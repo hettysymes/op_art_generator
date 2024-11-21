@@ -12,16 +12,16 @@ class Drawing:
         self.set_viewbox()
 
     # View box is such that (0,0) is the centre of the image
-    def set_viewbox(self, pixel_border=10):
+    def set_viewbox(self, top_bot_crop=10):
         self.dwg.viewbox(minx=-self.width//2, 
                          miny=-self.height//2, 
-                         width=self.width - 2*pixel_border, 
-                         height=self.height - 2*pixel_border)
+                         width=self.width, 
+                         height=self.height - 2*top_bot_crop)
         
     def draw(self):
         # Add background
         self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
-        n_polygons = 15
+        n_polygons = 16
         separation = 30
         phase = 0
         shift = 0.5
