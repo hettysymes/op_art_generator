@@ -28,6 +28,15 @@ class Drawing:
         for i in range(-n_polygons//2, n_polygons//2):
             self.add_vertical_sine_wave_polygon(i*separation, fill='black', phase_shift1=phase, phase_shift2=phase+shift)
             phase += 2*shift
+        self.add_linear_gradient()
+
+    def add_linear_gradient(self, colour='white'):
+        gradient = self.dwg.linearGradient(id="grad1", start=(0, 0), end=(1, 0))  # From left to right
+        gradient.add_stop_color(offset=0, opacity=0)  # Start with transparent
+        gradient.add_stop_color(offset=1, color=colour)  # End with white
+        self.dwg.defs.add(gradient)
+        rect = self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="url(#grad1)")
+        self.dwg.add(rect)
 
     # Plots vertical sine wave centered at x_pos starting at y_start, ranging for y_len
     @staticmethod
