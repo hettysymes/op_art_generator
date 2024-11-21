@@ -9,36 +9,40 @@ class Drawing:
         self.width = width
         self.height = height
         self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
+        self.set_viewbox()
 
-    def crop(self, pixel_border=10):
-        self.dwg.viewbox(minx=pixel_border, 
-                         miny=pixel_border, 
+    # View box is such that (0,0) is the centre of the image
+    def set_viewbox(self, pixel_border=10):
+        self.dwg.viewbox(minx=-self.width//2, 
+                         miny=-self.height//2, 
                          width=self.width - 2*pixel_border, 
                          height=self.height - 2*pixel_border)
-
+        
     def draw(self):
-        self.crop()
-        self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
+        # Add background
+        self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
+        points = Drawing.vertical_sine_wave(0, -self.height//2, self.height)
+        path = self.create_line_path(points)
+        self.dwg.add(path)
 
-        # SVG dimensions
-        amplitude = 50  # Amplitude of the sine wave
-        frequency = 3    # Number of cycles in the sine wave
-        num_points = 100  # Number of points to calculate
-
+    # Plots vertical sine wave centered at x_pos starting at y_start, ranging for y_len
+    @staticmethod
+    def vertical_sine_wave(x_pos, y_start, y_len, amplitude=50, frequency=3, num_points=100):
         # Generate sine wave points
         points = []
         for i in range(num_points):
-            y = i * (self.height / num_points)
-            x = (self.width / 2) + amplitude * math.sin(2 * math.pi * frequency * (i / num_points))
+            y = y_start + i * (y_len / num_points)
+            x = x_pos + amplitude * math.sin(2 * math.pi * frequency * (i / num_points))
             points.append((x, y))
-
-        # Create a path string
-        path_d = f"M {points[0][0]},{points[0][1]}"  # Move to the first point
-        for x, y in points[1:]:
-            path_d += f" L {x},{y}"  # Line to subsequent points
-
-        # Add the path to the drawing
-        self.dwg.add(self.dwg.path(d=path_d, stroke="blue", fill="none", stroke_width=2))
+        return points
+    
+    # Plots vertical sine wave centered at x_pos starting at y_start, ranging for y_len
+    def create_line_path(self, points, colour="blue", fill="none", stroke_width=2):
+        path = self.dwg.path(stroke=colour, fill=fill, stroke_width=stroke_width)
+        path.push('M', points[0][0], points[0][1])  # Move to start point
+        for i in range(1, len(points)):
+            path.push('L', points[i][0], points[i][1])
+        return path
 
     def save(self):
         self.dwg.save()
