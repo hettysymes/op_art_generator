@@ -21,7 +21,13 @@ class Drawing:
     def draw(self):
         # Add background
         self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
-        self.add_vertical_sine_wave_polygon(0, fill='green')
+        n_polygons = 15
+        separation = 30
+        phase = 0
+        shift = 0.5
+        for i in range(-n_polygons//2, n_polygons//2):
+            self.add_vertical_sine_wave_polygon(i*separation, fill='black', phase_shift1=phase, phase_shift2=phase+shift)
+            phase += 2*shift
 
     # Plots vertical sine wave centered at x_pos starting at y_start, ranging for y_len
     @staticmethod
@@ -34,9 +40,9 @@ class Drawing:
             points.append((x, y))
         return points
     
-    def add_vertical_sine_wave_polygon(self, x_pos, width=15, fill='blue', phase_shift=0.5, amplitude=10, frequency=3, num_points=100):
-        sine1_pts = Drawing.vertical_sine_wave(x_pos-width//2, -self.height//2, self.height, amplitude=amplitude, frequency=frequency, num_points=num_points)
-        sine2_pts = Drawing.vertical_sine_wave(x_pos+width//2, -self.height//2, self.height, phase_shift=phase_shift, amplitude=amplitude, frequency=frequency, num_points=num_points)
+    def add_vertical_sine_wave_polygon(self, x_pos, width=15, fill='blue', phase_shift1=0, phase_shift2=0.5, amplitude=10, frequency=3, num_points=100):
+        sine1_pts = Drawing.vertical_sine_wave(x_pos-width//2, -self.height//2, self.height, phase_shift=phase_shift1, amplitude=amplitude, frequency=frequency, num_points=num_points)
+        sine2_pts = Drawing.vertical_sine_wave(x_pos+width//2, -self.height//2, self.height, phase_shift=phase_shift2, amplitude=amplitude, frequency=frequency, num_points=num_points)
         sine2_pts.reverse()
         path = self.create_line_path(sine1_pts + sine2_pts, fill=fill, colour=fill)
         path.push('Z')
@@ -55,7 +61,7 @@ class Drawing:
         cairosvg.svg2png(url=f"{self.out_name}.svg", write_to=f"{self.out_name}.png")
 
 if __name__ == '__main__':
-    drawing = Drawing('out/example', 800, 400)
+    drawing = Drawing('out/example', 400, 400)
     drawing.draw()
     drawing.save()
     print("SVG file saved.")
