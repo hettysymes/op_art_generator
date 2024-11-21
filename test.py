@@ -21,29 +21,29 @@ class Drawing:
     def draw(self):
         # Add background
         self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
-        self.add_vertical_sine_wave_polygon(0)
+        self.add_vertical_sine_wave_polygon(0, fill='green')
 
     # Plots vertical sine wave centered at x_pos starting at y_start, ranging for y_len
     @staticmethod
-    def vertical_sine_wave(x_pos, y_start, y_len, amplitude=50, frequency=3, num_points=100):
+    def vertical_sine_wave(x_pos, y_start, y_len, phase_shift=0, amplitude=50, frequency=3, num_points=100):
         # Generate sine wave points
         points = []
         for i in range(num_points):
             y = y_start + i * (y_len / num_points)
-            x = x_pos + amplitude * math.sin(2 * math.pi * frequency * (i / num_points))
+            x = x_pos + amplitude * math.sin(2 * math.pi * frequency * (i / num_points) + phase_shift)
             points.append((x, y))
         return points
     
-    def add_vertical_sine_wave_polygon(self, x_pos, width=10, fill='blue', amplitude=50, frequency=3, num_points=100):
-        sine1_pts = Drawing.vertical_sine_wave(x_pos-width//2, -self.height//2, self.height)
-        sine2_pts = Drawing.vertical_sine_wave(x_pos+width//2, -self.height//2, self.height)
+    def add_vertical_sine_wave_polygon(self, x_pos, width=15, fill='blue', phase_shift=0.5, amplitude=10, frequency=3, num_points=100):
+        sine1_pts = Drawing.vertical_sine_wave(x_pos-width//2, -self.height//2, self.height, amplitude=amplitude, frequency=frequency, num_points=num_points)
+        sine2_pts = Drawing.vertical_sine_wave(x_pos+width//2, -self.height//2, self.height, phase_shift=phase_shift, amplitude=amplitude, frequency=frequency, num_points=num_points)
         sine2_pts.reverse()
-        path = self.create_line_path(sine1_pts + sine2_pts, fill=fill)
+        path = self.create_line_path(sine1_pts + sine2_pts, fill=fill, colour=fill)
         path.push('Z')
         self.dwg.add(path)
     
     # Plots vertical sine wave centered at x_pos starting at y_start, ranging for y_len
-    def create_line_path(self, points, colour="blue", fill="none", stroke_width=2):
+    def create_line_path(self, points, colour='blue', fill='none', stroke_width=1):
         path = self.dwg.path(stroke=colour, fill=fill, stroke_width=stroke_width)
         path.push('M', points[0][0], points[0][1])  # Move to start point
         for i in range(1, len(points)):
