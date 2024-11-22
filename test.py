@@ -10,6 +10,7 @@ class Drawing:
         self.height = height
         self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
         self.set_viewbox()
+        self.colours = {'black': '#29272e', 'blue':'#3f4957', 'grey': '#818389'}
 
     # View box is such that (0,0) is the centre of the image
     def set_viewbox(self, top_bot_crop=10):
@@ -22,25 +23,27 @@ class Drawing:
         # Add background
         self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
         n_polygons = 16
-        separation = 30
         phase = 0
         shift = -0.8
         grad_end_sine_pts = []
         p_width = 15
+        colour_i = 2
+        colours = ['black', 'blue', 'grey']
         for i in range(-n_polygons//2, n_polygons//2):
+            if i == -n_polygons//2 + 5:
+                phase -= shift
+                shift = 0.8
+                colour_i = 0
+            colour = self.colours[colours[colour_i]]
+            colour_i = (colour_i + 1) % 3
             if i < -n_polygons//2 + 5:
-                points = self.add_vertical_sine_wave_polygon(i*separation, fill='black', phase_shift1=phase, phase_shift2=phase+shift, width=p_width)
+                points = self.add_vertical_sine_wave_polygon(i*(p_width*2), fill=colour, phase_shift1=phase, phase_shift2=phase+shift, width=p_width)
                 phase += 2*shift
                 p_width -= 0.5
-                separation -= 1
             else:
-                if i == -n_polygons//2 + 5:
-                    phase -= shift
-                    shift = 0.8
-                points = self.add_vertical_sine_wave_polygon(i*separation, fill='black', phase_shift1=phase, phase_shift2=phase+shift, width=p_width)
+                points = self.add_vertical_sine_wave_polygon(i*(p_width*2), fill=colour, phase_shift1=phase, phase_shift2=phase+shift, width=p_width)
                 phase += 2*shift
                 p_width += 0.5
-                separation += 1
             if i == 0:
                 grad_end_sine_pts = points[:100]
         grad_id = self.create_linear_gradient()
