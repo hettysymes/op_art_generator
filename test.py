@@ -24,11 +24,23 @@ class Drawing:
         n_polygons = 16
         separation = 30
         phase = 0
-        shift = 0.5
+        shift = -0.8
         grad_end_sine_pts = []
+        p_width = 15
         for i in range(-n_polygons//2, n_polygons//2):
-            points = self.add_vertical_sine_wave_polygon(i*separation, fill='black', phase_shift1=phase, phase_shift2=phase+shift)
-            phase += 2*shift
+            if i < -n_polygons//2 + 5:
+                points = self.add_vertical_sine_wave_polygon(i*separation, fill='black', phase_shift1=phase, phase_shift2=phase+shift, width=p_width)
+                phase += 2*shift
+                p_width -= 0.5
+                separation -= 1
+            else:
+                if i == -n_polygons//2 + 5:
+                    phase -= shift
+                    shift = 0.8
+                points = self.add_vertical_sine_wave_polygon(i*separation, fill='black', phase_shift1=phase, phase_shift2=phase+shift, width=p_width)
+                phase += 2*shift
+                p_width += 0.5
+                separation += 1
             if i == 0:
                 grad_end_sine_pts = points[:100]
         grad_id = self.create_linear_gradient()
@@ -40,7 +52,6 @@ class Drawing:
         path = self.create_line_path(grad_end_sine_pts + [(self.width//2, self.height//2), (self.width//2, -self.height//2)], fill=f'url(#{grad_id})', colour='none')
         path.push('Z')
         self.dwg.add(path)
-
 
     def create_linear_gradient(self, colour='white'):
         grad_id = 'white_lin_grad'
