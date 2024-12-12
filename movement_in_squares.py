@@ -17,19 +17,16 @@ class Drawing:
         merge_x = self.width * 3/4
         # Add rectangle stripes
         start = True
-        original_rect_w = 30
+        original_rect_w = 30 # Start rectangle width
+        min_w = 1 # Minimum rectangle width
         rect_h = 30
-        scale = 1
         x_pos = 0
         while x_pos < self.width:
-            rect_w = original_rect_w * scale
-            if rect_w < 1:
-                break
+            # Use sqrt fun to find rectangle width - gets thinner nearer to merge_x
+            rect_w = (original_rect_w/(math.sqrt(merge_x) + min_w))*math.sqrt(abs(merge_x - x_pos)) + min_w
             self.add_verticle_stripe(rect_w, rect_h, x_pos, start)
             x_pos += rect_w
             start = not start
-            # Closer to merge x, bigger shrink scaling
-            scale = abs(x_pos - merge_x)/300
 
     # x_pos is left border of line
     def add_verticle_stripe(self, rect_w, rect_h, x_pos, start=True):
