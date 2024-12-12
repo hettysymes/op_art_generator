@@ -14,16 +14,20 @@ class Drawing:
         # Add background
         self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
         # Define merge centre x position
-        merge_x = self.width * 3/4
+        merge_x = self.width * 5/8
         # Add rectangle stripes
         start = True
-        original_rect_w = 30 # Start rectangle width
-        min_w = 1 # Minimum rectangle width
+        w_scaling = 30
         rect_h = 30
         x_pos = 0
         while x_pos < self.width:
-            # Use sqrt fun to find rectangle width - gets thinner nearer to merge_x
-            rect_w = (original_rect_w/(math.sqrt(merge_x) + min_w))*math.sqrt(abs(merge_x - x_pos)) + min_w
+            # Use sigmoid fun to find rectangle width
+            x = abs(merge_x - x_pos)
+            sigmoid = lambda z: 1/(1 + math.exp(-z))
+            # Consider sigmoid range [a, b]
+            a = -2
+            b = 4
+            rect_w = w_scaling * sigmoid(a + (x/merge_x) * (b-a))
             self.add_verticle_stripe(rect_w, rect_h, x_pos, start)
             x_pos += rect_w
             start = not start
