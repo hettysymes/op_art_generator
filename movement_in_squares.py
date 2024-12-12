@@ -51,7 +51,7 @@ class Drawing:
         cairosvg.svg2png(url=f"{self.out_name}.svg", write_to=f"{self.out_name}.png")
 
 if __name__ == '__main__':
-    drawing = Drawing('out/movement_in_squares', 360, 360)
+    drawing = Drawing('out/movement_in_squares', 355, 360)
     drawing.draw()
     drawing.save()
     print("SVG and PNG files saved.")
