@@ -99,7 +99,7 @@ class Drawing:
         cairosvg.svg2png(url=f"{self.out_name}.svg", write_to=f"{self.out_name}.png")
 
 if __name__ == '__main__':
-    drawing = Drawing('out/example', 400, 400)
+    drawing = Drawing('out/arrest_2', 400, 400)
     drawing.draw()
     drawing.save()
-    print("SVG file saved.")
+    print("SVG and PNG files saved.")
