@@ -17,14 +17,16 @@ class Drawing:
         merge_x = self.width * 5/8
         # Add rectangle stripes
         start = True
+        switch = False
         rect_h = 30
         x_pos = 0
         while x_pos < self.width:
             # Use sigmoid fun to find rectangle width
-            x = abs(merge_x - x_pos)
+            # 1.5 is arbitrary scaling factor for "sharper" curve
+            x = 1.5*abs(merge_x - x_pos)
             sigmoid = lambda z: 1/(1 + math.exp(-z))
             # Consider sigmoid range [a, b]
-            a = -2
+            a = -2.3
             b = 4
             # When x is high, sigmoid is close to 1 so rect_w is approx rect_h
             rect_w = rect_h * sigmoid(a + (x/merge_x) * (b-a))
