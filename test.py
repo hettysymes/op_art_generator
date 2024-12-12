@@ -59,8 +59,8 @@ class Drawing:
     def create_linear_gradient(self, colour='white'):
         grad_id = 'white_lin_grad'
         gradient = self.dwg.linearGradient(id=grad_id, start=(0, 0), end=(1, 0))  # From left to right
-        gradient.add_stop_color(offset=0, opacity=0)  # Start with transparent
-        gradient.add_stop_color(offset=1, color=colour)  # End with white
+        gradient.add_stop_color(offset=0, opacity=0, color=colour)  # Start with transparent
+        gradient.add_stop_color(offset=1, opacity=1, color=colour)  # End with white
         self.dwg.defs.add(gradient)
         return grad_id
 
