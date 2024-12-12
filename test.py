@@ -8,14 +8,15 @@ class Drawing:
         self.out_name = out_name
         self.width = width
         self.height = height
-        self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
-        self.set_viewbox()
+        top_bot_crop = 5
+        self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height-2*top_bot_crop))
+        self.set_viewbox(top_bot_crop)
         self.colours = {'black': '#29272e', 'blue':'#3f4957', 'grey': '#818389'}
 
     # View box is such that (0,0) is the centre of the image
-    def set_viewbox(self, top_bot_crop=10):
+    def set_viewbox(self, top_bot_crop):
         self.dwg.viewbox(minx=-self.width//2, 
-                         miny=-self.height//2, 
+                         miny=-self.height//2 + top_bot_crop, 
                          width=self.width, 
                          height=self.height - 2*top_bot_crop)
         
