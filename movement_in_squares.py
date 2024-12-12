@@ -8,34 +8,26 @@ class Drawing:
         self.out_name = out_name
         self.width = width
         self.height = height
-        top_bot_crop = 5
-        self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height-2*top_bot_crop))
-        self.set_viewbox(top_bot_crop)
-
-    # View box is such that (0,0) is the centre of the image
-    def set_viewbox(self, top_bot_crop):
-        self.dwg.viewbox(minx=-self.width//2, 
-                         miny=-self.height//2 + top_bot_crop, 
-                         width=self.width, 
-                         height=self.height - 2*top_bot_crop)
+        self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
         
     def draw(self):
         # Add background
-        self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
+        self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
+        # Define merge centre x position
         # Add rectangle stripes
         start = True
         rect_w = 20
-        for x_pos in range(-self.width//2, self.width//2, rect_w):
+        for x_pos in range(0, self.width, rect_w):
             self.add_verticle_stripe(rect_w, 20, x_pos, start)
             start = not start
 
     # x_pos is left border of line
     def add_verticle_stripe(self, rect_w, rect_h, x_pos, start=True):
-        y_pos = -self.height//2
+        y_pos = 0
         if not start:
             # White rectangle starts
             y_pos += rect_h
-        while y_pos < self.height//2:
+        while y_pos < self.height:
             self.dwg.add(self.dwg.rect(
                             insert=(x_pos, y_pos),
                             size=(rect_w, rect_h),
