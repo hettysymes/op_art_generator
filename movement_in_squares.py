@@ -17,7 +17,6 @@ class Drawing:
         merge_x = self.width * 5/8
         # Add rectangle stripes
         start = True
-        w_scaling = 30
         rect_h = 30
         x_pos = 0
         while x_pos < self.width:
@@ -27,7 +26,8 @@ class Drawing:
             # Consider sigmoid range [a, b]
             a = -2
             b = 4
-            rect_w = w_scaling * sigmoid(a + (x/merge_x) * (b-a))
+            # When x is high, sigmoid is close to 1 so rect_w is approx rect_h
+            rect_w = rect_h * sigmoid(a + (x/merge_x) * (b-a))
             self.add_verticle_stripe(rect_w, rect_h, x_pos, start)
             x_pos += rect_w
             start = not start
