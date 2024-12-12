@@ -23,13 +23,13 @@ class Drawing:
         while x_pos < self.width:
             # Use sigmoid fun to find rectangle width
             # 1.5 is arbitrary scaling factor for "sharper" curve
-            x = 1.5*abs(merge_x - x_pos)
+            d = 1.5*abs(merge_x - x_pos)
             sigmoid = lambda z: 1/(1 + math.exp(-z))
             # Consider sigmoid range [a, b]
             a = -2.3
             b = 4
             # When x is high, sigmoid is close to 1 so rect_w is approx rect_h
-            rect_w = rect_h * sigmoid(a + (x/merge_x) * (b-a))
+            rect_w = rect_h * sigmoid(a + (d/merge_x) * (b-a))
             self.add_verticle_stripe(rect_w, rect_h, x_pos, start)
             x_pos += rect_w
             start = not start
