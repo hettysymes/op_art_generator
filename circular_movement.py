@@ -1,6 +1,7 @@
 import svgwrite
 import cairosvg
 import math
+import numpy as np
 
 class Drawing:
 
@@ -19,12 +20,17 @@ class Drawing:
                          width=self.width, 
                          height=self.height)
 
+    def bezier_pt_calc(self, t, P0, P1, P2):
+        x = (1-t)**2 * P0[0] + 2*(1-t)*t * P1[0] + t**2 * P2[0]
+        y = (1-t)**2 * P0[1] + 2*(1-t)*t * P1[1] + t**2 * P2[1]
+        return (x, y)
+
     def draw(self):
         # Add background
         self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
         dip_pt = (-50,0)
         circle_rad = 150
-        inter_rad = 100
+        inter_rad = 10
         self.dwg.add(self.dwg.circle(center=(0,0), r=circle_rad, stroke='black', fill='none', opacity=self.opacity))
         self.dwg.add(self.dwg.circle(center=(0,0), r=inter_rad, stroke='blue', fill='none', opacity=self.opacity))
 
@@ -44,6 +50,10 @@ class Drawing:
         self.bezier(start, pt, end)
         self.dwg.add(self.dwg.line(start, pt, stroke='red', opacity=self.opacity))
         self.dwg.add(self.dwg.line(pt, end, stroke='red', opacity=self.opacity))
+        # Add ellipse centres
+        for t in np.linspace(0, 1, 20):
+            point = self.bezier_pt_calc(t, start, pt, end)
+            self.dwg.add(self.dwg.ellipse(center=point, r=(2, 2), fill="black"))
 
     def polar_coords(self, r, theta, c=(0,0)):
         theta_rad = math.radians(theta)
