@@ -21,11 +21,21 @@ class Drawing:
         
     def draw_pt(self, centre, rad=0.5, col="black"):
         self.dwg.add(self.dwg.circle(center=centre, r=rad, fill=col))
+
+    def draw_grid(self, step_size=10, opacity=0.2):
+        # Draw horizontal grid lines
+        for y in range(-self.width//2, self.width//2, step_size):
+            self.dwg.add(self.dwg.line(start=(-self.height//2, y), end=(self.height//2, y), stroke='blue', stroke_width=1, opacity=opacity))
+
+        # Draw vertical grid lines
+        for x in range(-self.height//2, self.height//2, step_size):
+            self.dwg.add(self.dwg.line(start=(x, -self.width//2), end=(x, self.width//2), stroke='blue', stroke_width=1, opacity=opacity))
         
     def draw(self):
         # Add background
         self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
-        
+        self.draw_grid()
+
         pts = [(0,-200), (100,-100), (0,0), (-200,100), (0,200)]
         c = CatmullRomCurve(pts)
 
