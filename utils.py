@@ -7,6 +7,46 @@ class CubicBezierCurve:
         for i in range(0, len(points)-3, 3):
             self.splines.append(CubicBezierSpline(points[i:i+4]))
 
+    def cumulative_spline_dists(self):
+        dists = [self.splines[0].approx_dist()]
+        for i in range(1, len(self.splines)):
+            dists.append(self.splines[i].approx_dist() + dists[-1])
+        return dists
+
+    def approx_dist(self):
+        return self.cumulative_spline_dists()[-1]
+
+    def dist_to_u_lookup(self, dist):
+        spline_dists = self.cumulative_spline_dists()
+        # Find which spline
+        if len(self.splines) > 1:
+            for i in range(len(self.splines)-1):
+                if spline_dists[i] <= dist and dist <= spline_dists[i+1]:
+                    break
+            if i > 0:
+                dist -= spline_dists[i-1]
+        else:
+            i = 0
+        return i + self.splines[i].dist_to_t_lookup(dist)
+    
+    def dist_sample(self, dist):
+        u = self.dist_to_u_lookup(dist)
+        return self.sample(u)
+    
+    def sample(self, u):
+        t, spline_idx = np.modf(u)
+        return self.splines[int(spline_idx)].sample(t)
+    
+    def reg_dist_sample(self, num_samples = 10):
+        samples = []
+        approx_dist = self.approx_dist()
+        step = approx_dist/num_samples
+        dist = 0
+        while dist <= approx_dist:
+            dist += step
+            samples.append(self.dist_sample(dist))
+        return samples
+
     def path_data(self):
         i = 0
         path_data = ""
@@ -23,7 +63,15 @@ class CubicBezierSpline:
                                  [3, -6, 3, 0],
                                  [-1, 3, -3, 1]])
         self.points = np.array(points)
-        self.dist_table = None # Array: (t,dist) pairs
+        self._dtable = None # Array: (t,dist) pairs
+
+    def dist_table(self):
+        if self._dtable == None:
+            self._dtable = self.calc_dist_table()
+        return self._dtable
+
+    def approx_dist(self):
+        return self.dist_table()[-1][1]
 
     def sample(self, t):
         t_vec = np.array([1, t, t**2, t**3])
@@ -49,27 +97,19 @@ class CubicBezierSpline:
         step = 1/num_samples
         for i in range(1, num_samples):
             dist_table[i] = (step*i, dist_table[i-1][1] + np.linalg.norm(samples[i] - samples[i-1]))
-        self.dist_table = dist_table
+        return dist_table
 
     def dist_to_t_lookup(self, dist):
-        for i in range(1, len(self.dist_table)):
-            t1, d1 = self.dist_table[i-1]
-            t2, d2 = self.dist_table[i]
+        for i in range(1, len(self.dist_table())):
+            t1, d1 = self.dist_table()[i-1]
+            t2, d2 = self.dist_table()[i]
             if d1 <= dist and dist <= d2:
                 break
         return t1 + ((dist - d1) / (d2 - d1))*(t2-t1)
     
-    def reg_dist_sample(self, num_samples=10):
-        if self.dist_table == None: self.calc_dist_table()
-        approx_dist = self.dist_table[-1][1]
-        step = approx_dist/num_samples
-        ts = []
-        dist = 0
-        while dist <= np.floor(approx_dist):
-            ts.append(self.dist_to_t_lookup(dist))
-            dist += step
-        return [self.sample(t) for t in ts]
-            
+    def dist_sample(self, dist):
+        t = self.dist_to_t_lookup(dist)
+        return self.sample(t)
 
 class CatmullRomCurve:
 

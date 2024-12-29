@@ -20,7 +20,7 @@ class Drawing:
                          width=self.width, 
                          height=self.height)
         
-    def draw_pt(self, centre, col="black", rad=0.5):
+    def draw_pt(self, centre, col='green', rad=2):
         self.dwg.add(self.dwg.circle(center=centre, r=rad, fill=col))
 
     def draw_grid(self, step_size=10, opacity=0.2):
@@ -48,11 +48,9 @@ class Drawing:
 
     def draw_bezier(self, curve, col='black'):
         self.dwg.add(self.dwg.path(d=curve.path_data(), stroke=col, fill='none'))
-        for spline in curve.splines:
-            spline.calc_dist_table()
-            samples = spline.reg_dist_sample()
-            for s in samples:
-                self.draw_pt(s, col='green', rad=2)
+        samples = curve.reg_dist_sample(num_samples=20)
+        for s in samples:
+            self.draw_pt(s)
                     
     def save(self):
         self.dwg.save()
