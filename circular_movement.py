@@ -1,6 +1,6 @@
 import svgwrite
 import cairosvg
-from utils import CatmullRomCurve
+from utils import CubicBezierCurve
 from analyse import get_cubic_beziers
 
 class Drawing:
@@ -37,27 +37,22 @@ class Drawing:
         self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
         self.draw_grid()
 
-        p0_pts = [(-61.145489, 19.144546), (-12.962688999999997, -50.87909700000001), (111.10529, -23.679314000000005), (128.24452, 10.170949999999998)]
-        p2_pts = [(-97.659293, -23.174638), (-97.053731, 20.426138), (-61.93088, 18.003873), (-61.93088, 18.003873),
-                  (139.7227, 1.0480200000000002), (70.677453, -140.13314), (-99.901838, -119.80074), (-97.659293, -23.174638)]
-        p3_pts = [(-176.95926,-7.9394163), (-171.59013,26.754865), (-75.920842,23.904545), (-63.142013,18.609439),
-                  (172.42328,-20.752366), (160.75742,-117.4515), (-81.391416,-260.88804), (-176.95926,-7.9394163)]
+        p0_pts = CubicBezierCurve([(-61.145489, 19.144546), (-12.962688999999997, -50.87909700000001), (111.10529, -23.679314000000005), (128.24452, 10.170949999999998)])
+        p2_pts = CubicBezierCurve([(139.7227, 1.0480200000000002), (70.677453, -140.13314), (-99.901838, -119.80074), (-97.659293, -23.174638), (-97.659293, -23.174638), (-97.053731, 20.426138), (-61.93088, 18.003873), (-61.93088, 18.003873)])
+        p3_pts = CubicBezierCurve([(172.42328,-20.752366), (160.75742,-117.4515), (-81.391416,-260.88804), (-176.95926,-7.9394163), (-176.95926,-7.9394163), (-171.59013,26.754865), (-75.920842,23.904545), (-63.142013,18.609439)])
 
         beziers = [p0_pts, p2_pts, p3_pts]
         cols = ['black', 'blue', 'red']
         for col, b in zip(cols, beziers):
             self.draw_bezier(b, col=col)
 
-    def draw_bezier(self, points, col='black'):
-        i = 0
-        path_data = ""
-        while i < len(points):
-            path_data += f"M {points[i][0]},{points[i][1]} C "
-            i += 1
-            for _ in range(3):
-                path_data += f"{points[i][0]},{points[i][1]} "
-                i += 1
-        self.dwg.add(self.dwg.path(d=path_data, stroke=col, fill='none'))
+    def draw_bezier(self, curve, col='black'):
+        self.dwg.add(self.dwg.path(d=curve.path_data(), stroke=col, fill='none'))
+        for spline in curve.splines:
+            spline.calc_dist_table()
+            samples = spline.reg_dist_sample()
+            for s in samples:
+                self.draw_pt(s, col='green', rad=2)
                     
     def save(self):
         self.dwg.save()
