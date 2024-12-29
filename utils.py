@@ -18,6 +18,7 @@ class CubicBezierCurve:
 
     def dist_to_u_lookup(self, dist):
         spline_dists = self.cumulative_spline_dists()
+        print(spline_dists)
         # Find which spline
         if len(self.splines) > 1:
             for i in range(len(self.splines)-1):
