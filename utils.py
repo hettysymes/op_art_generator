@@ -40,7 +40,7 @@ class CubicBezierCurve:
         approx_dist = self.approx_dist()
         step = approx_dist/num_samples
         dist = 0
-        while dist <= approx_dist:
+        for _ in range(num_samples):
             samples.append(self.dist_sample(dist))
             dist += step
         return samples
