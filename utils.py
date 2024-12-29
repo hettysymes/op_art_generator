@@ -18,16 +18,13 @@ class CubicBezierCurve:
 
     def dist_to_u_lookup(self, dist):
         spline_dists = self.cumulative_spline_dists()
-        print(spline_dists)
         # Find which spline
-        if len(self.splines) > 1:
-            for i in range(len(self.splines)-1):
-                if spline_dists[i] <= dist and dist <= spline_dists[i+1]:
+        i = 0
+        if dist > spline_dists[0]:
+            for i in range(1, len(self.splines)):
+                if spline_dists[i-1] <= dist and dist <= spline_dists[i]:
                     break
-            if i > 0:
-                dist -= spline_dists[i-1]
-        else:
-            i = 0
+            dist -= spline_dists[i-1]
         return i + self.splines[i].dist_to_t_lookup(dist)
     
     def dist_sample(self, dist):
@@ -44,8 +41,8 @@ class CubicBezierCurve:
         step = approx_dist/num_samples
         dist = 0
         while dist <= approx_dist:
-            dist += step
             samples.append(self.dist_sample(dist))
+            dist += step
         return samples
 
     def path_data(self):
