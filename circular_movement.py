@@ -20,7 +20,7 @@ class Drawing:
                          width=self.width, 
                          height=self.height)
         
-    def draw_pt(self, centre, col='green', rad=2):
+    def draw_pt(self, centre, col='green', rad=1):
         self.dwg.add(self.dwg.circle(center=centre, r=rad, fill=col))
 
     def draw_grid(self, step_size=10, opacity=0.2):
@@ -37,12 +37,24 @@ class Drawing:
         self.dwg.add(self.dwg.rect(insert=(-self.width//2, -self.height//2), size=(self.width, self.height), fill="white"))
         self.draw_grid()
 
-        p0_pts = CubicBezierCurve([(-61.145489, 19.144546), (-12.962688999999997, -50.87909700000001), (111.10529, -23.679314000000005), (128.24452, 10.170949999999998)])
-        p2_pts = CubicBezierCurve([(139.7227, 1.0480200000000002), (70.677453, -140.13314), (-99.901838, -119.80074), (-97.659293, -23.174638), (-97.053731, 20.426138), (-61.93088, 18.003873), (-61.93088, 18.003873)])
-        p3_pts = CubicBezierCurve([(172.42328,-20.752366), (160.75742,-117.4515), (-81.391416,-260.88804), (-176.95926,-7.9394163), (-171.59013,26.754865), (-75.920842,23.904545), (-63.142013,18.609439)])
+        p0_curve = CubicBezierCurve([(-61.145489, 19.144546), (-12.962688999999997, -50.87909700000001), (111.10529, -23.679314000000005), (128.24452, 10.170949999999998)])
+        p1_curve = CubicBezierCurve([(139.7227, 1.0480200000000002), (70.677453, -140.13314), (-99.901838, -119.80074), (-97.659293, -23.174638), (-97.053731, 20.426138), (-61.93088, 18.003873), (-61.93088, 18.003873)])
+        p3_curve = CubicBezierCurve([(-63.142013, 18.609439), (-75.920842, 23.904545), (-171.59013, 26.754865), (-176.95926, -7.9394163), (-81.391416, -260.88804), (160.75742, -117.4515), (172.42328, -20.752366)])
 
-        beziers = [p0_pts, p2_pts, p3_pts]
-        cols = ['black', 'blue', 'red']
+        num_samples = 10
+        p0_samples = p0_curve.reg_dist_sample(num_samples=num_samples)
+        p1_samples = p1_curve.reg_dist_sample(num_samples=num_samples)
+        p3_samples = p3_curve.reg_dist_sample(num_samples=num_samples)
+
+        beziers = []
+        for i in range(num_samples):
+            beziers.append(CubicBezierCurve([p0_samples[i], p1_samples[i], p3_samples[i], p3_samples[i]]))
+        
+        for b in beziers:
+            self.draw_bezier(b)
+
+        beziers = [p0_curve, p1_curve, p3_curve]
+        cols = ['orange', 'blue', 'red']
         for col, b in zip(cols, beziers):
             self.draw_bezier(b, col=col)
 
