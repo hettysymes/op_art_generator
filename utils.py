@@ -1,5 +1,23 @@
 import numpy as np
 
+class Circle:
+    
+    def __init__(self, cx, cy, r):
+        self.cx = cx
+        self.cy = cy
+        self.r = r
+
+    def reg_sample(self, num_samples=20):
+        samples = []
+        for i in range(num_samples):
+            # Calculate the angle for this point
+            angle = 2 * np.pi * i / num_samples
+            # Calculate x and y coordinates
+            x = self.cx + self.r * np.cos(angle)
+            y = self.cy + self.r * np.sin(angle)
+            samples.append((x, y))
+        return samples
+
 class CubicBezierCurve:
 
     def __init__(self, points):
