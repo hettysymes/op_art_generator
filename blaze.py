@@ -33,12 +33,25 @@ class Drawing:
         zigzag_angles = [0, -np.pi/8, 0, -np.pi/8, 0, -np.pi/8, 0, -np.pi/8, 0]
         circle_samples = []
         for i,c in enumerate(circles):
-            self.dwg.add(self.dwg.circle(center=(c.cx, c.cy), r=c.r, fill='none', stroke='red'))
+            #self.dwg.add(self.dwg.circle(center=(c.cx, c.cy), r=c.r, fill='none', stroke='red'))
             samples = c.reg_sample(start_angle=zigzag_angles[i], num_samples=50)
             circle_samples.append(samples)
         lines = [list(line) for line in zip(*circle_samples)]
-        for line in lines:
-            self.dwg.add(self.dwg.polyline(points=line, fill='none', stroke='black'))
+        for i in range(0, len(lines), 2):
+            left_line = lines[i-1]
+            right_line = lines[i]
+            right_line.reverse()
+            points = left_line + right_line
+            path = self.create_line_path(points, fill='black', colour='black')
+            path.push('Z')
+            self.dwg.add(path)
+
+    def create_line_path(self, points, colour='blue', fill='none', stroke_width=1):
+        path = self.dwg.path(stroke=colour, fill=fill, stroke_width=stroke_width)
+        path.push('M', points[0][0], points[0][1])  # Move to start point
+        for i in range(1, len(points)):
+            path.push('L', points[i][0], points[i][1])
+        return path
                     
     def save(self):
         self.dwg.save()
