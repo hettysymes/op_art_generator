@@ -30,13 +30,15 @@ class Drawing:
                    Circle(201.67407, 190.61722, 130.26596),
                    Circle(202.22873, 198.23079, 148.25665)]
         
-        zigzag_angles = [0, -np.pi/4, 0, -np.pi/4, 0, -np.pi/4, 0, 0, 0]
+        zigzag_angles = [0, -np.pi/8, 0, -np.pi/8, 0, -np.pi/8, 0, -np.pi/8, 0]
+        circle_samples = []
         for i,c in enumerate(circles):
             self.dwg.add(self.dwg.circle(center=(c.cx, c.cy), r=c.r, fill='none', stroke='red'))
-            samples = c.reg_sample(start_angle=zigzag_angles[i])
-            self.draw_pt(samples[0], col='black', rad=2)
-            for i in range(1, len(samples)):
-                self.draw_pt(samples[i])
+            samples = c.reg_sample(start_angle=zigzag_angles[i], num_samples=50)
+            circle_samples.append(samples)
+        lines = [list(line) for line in zip(*circle_samples)]
+        for line in lines:
+            self.dwg.add(self.dwg.polyline(points=line, fill='none', stroke='black'))
                     
     def save(self):
         self.dwg.save()
