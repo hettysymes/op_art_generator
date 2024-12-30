@@ -7,15 +7,18 @@ class Circle:
         self.cy = cy
         self.r = r
 
-    def reg_sample(self, num_samples=20):
+    def angle_to_point(self, angle):
+        x = self.cx + self.r * np.cos(angle)
+        y = self.cy + self.r * np.sin(angle)
+        return (x, y)
+
+    def reg_sample(self, start_angle = 0, num_samples=20):
         samples = []
-        for i in range(num_samples):
-            # Calculate the angle for this point
-            angle = 2 * np.pi * i / num_samples
-            # Calculate x and y coordinates
-            x = self.cx + self.r * np.cos(angle)
-            y = self.cy + self.r * np.sin(angle)
-            samples.append((x, y))
+        angle = start_angle
+        step =  2 * np.pi / num_samples
+        for _ in range(num_samples):
+            samples.append(self.angle_to_point(angle))
+            angle += step
         return samples
 
 class CubicBezierCurve:

@@ -1,6 +1,7 @@
 import svgwrite
 import cairosvg
 from utils import Circle
+import numpy as np
 
 class Drawing:
 
@@ -19,21 +20,23 @@ class Drawing:
         self.draw_circles()
 
     def draw_circles(self):
-        circles = [Circle(177.33932, 196.70197, 74.45282),
-                   Circle(178.69621, 207.38835, 56.179714),
-                   Circle(186.39648, 212.4418, 38.126766),
+        circles = [Circle(194.45273, 207.26987, 9.8289003),
                    Circle(193.96831, 206.92116, 18.422821),
-                   Circle(194.45273, 207.26987, 9.8289003),
-                   Circle(201.67407, 190.61722, 130.26596),
+                   Circle(186.39648, 212.4418, 38.126766),
+                   Circle(178.69621, 207.38835, 56.179714),
+                   Circle(177.33932, 196.70197, 74.45282),
+                   Circle(183.46475, 188.90541, 93.60656),
                    Circle(191.36472, 186.87128, 112.28111),
-                   Circle(202.22873, 198.23079, 148.25665),
-                   Circle(183.46475, 188.90541, 93.60656)]
+                   Circle(201.67407, 190.61722, 130.26596),
+                   Circle(202.22873, 198.23079, 148.25665)]
         
-        for c in circles:
+        zigzag_angles = [0, -np.pi/4, 0, -np.pi/4, 0, -np.pi/4, 0, 0, 0]
+        for i,c in enumerate(circles):
             self.dwg.add(self.dwg.circle(center=(c.cx, c.cy), r=c.r, fill='none', stroke='red'))
-            samples = c.reg_sample()
-            for s in samples:
-                self.draw_pt(s)
+            samples = c.reg_sample(start_angle=zigzag_angles[i])
+            self.draw_pt(samples[0], col='black', rad=2)
+            for i in range(1, len(samples)):
+                self.draw_pt(samples[i])
                     
     def save(self):
         self.dwg.save()
