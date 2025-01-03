@@ -14,39 +14,39 @@ class Drawing:
         # Add background
         self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
         # Define merge centre x position
-        merge_x = self.width * 3/8
+        merge_y = self.height * 3/8
         # Add rectangle stripes
         start = True
         switch = False
-        ellipse_rh = 10
-        x_pos = 0
-        while x_pos < self.width:
+        ellipse_rw = 10
+        y_pos = 0
+        while y_pos < self.height:
             # Use sigmoid fun to find rectangle width
             # 1.5 is arbitrary scaling factor for "sharper" curve
-            d = 1.5*abs(merge_x - x_pos)
+            d = 1.5*abs(merge_y - y_pos)
             sigmoid = lambda z: 1/(1 + math.exp(-z))
             # Consider sigmoid range [a, b]
             a = -2.3
             b = 4
             # When x is high, sigmoid is close to 1 so rect_w is approx rect_h
-            ellipse_rw = ellipse_rh * sigmoid(a + (d/merge_x) * (b-a))
-            self.add_verticle_stripe(ellipse_rw, ellipse_rh, x_pos, start)
-            x_pos += 2*ellipse_rw
+            ellipse_rh = ellipse_rw * sigmoid(a + (d/merge_y) * (b-a))
+            self.add_verticle_stripe(ellipse_rw, ellipse_rh, y_pos, start)
+            y_pos += 2*ellipse_rh
             start = not start
 
     # x_pos is left border of line
-    def add_verticle_stripe(self, ellipse_rx, ellipse_ry, x_pos, start=True):
-        y_pos = 0
+    def add_verticle_stripe(self, ellipse_rx, ellipse_ry, y_pos, start=True):
+        x_pos = 0
         if not start:
             # White area starts
-            y_pos += 2*ellipse_ry
-        while y_pos < self.height:
+            x_pos += 2*ellipse_rx
+        while x_pos < self.width:
             self.dwg.add(self.dwg.ellipse(
                             center=(x_pos, y_pos),
                             r=(ellipse_rx, ellipse_ry),
                             fill='black',
                         ))
-            y_pos += 4*ellipse_ry
+            x_pos += 4*ellipse_rx
                     
     def save(self):
         self.dwg.save()
