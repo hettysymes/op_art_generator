@@ -1,5 +1,5 @@
 import svgwrite
-import cairosvg
+import subprocess
 import math
 
 class Drawing:
@@ -33,6 +33,19 @@ class Drawing:
             self.add_verticle_stripe(ellipse_rw, ellipse_rh, y_pos, start)
             y_pos += 2*ellipse_rh
             start = not start
+        self.add_gradients()
+
+    def add_gradients(self):
+        # Define a blur filter
+        blur_filter = self.dwg.defs.add(self.dwg.filter(id='blur'))
+        blur_filter.feGaussianBlur(in_='SourceGraphic', stdDeviation=10)
+
+        # Draw the Bezier path with blurred stroke
+        path = self.dwg.path(d="M100,250 C150,100 350,100 400,250", stroke="white", fill="none", stroke_width=20)
+        path['filter'] = 'url(#blur)'
+
+        # Add to canvas
+        self.dwg.add(path)
 
     # x_pos is left border of line
     def add_verticle_stripe(self, ellipse_rx, ellipse_ry, y_pos, start=True):
@@ -47,10 +60,20 @@ class Drawing:
                             fill='black',
                         ))
             x_pos += 4*ellipse_rx
-                    
+
     def save(self):
         self.dwg.save()
-        cairosvg.svg2png(url=f"{self.out_name}.svg", write_to=f"{self.out_name}.png")
+        input_svg = f"{self.out_name}.svg"
+        output_png = f"{self.out_name}.png"
+        try:
+            # Run the Inkscape command
+            subprocess.run([
+                "/Applications/Inkscape.app/Contents/MacOS/inkscape",
+                input_svg,
+                "--export-filename", output_png
+            ], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error: {e}")
 
 if __name__ == '__main__':
     drawing = Drawing('out/hesitate', 400, 400)
