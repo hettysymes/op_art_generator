@@ -9,31 +9,36 @@ class Drawing:
         self.width = width
         self.height = height
         self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
+
+        # Parameters
+        self.merge_y = 58.4
+        self.rx = 4.03
+
+        scale = 0.28
+        min_ry = 0.25
+        self.ry_fun = lambda idx: abs(scale*idx)+min_ry
+
         
     def draw(self):
         # Add background
         self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
-        # Define merge centre x position
-        merge_y = self.height * 3/8
-        # Add rectangle stripes
-        start = True
-        switch = False
-        ellipse_rw = 10
-        y_pos = 0
+
+        init_ry, init_y_pos, _ = self.draw_row(0, 0, self.merge_y, True)
+        # Draw from merge to top
+        ry = init_ry
+        y_pos = init_y_pos
+        idx = -1
+        while y_pos > 0:
+            ry, y_pos, idx = self.draw_row(idx, ry, y_pos, True)
+
+        # Draw from merge to bottom
+        ry = init_ry
+        y_pos = init_y_pos
+        idx = 1
         while y_pos < self.height:
-            # Use sigmoid fun to find rectangle width
-            # 1.5 is arbitrary scaling factor for "sharper" curve
-            d = 1.5*abs(merge_y - y_pos)
-            sigmoid = lambda z: 1/(1 + math.exp(-z))
-            # Consider sigmoid range [a, b]
-            a = -2.3
-            b = 4
-            # When x is high, sigmoid is close to 1 so rect_w is approx rect_h
-            ellipse_rh = ellipse_rw * sigmoid(a + (d/merge_y) * (b-a))
-            self.add_verticle_stripe(ellipse_rw, ellipse_rh, y_pos, start)
-            y_pos += 2*ellipse_rh
-            start = not start
-        self.add_gradients()
+            ry, y_pos, idx = self.draw_row(idx, ry, y_pos, False)
+        
+        #self.add_gradients()
 
     def add_gradients(self):
         # Define a blur filter
@@ -47,19 +52,21 @@ class Drawing:
         # Add to canvas
         self.dwg.add(path)
 
-    # x_pos is left border of line
-    def add_verticle_stripe(self, ellipse_rx, ellipse_ry, y_pos, start=True):
-        x_pos = 0
-        if not start:
-            # White area starts
-            x_pos += 2*ellipse_rx
+    def draw_row(self, idx, prev_ry, prev_y_pos, above):
+        ry = self.ry_fun(idx)
+        direction = -1 if above else 1
+        y_diff = prev_ry + ry
+        y_pos = prev_y_pos + direction*y_diff
+        x_pos = self.rx if idx % 2 == 0 else self.rx*3
         while x_pos < self.width:
+            # Draw ellipse
             self.dwg.add(self.dwg.ellipse(
                             center=(x_pos, y_pos),
-                            r=(ellipse_rx, ellipse_ry),
+                            r=(self.rx, ry),
                             fill='black',
                         ))
-            x_pos += 4*ellipse_rx
+            x_pos+= self.rx*4
+        return ry, y_pos, idx + direction
 
     def save(self):
         self.dwg.save()
@@ -76,7 +83,7 @@ class Drawing:
             print(f"Error: {e}")
 
 if __name__ == '__main__':
-    drawing = Drawing('out/hesitate', 400, 400)
+    drawing = Drawing('out/hesitate', 207, 197)
     drawing.draw()
     drawing.save()
     print("SVG and PNG files saved.")
