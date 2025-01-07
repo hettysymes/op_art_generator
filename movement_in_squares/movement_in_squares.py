@@ -16,24 +16,22 @@ class Drawing:
         # Add rectangle stripes
         start = True
         rect_h = 9.52
-        x_pos = 0
         boundary_fun = lambda x: 0.0134*(x**3) - 0.7359*(x**2) + 14.176*x - 14.463
         prev_boundary = 0
         i = 2
         while prev_boundary < self.width:
             next_boundary = boundary_fun(i)
-            self.add_column(next_boundary-prev_boundary, rect_h, prev_boundary, start)
+            self.draw_column(next_boundary-prev_boundary, rect_h, prev_boundary, start)
             start = not start
             i += 1
             prev_boundary = next_boundary
 
     # x_pos is left border of line
-    def add_column(self, rect_w, rect_h, x_pos, start=True):
+    def draw_column(self, rect_w, rect_h, x_pos, start=True):
         y_pos = 0
         if not start:
             # White rectangle starts
             y_pos += rect_h
-        print(rect_w)
         while y_pos < self.height:
             self.dwg.add(self.dwg.rect(
                             insert=(x_pos, y_pos),

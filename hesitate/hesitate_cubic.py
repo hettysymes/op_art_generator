@@ -1,6 +1,6 @@
 import svgwrite
 import subprocess
-import math
+import numpy as np
 
 class Drawing:
 
@@ -10,35 +10,39 @@ class Drawing:
         self.height = height
         self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
 
-        # Parameters
-        self.merge_y = 58.4
-        self.rx = 4.03
-
-        scale = 0.28
-        min_ry = 0.25
-        self.ry_fun = lambda idx: abs(scale*idx)+min_ry
-
-        
     def draw(self):
         # Add background
         self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
 
-        init_ry, init_y_pos, _ = self.draw_row(0, 0, self.merge_y, True)
-        # Draw from merge to top
-        ry = init_ry
-        y_pos = init_y_pos
-        idx = -1
-        while y_pos > 0:
-            ry, y_pos, idx = self.draw_row(idx, ry, y_pos, True)
-
-        # Draw from merge to bottom
-        ry = init_ry
-        y_pos = init_y_pos
-        idx = 1
-        while y_pos < self.height:
-            ry, y_pos, idx = self.draw_row(idx, ry, y_pos, False)
+        # Add ellipses
+        start = True
+        rx = 4.03
+        boundary_fun = lambda x: 0.006*(x**3) - 0.2593*(x**2) + 6.5855*x - 0.1371
+        prev_boundary = 0
+        i = 2
+        while prev_boundary < self.height:
+            next_boundary = boundary_fun(i)
+            ry = (next_boundary - prev_boundary)/2
+            self.add_row(prev_boundary+ry, rx, ry, start)
+            start = not start
+            i += 1
+            prev_boundary = next_boundary
         
         #self.add_gradients()
+
+    def add_row(self, y_pos, rx, ry, start=True):
+        x_pos = rx
+        if not start:
+            # Blank area starts
+            x_pos += rx*2
+        while x_pos < self.width:
+            # Draw ellipse
+            self.dwg.add(self.dwg.ellipse(
+                            center=(x_pos, y_pos),
+                            r=(rx, ry),
+                            fill='black',
+                        ))
+            x_pos += rx*4
 
     def add_gradients(self):
         # Define a blur filter
@@ -51,22 +55,6 @@ class Drawing:
 
         # Add to canvas
         self.dwg.add(path)
-
-    def draw_row(self, idx, prev_ry, prev_y_pos, above):
-        ry = self.ry_fun(idx)
-        direction = -1 if above else 1
-        y_diff = prev_ry + ry
-        y_pos = prev_y_pos + direction*y_diff
-        x_pos = self.rx if idx % 2 == 0 else self.rx*3
-        while x_pos < self.width:
-            # Draw ellipse
-            self.dwg.add(self.dwg.ellipse(
-                            center=(x_pos, y_pos),
-                            r=(self.rx, min(self.rx, ry)),
-                            fill='black',
-                        ))
-            x_pos+= self.rx*4
-        return ry, y_pos, idx + direction
 
     def save(self):
         self.dwg.save()
