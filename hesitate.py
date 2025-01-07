@@ -62,7 +62,7 @@ class Drawing:
             # Draw ellipse
             self.dwg.add(self.dwg.ellipse(
                             center=(x_pos, y_pos),
-                            r=(self.rx, ry),
+                            r=(self.rx, min(self.rx, ry)),
                             fill='black',
                         ))
             x_pos+= self.rx*4
