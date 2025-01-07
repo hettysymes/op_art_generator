@@ -13,33 +13,27 @@ class Drawing:
     def draw(self):
         # Add background
         self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
-        # Define merge centre x position
-        merge_x = self.width * 5/8
         # Add rectangle stripes
         start = True
-        switch = False
-        rect_h = 30
+        rect_h = 9.52
         x_pos = 0
-        while x_pos < self.width:
-            # Use sigmoid fun to find rectangle width
-            # 1.5 is arbitrary scaling factor for "sharper" curve
-            d = 1.5*abs(merge_x - x_pos)
-            sigmoid = lambda z: 1/(1 + math.exp(-z))
-            # Consider sigmoid range [a, b]
-            a = -2.3
-            b = 4
-            # When x is high, sigmoid is close to 1 so rect_w is approx rect_h
-            rect_w = rect_h * sigmoid(a + (d/merge_x) * (b-a))
-            self.add_verticle_stripe(rect_w, rect_h, x_pos, start)
-            x_pos += rect_w
+        boundary_fun = lambda x: 0.0134*(x**3) - 0.7359*(x**2) + 14.176*x - 14.463
+        prev_boundary = 0
+        i = 2
+        while prev_boundary < self.width:
+            next_boundary = boundary_fun(i)
+            self.add_column(next_boundary-prev_boundary, rect_h, prev_boundary, start)
             start = not start
+            i += 1
+            prev_boundary = next_boundary
 
     # x_pos is left border of line
-    def add_verticle_stripe(self, rect_w, rect_h, x_pos, start=True):
+    def add_column(self, rect_w, rect_h, x_pos, start=True):
         y_pos = 0
         if not start:
             # White rectangle starts
             y_pos += rect_h
+        print(rect_w)
         while y_pos < self.height:
             self.dwg.add(self.dwg.rect(
                             insert=(x_pos, y_pos),
@@ -53,7 +47,7 @@ class Drawing:
         cairosvg.svg2png(url=f"{self.out_name}.svg", write_to=f"{self.out_name}.png")
 
 if __name__ == '__main__':
-    drawing = Drawing('out/movement_in_squares', 355, 360)
+    drawing = Drawing('out/movement_in_squares', 123, 123)
     drawing.draw()
     drawing.save()
     print("SVG and PNG files saved.")
