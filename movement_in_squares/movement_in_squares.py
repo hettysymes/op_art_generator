@@ -1,6 +1,5 @@
 import svgwrite
 import cairosvg
-import math
 
 class Drawing:
 
@@ -10,17 +9,26 @@ class Drawing:
         self.height = height
         self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
         
+        # Define clipping that clips everything outside of view box
+        clip = self.dwg.defs.add(self.dwg.clipPath(id="viewbox-clip"))
+        clip.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height)))
+
+    # Add element to drawing whilst clipping parts outside the view box
+    def dwg_add(self, element):
+        element['clip-path'] = "url(#viewbox-clip)"
+        self.dwg.add(element)
+        
     def draw(self):
         # Add background
-        self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
+        self.dwg_add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
         # Add rectangle stripes
         start = True
         rect_h = 9.52
-        boundary_fun = lambda x: 0.0134*(x**3) - 0.7359*(x**2) + 14.176*x - 14.463
+        boundary_fun = lambda x: (3.2206*(x**3) - 5.4091*(x**2) + 3.1979*x)/1.0094
         prev_boundary = 0
-        i = 2
+        i = 1
         while prev_boundary < self.width:
-            next_boundary = boundary_fun(i)
+            next_boundary = boundary_fun(i/31)*self.width
             self.draw_column(next_boundary-prev_boundary, rect_h, prev_boundary, start)
             start = not start
             i += 1
@@ -33,7 +41,7 @@ class Drawing:
             # White rectangle starts
             y_pos += rect_h
         while y_pos < self.height:
-            self.dwg.add(self.dwg.rect(
+            self.dwg_add(self.dwg.rect(
                             insert=(x_pos, y_pos),
                             size=(rect_w, rect_h),
                             fill='black',
