@@ -29,7 +29,7 @@ class Drawing:
         amplitude = 0.0195*self.width
         wavelength = 0.281*self.height
         sine = SineWave(amplitude, wavelength)
-        first_sine_trough_y = 12.82
+        first_sine_trough_y = 0.059*self.height
 
         wave_points = []
         for i in range(len(indices)):
