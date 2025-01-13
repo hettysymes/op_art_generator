@@ -1,5 +1,33 @@
 import numpy as np
 
+class SineWave:
+    def __init__(self, amplitude, wavelength):
+        self.amplitude = amplitude
+        self.wavelength = wavelength
+
+    # Points of horizontal sine wave
+    def points(self, trough_x, trough_y, x_min, x_max, num_points=100):
+        xs = np.linspace(x_min, x_max, num_points)
+        ys = self.amplitude * np.sin(((2 * np.pi) / self.wavelength) * (xs - trough_x)) + trough_y + self.amplitude
+        return list(zip(xs, ys))
+
+class ColourIterator:
+    def __init__(self, colours):
+        self.colours = colours
+        self.c_len = len(colours)
+        self.idx = 0
+
+    def next(self):
+        col = self.colours[self.idx]
+        self.idx = (self.idx + 1) % self.c_len
+        return col
+    
+    def set(self, idx):
+        self.idx = idx % self.c_len
+
+    def get(self, idx):
+        return self.colours[idx % self.c_len]
+
 class Circle:
     
     def __init__(self, cx, cy, r):
@@ -20,6 +48,13 @@ class Circle:
             samples.append(self.angle_to_point(angle))
             angle += step
         return samples
+    
+class Ellipse:
+    def __init__(self, cx, cy, rx, ry):
+        self.cx = cx
+        self.cy = cy
+        self.rx = rx
+        self.ry = ry
 
 class CubicBezierCurve:
 
