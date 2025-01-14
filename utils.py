@@ -8,7 +8,7 @@ class SineWave:
     # Points of horizontal sine wave
     def points(self, trough_x, trough_y, x_min, x_max, num_points=100):
         xs = np.linspace(x_min, x_max, num_points)
-        ys = self.amplitude * np.sin(((2 * np.pi) / self.wavelength) * (xs - trough_x)) + trough_y + self.amplitude
+        ys = self.amplitude * np.sin(np.pi*((2/self.wavelength)*xs + (3/2) - (2/self.wavelength)*trough_x)) + trough_y + self.amplitude
         return list(zip(xs, ys))
 
 class ColourIterator:
