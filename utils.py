@@ -49,6 +49,15 @@ class Circle:
             angle += step
         return samples
     
+    def scale(self, sf):
+        self.cx *= sf
+        self.cy *= sf
+        self.r *= sf
+
+    def translate(self, t):
+        self.cx += t[0]
+        self.cy += t[1]
+    
 class Ellipse:
     def __init__(self, cx, cy, rx, ry):
         self.cx = cx
