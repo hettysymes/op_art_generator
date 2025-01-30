@@ -1,36 +1,42 @@
 from Drawing import Drawing
+from Warp import PosWarp
+import numpy as np
 
 class MovementInSquares(Drawing):
+
+    def __init__(self, out_name, width, height, 
+                 num_gridlines=32,
+                 rect_h=0.077,
+                 gridline_f=lambda i: (3.2206*(i**3) - 5.4091*(i**2) + 3.1979*i)/1.0094000000000007,
+                 black_rect_starts=True):
+        super().__init__(out_name, width, height)
+        self.num_gridlines = num_gridlines
+        self.rect_h = rect_h * self.height
+        self.gridline_f = gridline_f
+        self.black_rect_starts = black_rect_starts
         
     def draw(self):
         self.add_bg()
-        # Add rectangle stripes
-        start = True
-        rect_h = 9.52
-        boundary_fun = lambda x: (3.2206*(x**3) - 5.4091*(x**2) + 3.1979*x)/1.0094
-        prev_boundary = 0
-        i = 1
-        while prev_boundary < self.width:
-            next_boundary = boundary_fun(i/31)*self.width
-            self.draw_column(next_boundary-prev_boundary, rect_h, prev_boundary, start)
-            start = not start
-            i += 1
-            prev_boundary = next_boundary
+        black_rect_starts = self.black_rect_starts
+        gridline_warp = PosWarp(self.gridline_f)
+        gridline_xs = gridline_warp.sample(self.num_gridlines)*self.width
+        for i in range(1, len(gridline_xs)):
+            x = gridline_xs[i-1]
+            rect_w = gridline_xs[i] - x
+            self.draw_column(x, rect_w, black_rect_starts)
+            black_rect_starts = not black_rect_starts
 
-    # x_pos is left border of line
-    def draw_column(self, rect_w, rect_h, x_pos, start=True):
-        y_pos = 0
-        if not start:
-            # White rectangle starts
-            y_pos += rect_h
-        while y_pos < self.height:
+    def draw_column(self, x, rect_w, black_rect_starts):
+        # A block is two stacked rectangles (one black, one white)
+        block_ys = np.arange(0, self.height, 2*self.rect_h)
+        for block_y in block_ys:
+            y = block_y if black_rect_starts else block_y + self.rect_h
             self.dwg_add(self.dwg.rect(
-                            insert=(x_pos, y_pos),
-                            size=(rect_w, rect_h),
+                            insert=(x, y),
+                            size=(rect_w, self.rect_h),
                             fill='black',
-                        ))
-            y_pos += 2*rect_h
+                            ))
 
 if __name__ == '__main__':
-    drawing = MovementInSquares('out/movement_in_squares', 123, 123)
+    drawing = MovementInSquares('out/movement_in_squares', 492, 492)
     drawing.render()
