@@ -18,8 +18,7 @@ class MovementInSquares(Drawing):
     def draw(self):
         self.add_bg()
         black_rect_starts = self.black_rect_starts
-        gridline_warp = PosWarp(self.gridline_f)
-        gridline_xs = gridline_warp.sample(self.num_gridlines)*self.width
+        gridline_xs = PosWarp(self.gridline_f).sample(self.num_gridlines)*self.width
         for i in range(1, len(gridline_xs)):
             x = gridline_xs[i-1]
             rect_w = gridline_xs[i] - x
