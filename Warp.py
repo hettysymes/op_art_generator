@@ -5,13 +5,12 @@ class PosWarp:
     def __init__(self, pos_f):
         if pos_f(0) != 0:
             raise ValueError("Function must pass through (0,0)")
-        if pos_f(1) != 1:
-            raise ValueError("Function must pass through (1,1)")
         self.pos_f = pos_f
     
     def sample(self, num_splits):
         indices = np.linspace(0, 1, num_splits)
-        return np.array([self.pos_f(i) for i in indices])
+        unnorm_pos = [self.pos_f(i) for i in indices]
+        return np.array([p/unnorm_pos[-1] for p in unnorm_pos])
     
 class RelWarp:
 

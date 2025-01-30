@@ -7,7 +7,7 @@ class MovementInSquares(Drawing):
     def __init__(self, out_name, width, height, 
                  num_vert_lines=32,
                  rect_h=0.077,
-                 vert_line_f=lambda i: (3.2206*(i**3) - 5.4091*(i**2) + 3.1979*i)/1.0094000000000007,
+                 vert_line_f=lambda i: 3.2206*(i**3) - 5.4091*(i**2) + 3.1979*i,
                  black_rect_starts=True):
         super().__init__(out_name, width, height)
         self.num_vert_lines = num_vert_lines
