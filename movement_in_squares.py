@@ -5,23 +5,23 @@ import numpy as np
 class MovementInSquares(Drawing):
 
     def __init__(self, out_name, width, height, 
-                 num_gridlines=32,
+                 num_vert_lines=32,
                  rect_h=0.077,
-                 gridline_f=lambda i: (3.2206*(i**3) - 5.4091*(i**2) + 3.1979*i)/1.0094000000000007,
+                 vert_line_f=lambda i: (3.2206*(i**3) - 5.4091*(i**2) + 3.1979*i)/1.0094000000000007,
                  black_rect_starts=True):
         super().__init__(out_name, width, height)
-        self.num_gridlines = num_gridlines
+        self.num_vert_lines = num_vert_lines
         self.rect_h = rect_h * self.height
-        self.gridline_f = gridline_f
+        self.vert_line_f= vert_line_f
         self.black_rect_starts = black_rect_starts
         
     def draw(self):
         self.add_bg()
         black_rect_starts = self.black_rect_starts
-        gridline_xs = PosWarp(self.gridline_f).sample(self.num_gridlines)*self.width
-        for i in range(1, len(gridline_xs)):
-            x = gridline_xs[i-1]
-            rect_w = gridline_xs[i] - x
+        vert_line_xs = PosWarp(self.vert_line_f).sample(self.num_vert_lines)*self.width
+        for i in range(1, len(vert_line_xs)):
+            x = vert_line_xs[i-1]
+            rect_w = vert_line_xs[i] - x
             self.draw_column(x, rect_w, black_rect_starts)
             black_rect_starts = not black_rect_starts
 
