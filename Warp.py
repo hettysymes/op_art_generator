@@ -19,7 +19,7 @@ class RelWarp:
     
     def sample(self, num_splits):
         indices = np.linspace(0, 1, num_splits)
-        res = [0]
+        unnorm_pos = [0]
         for i in indices[1:]:
-            res.append(res[-1] + self.rel_f(i))
-        return np.array([r/res[-1] for r in res])
+            unnorm_pos.append(unnorm_pos[-1] + self.rel_f(i))
+        return np.array([p/unnorm_pos[-1] for p in unnorm_pos])
