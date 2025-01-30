@@ -10,8 +10,6 @@ class Hesitate(Drawing):
                  num_hlines=37,
                  ellipse_start=True):
         super().__init__(out_name, width, height)
-
-        # Parameters
         self.rx = rx*self.width
         self.height_f = lambda i: ry_f(i)*2
         self.num_hlines = num_hlines
