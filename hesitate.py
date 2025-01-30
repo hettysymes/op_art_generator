@@ -1,19 +1,12 @@
-import svgwrite
 import subprocess
 from utils import CubicBezierCurve, Ellipse, ColourIterator
+from Drawing import Drawing
 import math
 
-class Drawing:
+class Hesitate(Drawing):
 
     def __init__(self, out_name, width, height):
-        self.out_name = out_name
-        self.width = width
-        self.height = height
-        self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
-
-        # Define a clipping path that matches the viewBox size
-        clip = self.dwg.defs.add(self.dwg.clipPath(id="clip-area"))
-        clip.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height)))
+        super().__init__(out_name, width, height)
 
         # Parameters
         self.rx = 0.02*self.width
@@ -22,18 +15,11 @@ class Drawing:
         self.merge_idx = 0.365
         self.ry_fun = lambda idx: min(scale*abs(idx-self.merge_idx)+min_ry, 0.02)
 
-        self.gradient1 = CubicBezierCurve([(0.36754503,197.35298), (90.31066,101.13119), (147.20573,59.949696), (208.38394,59.714716)])
+        #self.gradient1 = CubicBezierCurve([(0.36754503,197.35298), (90.31066,101.13119), (147.20573,59.949696), (208.38394,59.714716)])
         self.ellipses = [] # TODO: what if is not rectangle?
-        
-
-    def dwg_add(self, element):
-        element['clip-path'] = "url(#clip-area)"
-        self.dwg.add(element)
 
     def draw(self):
-        # Add background
-        self.dwg_add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="#eceeeb"))
-
+        self.add_bg('#eceeeb')
         start = True
         prev_boundary = 0
         i = 0
@@ -106,24 +92,20 @@ class Drawing:
         self.dwg_add(self.dwg.polygon(points=polygon_points, fill='none', stroke='green'))
         self.dwg_add(self.dwg.polyline(points=centre_points, stroke='blue', fill="none"))
 
-    def save(self):
-        
-
-        self.dwg.save()
-        input_svg = f"{self.out_name}.svg"
-        output_png = f"{self.out_name}.png"
-        try:
-            # Run the Inkscape command
-            subprocess.run([
-                "/Applications/Inkscape.app/Contents/MacOS/inkscape",
-                input_svg,
-                "--export-filename", output_png
-            ], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"Error: {e}")
+    # def save(self):
+    #     self.dwg.save()
+    #     input_svg = f"{self.out_name}.svg"
+    #     output_png = f"{self.out_name}.png"
+    #     try:
+    #         # Run the Inkscape command
+    #         subprocess.run([
+    #             "/Applications/Inkscape.app/Contents/MacOS/inkscape",
+    #             input_svg,
+    #             "--export-filename", output_png
+    #         ], check=True)
+    #     except subprocess.CalledProcessError as e:
+    #         print(f"Error: {e}")
 
 if __name__ == '__main__':
-    drawing = Drawing('out/hesitate', 207, 197)
-    drawing.draw()
-    drawing.save()
-    print("SVG and PNG files saved.")
+    drawing = Hesitate('out/hesitate', 414, 394)
+    drawing.render()

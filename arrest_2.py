@@ -1,28 +1,15 @@
-import svgwrite
-import cairosvg
+from Drawing import Drawing
 import numpy as np
 from utils import SineWave, ColourIterator
 
-class Drawing:
+class Arrest2(Drawing):
 
     def __init__(self, out_name, width, height):
-        self.out_name = out_name
-        self.width = width
-        self.height = height
-        self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
+        super().__init__(out_name, width, height)
         self.colours = {'black': '#29272e', 'blue':'#3f4957', 'grey': '#818389'}
-        # Define clipping that clips everything outside of view box
-        clip = self.dwg.defs.add(self.dwg.clipPath(id="viewbox-clip"))
-        clip.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height)))
-
-    # Add element to drawing whilst clipping parts outside the view box
-    def dwg_add(self, element):
-        element['clip-path'] = "url(#viewbox-clip)"
-        self.dwg.add(element)
         
     def draw(self):
-        # Add background
-        self.dwg_add(self.dwg.rect(insert=(0,0), size=(self.width, self.height), fill="white"))
+        self.add_bg()
         indices = np.linspace(0, 1, 30)
         trough_xs = [self.width*(0.7458*(x**3) - 0.8916*(x**2) + 1.0888*x + 0.0084) for x in indices]
         phase_shifts = [9.1 - abs(21*x - 9.1) for x in indices]
@@ -43,7 +30,6 @@ class Drawing:
             points = wave_points[i-1] + list(reversed(wave_points[i]))
             self.dwg_add(self.dwg.polygon(points, fill=colour_iterator.next(), stroke='none'))
             
-        
         grad_end_sine_pts = wave_points[18]
         grad_id = self.create_linear_gradient()
         # Add first gradient
@@ -59,12 +45,6 @@ class Drawing:
         self.dwg.defs.add(gradient)
         return grad_id
 
-    def save(self):
-        self.dwg.save()
-        cairosvg.svg2png(url=f"{self.out_name}.svg", write_to=f"{self.out_name}.png")
-
 if __name__ == '__main__':
-    drawing = Drawing('out/arrest_2', 212, 216)
-    drawing.draw()
-    drawing.save()
-    print("SVG and PNG files saved.")
+    drawing = Arrest2('out/arrest_2', 212, 216)
+    drawing.render()

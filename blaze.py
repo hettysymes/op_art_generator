@@ -1,29 +1,14 @@
-import svgwrite
-import cairosvg
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils import Circle
-import numpy as np
+from Drawing import Drawing
 
-class Drawing:
-
-    def __init__(self, out_name, width, height):
-        self.out_name = out_name
-        self.width = width
-        self.height = height
-        self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(width, height))
+class Blaze(Drawing):
 
     def draw_pt(self, centre, col='green', rad=1):
         self.dwg.add(self.dwg.circle(center=centre, r=rad, fill=col))
         
     def draw(self):
-        # Add background
-        self.dwg.add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill="white"))
-        self.draw_circles()
-
-    def draw_circles(self):
+        self.add_bg()
+        
         circles = [Circle(0.473775207, 0.530484568, 0.033148261),
                    Circle(0.472141486, 0.529308534, 0.062131517),
                    Circle(0.446605262, 0.547927058, 0.128583662),
@@ -59,13 +44,7 @@ class Drawing:
         for i in range(1, len(points)):
             path.push('L', points[i][0], points[i][1])
         return path
-                    
-    def save(self):
-        self.dwg.save()
-        cairosvg.svg2png(url=f"{self.out_name}.svg", write_to=f"{self.out_name}.png")
 
 if __name__ == '__main__':
-    drawing = Drawing('out/blaze', 2500, 2500)
-    drawing.draw()
-    drawing.save()
-    print("SVG and PNG files saved.")
+    drawing = Blaze('out/blaze', 2500, 2500)
+    drawing.render()
