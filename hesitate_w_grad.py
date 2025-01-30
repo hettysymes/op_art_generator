@@ -107,5 +107,5 @@ class Hesitate(Drawing):
     #         print(f"Error: {e}")
 
 if __name__ == '__main__':
-    drawing = Hesitate('out/hesitate', 414, 394)
+    drawing = Hesitate('out/hesitate', 1000, 1.051)
     drawing.render()

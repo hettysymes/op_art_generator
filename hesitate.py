@@ -34,5 +34,5 @@ class Hesitate(Drawing):
             ellipse_start = not ellipse_start
 
 if __name__ == '__main__':
-    drawing = Hesitate('out/hesitate', 414, 394)
+    drawing = Hesitate('out/hesitate', 1000, 1.051)
     drawing.render()

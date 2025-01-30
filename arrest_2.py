@@ -4,8 +4,8 @@ from utils import SineWave, ColourIterator
 
 class Arrest2(Drawing):
 
-    def __init__(self, out_name, width, height):
-        super().__init__(out_name, width, height)
+    def __init__(self, out_name, wh_ratio, height):
+        super().__init__(out_name, wh_ratio, height)
         self.colours = {'black': '#29272e', 'blue':'#3f4957', 'grey': '#818389'}
         
     def draw(self):
@@ -46,5 +46,5 @@ class Arrest2(Drawing):
         return grad_id
 
 if __name__ == '__main__':
-    drawing = Arrest2('out/arrest_2', 212, 216)
+    drawing = Arrest2('out/arrest_2', 1000, 0.981)
     drawing.render()

@@ -46,5 +46,5 @@ class Blaze(Drawing):
         return path
 
 if __name__ == '__main__':
-    drawing = Blaze('out/blaze', 2500, 2500)
+    drawing = Blaze('out/blaze', 2500, 1)
     drawing.render()

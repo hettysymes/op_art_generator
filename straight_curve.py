@@ -34,5 +34,5 @@ class StraightCurve(Drawing):
                         ))
 
 if __name__ == '__main__':
-    drawing = StraightCurve('out/straight_curve', 374, 424)
+    drawing = StraightCurve('out/straight_curve', 424, 0.882)
     drawing.render()

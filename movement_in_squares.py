@@ -37,5 +37,5 @@ class MovementInSquares(Drawing):
                             ))
 
 if __name__ == '__main__':
-    drawing = MovementInSquares('out/movement_in_squares', 492, 492)
+    drawing = MovementInSquares('out/movement_in_squares', 1000, 1)
     drawing.render()
