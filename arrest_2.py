@@ -1,36 +1,56 @@
 from Drawing import Drawing
+from Warp import sample_fun
 import numpy as np
-from utils import SineWave, ColourIterator
+from utils import SineWave
+import itertools
 
 class Arrest2(Drawing):
 
-    def __init__(self, out_name, wh_ratio, height):
+    def __init__(self, out_name, wh_ratio, height,
+                 colours=['#29272e', '#3f4957', '#818389'],
+                 trough_x_f=lambda i: 0.7458*(i**3) - 0.8916*(i**2) + 1.0888*i + 0.0084,
+                 num_waves=30,
+                 amplitude=0.0195,
+                 wavelength=0.281,
+                 phase_shift_f=lambda i: 9.1 - abs(21*i - 9.1),
+                 first_sine_trough_y=0.059,
+                 gradient_wave_bound=0.6333):
         super().__init__(out_name, wh_ratio, height)
-        self.colours = {'black': '#29272e', 'blue':'#3f4957', 'grey': '#818389'}
+        self.colour_it = itertools.cycle(colours)
+        self.trough_x_f = trough_x_f
+        self.num_waves = num_waves
+        self.amplitude = amplitude*self.width
+        self.wavelength = wavelength*self.height
+        self.phase_shift_f = phase_shift_f
+        self.first_sine_trough_y = first_sine_trough_y * self.height
+        self.gradient_wave_bound = np.clip(round(gradient_wave_bound * num_waves)-1, 0, num_waves-1)
         
     def draw(self):
         self.add_bg()
-        indices = np.linspace(0, 1, 30)
-        trough_xs = [self.width*(0.7458*(x**3) - 0.8916*(x**2) + 1.0888*x + 0.0084) for x in indices]
-        phase_shifts = [9.1 - abs(21*x - 9.1) for x in indices]
-        amplitude = 0.0195*self.width
-        wavelength = 0.281*self.height
-        sine = SineWave(amplitude, wavelength)
-        first_sine_trough_y = 0.059*self.height
 
+        # Get sine wave properties
+        trough_xs = sample_fun(self.trough_x_f, self.num_waves)*self.width
+        phase_shifts = sample_fun(self.phase_shift_f, self.num_waves)
+        sine = SineWave(self.amplitude, self.wavelength)
+
+        # Get sine wave points
         wave_points = []
-        for i in range(len(indices)):
-            distance_shift = (wavelength / (2*np.pi)) * phase_shifts[i]
-            trough_y = first_sine_trough_y + distance_shift
-            horizontal_points = sine.points(trough_y, trough_xs[i], 0, self.height)
+        for i in range(self.num_waves):
+            distance_shift = (self.wavelength / (2*np.pi)) * phase_shifts[i]
+            trough_y = self.first_sine_trough_y + distance_shift
+            horizontal_points = sine.sample(trough_y, trough_xs[i], 0, self.height)
             wave_points.append([(x,y) for (y,x) in horizontal_points])
 
-        colour_iterator = ColourIterator([self.colours['black'], self.colours['blue'], self.colours['grey']])
+        # Draw the sine wave polygons
         for i in range(1, len(wave_points), 2):
             points = wave_points[i-1] + list(reversed(wave_points[i]))
-            self.dwg_add(self.dwg.polygon(points, fill=colour_iterator.next(), stroke='none'))
-            
-        grad_end_sine_pts = wave_points[18]
+            self.dwg_add(self.dwg.polygon(points, fill=next(self.colour_it), stroke='none'))
+
+        # Add gradients
+        self.add_gradients(wave_points)
+
+    def add_gradients(self, wave_points):
+        grad_end_sine_pts = wave_points[self.gradient_wave_bound]
         grad_id = self.create_linear_gradient()
         # Add first gradient
         self.dwg_add(self.dwg.polygon(grad_end_sine_pts + [(0, self.height), (0, 0)], fill=f'url(#{grad_id})'))
