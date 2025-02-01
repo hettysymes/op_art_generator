@@ -4,13 +4,12 @@ from Drawing import Drawing
 class Blaze(Drawing):
 
     def __init__(self, out_name, wh_ratio, height,
-                 padding_w=0.1):
+                 padding_w=0.1,
+                 num_zig_zags=72):
         super().__init__(out_name, wh_ratio, height)
         # padding_w is (normalised) padding at left and right boundaries
         self.diameter = self.width * (1 - 2*padding_w)
-
-    def draw_pt(self, centre, col='green', rad=1):
-        self.dwg.add(self.dwg.circle(center=centre, r=rad, fill=col))
+        self.num_circle_samples = num_zig_zags * 2
         
     def draw(self):
         self.add_bg()
@@ -33,27 +32,18 @@ class Blaze(Drawing):
             circle.scale(self.diameter)
         
         zigzag_angles = [1.563889958, 1.514036403, 1.165083633, 1.516246349, 1.191979318, 1.438082975, 1.132194804, 1.406996157, 1.081285523]
+        
+        # For each circle sample regularly spaced points through which the zig zags go through
         circle_samples = []
-        for i,c in enumerate(circles):
-            # self.dwg.add(self.dwg.circle(center=(c.cx, c.cy), r=c.r, fill='none', stroke='red'))
-            samples = c.reg_sample(start_angle=zigzag_angles[i], num_samples=144)
+        for i, c in enumerate(circles):
+            samples = c.reg_sample(start_angle=zigzag_angles[i], num_samples=self.num_circle_samples)
             circle_samples.append(samples)
+
+        # Connect the circle samples together
         lines = [list(line) for line in zip(*circle_samples)]
         for i in range(0, len(lines), 2):
-            left_line = lines[i-1]
-            right_line = lines[i]
-            right_line.reverse()
-            points = left_line + right_line
-            path = self.create_line_path(points, fill='black', colour='black')
-            path.push('Z')
-            self.dwg.add(path)
-
-    def create_line_path(self, points, colour='blue', fill='none', stroke_width=1):
-        path = self.dwg.path(stroke=colour, fill=fill, stroke_width=stroke_width)
-        path.push('M', points[0][0], points[0][1])  # Move to start point
-        for i in range(1, len(points)):
-            path.push('L', points[i][0], points[i][1])
-        return path
+            points = lines[i-1] + list(reversed(lines[i]))
+            self.dwg_add(self.dwg.polygon(points, fill='black', stroke='none'))
 
 if __name__ == '__main__':
     drawing = Blaze('out/blaze', 2500, 1)
