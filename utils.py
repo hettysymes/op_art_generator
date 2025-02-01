@@ -1,5 +1,8 @@
 import numpy as np
 
+def cubic_f(a,b,c,d):
+    return lambda x: a*(x**3) + b*(x**2) + c*x + d
+
 class SineWave:
     def __init__(self, amplitude, wavelength):
         self.amplitude = amplitude
