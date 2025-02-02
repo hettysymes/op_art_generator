@@ -182,17 +182,19 @@ class CatmullRomCurve:
                                  [-s, 0, s, 0],
                                  [2*s, s-3, 3-2*s, -s],
                                  [-s, 2-s, s-2, s]])
-        self.points = np.array(points)
-        
+        self.points = CatmullRomCurve.extend(np.array(points))
+        self.num_splines = len(self.points) - 3
+
+    @staticmethod
+    def extend(points):
         # Add two fake end points
         # First end point
-        vec = 2*self.points[0] - self.points[1]
-        self.points = np.vstack((vec, self.points))
+        vec = 2*points[0] - points[1]
+        points = np.vstack((vec, points))
         # Second end point
-        vec = 2*self.points[-1] - self.points[-2]
-        self.points = np.vstack((self.points, vec))
-
-        self.num_splines = len(self.points) - 3
+        vec = 2*points[-1] - points[-2]
+        points = np.vstack((points, vec))
+        return points
     
     def sample(self, u):
         if u < 0 or u > self.num_splines:
