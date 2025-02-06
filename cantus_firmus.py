@@ -1,11 +1,21 @@
 from Drawing import Drawing
 import numpy as np
 
+class IntensityPicker:
+
+    def __init__(self, f):
+        self.f = f
+    
+    def get_grey(self, i):
+        intensity = max(0, min(255, int(self.f(i))))
+        return f"#{intensity:02X}{intensity:02X}{intensity:02X}"
+
 class CantusFirmus(Drawing):
 
     def __init__(self, out_name, width, height):
         super().__init__(out_name, width, height)
-        self.colour_palette = ['#c4cb3a', '#d38aaa', '#7dbbd3', '#3c3c3c', '#858589', '#f5f9f4']
+        self.grey_picker = lambda i: np.interp(i, [0.056, 0.649, 0.956], [174, 61, 187])
+        self.colour_palette = ['#c4cb3a', '#d38aaa', '#7dbbd3', '#3c3c3c', IntensityPicker(self.grey_picker), '#f5f9f4']
         self.gradual_colours = [self.colour_palette[0],
                               self.colour_palette[1],
                               self.colour_palette[2]]
@@ -23,6 +33,8 @@ class CantusFirmus(Drawing):
                 x = self.draw_block(x, list(reversed(self.gradual_colours)), self.gradual_widths)
 
     def draw_stripe(self, x, colour, width):
+        if isinstance(colour, IntensityPicker):
+            colour = colour.get_grey(x/self.width)
         self.dwg_add(self.dwg.rect(
                         insert=(x, 0),
                         size=(width, self.height),
