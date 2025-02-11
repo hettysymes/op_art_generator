@@ -25,7 +25,6 @@ class Conversation(Drawing):
                         }
         
     def draw(self):
-        self.add_bg()
         x = self.rw
         y = 0
         while x < self.width+self.rw:
@@ -43,7 +42,8 @@ class Conversation(Drawing):
     # x,y is coordinate of top-right corner of rhombus
     def draw_rhombus(self, x, y, colour):
         self.dwg_add(self.dwg.polygon(points=[(x,y), (x,y+self.rh), (x-self.rw,y+self.rdh+self.rh), (x-self.rw,y+self.rdh)], 
-                                      fill=colour))
+                                      fill=colour,
+                                      stroke=colour))
         
     def draw_column(self, x, y):
         while y < self.height:
