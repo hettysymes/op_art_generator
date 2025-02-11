@@ -27,9 +27,11 @@ class Conversation(Drawing):
     def draw(self):
         self.add_bg()
         x = self.rw
-        while x < self.width:
-            self.draw_column(x)
+        y = 0
+        while x < self.width+self.rw:
+            self.draw_column(x, y)
             x += self.rw
+            y -= self.rdh
     
     def draw_6_block(self, col1, col2, x, y):
         for i in range(6):
@@ -43,9 +45,8 @@ class Conversation(Drawing):
         self.dwg_add(self.dwg.polygon(points=[(x,y), (x,y+self.rh), (x-self.rw,y+self.rdh+self.rh), (x-self.rw,y+self.rdh)], 
                                       fill=colour))
         
-    def draw_column(self, x):
-        y = 0
-        for _ in range(5):
+    def draw_column(self, x, y):
+        while y < self.height:
             col1, col2 = [hex_code for _, hex_code in random.sample(list(self.palette.items()), 2)]
             y = self.draw_6_block(col1, col2, x, y)
 
