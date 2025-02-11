@@ -35,20 +35,41 @@ class Conversation(Drawing):
     def draw_6_block(self, col1, col2, x, y):
         for i in range(6):
             col = col1 if i%2 == 0 else col2
-            self.draw_rhombus(x, y, col)
-            y += self.rh
+            y = self.draw_rhombus(col, x, y)
+        return y
+    
+    def draw_medium_block(self, col, x, y):
+        for _ in range(3):
+            y = self.draw_rhombus(col, x, y)
+        return y
+    
+    def draw_large_block(self, col, x, y):
+        for _ in range(2):
+            y = self.draw_medium_block(col, x, y)
         return y
 
     # x,y is coordinate of top-right corner of rhombus
-    def draw_rhombus(self, x, y, colour):
+    def draw_rhombus(self, col, x, y):
         self.dwg_add(self.dwg.polygon(points=[(x,y), (x,y+self.rh), (x-self.rw,y+self.rdh+self.rh), (x-self.rw,y+self.rdh)], 
-                                      fill=colour,
-                                      stroke=colour))
+                                      fill=col,
+                                      stroke=col))
+        return y + self.rh
         
     def draw_column(self, x, y):
         while y < self.height:
-            col1, col2 = [hex_code for _, hex_code in random.sample(list(self.palette.items()), 2)]
-            y = self.draw_6_block(col1, col2, x, y)
+            block_choice = random.random()
+            if block_choice < 0.5:
+                # 6 block
+                col1, col2 = random.sample(list(self.palette.values()), 2)
+                y = self.draw_6_block(col1, col2, x, y)
+            else:
+                col = random.choice(list(self.palette.values()))
+                if block_choice < 0.8:
+                    # medium block
+                    y = self.draw_medium_block(col, x, y)
+                else:
+                    # large block
+                    y = self.draw_large_block(col, x, y)
 
 
 if __name__ == '__main__':
