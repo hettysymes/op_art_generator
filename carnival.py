@@ -11,15 +11,14 @@ class Carnival(Drawing):
         super().__init__(out_name, width, height)
         self.palette = {"red": "#de4040",
                         "yellow": "#e2bf31",
-                        "purple": "#a13d90"
-                        }
+                        "purple": "#a13d90"}
         self.sine = SineWave(0.031792845*self.width, 0.558472292*self.height)
         self.xshift = 0.048933148 * self.width
         self.yshift = 0.022185698 * self.height
         self.line_grad = 0.9
         
     def draw(self):
-        self.add_bg()
+        self.add_bg(self.palette['yellow'])
         lines = self.create_cut_lines()
         random.shuffle(lines)
         for line in lines:
@@ -33,7 +32,7 @@ class Carnival(Drawing):
     def create_mask(self, line):
         mask_id = f"mask-{uuid.uuid4()}"
         clip = self.dwg.defs.add(self.dwg.clipPath(id=mask_id))
-        clip.add(self.dwg.polygon(line + [(0,0)]))
+        clip.add(self.dwg.polygon(line + [(0, self.height), (0,0)]))
         return mask_id
     
     def mask_dwg_add(self, element, mask_id):
@@ -42,7 +41,7 @@ class Carnival(Drawing):
 
     def get_wave_points(self):
         wave_points = []
-        trough_x = -100
+        trough_x = -random.random()*self.width - 100
         trough_y = 100
         for _  in range(30):
             horizontal_points = self.sine.sample(trough_y, trough_x, 0, self.height)
@@ -60,7 +59,9 @@ class Carnival(Drawing):
 
     def stamp(self, line=None):
         wave_pts = self.get_wave_points()
-        colours = random.choices(list(self.palette.values()), k=len(wave_pts)-1)
+        colours = np.array(random.choices(list(self.palette.values()), k=len(wave_pts)-1))
+        none_indices = np.array(random.choices(range(len(colours)), k=len(colours)//2))
+        colours[none_indices] = "none"
         group = self.get_polygons(wave_pts, colours)
         if line is None:
             self.dwg_add(group)
