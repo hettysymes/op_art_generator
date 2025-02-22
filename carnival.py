@@ -2,6 +2,8 @@ from Drawing import Drawing
 import numpy as np
 import random
 from utils import SineWave
+import uuid
+import itertools
 
 class Carnival(Drawing):
 
@@ -14,18 +16,56 @@ class Carnival(Drawing):
         self.sine = SineWave(0.031792845*self.width, 0.558472292*self.height)
         self.xshift = 0.048933148 * self.width
         self.yshift = 0.022185698 * self.height
+        self.line_grad = 0.9
         
     def draw(self):
-        self.add_bg(self.palette['yellow'])
-        self.draw_polygon(50, 50, self.palette['red'])
-        self.draw_polygon(200, 100, self.palette['purple'])
+        self.add_bg()
+        lines = self.create_cut_lines()
+        random.shuffle(lines)
+        for line in lines:
+            self.stamp(line)
 
-    def draw_polygon(self, trough_x, trough_y, col):
-        horizontal_points = self.sine.sample(trough_y, trough_x, 0, self.height)
-        wave_points = [(x,y) for (y,x) in horizontal_points]
-        horizontal_points = self.sine.sample(trough_y+self.yshift, trough_x+self.xshift, 0, self.height)
-        wave_points += reversed([(x,y) for (y,x) in horizontal_points])
-        self.dwg_add(self.dwg.polygon(wave_points, fill=col, stroke='none'))
+    def create_cut_lines(self, num_lines=40):
+        top_xs = np.linspace(0, self.width*2, num_lines+1)[1:]
+        bottom_xs = top_xs - (self.height/self.line_grad)
+        return [[(top_x, 0), (bot_x, self.height)] for top_x, bot_x in zip(top_xs, bottom_xs)]
+
+    def create_mask(self, line):
+        mask_id = f"mask-{uuid.uuid4()}"
+        clip = self.dwg.defs.add(self.dwg.clipPath(id=mask_id))
+        clip.add(self.dwg.polygon(line + [(0,0)]))
+        return mask_id
+    
+    def mask_dwg_add(self, element, mask_id):
+        element['clip-path'] = f"url(#{mask_id})"
+        self.dwg.add(element)
+
+    def get_wave_points(self):
+        wave_points = []
+        trough_x = -100
+        trough_y = 100
+        for _  in range(30):
+            horizontal_points = self.sine.sample(trough_y, trough_x, 0, self.height)
+            wave_points.append([(x,y) for (y,x) in horizontal_points])
+            trough_x += self.xshift
+            trough_y += self.yshift
+        return wave_points
+    
+    def get_polygons(self, wave_pts, colours):
+        assert len(wave_pts)-1 == len(colours)
+        group = self.dwg.g()
+        for i in range(len(wave_pts)-2):
+            group.add(self.dwg.polygon(wave_pts[i] + list(reversed(wave_pts[i+1])), fill=colours[i], stroke=colours[i]))
+        return group
+
+    def stamp(self, line=None):
+        wave_pts = self.get_wave_points()
+        colours = random.choices(list(self.palette.values()), k=len(wave_pts)-1)
+        group = self.get_polygons(wave_pts, colours)
+        if line is None:
+            self.dwg_add(group)
+        else:
+            self.mask_dwg_add(group, self.create_mask(line))
 
 
 if __name__ == '__main__':
