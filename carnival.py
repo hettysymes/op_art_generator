@@ -20,19 +20,23 @@ class Carnival(Drawing):
     def draw(self):
         self.add_bg(self.palette['yellow'])
         lines = self.create_cut_lines()
-        random.shuffle(lines)
-        for line in lines:
-            self.stamp(line)
+        for _ in range(10):
+            self.stamp(lines)
 
     def create_cut_lines(self, num_lines=40):
         top_xs = np.linspace(0, self.width*2, num_lines+1)[1:]
         bottom_xs = top_xs - (self.height/self.line_grad)
         return [[(top_x, 0), (bot_x, self.height)] for top_x, bot_x in zip(top_xs, bottom_xs)]
 
-    def create_mask(self, line):
+    def create_random_mask(self, lines):
+        num_visible = 5
+        indices = random.sample(range(len(lines)-2), num_visible)
         mask_id = f"mask-{uuid.uuid4()}"
         clip = self.dwg.defs.add(self.dwg.clipPath(id=mask_id))
-        clip.add(self.dwg.polygon(line + [(0, self.height), (0,0)]))
+        for i in indices:
+            c1, c2 = lines[i]
+            c3, c4 = lines[i+2]
+            clip.add(self.dwg.polygon([c1, c2, c4, c3]))
         return mask_id
     
     def mask_dwg_add(self, element, mask_id):
@@ -41,7 +45,8 @@ class Carnival(Drawing):
 
     def get_wave_points(self):
         wave_points = []
-        trough_x = -random.random()*self.width - 100
+        #trough_x = -random.random()*self.width - 100
+        trough_x = -100 + random.randint(0,2)*self.xshift/2
         trough_y = 100
         for _  in range(30):
             horizontal_points = self.sine.sample(trough_y, trough_x, 0, self.height)
@@ -57,16 +62,11 @@ class Carnival(Drawing):
             group.add(self.dwg.polygon(wave_pts[i] + list(reversed(wave_pts[i+1])), fill=colours[i], stroke=colours[i]))
         return group
 
-    def stamp(self, line=None):
+    def stamp(self, lines):
         wave_pts = self.get_wave_points()
         colours = np.array(random.choices(list(self.palette.values()), k=len(wave_pts)-1))
-        none_indices = np.array(random.choices(range(len(colours)), k=len(colours)//2))
-        colours[none_indices] = "none"
         group = self.get_polygons(wave_pts, colours)
-        if line is None:
-            self.dwg_add(group)
-        else:
-            self.mask_dwg_add(group, self.create_mask(line))
+        self.mask_dwg_add(group, self.create_random_mask(lines))
 
 
 if __name__ == '__main__':
