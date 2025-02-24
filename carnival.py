@@ -20,7 +20,7 @@ class Carnival(Drawing):
     def draw(self):
         self.add_bg(self.palette['yellow'])
         lines = self.create_cut_lines()
-        for _ in range(10):
+        for _ in range(30):
             self.stamp(lines)
 
     def create_cut_lines(self, num_lines=40):
@@ -46,7 +46,7 @@ class Carnival(Drawing):
     def get_wave_points(self):
         wave_points = []
         #trough_x = -random.random()*self.width - 100
-        trough_x = -100 + random.randint(0,2)*self.xshift/2
+        trough_x = -100
         trough_y = 100
         for _  in range(30):
             horizontal_points = self.sine.sample(trough_y, trough_x, 0, self.height)
@@ -64,7 +64,17 @@ class Carnival(Drawing):
 
     def stamp(self, lines):
         wave_pts = self.get_wave_points()
-        colours = np.array(random.choices(list(self.palette.values()), k=len(wave_pts)-1))
+        #colours = np.array(random.choices(list(self.palette.values()), k=len(wave_pts)-1))
+
+        # Generate colours
+        colours = []
+        for _ in range(len(wave_pts)-1):
+            choices = list(self.palette.values())[:]  # Copy the list of colors
+            if len(colours) >= 2 and colours[-1] == colours[-2]:  
+                # Remove last color if it appeared twice in a row
+                choices.remove(colours[-1])
+            colours.append(random.choice(choices))  # Pick a random color from the remaining choices
+
         group = self.get_polygons(wave_pts, colours)
         self.mask_dwg_add(group, self.create_random_mask(lines))
 
