@@ -17,13 +17,26 @@ class CurveRow:
 
         def draw(self):
             xs = [self.x1 + i*self.fragment2.polygon_w for i in range(self.num_curves+1)]
-            beziers = []
-            for x in xs:
-                beziers.append(self.curve_control_pts(self.y1, self.y2, x, self.left, self.curvature_w))
-            for i in range(0, len(xs)-1):
-                fill = 'black' if i%2 == 0 else '#d1d2d4'
-                self.draw_polygon(beziers[i], beziers[i+1], fill)
-
+            bezier1 = self.curve_control_pts(self.y1, self.y2, xs[0], self.left, self.curvature_w)
+            i = 1
+            black_fill = True
+            while i < len(xs):
+                if random.random() < 0.05 and i < len(xs)-2:
+                    # Create circle pocket
+                    if self.left:
+                        bezier2 = self.curve_control_pts(self.y1, self.y2, xs[i], not self.left, self.curvature_w)
+                        i += 1
+                    else:
+                        bezier2 = self.curve_control_pts(self.y1, self.y2, xs[i+1], not self.left, self.curvature_w)
+                        i += 1
+                        black_fill = not black_fill
+                else:
+                    bezier2 = self.curve_control_pts(self.y1, self.y2, xs[i], self.left, self.curvature_w)
+                    i += 1
+                    black_fill = not black_fill
+                self.draw_polygon(bezier1, bezier2, black_fill)
+                bezier1 = bezier2
+                
         def curve_control_pts(self, y1, y2, x1, left, curvature_w):
             xm = x1 - curvature_w if left else x1 + curvature_w
             xc = 2 * xm - x1
@@ -61,7 +74,8 @@ class Fragment2(Drawing):
         shift = random.randint(-2, 2)
         flip = random.random() < 0.5
         left = (not prev_row.left) if flip else prev_row.left
-        curvature_w = random.uniform(0.02, 0.08)*self.width
+        # curvature_w = random.uniform(0.02, 0.04)*self.width
+        curvature_w = self.polygon_w
         return CurveRow(self, prev_row.x1 + shift*self.polygon_w, prev_row.y2, y2, num_curves, left, curvature_w)
 
 
