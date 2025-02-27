@@ -1,6 +1,6 @@
 import numpy as np
 
-def cubic_f(a,b,c,d):
+def cubic_f(a,b,c,d=0):
     return lambda x: a*(x**3) + b*(x**2) + c*x + d
 
 class SineWave:
