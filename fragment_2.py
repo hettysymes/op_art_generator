@@ -1,41 +1,65 @@
 from Drawing import Drawing
-import numpy as np
 import random
 from utils import cubic_f
-from Warp import PosWarp, sample_fun
+from Warp import sample_fun
+
+class CurveRow:
+
+        def __init__(self, fragment2, x1, y1, y2, num_curves, left, curvature_w):
+            self.x1 = x1
+            self.y1 = y1
+            self.y2 = y2
+            self.num_curves = num_curves
+            self.left = left
+            self.curvature_w = curvature_w
+            self.fragment2 = fragment2
+
+        def draw(self):
+            xs = [self.x1 + i*self.fragment2.polygon_w for i in range(self.num_curves+1)]
+            beziers = []
+            for x in xs:
+                beziers.append(self.curve_control_pts(self.y1, self.y2, x, self.left, self.curvature_w))
+            for i in range(0, len(xs)-1):
+                fill = 'black' if i%2 == 0 else '#d1d2d4'
+                self.draw_polygon(beziers[i], beziers[i+1], fill)
+
+        def curve_control_pts(self, y1, y2, x1, left, curvature_w):
+            xm = x1 - curvature_w if left else x1 + curvature_w
+            xc = 2 * xm - x1
+            yc = (y1+y2)/2
+            return [(x1, y1), (xc, yc), (x1, y2)]
+
+        def draw_polygon(self, bezier1, bezier2, fill):
+            p0, p1, p2 = bezier1
+            p5, p4, p3 = bezier2
+            path_data = f"M {p0[0]},{p0[1]} Q {p1[0]},{p1[1]} {p2[0]},{p2[1]} L {p3[0]},{p3[1]} Q {p4[0]},{p4[1]} {p5[0]},{p5[1]} Z"
+            self.fragment2.dwg_add(self.fragment2.dwg.path(d=path_data, fill=fill, stroke="none"))
 
 class Fragment2(Drawing):
 
     def __init__(self, out_name, width, height,
-                 y_fun = cubic_f(1.5534, -2.2909, 1.4854, 0.1142)):
+                 y_fun = cubic_f(1.5534, -2.2909, 1.4854, 0.1142),
+                 polygon_w = 0.018):
         super().__init__(out_name, width, height)
         self.y_fun = y_fun
+        self.polygon_w = polygon_w * self.width
         
     def draw(self):
         self.add_bg() 
-        # Make first row
         ys = sample_fun(self.y_fun, 11)*self.height
-        xw = 0.0180
-        start_x = 0.322
-        curvature_w = 0.026*self.width
-        xs = np.array([start_x + i*xw for i in range(6)]) * self.width
-        beziers = []
-        for x in xs:
-            beziers.append(self.curve_control_pts(ys[0], ys[1], x, curvature_w))
-        for i in range(0, len(beziers)-1, 2):
-            self.draw_polygon(beziers[i], beziers[i+1])
+        row = CurveRow(self, 0.322*self.width, ys[0], ys[1], 5, False, 0.026*self.width)
+        row.draw()
+        for i in range(2, len(ys)):
+            row = self.gen_row(row, ys[i])
+            row.draw()
 
-    def curve_control_pts(self, y1, y2, x1, curvature_w):
-        xm = x1 + curvature_w
-        xc = 2 * xm - x1
-        yc = (y1+y2)/2
-        return [(x1, y1), (xc, yc), (x1, y2)]
-
-    def draw_polygon(self, bezier1, bezier2):
-        p0, p1, p2 = bezier1
-        p5, p4, p3 = bezier2
-        path_data = f"M {p0[0]},{p0[1]} Q {p1[0]},{p1[1]} {p2[0]},{p2[1]} L {p3[0]},{p3[1]} Q {p4[0]},{p4[1]} {p5[0]},{p5[1]} Z"
-        self.dwg_add(self.dwg.path(d=path_data, fill="black", stroke="none"))
+    def gen_row(self, prev_row, y2):
+        num_curves = max(4, prev_row.num_curves + random.randint(-3, 3)*2)
+        shift = random.randint(-2, 2)
+        flip = random.random() < 0.5
+        left = (not prev_row.left) if flip else prev_row.left
+        curvature_w = prev_row.curvature_w + random.uniform(-0.005, 0.005)*self.width
+        return CurveRow(self, prev_row.x1 + shift*self.polygon_w, prev_row.y2, y2, num_curves, left, curvature_w)
 
 
 if __name__ == '__main__':
