@@ -12,10 +12,19 @@ class ConnectionSignals(QObject):
     connectionMade = pyqtSignal(object, object)  # Emits source and destination ports
 
 
+class NodeType:
+    """Defines a type of node with specific inputs and outputs"""
+    def __init__(self, name, input_count=1, output_count=1, color=QColor(200, 230, 250)):
+        self.name = name
+        self.input_count = input_count
+        self.output_count = output_count
+        self.color = color
+
+
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
     
-    def __init__(self, x, y, width, height, title="Node", color=QColor(200, 230, 250)):
+    def __init__(self, x, y, width, height, node_type):
         super().__init__(0, 0, width, height)
         self.setPos(x, y)
         self.setZValue(1)
@@ -23,22 +32,27 @@ class NodeItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         
-        self.setBrush(QBrush(color))
+        self.setBrush(QBrush(node_type.color))
         self.setPen(QPen(Qt.black, 2))
         
-        self.title = title
+        self.title = node_type.name
+        self.node_type = node_type
         self.input_ports = []
         self.output_ports = []
         self.create_ports()
         
     def create_ports(self):
-        # Create input port (left side)
-        input_port = PortItem(self, -10, self.rect().height() / 2, is_input=True)
-        self.input_ports.append(input_port)
+        # Create input ports (left side)
+        for i in range(self.node_type.input_count):
+            y_offset = (i + 1) * self.rect().height() / (self.node_type.input_count + 1)
+            input_port = PortItem(self, -10, y_offset, is_input=True)
+            self.input_ports.append(input_port)
         
-        # Create output port (right side)
-        output_port = PortItem(self, self.rect().width() + 10, self.rect().height() / 2, is_input=False)
-        self.output_ports.append(output_port)
+        # Create output ports (right side)
+        for i in range(self.node_type.output_count):
+            y_offset = (i + 1) * self.rect().height() / (self.node_type.output_count + 1)
+            output_port = PortItem(self, self.rect().width() + 10, y_offset, is_input=False)
+            self.output_ports.append(output_port)
         
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
@@ -46,6 +60,21 @@ class NodeItem(QGraphicsRectItem):
         # Draw node title
         painter.setFont(QFont("Arial", 10))
         painter.drawText(self.rect(), Qt.AlignCenter, self.title)
+        
+        # Draw port labels if there are multiple
+        painter.setFont(QFont("Arial", 8))
+        
+        # Input port labels
+        if self.node_type.input_count > 1:
+            for i, port in enumerate(self.input_ports):
+                label_pos = port.pos() + QLineF(5, 0).p2()  # Position just right of the port
+                painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"In {i+1}")
+        
+        # Output port labels
+        if self.node_type.output_count > 1:
+            for i, port in enumerate(self.output_ports):
+                label_pos = port.pos() + QLineF(-25, 0).p2()  # Position just left of the port
+                painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"Out {i+1}")
         
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -143,9 +172,52 @@ class PipelineScene(QGraphicsScene):
         self.source_port = None
         self.dest_port = None
         
+        # Node types
+        self.node_types = self.create_node_types()
+        
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
+    
+    def create_node_types(self):
+        """Create predefined node types"""
+        return [
+            NodeType("Data Source", input_count=0, output_count=1, color=QColor(220, 230, 250)),
+            NodeType("Transform", input_count=1, output_count=1, color=QColor(220, 250, 220)),
+            NodeType("Filter", input_count=1, output_count=1, color=QColor(250, 220, 220)),
+            NodeType("Merger", input_count=2, output_count=1, color=QColor(240, 220, 240)),
+            NodeType("Splitter", input_count=1, output_count=2, color=QColor(250, 250, 200)),
+            NodeType("Sink", input_count=1, output_count=0, color=QColor(200, 200, 200)),
+            NodeType("Aggregator", input_count=3, output_count=1, color=QColor(230, 240, 255)),
+            NodeType("Custom Node", input_count=1, output_count=1, color=QColor(200, 230, 250)),
+        ]
+    
+    def add_node_from_type(self, node_type, pos):
+        """Add a new node of the given type at the specified position"""
+        new_node = NodeItem(pos.x(), pos.y(), 150, 80, node_type)
+        self.addItem(new_node)
+        return new_node
+    
+    def add_custom_node(self, pos):
+        """Add a custom node with user-defined inputs and outputs"""
+        node_name, ok = QInputDialog.getText(None, "Custom Node", "Enter node name:")
+        if not ok or not node_name:
+            return
+        
+        input_count, ok = QInputDialog.getInt(None, "Custom Node", "Number of input ports:", 1, 0, 10, 1)
+        if not ok:
+            return
+        
+        output_count, ok = QInputDialog.getInt(None, "Custom Node", "Number of output ports:", 1, 0, 10, 1)
+        if not ok:
+            return
+        
+        color = QColorDialog.getColor(QColor(200, 230, 250), None, "Select Node Color")
+        if not color.isValid():
+            color = QColor(200, 230, 250)
+        
+        custom_type = NodeType(node_name, input_count, output_count, color)
+        return self.add_node_from_type(custom_type, pos)
         
     def start_connection(self, source_port):
         """Start creating a connection from the given source port"""
@@ -177,7 +249,10 @@ class PipelineScene(QGraphicsScene):
                         connection_exists = True
                         break
                 
-                if not connection_exists:
+                # Check if target port already has a connection
+                target_has_connection = len(dest_port.edges) > 0
+                
+                if not connection_exists and not target_has_connection:
                     edge = EdgeItem(source_port, dest_port)
                     self.addItem(edge)
         
@@ -283,23 +358,28 @@ class PipelineScene(QGraphicsScene):
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
         elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
-            # Context menu for empty space
+            # Context menu for empty space - Node type selection
             menu = QMenu()
-            add_action = QAction("Add Node", menu)
-            add_action.triggered.connect(lambda: self.add_node(event.scenePos()))
-            menu.addAction(add_action)
+            add_node_menu = QMenu("Add Node", menu)
+            menu.addMenu(add_node_menu)
+            
+            # Add actions for each node type
+            for node_type in self.node_types:
+                if node_type.name == "Custom Node":
+                    # Special handling for custom node
+                    action = QAction(node_type.name, add_node_menu)
+                    action.triggered.connect(lambda checked=False, pos=event.scenePos(): self.add_custom_node(pos))
+                else:
+                    action = QAction(node_type.name, add_node_menu)
+                    action.triggered.connect(lambda checked=False, nt=node_type, pos=event.scenePos(): 
+                                           self.add_node_from_type(nt, pos))
+                add_node_menu.addAction(action)
+            
             menu.exec_(event.screenPos())
     
     def nodes(self):
         """Return all nodes in the scene"""
         return [item for item in self.items() if isinstance(item, NodeItem)]
-    
-    def add_node(self, pos):
-        """Add a new node at the given position"""
-        node_name, ok = QInputDialog.getText(None, "New Node", "Enter node name:")
-        if ok and node_name:
-            new_node = NodeItem(pos.x(), pos.y(), 150, 80, node_name)
-            self.addItem(new_node)
     
     def rename_node(self, node):
         """Rename the given node"""
@@ -341,6 +421,10 @@ class PipelineView(QGraphicsView):
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         self.setDragMode(QGraphicsView.RubberBandDrag)
         self.setBackgroundBrush(QBrush(QColor(240, 240, 240)))
+        
+        # Enable zooming
+        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.TextAntialiasing)
         
         # Add grid lines
         self.draw_grid()
@@ -400,19 +484,21 @@ class PipelineEditor(QMainWindow):
         self.add_example_nodes()
         
         # Create a status bar with instructions
-        self.statusBar().showMessage("Drag from output port (green) to input port (gray) to create connections")
+        self.statusBar().showMessage("Right-click for node menu | Drag from output port (green) to input port (gray) to create connections")
         
         self.show()
     
     def add_example_nodes(self):
         """Add some example nodes to the scene"""
-        node1 = NodeItem(100, 100, 150, 80, "Data Source")
-        node2 = NodeItem(400, 100, 150, 80, "Transform")
-        node3 = NodeItem(400, 250, 150, 80, "Filter")
-        node4 = NodeItem(700, 175, 150, 80, "Output")
+        data_source = self.scene.node_types[0]  # Data Source
+        transform = self.scene.node_types[1]    # Transform
+        filter_type = self.scene.node_types[2]  # Filter
+        sink = self.scene.node_types[5]         # Sink
         
-        for node in [node1, node2, node3, node4]:
-            self.scene.addItem(node)
+        node1 = self.scene.add_node_from_type(data_source, QLineF(100, 100, 0, 0).p1())
+        node2 = self.scene.add_node_from_type(transform, QLineF(400, 100, 0, 0).p1())
+        node3 = self.scene.add_node_from_type(filter_type, QLineF(400, 250, 0, 0).p1())
+        node4 = self.scene.add_node_from_type(sink, QLineF(700, 175, 0, 0).p1())
 
 
 if __name__ == "__main__":
