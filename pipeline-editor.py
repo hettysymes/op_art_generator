@@ -1,10 +1,9 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView, 
                             QGraphicsItem, QGraphicsRectItem, QGraphicsEllipseItem, 
-                            QGraphicsLineItem, QMenu, QAction, QInputDialog, QColorDialog,
-                            QGraphicsSceneMouseEvent, QGraphicsSceneDragDropEvent, QLabel)
-from PyQt5.QtCore import Qt, QPointF, QRectF, QLineF, pyqtSignal, QObject
-from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont, QCursor
+                            QGraphicsLineItem, QMenu, QAction, QInputDialog, QColorDialog)
+from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject
+from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 
 
 class ConnectionSignals(QObject):
@@ -233,14 +232,7 @@ class PipelineScene(QGraphicsScene):
     def mouseReleaseEvent(self, event):
         """Handle mouse release events for the scene"""
         if event.button() == Qt.LeftButton and self.source_port:
-            # Check if we're over an input port
-            items_under_cursor = self.items(event.scenePos())
-            print(f"Items under cursor: {items_under_cursor}")
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
-            
-            print(f"Released at: {event.scenePos()}")
-            print(f"Item type: {type(item)}")
-
             if isinstance(item, PortItem) and item.is_input:
                 # Create permanent connection
                 self.connection_signals.connectionMade.emit(self.source_port, item)
@@ -371,29 +363,6 @@ class PipelineView(QGraphicsView):
             line.setPen(QPen(QColor(200, 200, 200), 1))
             line.setZValue(-1000)  # Place behind all other items
             self.scene().addItem(line)
-    
-    def wheelEvent(self, event):
-        """Handle mouse wheel events for zooming"""
-        zoom_in_factor = 1.25
-        zoom_out_factor = 1 / zoom_in_factor
-        
-        # Save the scene pos
-        old_pos = self.mapToScene(event.pos())
-        
-        # Zoom
-        if event.angleDelta().y() > 0:
-            zoom_factor = zoom_in_factor
-        else:
-            zoom_factor = zoom_out_factor
-        
-        self.scale(zoom_factor, zoom_factor)
-        
-        # Get the new position
-        new_pos = self.mapToScene(event.pos())
-        
-        # Move scene to old position
-        delta = new_pos - old_pos
-        self.translate(delta.x(), delta.y())
     
     def mousePressEvent(self, event):
         """Handle mouse press events for the view"""
