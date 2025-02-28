@@ -182,14 +182,10 @@ class PipelineScene(QGraphicsScene):
     def create_node_types(self):
         """Create predefined node types"""
         return [
-            NodeType("Data Source", input_count=0, output_count=1, color=QColor(220, 230, 250)),
-            NodeType("Transform", input_count=1, output_count=1, color=QColor(220, 250, 220)),
-            NodeType("Filter", input_count=1, output_count=1, color=QColor(250, 220, 220)),
-            NodeType("Merger", input_count=2, output_count=1, color=QColor(240, 220, 240)),
-            NodeType("Splitter", input_count=1, output_count=2, color=QColor(250, 250, 200)),
-            NodeType("Sink", input_count=1, output_count=0, color=QColor(200, 200, 200)),
-            NodeType("Aggregator", input_count=3, output_count=1, color=QColor(230, 240, 255)),
-            NodeType("Custom Node", input_count=1, output_count=1, color=QColor(200, 230, 250)),
+            NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250)),
+            NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220)),
+            NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220)),
+            NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240))
         ]
     
     def add_node_from_type(self, node_type, pos):
@@ -347,14 +343,10 @@ class PipelineScene(QGraphicsScene):
             rename_action = QAction("Rename Node", menu)
             rename_action.triggered.connect(lambda: self.rename_node(clicked_item))
             
-            change_color_action = QAction("Change Color", menu)
-            change_color_action.triggered.connect(lambda: self.change_node_color(clicked_item))
-            
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
             
             menu.addAction(rename_action)
-            menu.addAction(change_color_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
         elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
@@ -387,12 +379,6 @@ class PipelineScene(QGraphicsScene):
         if ok and new_name:
             node.title = new_name
             node.update()
-    
-    def change_node_color(self, node):
-        """Change the color of the given node"""
-        color = QColorDialog.getColor(node.brush().color(), None, "Select Node Color")
-        if color.isValid():
-            node.setBrush(QBrush(color))
     
     def delete_edge(self, edge):
         """Delete the given edge"""
@@ -490,15 +476,15 @@ class PipelineEditor(QMainWindow):
     
     def add_example_nodes(self):
         """Add some example nodes to the scene"""
-        data_source = self.scene.node_types[0]  # Data Source
-        transform = self.scene.node_types[1]    # Transform
-        filter_type = self.scene.node_types[2]  # Filter
-        sink = self.scene.node_types[5]         # Sink
-        
-        node1 = self.scene.add_node_from_type(data_source, QLineF(100, 100, 0, 0).p1())
-        node2 = self.scene.add_node_from_type(transform, QLineF(400, 100, 0, 0).p1())
-        node3 = self.scene.add_node_from_type(filter_type, QLineF(400, 250, 0, 0).p1())
-        node4 = self.scene.add_node_from_type(sink, QLineF(700, 175, 0, 0).p1())
+        grid = self.scene.node_types[0]
+        shape_repeater = self.scene.node_types[1]
+        surface_warp = self.scene.node_types[2]
+        canvas = self.scene.node_types[3]
+
+        node1 = self.scene.add_node_from_type(grid, QLineF(100, 100, 0, 0).p1())
+        node2 = self.scene.add_node_from_type(shape_repeater, QLineF(400, 100, 0, 0).p1())
+        node3 = self.scene.add_node_from_type(surface_warp, QLineF(400, 250, 0, 0).p1())
+        node4 = self.scene.add_node_from_type(canvas, QLineF(700, 175, 0, 0).p1())
 
 
 if __name__ == "__main__":
