@@ -580,6 +580,25 @@ class PipelineScene(QGraphicsScene):
             menu.addAction(delete_action)
             menu.addAction(visualize_action)  # Add the new action
             menu.exec_(event.screenPos())
+        elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
+            # Context menu for empty space - Node type selection
+            menu = QMenu()
+            add_node_menu = QMenu("Add Node", menu)
+            menu.addMenu(add_node_menu)
+            
+            # Add actions for each node type
+            for node_type in self.node_types:
+                if node_type.name == "Custom Node":
+                    # Special handling for custom node
+                    action = QAction(node_type.name, add_node_menu)
+                    action.triggered.connect(lambda checked=False, pos=event.scenePos(): self.add_custom_node(pos))
+                else:
+                    action = QAction(node_type.name, add_node_menu)
+                    action.triggered.connect(lambda checked=False, nt=node_type, pos=event.scenePos(): 
+                                           self.add_node_from_type(nt, pos))
+                add_node_menu.addAction(action)
+            
+            menu.exec_(event.screenPos())
     
     def nodes(self):
         """Return all nodes in the scene"""
