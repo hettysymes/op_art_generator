@@ -269,8 +269,7 @@ class NodePropertiesDialog(QDialog):
             
         elif prop.prop_type == "float":
             widget = QDoubleSpinBox()
-            if prop.min_value is not None:
-                widget.setMinimum(prop.min_value)
+            widget.setMinimum(prop.min_value if prop.min_value is not None else -999999.0)
             if prop.max_value is not None:
                 widget.setMaximum(prop.max_value)
             widget.setValue(current_value or 0.0)
