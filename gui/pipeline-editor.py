@@ -534,17 +534,22 @@ class PipelineScene(QGraphicsScene):
         super().mouseReleaseEvent(event)
 
     def visualize_node(self, node):
-        """Display a visualization of the node's output"""
+        """Display a visualization of the node's output with fixed size"""
         if node.node_type.visualizer is not None:
             svg_content = node.node_type.visualizer.display(node)
             
             # Create a dialog to display the SVG
             dialog = QDialog()
             dialog.setWindowTitle(f"Visualization: {node.title}")
-            dialog.setMinimumSize(500, 500)
+            dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
             
-            layout = QVBoxLayout()
-            dialog.setLayout(layout)
+            # Get grid properties for determining the fixed size
+            grid_width = node.property_values.get('Width', 5)
+            grid_height = node.property_values.get('Height', 5)
+            
+            # Calculate pixel dimensions (same as in the GridNode.display method)
+            pixel_width = grid_width * 40 + 1
+            pixel_height = grid_height * 40 + 1
             
             # Create a temporary file to save the SVG content
             import tempfile
@@ -553,9 +558,18 @@ class PipelineScene(QGraphicsScene):
             temp_file_path = temp_file.name
             temp_file.close()
             
-            # Use QSvgWidget to display SVG
+            # Use QSvgWidget with fixed size
             svg_widget = QSvgWidget(temp_file_path)
-            layout.addWidget(svg_widget)
+            svg_widget.setFixedSize(pixel_width, pixel_height)
+            
+            # Create layout and set fixed size for dialog
+            layout = QVBoxLayout()
+            layout.setContentsMargins(10, 10, 10, 10)
+            layout.addWidget(svg_widget, 0, Qt.AlignCenter)
+            dialog.setLayout(layout)
+            
+            # Fix the dialog size to match the SVG size plus margins
+            dialog.setFixedSize(500, 500)
             
             # Clean up the temporary file when the dialog is closed
             dialog.finished.connect(lambda: os.remove(temp_file_path))
