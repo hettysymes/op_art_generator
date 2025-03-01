@@ -10,7 +10,7 @@ from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget
 import os
 import svgwrite
-from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicPosWarpNode
+from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -346,7 +346,7 @@ class PipelineScene(QGraphicsScene):
                         description="Number of squares in height of grid")
         ]
 
-        cubic_pwarp_props = [
+        cubic_fun_props = [
             NodeProperty("a_coeff", "float", default_value=3.22, 
                         description=""),
             NodeProperty("b_coeff", "float", default_value=-5.41, 
@@ -392,7 +392,8 @@ class PipelineScene(QGraphicsScene):
 
         return [
             NodeType("Grid", input_count=2, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
-            NodeType("Cubic Pos Warp", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=cubic_pwarp_props, node_class=CubicPosWarpNode),
+            NodeType("Cubic Function", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=cubic_fun_props, node_class=CubicFunNode),
+            NodeType("Position Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=PosWarpNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
             NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
             NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props)

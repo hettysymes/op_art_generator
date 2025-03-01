@@ -4,10 +4,10 @@ from utils import cubic_f
 
 class InvalidInputNodesLength(Exception):
     """Custom exception for incorrect input_nodes length."""
-    def __init__(self, expected_length, actual_length):
-        super().__init__(f"Expected {expected_length} input node(s), but got {actual_length}.")
+    def __init__(self, expected_length):
+        super().__init__(f"Requires {expected_length} input node(s).")
 
-class CubicPosWarpNode:
+class CubicFunNode:
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -17,7 +17,21 @@ class CubicPosWarpNode:
         self.d_coeff = properties['d_coeff']
 
     def compute(self, height, wh_ratio):
-        return PosWarp(cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff))
+        return cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff)
+
+    def visualise(self, height, wh_ratio):
+        return
+
+class PosWarpNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        if input_nodes[0] is None:
+            raise InvalidInputNodesLength(1)
+        self.node_id = node_id
+        self.f_node = input_nodes[0]
+
+    def compute(self, height, wh_ratio):
+        return PosWarp(self.f_node.compute(height, wh_ratio))
 
     def visualise(self, height, wh_ratio):
         return
@@ -69,8 +83,6 @@ class GridDrawing(Drawing):
 class ShapeRepeaterNode:
 
     def __init__(self, node_id, input_nodes, properties):
-        if len(input_nodes) != 1:
-            raise InvalidInputNodesLength(1, len(input_nodes))
         self.node_id = node_id
         self.grid_node = input_nodes[0]
         self.shape = properties['shape']
