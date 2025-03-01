@@ -2,10 +2,16 @@ from Warp import PosWarp
 from Drawing import Drawing
 from utils import cubic_f
 
+class InvalidInputNodesLength(Exception):
+    """Custom exception for incorrect input_nodes length."""
+    def __init__(self, expected_length, actual_length):
+        super().__init__(f"Expected {expected_length} input node(s), but got {actual_length}.")
+
 class GridNode:
 
     def __init__(self, node_id, input_nodes, num_v_lines, num_h_lines, cubic_param_a):
-        assert len(input_nodes) == 0
+        if len(input_nodes) != 0:
+            raise InvalidInputNodesLength(0, len(input_nodes))
         self.node_id = node_id
         self.num_v_lines = num_v_lines
         self.num_h_lines = num_h_lines
@@ -40,7 +46,8 @@ class GridDrawing(Drawing):
 class ShapeRepeaterNode:
 
     def __init__(self, node_id, input_nodes, shape):
-        assert len(input_nodes) == 1
+        if len(input_nodes) != 1:
+            raise InvalidInputNodesLength(1, len(input_nodes))
         self.node_id = node_id
         self.grid_node = input_nodes[0]
         self.shape = shape

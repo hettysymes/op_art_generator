@@ -10,7 +10,7 @@ from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget
 import os
 import svgwrite
-from node import GridNode, ShapeRepeaterNode
+from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -71,9 +71,10 @@ class NodeItem(QGraphicsRectItem):
     def get_input_nodes(self):
         input_nodes = []
         for input_port in self.input_ports:
-            edge = input_port.edges[0] # TODO: assume only one edge
-            src_port = edge.source_port
-            input_nodes.append(src_port.parent)
+            if len(input_port.edges) > 0:
+                edge = input_port.edges[0] # TODO: assume only 0 or 1 edge
+                src_port = edge.source_port
+                input_nodes.append(src_port.parent)
         return input_nodes
 
     def get_node(self):
@@ -537,7 +538,15 @@ class PipelineScene(QGraphicsScene):
             width = 500
             height = 500
 
-            svg_path = node.get_node().visualise(height, width/height)
+            try:
+                extracted_node = node.get_node()
+            except InvalidInputNodesLength as e:
+                # Show message if no visualizer is available
+                QMessageBox.information(None, "Visualization", 
+                                    f"No visualization available: {e}")
+                return
+                
+            svg_path = extracted_node.visualise(height, width/height)
             
             # Create a dialog to display the SVG
             dialog = QDialog()
