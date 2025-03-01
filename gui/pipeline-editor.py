@@ -4,9 +4,39 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                             QGraphicsLineItem, QMenu, QAction, QInputDialog, QColorDialog,
                             QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                             QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
-                            QDialogButtonBox, QGroupBox)
+                            QDialogButtonBox, QGroupBox, QMessageBox)
 from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+import svgwrite
+
+class GridNode:
+    """Class to visualize grid nodes"""
+    
+    @staticmethod
+    def display(node_item):
+        """Generate SVG visualization for a grid node"""
+        # Get grid properties from the node
+        grid_width = node_item.property_values.get('Width', 5)
+        grid_height = node_item.property_values.get('Height', 5)
+        
+        # Create SVG drawing
+        dwg = svgwrite.Drawing(size=(grid_width * 40 + 1, grid_height * 40 + 1))
+        
+        # Add background
+        dwg.add(dwg.rect((0, 0), (grid_width * 40 + 1, grid_height * 40 + 1), 
+                         fill='white', stroke='none'))
+        
+        # Draw grid lines
+        for x in range(grid_width + 1):
+            dwg.add(dwg.line((x * 40, 0), (x * 40, grid_height * 40), 
+                             stroke='black', stroke_width=1))
+        
+        for y in range(grid_height + 1):
+            dwg.add(dwg.line((0, y * 40), (grid_width * 40, y * 40), 
+                             stroke='black', stroke_width=1))
+        
+        return dwg.tostring()
 
 
 class ConnectionSignals(QObject):
@@ -30,12 +60,13 @@ class NodeProperty:
 
 class NodeType:
     """Defines a type of node with specific inputs and outputs"""
-    def __init__(self, name, input_count=1, output_count=1, color=QColor(200, 230, 250), properties=None):
+    def __init__(self, name, input_count=1, output_count=1, color=QColor(200, 230, 250), properties=None, visualizer=None):
         self.name = name
         self.input_count = input_count
         self.output_count = output_count
         self.color = color
         self.properties = properties or []
+        self.visualizer = visualizer
 
 
 class NodeItem(QGraphicsRectItem):
@@ -200,14 +231,9 @@ class NodePropertiesDialog(QDialog):
         
         self.property_widgets = {}
         
-        # Add general properties (title, color)
+        # Add general properties (title)
         self.title_edit = QLineEdit(self.node_item.title)
         form_layout.addRow("Node Name:", self.title_edit)
-        
-        self.color_button = QPushButton()
-        self.color_button.setStyleSheet(f"background-color: {self.node_item.brush().color().name()}")
-        self.color_button.clicked.connect(self.change_color)
-        form_layout.addRow("Node Color:", self.color_button)
         
         # Add custom properties based on node type
         if node_item.node_type.properties:
@@ -267,19 +293,11 @@ class NodePropertiesDialog(QDialog):
             widget = QLineEdit(str(current_value) if current_value is not None else "")
             
         return widget
-    
-    def change_color(self):
-        """Open color dialog to change node color"""
-        color = QColorDialog.getColor(self.node_item.brush().color(), self, "Select Node Color")
-        if color.isValid():
-            self.color_button.setStyleSheet(f"background-color: {color.name()}")
             
     def accept(self):
         """Apply properties and close dialog"""
-        # Update node title and color
+        # Update node title
         self.node_item.title = self.title_edit.text()
-        color = QColor(self.color_button.styleSheet().split("background-color: ")[1].split(";")[0])
-        self.node_item.setBrush(QBrush(color))
         
         # Update custom properties
         for prop_name, widget in self.property_widgets.items():
@@ -325,15 +343,10 @@ class PipelineScene(QGraphicsScene):
         """Create predefined node types with properties"""
         # Data Source properties
         grid_props = [
-            NodeProperty("File Path", "string", default_value="data.csv", 
-                        description="Path to the data file"),
-            NodeProperty("Format", "enum", default_value="CSV", 
-                        options=["CSV", "JSON", "XML", "Parquet"], 
-                        description="Data file format"),
-            NodeProperty("Skip Headers", "bool", default_value=True,
-                        description="Skip the header row in CSV files"),
-            NodeProperty("Refresh Rate", "int", default_value=0, min_value=0, max_value=3600,
-                        description="Refresh interval in seconds (0 = no refresh)")
+            NodeProperty("Width", "int", default_value=5, 
+                        description="Number of squares in width of grid"),
+            NodeProperty("Height", "int", default_value=5, 
+                        description="Number of squares in height of grid"),
         ]
         
         # Transform properties
@@ -365,7 +378,7 @@ class PipelineScene(QGraphicsScene):
         ]
 
         return [
-            NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=grid_props),
+            NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=grid_props, visualizer=GridNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props),
             NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
             NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props)
@@ -518,6 +531,31 @@ class PipelineScene(QGraphicsScene):
                     self.dest_port = None
         
         super().mouseReleaseEvent(event)
+
+    # Add a visualize method to display the SVG
+    def visualize_node(self, node):
+        """Display a visualization of the node's output"""
+        if node.node_type.visualizer is not None:
+            svg_content = node.node_type.visualizer.display(node)
+            
+            # Create a dialog to display the SVG
+            dialog = QDialog()
+            dialog.setWindowTitle(f"Visualization: {node.title}")
+            dialog.setMinimumSize(500, 500)
+            
+            layout = QVBoxLayout()
+            dialog.setLayout(layout)
+            
+            # Use QWebEngineView to display SVG
+            web_view = QWebEngineView()
+            web_view.setHtml(f"<html><body>{svg_content}</body></html>")
+            layout.addWidget(web_view)
+            
+            dialog.exec_()
+        else:
+            # Show message if no visualizer is available
+            QMessageBox.information(None, "Visualization", 
+                                f"No visualization available for node type: {node.node_type.name}")
     
     def contextMenuEvent(self, event):
         """Handle context menu events for the scene"""
@@ -545,28 +583,14 @@ class PipelineScene(QGraphicsScene):
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
             
+            # Add visualize action
+            visualize_action = QAction("Visualize", menu)
+            visualize_action.triggered.connect(lambda: self.visualize_node(clicked_item))
+            
             menu.addAction(properties_action)
             menu.addAction(rename_action)
             menu.addAction(delete_action)
-            menu.exec_(event.screenPos())
-        elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
-            # Context menu for empty space - Node type selection
-            menu = QMenu()
-            add_node_menu = QMenu("Add Node", menu)
-            menu.addMenu(add_node_menu)
-            
-            # Add actions for each node type
-            for node_type in self.node_types:
-                if node_type.name == "Custom Node":
-                    # Special handling for custom node
-                    action = QAction(node_type.name, add_node_menu)
-                    action.triggered.connect(lambda checked=False, pos=event.scenePos(): self.add_custom_node(pos))
-                else:
-                    action = QAction(node_type.name, add_node_menu)
-                    action.triggered.connect(lambda checked=False, nt=node_type, pos=event.scenePos(): 
-                                           self.add_node_from_type(nt, pos))
-                add_node_menu.addAction(action)
-            
+            menu.addAction(visualize_action)  # Add the new action
             menu.exec_(event.screenPos())
     
     def nodes(self):
