@@ -1,8 +1,11 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView, 
                             QGraphicsItem, QGraphicsRectItem, QGraphicsEllipseItem, 
-                            QGraphicsLineItem, QMenu, QAction, QInputDialog, QColorDialog)
-from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject
+                            QGraphicsLineItem, QMenu, QAction, QInputDialog, QColorDialog,
+                            QDialog, QVBoxLayout, QFormLayout, QLineEdit,
+                            QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
+                            QDialogButtonBox, QGroupBox)
+from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 
 
@@ -12,13 +15,27 @@ class ConnectionSignals(QObject):
     connectionMade = pyqtSignal(object, object)  # Emits source and destination ports
 
 
+class NodeProperty:
+    """Defines a property for a node"""
+    def __init__(self, name, prop_type, default_value=None, min_value=None, max_value=None, 
+                 options=None, description=""):
+        self.name = name
+        self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
+        self.default_value = default_value
+        self.min_value = min_value
+        self.max_value = max_value
+        self.options = options  # For enum type
+        self.description = description
+
+
 class NodeType:
     """Defines a type of node with specific inputs and outputs"""
-    def __init__(self, name, input_count=1, output_count=1, color=QColor(200, 230, 250)):
+    def __init__(self, name, input_count=1, output_count=1, color=QColor(200, 230, 250), properties=None):
         self.name = name
         self.input_count = input_count
         self.output_count = output_count
         self.color = color
+        self.properties = properties or []
 
 
 class NodeItem(QGraphicsRectItem):
@@ -39,6 +56,12 @@ class NodeItem(QGraphicsRectItem):
         self.node_type = node_type
         self.input_ports = []
         self.output_ports = []
+        self.property_values = {}
+        
+        # Initialize property values with defaults
+        for prop in self.node_type.properties:
+            self.property_values[prop.name] = prop.default_value
+        
         self.create_ports()
         
     def create_ports(self):
@@ -67,13 +90,13 @@ class NodeItem(QGraphicsRectItem):
         # Input port labels
         if self.node_type.input_count > 1:
             for i, port in enumerate(self.input_ports):
-                label_pos = port.pos() + QLineF(5, 0).p2()  # Position just right of the port
+                label_pos = port.pos() + QPointF(5, 0)  # Position just right of the port
                 painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"In {i+1}")
         
         # Output port labels
         if self.node_type.output_count > 1:
             for i, port in enumerate(self.output_ports):
-                label_pos = port.pos() + QLineF(-25, 0).p2()  # Position just left of the port
+                label_pos = port.pos() + QPointF(-25, 0)  # Position just left of the port
                 painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"Out {i+1}")
         
     def itemChange(self, change, value):
@@ -158,6 +181,125 @@ class EdgeItem(QGraphicsLineItem):
             self.setLine(QLineF(source_pos, dest_pos))
 
 
+class NodePropertiesDialog(QDialog):
+    """Dialog for editing node properties"""
+    
+    def __init__(self, node_item, parent=None):
+        super().__init__(parent)
+        self.node_item = node_item
+        self.setWindowTitle(f"Properties: {node_item.title}")
+        self.setMinimumWidth(400)
+        
+        # Main layout
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+        
+        # Create form layout for properties
+        form_layout = QFormLayout()
+        form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        
+        self.property_widgets = {}
+        
+        # Add general properties (title, color)
+        self.title_edit = QLineEdit(self.node_item.title)
+        form_layout.addRow("Node Name:", self.title_edit)
+        
+        self.color_button = QPushButton()
+        self.color_button.setStyleSheet(f"background-color: {self.node_item.brush().color().name()}")
+        self.color_button.clicked.connect(self.change_color)
+        form_layout.addRow("Node Color:", self.color_button)
+        
+        # Add custom properties based on node type
+        if node_item.node_type.properties:
+            props_group = QGroupBox("Node Properties")
+            props_layout = QFormLayout()
+            props_group.setLayout(props_layout)
+            
+            for prop in node_item.node_type.properties:
+                widget = self.create_property_widget(prop, node_item.property_values.get(prop.name, prop.default_value))
+                props_layout.addRow(f"{prop.name}:", widget)
+                self.property_widgets[prop.name] = widget
+                
+                # Add tooltip if description is available
+                if prop.description:
+                    widget.setToolTip(prop.description)
+            
+            main_layout.addWidget(props_group)
+        
+        # Create buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        
+        main_layout.addLayout(form_layout)
+        main_layout.addWidget(button_box)
+    
+    def create_property_widget(self, prop, current_value):
+        """Create an appropriate widget for the property type"""
+        if prop.prop_type == "int":
+            widget = QSpinBox()
+            if prop.min_value is not None:
+                widget.setMinimum(prop.min_value)
+            if prop.max_value is not None:
+                widget.setMaximum(prop.max_value)
+            widget.setValue(current_value or 0)
+            
+        elif prop.prop_type == "float":
+            widget = QDoubleSpinBox()
+            if prop.min_value is not None:
+                widget.setMinimum(prop.min_value)
+            if prop.max_value is not None:
+                widget.setMaximum(prop.max_value)
+            widget.setValue(current_value or 0.0)
+            
+        elif prop.prop_type == "bool":
+            widget = QCheckBox()
+            widget.setChecked(current_value or False)
+            
+        elif prop.prop_type == "enum" and prop.options:
+            widget = QComboBox()
+            widget.addItems(prop.options)
+            if current_value is not None:
+                index = prop.options.index(current_value) if current_value in prop.options else 0
+                widget.setCurrentIndex(index)
+                
+        else:  # Default to string type
+            widget = QLineEdit(str(current_value) if current_value is not None else "")
+            
+        return widget
+    
+    def change_color(self):
+        """Open color dialog to change node color"""
+        color = QColorDialog.getColor(self.node_item.brush().color(), self, "Select Node Color")
+        if color.isValid():
+            self.color_button.setStyleSheet(f"background-color: {color.name()}")
+            
+    def accept(self):
+        """Apply properties and close dialog"""
+        # Update node title and color
+        self.node_item.title = self.title_edit.text()
+        color = QColor(self.color_button.styleSheet().split("background-color: ")[1].split(";")[0])
+        self.node_item.setBrush(QBrush(color))
+        
+        # Update custom properties
+        for prop_name, widget in self.property_widgets.items():
+            if isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
+                value = widget.value()
+            elif isinstance(widget, QCheckBox):
+                value = widget.isChecked()
+            elif isinstance(widget, QComboBox):
+                value = widget.currentText()
+            else:  # QLineEdit
+                value = widget.text()
+                
+            self.node_item.property_values[prop_name] = value
+        
+        # Update the node's appearance
+        self.node_item.update()
+        
+        super().accept()
+
+
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
     
@@ -180,12 +322,53 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals.connectionMade.connect(self.finish_connection)
     
     def create_node_types(self):
-        """Create predefined node types"""
+        """Create predefined node types with properties"""
+        # Data Source properties
+        grid_props = [
+            NodeProperty("File Path", "string", default_value="data.csv", 
+                        description="Path to the data file"),
+            NodeProperty("Format", "enum", default_value="CSV", 
+                        options=["CSV", "JSON", "XML", "Parquet"], 
+                        description="Data file format"),
+            NodeProperty("Skip Headers", "bool", default_value=True,
+                        description="Skip the header row in CSV files"),
+            NodeProperty("Refresh Rate", "int", default_value=0, min_value=0, max_value=3600,
+                        description="Refresh interval in seconds (0 = no refresh)")
+        ]
+        
+        # Transform properties
+        shape_repeater_props = [
+            NodeProperty("Operation", "enum", default_value="Map", 
+                        options=["Map", "Filter", "GroupBy", "Aggregate"], 
+                        description="Transformation operation type"),
+            NodeProperty("Formula", "string", default_value="value * 2",
+                        description="Formula or expression to apply"),
+            NodeProperty("Column", "string", default_value="",
+                        description="Target column name")
+        ]
+        
+        # Filter properties
+        surface_warp_props = [
+            NodeProperty("Condition", "string", default_value="value > 0",
+                        description="Filter condition expression"),
+            NodeProperty("Keep Nulls", "bool", default_value=False,
+                        description="Keep null values when filtering")
+        ]
+        
+        # Merger properties
+        canvas_props = [
+            NodeProperty("Join Type", "enum", default_value="Inner", 
+                        options=["Inner", "Left", "Right", "Outer"], 
+                        description="Type of join operation"),
+            NodeProperty("Join Keys", "string", default_value="id,name",
+                        description="Comma-separated list of join key fields")
+        ]
+
         return [
-            NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250)),
-            NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220)),
-            NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220)),
-            NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240))
+            NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=grid_props),
+            NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props),
+            NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
+            NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props)
         ]
     
     def add_node_from_type(self, node_type, pos):
@@ -212,8 +395,21 @@ class PipelineScene(QGraphicsScene):
         if not color.isValid():
             color = QColor(200, 230, 250)
         
-        custom_type = NodeType(node_name, input_count, output_count, color)
+        # Define custom properties
+        custom_props = [
+            NodeProperty("Description", "string", default_value="Custom node"),
+            NodeProperty("Process Time", "float", default_value=1.0, min_value=0.1, max_value=100.0),
+            NodeProperty("Enabled", "bool", default_value=True)
+        ]
+        
+        custom_type = NodeType(node_name, input_count, output_count, color, properties=custom_props)
         return self.add_node_from_type(custom_type, pos)
+    
+    def edit_node_properties(self, node):
+        """Open a dialog to edit the node's properties"""
+        dialog = NodePropertiesDialog(node)
+        if dialog.exec_() == QDialog.Accepted:
+            node.update()
         
     def start_connection(self, source_port):
         """Start creating a connection from the given source port"""
@@ -340,12 +536,16 @@ class PipelineScene(QGraphicsScene):
                 clicked_item = clicked_item.parentItem()
                 
             menu = QMenu()
+            properties_action = QAction("Properties...", menu)
+            properties_action.triggered.connect(lambda: self.edit_node_properties(clicked_item))
+            
             rename_action = QAction("Rename Node", menu)
             rename_action.triggered.connect(lambda: self.rename_node(clicked_item))
             
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
             
+            menu.addAction(properties_action)
             menu.addAction(rename_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
