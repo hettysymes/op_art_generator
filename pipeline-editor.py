@@ -4,13 +4,14 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                             QGraphicsLineItem, QMenu, QAction, QInputDialog, QColorDialog,
                             QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                             QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
-                            QDialogButtonBox, QGroupBox, QMessageBox)
+                            QDialogButtonBox, QGroupBox, QMessageBox, QTableWidget, QTableWidgetItem, QWidget,
+                            QHBoxLayout)
 from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget
 import os
 import svgwrite
-from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode
+from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -286,52 +287,71 @@ class NodePropertiesDialog(QDialog):
                 widget.setCurrentIndex(index)
 
         elif prop.prop_type == "table":
-            # Retrieve stored table data or set defaults
-            table_data = prop.property_values.get("table_data", [])
-            headers = prop.property_values.get("table_headers", ["Column 1", "Column 2"])
-
-            # Create QTableWidget with dynamic size
-            num_rows = len(table_data)
-            num_cols = len(headers)
-
-            table = QTableWidget(num_rows, num_cols)
-            table.setHorizontalHeaderLabels(headers)
-            table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-
-            # Populate the table with existing data
-            for i, row in enumerate(table_data):
-                for j, value in enumerate(row):
-                    table.setItem(i, j, QTableWidgetItem(str(value)))
-
-            # Buttons for modifying table (Add/Remove Rows)
-            button_layout = QHBoxLayout()
-            add_row_button = QPushButton("Add Row")
-            remove_row_button = QPushButton("Remove Selected Row")
-
+            # Create a table widget
+            widget = QTableWidget()
+            
+            # Set up the basic table structure
+            widget.setColumnCount(2)
+            widget.setHorizontalHeaderLabels(["X", "Y"])
+            
+            # Populate with current data
+            points = current_value or prop.default_value or []
+            widget.setRowCount(len(points))
+            
+            for row, (x, y) in enumerate(points):
+                widget.setItem(row, 0, QTableWidgetItem(str(x)))
+                widget.setItem(row, 1, QTableWidgetItem(str(y)))
+            
+            # Add buttons to add/remove rows
+            button_widget = QWidget()
+            button_layout = QHBoxLayout(button_widget)
+            button_layout.setContentsMargins(0, 0, 0, 0)
+            
+            add_button = QPushButton("+")
+            remove_button = QPushButton("-")
+            
+            # Add row function
             def add_row():
-                """Adds a new empty row to the table."""
-                row_position = table.rowCount()
-                table.insertRow(row_position)
-
+                row = widget.rowCount()
+                widget.setRowCount(row + 1)
+                widget.setItem(row, 0, QTableWidgetItem("0.0"))
+                widget.setItem(row, 1, QTableWidgetItem("0.0"))
+            
+            # Remove row function
             def remove_row():
-                """Removes the selected row from the table."""
-                selected_rows = sorted(set(index.row() for index in table.selectedIndexes()), reverse=True)
-                for row in selected_rows:
-                    table.removeRow(row)
-
-            add_row_button.clicked.connect(add_row)
-            remove_row_button.clicked.connect(remove_row)
-
-            button_layout.addWidget(add_row_button)
-            button_layout.addWidget(remove_row_button)
-
-            # Add table and buttons to the layout
-            layout.addWidget(QLabel("Edit Table Property:"))
-            layout.addWidget(table)
-            layout.addLayout(button_layout)
-
-            # Store reference for later access (if needed)
-            prop.widget = table
+                row = widget.rowCount()
+                if row > 0:
+                    widget.setRowCount(row - 1)
+            
+            add_button.clicked.connect(add_row)
+            remove_button.clicked.connect(remove_row)
+            
+            button_layout.addWidget(add_button)
+            button_layout.addWidget(remove_button)
+            
+            # Create a container for the table and buttons
+            container = QWidget()
+            layout = QVBoxLayout(container)
+            layout.addWidget(widget)
+            layout.addWidget(button_widget)
+            
+            # Function to get the current value from the table
+            def get_table_value():
+                points = []
+                for row in range(widget.rowCount()):
+                    try:
+                        x = float(widget.item(row, 0).text())
+                        y = float(widget.item(row, 1).text())
+                        points.append((x, y))
+                    except (ValueError, AttributeError):
+                        # Handle empty or invalid cells
+                        pass
+                return points
+            
+            # Store the getter function with the widget
+            widget.get_value = get_table_value
+            
+            widget = container
 
         else:  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
@@ -351,6 +371,14 @@ class NodePropertiesDialog(QDialog):
                 value = widget.isChecked()
             elif isinstance(widget, QComboBox):
                 value = widget.currentText()
+            elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
+                # This is our table container widget
+                table_widget = widget.layout().itemAt(0).widget()
+                if isinstance(table_widget, QTableWidget):
+                    # Use the custom get_value method we attached to the QTableWidget
+                    value = table_widget.get_value()
+                else:
+                    value = None
             else:  # QLineEdit
                 value = widget.text()
                 
@@ -404,6 +432,11 @@ class PipelineScene(QGraphicsScene):
             NodeProperty("d_coeff", "float", default_value=0, 
                         description="")
         ]
+
+        piecewise_fun_props = [
+            NodeProperty("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)], 
+                        description="")
+        ]
         
         # Transform properties
         # shape_repeater_props = [
@@ -441,6 +474,7 @@ class PipelineScene(QGraphicsScene):
         return [
             NodeType("Grid", input_count=2, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
             NodeType("Cubic Function", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=cubic_fun_props, node_class=CubicFunNode),
+            NodeType("Piecewise Linear Function", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
             NodeType("Position Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=PosWarpNode),
             NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=RelWarpNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
