@@ -10,41 +10,13 @@ from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget
 import os
 import svgwrite
-
-class GridNode:
-    """Class to visualize grid nodes"""
-    
-    @staticmethod
-    def display(node_item):
-        """Generate SVG visualization for a grid node"""
-        # Get grid properties from the node
-        grid_width = node_item.property_values.get('Width', 5)
-        grid_height = node_item.property_values.get('Height', 5)
-        
-        # Create SVG drawing
-        dwg = svgwrite.Drawing(size=(grid_width * 40 + 1, grid_height * 40 + 1))
-        
-        # Add background
-        dwg.add(dwg.rect((0, 0), (grid_width * 40 + 1, grid_height * 40 + 1), 
-                         fill='white', stroke='none'))
-        
-        # Draw grid lines
-        for x in range(grid_width + 1):
-            dwg.add(dwg.line((x * 40, 0), (x * 40, grid_height * 40), 
-                             stroke='black', stroke_width=1))
-        
-        for y in range(grid_height + 1):
-            dwg.add(dwg.line((0, y * 40), (grid_width * 40, y * 40), 
-                             stroke='black', stroke_width=1))
-        
-        return dwg.tostring()
-
+from node import GridNode
+import uuid
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
     connectionStarted = pyqtSignal(object)  # Emits the source port
     connectionMade = pyqtSignal(object, object)  # Emits source and destination ports
-
 
 class NodeProperty:
     """Defines a property for a node"""
@@ -58,16 +30,15 @@ class NodeProperty:
         self.options = options  # For enum type
         self.description = description
 
-
 class NodeType:
     """Defines a type of node with specific inputs and outputs"""
-    def __init__(self, name, input_count=1, output_count=1, color=QColor(200, 230, 250), properties=None, visualizer=None):
+    def __init__(self, name, input_count=1, output_count=1, color=QColor(200, 230, 250), properties=None, node_class=None):
         self.name = name
         self.input_count = input_count
         self.output_count = output_count
         self.color = color
         self.properties = properties or []
-        self.visualizer = visualizer
+        self.node_class = node_class
 
 
 class NodeItem(QGraphicsRectItem):
@@ -75,6 +46,7 @@ class NodeItem(QGraphicsRectItem):
     
     def __init__(self, x, y, width, height, node_type):
         super().__init__(0, 0, width, height)
+        self.node_id = uuid.uuid4()
         self.setPos(x, y)
         self.setZValue(1)
         self.setFlag(QGraphicsItem.ItemIsMovable)
@@ -341,13 +313,16 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals.connectionMade.connect(self.finish_connection)
     
     def create_node_types(self):
+        #3.2206*(i**3) - 5.4091*(i**2) + 3.1979*i,
         """Create predefined node types with properties"""
         # Data Source properties
         grid_props = [
-            NodeProperty("Width", "int", default_value=5, 
+            NodeProperty("num_v_lines", "int", default_value=5, 
                         description="Number of squares in width of grid"),
-            NodeProperty("Height", "int", default_value=5, 
+            NodeProperty("num_h_lines", "int", default_value=5, 
                         description="Number of squares in height of grid"),
+            NodeProperty("cubic_param_a", "float", default_value=3.2206, 
+                        description="")
         ]
         
         # Transform properties
@@ -379,7 +354,7 @@ class PipelineScene(QGraphicsScene):
         ]
 
         return [
-            NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=grid_props, visualizer=GridNode),
+            NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props),
             NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
             NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props)
@@ -535,32 +510,22 @@ class PipelineScene(QGraphicsScene):
 
     def visualize_node(self, node):
         """Display a visualization of the node's output with fixed size"""
-        if node.node_type.visualizer is not None:
-            svg_content = node.node_type.visualizer.display(node)
+        if node.node_type.node_class is not None:
+            width = 500
+            height = 500
+
+            svg_path = node.node_type.node_class(node.node_id, **node.property_values).visualise(height, width/height)
             
             # Create a dialog to display the SVG
             dialog = QDialog()
             dialog.setWindowTitle(f"Visualization: {node.title}")
             dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
             
-            # Get grid properties for determining the fixed size
-            grid_width = node.property_values.get('Width', 5)
-            grid_height = node.property_values.get('Height', 5)
-            
-            # Calculate pixel dimensions (same as in the GridNode.display method)
-            pixel_width = grid_width * 40 + 1
-            pixel_height = grid_height * 40 + 1
-            
-            # Create a temporary file to save the SVG content
-            import tempfile
-            temp_file = tempfile.NamedTemporaryFile(suffix='.svg', delete=False)
-            temp_file.write(svg_content.encode('utf-8'))
-            temp_file_path = temp_file.name
-            temp_file.close()
-            
             # Use QSvgWidget with fixed size
-            svg_widget = QSvgWidget(temp_file_path)
-            svg_widget.setFixedSize(pixel_width, pixel_height)
+            svg_widget = QSvgWidget(svg_path)
+            width = 500
+            height = 500
+            svg_widget.setFixedSize(width, height)
             
             # Create layout and set fixed size for dialog
             layout = QVBoxLayout()
@@ -569,10 +534,10 @@ class PipelineScene(QGraphicsScene):
             dialog.setLayout(layout)
             
             # Fix the dialog size to match the SVG size plus margins
-            dialog.setFixedSize(500, 500)
+            dialog.setFixedSize(width, height)
             
             # Clean up the temporary file when the dialog is closed
-            dialog.finished.connect(lambda: os.remove(temp_file_path))
+            dialog.finished.connect(lambda: os.remove(svg_path))
             
             dialog.exec_()
         else:

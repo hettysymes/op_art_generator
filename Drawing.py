@@ -22,14 +22,19 @@ class Drawing(ABC):
     def add_bg(self, fill='white'):
         self.dwg_add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill=fill))
                     
-    def save(self):
+    def save_both(self):
         self.dwg.save()
         cairosvg.svg2png(url=f"{self.out_name}.svg", write_to=f"{self.out_name}.png")
 
     def render(self):
         self.draw()
-        self.save()
+        self.save_both()
         print("SVG and PNG files saved.")
+
+    def save(self):
+        self.draw()
+        self.dwg.save()
+        return f'{self.out_name}.svg'
 
     @abstractmethod
     def draw(self):
