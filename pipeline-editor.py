@@ -10,7 +10,7 @@ from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget
 import os
 import svgwrite
-from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode
+from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -284,7 +284,55 @@ class NodePropertiesDialog(QDialog):
             if current_value is not None:
                 index = prop.options.index(current_value) if current_value in prop.options else 0
                 widget.setCurrentIndex(index)
-                
+
+        elif prop.prop_type == "table":
+            # Retrieve stored table data or set defaults
+            table_data = prop.property_values.get("table_data", [])
+            headers = prop.property_values.get("table_headers", ["Column 1", "Column 2"])
+
+            # Create QTableWidget with dynamic size
+            num_rows = len(table_data)
+            num_cols = len(headers)
+
+            table = QTableWidget(num_rows, num_cols)
+            table.setHorizontalHeaderLabels(headers)
+            table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+            # Populate the table with existing data
+            for i, row in enumerate(table_data):
+                for j, value in enumerate(row):
+                    table.setItem(i, j, QTableWidgetItem(str(value)))
+
+            # Buttons for modifying table (Add/Remove Rows)
+            button_layout = QHBoxLayout()
+            add_row_button = QPushButton("Add Row")
+            remove_row_button = QPushButton("Remove Selected Row")
+
+            def add_row():
+                """Adds a new empty row to the table."""
+                row_position = table.rowCount()
+                table.insertRow(row_position)
+
+            def remove_row():
+                """Removes the selected row from the table."""
+                selected_rows = sorted(set(index.row() for index in table.selectedIndexes()), reverse=True)
+                for row in selected_rows:
+                    table.removeRow(row)
+
+            add_row_button.clicked.connect(add_row)
+            remove_row_button.clicked.connect(remove_row)
+
+            button_layout.addWidget(add_row_button)
+            button_layout.addWidget(remove_row_button)
+
+            # Add table and buttons to the layout
+            layout.addWidget(QLabel("Edit Table Property:"))
+            layout.addWidget(table)
+            layout.addLayout(button_layout)
+
+            # Store reference for later access (if needed)
+            prop.widget = table
+
         else:  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
             
@@ -394,6 +442,7 @@ class PipelineScene(QGraphicsScene):
             NodeType("Grid", input_count=2, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
             NodeType("Cubic Function", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=cubic_fun_props, node_class=CubicFunNode),
             NodeType("Position Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=PosWarpNode),
+            NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=RelWarpNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
             NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
             NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props)

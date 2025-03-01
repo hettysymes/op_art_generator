@@ -1,6 +1,7 @@
-from Warp import PosWarp
+from Warp import PosWarp, RelWarp
 from Drawing import Drawing
 from utils import cubic_f
+import numpy as np
 
 class InvalidInputNodesLength(Exception):
     """Custom exception for incorrect input_nodes length."""
@@ -22,6 +23,19 @@ class CubicFunNode:
     def visualise(self, height, wh_ratio):
         return
 
+class PiecewiseFunNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        self.node_id = node_id
+        self.points = properties['points']
+
+    def compute(self, height, wh_ratio):
+        xs, ys = zip(*self.points)
+        return lambda i: np.interp(i, xs, ys)
+
+    def visualise(self, height, wh_ratio):
+        return
+
 class PosWarpNode:
 
     def __init__(self, node_id, input_nodes, properties):
@@ -32,6 +46,20 @@ class PosWarpNode:
 
     def compute(self, height, wh_ratio):
         return PosWarp(self.f_node.compute(height, wh_ratio))
+
+    def visualise(self, height, wh_ratio):
+        return
+
+class RelWarpNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        if input_nodes[0] is None:
+            raise InvalidInputNodesLength(1)
+        self.node_id = node_id
+        self.f_node = input_nodes[0]
+
+    def compute(self, height, wh_ratio):
+        return RelWarp(self.f_node.compute(height, wh_ratio))
 
     def visualise(self, height, wh_ratio):
         return
