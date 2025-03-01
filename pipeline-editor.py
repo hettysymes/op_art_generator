@@ -10,9 +10,8 @@ from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget
 import os
 import svgwrite
-from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode
+from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicPosWarpNode
 import uuid
-from function_editor import FunctionEditorDialog 
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
@@ -76,6 +75,8 @@ class NodeItem(QGraphicsRectItem):
                 edge = input_port.edges[0] # TODO: assume only 0 or 1 edge
                 src_port = edge.source_port
                 input_nodes.append(src_port.parent)
+            else:
+                input_nodes.append(None)
         return input_nodes
 
     def get_node(self):
@@ -84,7 +85,10 @@ class NodeItem(QGraphicsRectItem):
             return self.node_type.node_class(self.node_id, [], self.property_values)
         extracted_nodes = []
         for node in input_nodes:
-            extracted_nodes.append(node.get_node())
+            if node is None:
+                extracted_nodes.append(None)
+            else:
+                extracted_nodes.append(node.get_node())
         return self.node_type.node_class(self.node_id, extracted_nodes, self.property_values)
         
     def create_ports(self):
@@ -340,19 +344,18 @@ class PipelineScene(QGraphicsScene):
             NodeProperty("num_v_lines", "int", default_value=5, 
                         description="Number of squares in width of grid"),
             NodeProperty("num_h_lines", "int", default_value=5, 
-                        description="Number of squares in height of grid"),
-            NodeProperty("function_type", "string", default_value="cubic", 
+                        description="Number of squares in height of grid")
+        ]
+
+        cubic_pwarp_props = [
+            NodeProperty("a_coeff", "float", default_value=3.22, 
                         description=""),
-            NodeProperty("cubic_param_a", "float", default_value=3.22, 
+            NodeProperty("b_coeff", "float", default_value=-5.41, 
                         description=""),
-            NodeProperty("cubic_param_b", "float", default_value=5.41, 
+            NodeProperty("c_coeff", "float", default_value=3.20, 
                         description=""),
-            NodeProperty("cubic_param_c", "float", default_value=3.20, 
-                        description=""),
-            NodeProperty("cubic_param_d", "float", default_value=0, 
-                        description=""),
-            NodeProperty("piecewise_points", "string", default_value="[]", 
-                        description=""),
+            NodeProperty("d_coeff", "float", default_value=0, 
+                        description="")
         ]
         
         # Transform properties
@@ -389,7 +392,8 @@ class PipelineScene(QGraphicsScene):
         ]
 
         return [
-            NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
+            NodeType("Grid", input_count=2, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
+            NodeType("Cubic Pos Warp", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=cubic_pwarp_props, node_class=CubicPosWarpNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
             NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
             NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props)
@@ -558,6 +562,11 @@ class PipelineScene(QGraphicsScene):
                 return
                 
             svg_path = extracted_node.visualise(height, width/height)
+            if svg_path is None:
+                # Show message if no visualizer is available
+                QMessageBox.information(None, "Visualization", 
+                                    f"No visualization available for node type: {node.node_type.name}")
+                return
             
             # Create a dialog to display the SVG
             dialog = QDialog()
@@ -588,14 +597,6 @@ class PipelineScene(QGraphicsScene):
             QMessageBox.information(None, "Visualization", 
                                 f"No visualization available for node type: {node.node_type.name}")
 
-    def edit_node_function(self, node):
-        """Open function editor dialog for a node"""
-        if node.node_type.name == "Grid":
-            dialog = FunctionEditorDialog(node)
-            dialog.exec_()
-            # Update the node visualization if needed
-            node.update()
-
     def contextMenuEvent(self, event):
         """Handle context menu events for the scene"""
         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
@@ -625,12 +626,6 @@ class PipelineScene(QGraphicsScene):
             # Add visualize action
             visualize_action = QAction("Visualize", menu)
             visualize_action.triggered.connect(lambda: self.visualize_node(clicked_item))
-
-            # Add function editor action for Grid nodes
-            if clicked_item.node_type.name == "Grid":
-                function_action = QAction("Edit Warping Function...", menu)
-                function_action.triggered.connect(lambda: self.edit_node_function(clicked_item))
-                menu.addAction(function_action)
             
             menu.addAction(properties_action)
             menu.addAction(rename_action)

@@ -7,30 +7,44 @@ class InvalidInputNodesLength(Exception):
     def __init__(self, expected_length, actual_length):
         super().__init__(f"Expected {expected_length} input node(s), but got {actual_length}.")
 
+class CubicPosWarpNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        self.node_id = node_id
+        self.a_coeff = properties['a_coeff']
+        self.b_coeff = properties['b_coeff']
+        self.c_coeff = properties['c_coeff']
+        self.d_coeff = properties['d_coeff']
+
+    def compute(self, height, wh_ratio):
+        return PosWarp(cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff))
+
+    def visualise(self, height, wh_ratio):
+        return
+
 class GridNode:
 
     def __init__(self, node_id, input_nodes, properties):
-        if len(input_nodes) != 0:
-            raise InvalidInputNodesLength(0, len(input_nodes))
         self.node_id = node_id
         self.num_v_lines = properties['num_v_lines']
         self.num_h_lines = properties['num_h_lines']
-
-        if properties['function_type'] == 'cubic':
-            self.x_warp_f = cubic_f(properties['cubic_param_a'],
-                                    properties['cubic_param_b'],
-                                    properties['cubic_param_c'],
-                                    properties['cubic_param_d'])
-        else:
-            xs, ys = zip(*properties['piecewise_points'])
-            self.x_warp_f = lambda i: np.interp(i, xs, ys)
-
-        self.y_warp_f = lambda i: i
+        self.x_warp_node, self.y_warp_node = input_nodes
 
     def compute(self, height, wh_ratio):
+        # Get warp functions
+        if self.x_warp_node is None:
+            x_warp = PosWarp(lambda i: i)
+        else:
+            x_warp = self.x_warp_node.compute(height, wh_ratio)
+
+        if self.y_warp_node is None:
+            y_warp = PosWarp(lambda i: i)
+        else:
+            y_warp = self.y_warp_node.compute(height, wh_ratio)
+
         width = wh_ratio * height
-        v_line_xs = PosWarp(self.x_warp_f).sample(self.num_v_lines)*width
-        h_line_ys = PosWarp(self.y_warp_f).sample(self.num_h_lines)*height
+        v_line_xs = x_warp.sample(self.num_v_lines)*width
+        h_line_ys = y_warp.sample(self.num_h_lines)*height
         return v_line_xs, h_line_ys
 
     def visualise(self, height, wh_ratio):
