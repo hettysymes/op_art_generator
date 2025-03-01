@@ -12,6 +12,7 @@ import os
 import svgwrite
 from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode
 import uuid
+from function_editor import FunctionEditorDialog 
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
@@ -80,11 +81,11 @@ class NodeItem(QGraphicsRectItem):
     def get_node(self):
         input_nodes = self.get_input_nodes()
         if len(input_nodes) == 0:
-            return self.node_type.node_class(self.node_id, [], **self.property_values)
+            return self.node_type.node_class(self.node_id, [], self.property_values)
         extracted_nodes = []
         for node in input_nodes:
             extracted_nodes.append(node.get_node())
-        return self.node_type.node_class(self.node_id, extracted_nodes, **self.property_values)
+        return self.node_type.node_class(self.node_id, extracted_nodes, self.property_values)
         
     def create_ports(self):
         # Create input ports (left side)
@@ -340,8 +341,18 @@ class PipelineScene(QGraphicsScene):
                         description="Number of squares in width of grid"),
             NodeProperty("num_h_lines", "int", default_value=5, 
                         description="Number of squares in height of grid"),
-            NodeProperty("cubic_param_a", "float", default_value=3.2206, 
-                        description="")
+            NodeProperty("function_type", "string", default_value="cubic", 
+                        description=""),
+            NodeProperty("cubic_param_a", "float", default_value=3.22, 
+                        description=""),
+            NodeProperty("cubic_param_b", "float", default_value=5.41, 
+                        description=""),
+            NodeProperty("cubic_param_c", "float", default_value=3.20, 
+                        description=""),
+            NodeProperty("cubic_param_d", "float", default_value=0, 
+                        description=""),
+            NodeProperty("piecewise_points", "string", default_value="[]", 
+                        description=""),
         ]
         
         # Transform properties
@@ -576,7 +587,15 @@ class PipelineScene(QGraphicsScene):
             # Show message if no visualizer is available
             QMessageBox.information(None, "Visualization", 
                                 f"No visualization available for node type: {node.node_type.name}")
-    
+
+    def edit_node_function(self, node):
+        """Open function editor dialog for a node"""
+        if node.node_type.name == "Grid":
+            dialog = FunctionEditorDialog(node)
+            dialog.exec_()
+            # Update the node visualization if needed
+            node.update()
+
     def contextMenuEvent(self, event):
         """Handle context menu events for the scene"""
         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
@@ -606,6 +625,12 @@ class PipelineScene(QGraphicsScene):
             # Add visualize action
             visualize_action = QAction("Visualize", menu)
             visualize_action.triggered.connect(lambda: self.visualize_node(clicked_item))
+
+            # Add function editor action for Grid nodes
+            if clicked_item.node_type.name == "Grid":
+                function_action = QAction("Edit Warping Function...", menu)
+                function_action.triggered.connect(lambda: self.edit_node_function(clicked_item))
+                menu.addAction(function_action)
             
             menu.addAction(properties_action)
             menu.addAction(rename_action)

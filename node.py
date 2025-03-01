@@ -9,13 +9,22 @@ class InvalidInputNodesLength(Exception):
 
 class GridNode:
 
-    def __init__(self, node_id, input_nodes, num_v_lines, num_h_lines, cubic_param_a):
+    def __init__(self, node_id, input_nodes, properties):
         if len(input_nodes) != 0:
             raise InvalidInputNodesLength(0, len(input_nodes))
         self.node_id = node_id
-        self.num_v_lines = num_v_lines
-        self.num_h_lines = num_h_lines
-        self.x_warp_f = cubic_f(cubic_param_a, -5.4091, 3.1979)
+        self.num_v_lines = properties['num_v_lines']
+        self.num_h_lines = properties['num_h_lines']
+
+        if properties['function_type'] == 'cubic':
+            self.x_warp_f = cubic_f(properties['cubic_param_a'],
+                                    properties['cubic_param_b'],
+                                    properties['cubic_param_c'],
+                                    properties['cubic_param_d'])
+        else:
+            xs, ys = zip(*properties['piecewise_points'])
+            self.x_warp_f = lambda i: np.interp(i, xs, ys)
+
         self.y_warp_f = lambda i: i
 
     def compute(self, height, wh_ratio):
@@ -45,12 +54,12 @@ class GridDrawing(Drawing):
 
 class ShapeRepeaterNode:
 
-    def __init__(self, node_id, input_nodes, shape):
+    def __init__(self, node_id, input_nodes, properties):
         if len(input_nodes) != 1:
             raise InvalidInputNodesLength(1, len(input_nodes))
         self.node_id = node_id
         self.grid_node = input_nodes[0]
-        self.shape = shape
+        self.shape = properties['shape']
 
     def compute(self, height, wh_ratio):
         v_line_xs, h_line_ys = self.grid_node.compute(height, wh_ratio)
