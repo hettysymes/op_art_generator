@@ -52,8 +52,8 @@ class ShapeRepeaterNode:
             for j in range(1, len(h_line_ys)):
                 x1 = v_line_xs[i-1]
                 x2 = v_line_xs[i]
-                y1 = h_line_ys[i-1]
-                y2 = h_line_ys[i]
+                y1 = h_line_ys[j-1]
+                y2 = h_line_ys[j]
                 polygons.append({'points': [(x1, y1), (x1, y2), (x2, y2)],
                                 'fill': 'black',
                                 'stroke': 'none'})
