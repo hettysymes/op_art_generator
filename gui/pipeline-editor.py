@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                             QDialogButtonBox, QGroupBox, QMessageBox)
 from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtSvg import QSvgWidget
+import os
 import svgwrite
 
 class GridNode:
@@ -532,7 +533,6 @@ class PipelineScene(QGraphicsScene):
         
         super().mouseReleaseEvent(event)
 
-    # Add a visualize method to display the SVG
     def visualize_node(self, node):
         """Display a visualization of the node's output"""
         if node.node_type.visualizer is not None:
@@ -546,10 +546,19 @@ class PipelineScene(QGraphicsScene):
             layout = QVBoxLayout()
             dialog.setLayout(layout)
             
-            # Use QWebEngineView to display SVG
-            web_view = QWebEngineView()
-            web_view.setHtml(f"<html><body>{svg_content}</body></html>")
-            layout.addWidget(web_view)
+            # Create a temporary file to save the SVG content
+            import tempfile
+            temp_file = tempfile.NamedTemporaryFile(suffix='.svg', delete=False)
+            temp_file.write(svg_content.encode('utf-8'))
+            temp_file_path = temp_file.name
+            temp_file.close()
+            
+            # Use QSvgWidget to display SVG
+            svg_widget = QSvgWidget(temp_file_path)
+            layout.addWidget(svg_widget)
+            
+            # Clean up the temporary file when the dialog is closed
+            dialog.finished.connect(lambda: os.remove(temp_file_path))
             
             dialog.exec_()
         else:
