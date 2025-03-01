@@ -10,7 +10,7 @@ from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget
 import os
 import svgwrite
-from node import GridNode
+from node import GridNode, ShapeRepeaterNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -67,6 +67,23 @@ class NodeItem(QGraphicsRectItem):
             self.property_values[prop.name] = prop.default_value
         
         self.create_ports()
+
+    def get_input_nodes(self):
+        input_nodes = []
+        for input_port in self.input_ports:
+            edge = input_port.edges[0] # TODO: assume only one edge
+            src_port = edge.source_port
+            input_nodes.append(src_port.parent)
+        return input_nodes
+
+    def get_node(self):
+        input_nodes = self.get_input_nodes()
+        if len(input_nodes) == 0:
+            return self.node_type.node_class(self.node_id, [], **self.property_values)
+        extracted_nodes = []
+        for node in input_nodes:
+            extracted_nodes.append(node.get_node())
+        return self.node_type.node_class(self.node_id, extracted_nodes, **self.property_values)
         
     def create_ports(self):
         # Create input ports (left side)
@@ -119,6 +136,7 @@ class PortItem(QGraphicsEllipseItem):
     def __init__(self, parent, x, y, is_input=True):
         size = 12  # Slightly larger port for easier clicking
         super().__init__(-size/2, -size/2, size, size, parent)
+        self.parent = parent
         self.setPos(x, y)
         self.setZValue(1)
         self.is_input = is_input
@@ -326,14 +344,19 @@ class PipelineScene(QGraphicsScene):
         ]
         
         # Transform properties
+        # shape_repeater_props = [
+        #     NodeProperty("Operation", "enum", default_value="Map", 
+        #                 options=["Map", "Filter", "GroupBy", "Aggregate"], 
+        #                 description="Transformation operation type"),
+        #     NodeProperty("Formula", "string", default_value="value * 2",
+        #                 description="Formula or expression to apply"),
+        #     NodeProperty("Column", "string", default_value="",
+        #                 description="Target column name")
+        # ]
+
         shape_repeater_props = [
-            NodeProperty("Operation", "enum", default_value="Map", 
-                        options=["Map", "Filter", "GroupBy", "Aggregate"], 
-                        description="Transformation operation type"),
-            NodeProperty("Formula", "string", default_value="value * 2",
-                        description="Formula or expression to apply"),
-            NodeProperty("Column", "string", default_value="",
-                        description="Target column name")
+            NodeProperty("shape", "string", default_value="triangle", 
+                        description="")
         ]
         
         # Filter properties
@@ -355,7 +378,7 @@ class PipelineScene(QGraphicsScene):
 
         return [
             NodeType("Grid", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
-            NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props),
+            NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
             NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
             NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props)
         ]
@@ -514,7 +537,7 @@ class PipelineScene(QGraphicsScene):
             width = 500
             height = 500
 
-            svg_path = node.node_type.node_class(node.node_id, **node.property_values).visualise(height, width/height)
+            svg_path = node.get_node().visualise(height, width/height)
             
             # Create a dialog to display the SVG
             dialog = QDialog()
