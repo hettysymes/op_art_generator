@@ -161,9 +161,9 @@ class ShapeRepeaterNode:
     def visualise(self, height, wh_ratio):
         polygons = self.compute(height, wh_ratio)
         if polygons:
-            return ShapeRepeaterDrawing(str(self.node_id), height, wh_ratio, polygons).save()
+            return PolygonDrawer(str(self.node_id), height, wh_ratio, polygons).save()
 
-class ShapeRepeaterDrawing(Drawing):
+class PolygonDrawer(Drawing):
 
     def __init__(self, out_name, height, wh_ratio, inputs):
         super().__init__(out_name, height, wh_ratio)
@@ -173,3 +173,41 @@ class ShapeRepeaterDrawing(Drawing):
         self.add_bg()
         for p in self.polygons:
             self.dwg_add(self.dwg.polygon(**p))
+
+class CheckerboardNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        self.node_id = node_id
+        self.grid_node = input_nodes[0]
+        self.shape1 = properties['shape1']
+        self.shape2 = properties['shape2']
+
+    def compute(self, height, wh_ratio):
+        output = self.grid_node.compute(height, wh_ratio)
+        if output:
+            v_line_xs, h_line_ys = output
+            polygons = []
+            shape1_starts = True
+            for i in range(1, len(v_line_xs)):
+                shape1 = shape1_starts
+                for j in range(1, len(h_line_ys)):
+                    x1 = v_line_xs[i-1]
+                    x2 = v_line_xs[i]
+                    y1 = h_line_ys[j-1]
+                    y2 = h_line_ys[j]
+                    if shape1:
+                        polygons.append({'points': [(x1, y1), (x1, y2), (x2, y2), (x2, y1)],
+                                        'fill': 'black',
+                                        'stroke': 'none'})
+                    else:
+                        polygons.append({'points': [(x1, y1), (x1, y2), (x2, y2), (x2, y1)],
+                                        'fill': 'white',
+                                        'stroke': 'none'})
+                    shape1 = not shape1
+                shape1_starts = not shape1_starts
+            return polygons
+
+    def visualise(self, height, wh_ratio):
+        polygons = self.compute(height, wh_ratio)
+        if polygons:
+            return PolygonDrawer(str(self.node_id), height, wh_ratio, polygons).save()

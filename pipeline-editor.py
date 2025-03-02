@@ -11,7 +11,7 @@ from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
 import os
 import svgwrite
-from node import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode
+from node import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode, CheckerboardNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -491,6 +491,13 @@ class PipelineScene(QGraphicsScene):
             NodeProperty("shape", "string", default_value="triangle", 
                         description="")
         ]
+
+        checkerboard_props = [
+            NodeProperty("shape1", "string", default_value="black_rect", 
+                        description=""),
+            NodeProperty("shape2", "string", default_value="white_rect", 
+                        description="")
+        ]
         
         canvas_props = [
             NodeProperty("wh_ratio", "float", default_value=1.0, min_value=0.0,
@@ -504,7 +511,8 @@ class PipelineScene(QGraphicsScene):
             NodeType("Position Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
             NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
-            NodeType("Canvas", input_count=1, output_count=1, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode)
+            NodeType("Canvas", input_count=1, output_count=1, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode),
+            NodeType("Checkerboard", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=checkerboard_props, node_class=CheckerboardNode)
         ]
     
     def add_node_from_type(self, node_type, pos):
