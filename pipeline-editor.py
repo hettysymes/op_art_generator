@@ -77,7 +77,7 @@ class NodeItem(QGraphicsRectItem):
     def update_canvas_image(self):
         """Add an SVG image to the node"""
         assert self.node_type.node_class == CanvasNode
-        svg_path = self.get_node().compute(self.height, self.property_values['wh_ratio'])
+        svg_path = self.get_node().get_svg_path(self.height)
         if self.svg_item:
             # Remove existing SVG item if there is one
             scene = self.scene()
@@ -524,7 +524,7 @@ class PipelineScene(QGraphicsScene):
             NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=RelWarpNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
             NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
-            NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode)
+            NodeType("Canvas", input_count=1, output_count=1, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode)
         ]
     
     def add_node_from_type(self, node_type, pos):
