@@ -6,12 +6,12 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                             QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                             QDialogButtonBox, QGroupBox, QMessageBox, QTableWidget, QTableWidgetItem, QWidget,
                             QHBoxLayout)
-from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
+from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF, QRectF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
-from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
 import os
 import svgwrite
-from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode
+from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -41,7 +41,6 @@ class NodeType:
         self.properties = properties or []
         self.node_class = node_class
 
-
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
     
@@ -62,6 +61,8 @@ class NodeItem(QGraphicsRectItem):
         self.input_ports = []
         self.output_ports = []
         self.property_values = {}
+
+        self.height = height
         
         # Initialize property values with defaults
         for prop in self.node_type.properties:
@@ -69,16 +70,77 @@ class NodeItem(QGraphicsRectItem):
         
         self.create_ports()
 
+        self.svg_item = None
+        if self.node_type.node_class == CanvasNode:
+            self.update_canvas_image()
+
+    def update_canvas_image(self):
+        """Add an SVG image to the node"""
+        assert self.node_type.node_class == CanvasNode
+        svg_path = self.get_node().compute(self.height, self.property_values['wh_ratio'])
+        if self.svg_item:
+            # Remove existing SVG item if there is one
+            scene = self.scene()
+            if scene and self.svg_item in scene.items():
+                scene.removeItem(self.svg_item)
+        
+        # Create new SVG item
+        self.svg_item = QGraphicsSvgItem(svg_path)
+        
+        # Calculate margins (10% of width/height)
+        margin_x = self.rect().width() * 0.1
+        margin_y = self.rect().height() * 0.1
+        
+        # Calculate available space for SVG (accounting for title area)
+        title_height = 20  # Approximate height for the title
+        available_width = self.rect().width() - (2 * margin_x)
+        available_height = self.rect().height() - title_height - (2 * margin_y)
+        
+        # Scale SVG to fit within available space
+        svg_size = self.svg_item.boundingRect().size()
+        scale_x = available_width / svg_size.width()
+        scale_y = available_height / svg_size.height()
+        scale = min(scale_x, scale_y)  # Maintain aspect ratio
+        
+        self.svg_item.setScale(scale)
+        
+        # Position SVG within the node
+        svg_pos_x = margin_x
+        svg_pos_y = title_height + margin_y
+        
+        # Make SVG a child of the node item
+        self.svg_item.setParentItem(self)
+        self.svg_item.setPos(svg_pos_x, svg_pos_y)
+        self.svg_item.setZValue(2)  # Above the rectangle but below other elements
+
     def get_input_nodes(self):
         input_nodes = []
         for input_port in self.input_ports:
             if len(input_port.edges) > 0:
                 edge = input_port.edges[0] # TODO: assume only 0 or 1 edge
                 src_port = edge.source_port
-                input_nodes.append(src_port.parent)
+                input_nodes.append(src_port.parentItem())
             else:
                 input_nodes.append(None)
         return input_nodes
+
+    def get_output_nodes(self):
+        output_nodes = []
+        for output_port in self.output_ports:
+            if len(output_port.edges) > 0:
+                edge = output_port.edges[0] # TODO: assume only 0 or 1 edge
+                dest_port = edge.dest_port
+                output_nodes.append(dest_port.parentItem())
+            else:
+                output_nodes.append(None)
+        return output_nodes
+
+    def update_canvases(self):
+        if self.node_type.node_class == CanvasNode:
+            self.update_canvas_image()
+        output_nodes = self.get_output_nodes()
+        for output_node in output_nodes:
+            if output_node: output_node.update_canvases()
 
     def get_node(self):
         input_nodes = self.get_input_nodes()
@@ -110,7 +172,10 @@ class NodeItem(QGraphicsRectItem):
         
         # Draw node title
         painter.setFont(QFont("Arial", 10))
-        painter.drawText(self.rect(), Qt.AlignCenter, self.title)
+        if self.node_type.node_class == CanvasNode:
+            painter.drawText(self.rect(), Qt.AlignTop | Qt.AlignHCenter, self.title)
+        else:
+            painter.drawText(self.rect(), Qt.AlignCenter, self.title)
         
         # Draw port labels if there are multiple
         painter.setFont(QFont("Arial", 8))
@@ -143,7 +208,6 @@ class PortItem(QGraphicsEllipseItem):
     def __init__(self, parent, x, y, is_input=True):
         size = 12  # Slightly larger port for easier clicking
         super().__init__(-size/2, -size/2, size, size, parent)
-        self.parent = parent
         self.setPos(x, y)
         self.setZValue(1)
         self.is_input = is_input
@@ -163,11 +227,13 @@ class PortItem(QGraphicsEllipseItem):
         
     def add_edge(self, edge):
         self.edges.append(edge)
+        self.parentItem().update_canvases()
     
     def remove_edge(self, edge):
         if edge in self.edges:
             self.edges.remove(edge)
-    
+        self.parentItem().update_canvases()
+
     def get_center_scene_pos(self):
         return self.mapToScene(self.rect().center())
     
@@ -240,13 +306,14 @@ class NodePropertiesDialog(QDialog):
             props_group.setLayout(props_layout)
             
             for prop in node_item.node_type.properties:
-                widget = self.create_property_widget(prop, node_item.property_values.get(prop.name, prop.default_value))
-                props_layout.addRow(f"{prop.name}:", widget)
-                self.property_widgets[prop.name] = widget
-                
-                # Add tooltip if description is available
-                if prop.description:
-                    widget.setToolTip(prop.description)
+                if prop.prop_type != "hidden":
+                    widget = self.create_property_widget(prop, node_item.property_values.get(prop.name, prop.default_value))
+                    props_layout.addRow(f"{prop.name}:", widget)
+                    self.property_widgets[prop.name] = widget
+                    
+                    # Add tooltip if description is available
+                    if prop.description:
+                        widget.setToolTip(prop.description)
             
             main_layout.addWidget(props_group)
         
@@ -381,6 +448,7 @@ class NodePropertiesDialog(QDialog):
         
         # Update the node's appearance
         self.node_item.update()
+        self.node_item.update_canvases()
         
         super().accept()
 
@@ -407,9 +475,7 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals.connectionMade.connect(self.finish_connection)
     
     def create_node_types(self):
-        #3.2206*(i**3) - 5.4091*(i**2) + 3.1979*i,
         """Create predefined node types with properties"""
-        # Data Source properties
         grid_props = [
             NodeProperty("num_v_lines", "int", default_value=5, 
                         description="Number of squares in width of grid"),
@@ -432,24 +498,12 @@ class PipelineScene(QGraphicsScene):
             NodeProperty("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)], 
                         description="")
         ]
-        
-        # Transform properties
-        # shape_repeater_props = [
-        #     NodeProperty("Operation", "enum", default_value="Map", 
-        #                 options=["Map", "Filter", "GroupBy", "Aggregate"], 
-        #                 description="Transformation operation type"),
-        #     NodeProperty("Formula", "string", default_value="value * 2",
-        #                 description="Formula or expression to apply"),
-        #     NodeProperty("Column", "string", default_value="",
-        #                 description="Target column name")
-        # ]
 
         shape_repeater_props = [
             NodeProperty("shape", "string", default_value="triangle", 
                         description="")
         ]
         
-        # Filter properties
         surface_warp_props = [
             NodeProperty("Condition", "string", default_value="value > 0",
                         description="Filter condition expression"),
@@ -457,13 +511,9 @@ class PipelineScene(QGraphicsScene):
                         description="Keep null values when filtering")
         ]
         
-        # Merger properties
         canvas_props = [
-            NodeProperty("Join Type", "enum", default_value="Inner", 
-                        options=["Inner", "Left", "Right", "Outer"], 
-                        description="Type of join operation"),
-            NodeProperty("Join Keys", "string", default_value="id,name",
-                        description="Comma-separated list of join key fields")
+            NodeProperty("wh_ratio", "float", default_value=1.0, min_value=0.0,
+                        description="")
         ]
 
         return [
@@ -474,7 +524,7 @@ class PipelineScene(QGraphicsScene):
             NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=RelWarpNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
             NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
-            NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props)
+            NodeType("Canvas", input_count=1, output_count=0, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode)
         ]
     
     def add_node_from_type(self, node_type, pos):

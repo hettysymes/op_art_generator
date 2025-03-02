@@ -36,6 +36,32 @@ class PiecewiseFunNode:
     def visualise(self, height, wh_ratio):
         return
 
+class CanvasNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        self.node_id = node_id
+        self.input_node = input_nodes[0]
+        self.wh_ratio = properties['wh_ratio']
+
+    def compute(self, height, wh_ratio):
+        if self.input_node:
+            # Input, return input visualisation
+            return self.input_node.visualise(height, self.wh_ratio)
+        # No input, return blank canvas
+        d = BlankCanvas(str(self.node_id), height, self.wh_ratio)
+        return d.save()
+
+    def visualise(self, height, wh_ratio):
+        return
+
+class BlankCanvas(Drawing):
+
+    def __init__(self, out_name, height, wh_ratio):
+        super().__init__(out_name, height, wh_ratio)
+
+    def draw(self):
+        self.add_bg()
+
 class PosWarpNode:
 
     def __init__(self, node_id, input_nodes, properties):
