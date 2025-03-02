@@ -200,31 +200,30 @@ class CheckerboardNode:
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
         self.grid_node = input_nodes[0]
-        self.shape1 = properties['shape1']
-        self.shape2 = properties['shape2']
+        self.shape1_node = input_nodes[1]
+        self.shape2_node = input_nodes[2]
 
     def compute(self, height, wh_ratio):
-        output = self.grid_node.compute(height, wh_ratio)
-        if output:
-            v_line_xs, h_line_ys = output
+        grid_out = self.grid_node.compute(height, wh_ratio)
+        shape1 = self.shape1_node.compute(height, wh_ratio)
+        shape2 = self.shape2_node.compute(height, wh_ratio)
+        if grid_out and shape1 and shape2:
+            v_line_xs, h_line_ys = grid_out
             polygons = []
             shape1_starts = True
             for i in range(1, len(v_line_xs)):
-                shape1 = shape1_starts
+                shape1_turn = shape1_starts
                 for j in range(1, len(h_line_ys)):
                     x1 = v_line_xs[i-1]
                     x2 = v_line_xs[i]
                     y1 = h_line_ys[j-1]
                     y2 = h_line_ys[j]
-                    if shape1:
-                        polygons.append({'points': [(x1, y1), (x1, y2), (x2, y2), (x2, y1)],
-                                        'fill': 'black',
-                                        'stroke': 'none'})
-                    else:
-                        polygons.append({'points': [(x1, y1), (x1, y2), (x2, y2), (x2, y1)],
-                                        'fill': 'white',
-                                        'stroke': 'none'})
-                    shape1 = not shape1
+                    shape = shape1 if shape1_turn else shape2
+                    new_points = [(x1 + x*(x2-x1), y1 + y*(y2-y1)) for x,y in shape['points']]
+                    polygons.append({'points': new_points,
+                                    'fill': shape['fill'],
+                                    'stroke': shape['stroke']})
+                    shape1_turn = not shape1_turn
                 shape1_starts = not shape1_starts
             return polygons
 

@@ -486,18 +486,6 @@ class PipelineScene(QGraphicsScene):
             NodeProperty("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)], 
                         description="")
         ]
-
-        shape_repeater_props = [
-            NodeProperty("shape", "string", default_value="triangle", 
-                        description="")
-        ]
-
-        checkerboard_props = [
-            NodeProperty("shape1", "string", default_value="black_rect", 
-                        description=""),
-            NodeProperty("shape2", "string", default_value="white_rect", 
-                        description="")
-        ]
         
         canvas_props = [
             NodeProperty("wh_ratio", "float", default_value=1.0, min_value=0.0,
@@ -517,9 +505,9 @@ class PipelineScene(QGraphicsScene):
             NodeType("Piecewise Linear Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
             NodeType("Position Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
             NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
-            NodeType("Shape Repeater", input_count=2, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
+            NodeType("Shape Repeater", input_count=2, output_count=1, color=QColor(220, 250, 220), properties=[], node_class=ShapeRepeaterNode),
             NodeType("Canvas", input_count=1, output_count=1, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode),
-            NodeType("Checkerboard", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=checkerboard_props, node_class=CheckerboardNode),
+            NodeType("Checkerboard", input_count=3, output_count=1, color=QColor(220, 250, 220), properties=[], node_class=CheckerboardNode),
             NodeType("Polygon", input_count=0, output_count=1, color=QColor(219, 167, 176), properties=polygon_props, node_class=PolygonNode)
         ]
     
