@@ -6,11 +6,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                             QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                             QDialogButtonBox, QGroupBox, QMessageBox, QTableWidget, QTableWidgetItem, QWidget,
                             QHBoxLayout)
-from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF, QRectF
+from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
-import os
-import svgwrite
 from node import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode
 import uuid
 
@@ -690,9 +688,6 @@ class PipelineScene(QGraphicsScene):
         
         # Fix the dialog size to match the SVG size plus margins
         dialog.setFixedSize(width, height)
-        
-        # Clean up the temporary file when the dialog is closed
-        dialog.finished.connect(lambda: os.remove(svg_path))
         
         dialog.exec_()
 
