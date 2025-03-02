@@ -288,19 +288,19 @@ class NodePropertiesDialog(QDialog):
 
         elif prop.prop_type == "table":
             # Create a table widget
-            widget = QTableWidget()
+            table = QTableWidget()
             
             # Set up the basic table structure
-            widget.setColumnCount(2)
-            widget.setHorizontalHeaderLabels(["X", "Y"])
+            table.setColumnCount(2)
+            table.setHorizontalHeaderLabels(["X", "Y"])
             
             # Populate with current data
             points = current_value or prop.default_value or []
-            widget.setRowCount(len(points))
+            table.setRowCount(len(points))
             
             for row, (x, y) in enumerate(points):
-                widget.setItem(row, 0, QTableWidgetItem(str(x)))
-                widget.setItem(row, 1, QTableWidgetItem(str(y)))
+                table.setItem(row, 0, QTableWidgetItem(str(x)))
+                table.setItem(row, 1, QTableWidgetItem(str(y)))
             
             # Add buttons to add/remove rows
             button_widget = QWidget()
@@ -312,16 +312,16 @@ class NodePropertiesDialog(QDialog):
             
             # Add row function
             def add_row():
-                row = widget.rowCount()
-                widget.setRowCount(row + 1)
-                widget.setItem(row, 0, QTableWidgetItem("0.0"))
-                widget.setItem(row, 1, QTableWidgetItem("0.0"))
+                row = table.rowCount()
+                table.setRowCount(row + 1)
+                table.setItem(row, 0, QTableWidgetItem("0.0"))
+                table.setItem(row, 1, QTableWidgetItem("0.0"))
             
             # Remove row function
             def remove_row():
-                row = widget.rowCount()
+                row = table.rowCount()
                 if row > 0:
-                    widget.setRowCount(row - 1)
+                    table.setRowCount(row - 1)
             
             add_button.clicked.connect(add_row)
             remove_button.clicked.connect(remove_row)
@@ -332,24 +332,25 @@ class NodePropertiesDialog(QDialog):
             # Create a container for the table and buttons
             container = QWidget()
             layout = QVBoxLayout(container)
-            layout.addWidget(widget)
+            layout.addWidget(table)
             layout.addWidget(button_widget)
             
             # Function to get the current value from the table
             def get_table_value():
                 points = []
-                for row in range(widget.rowCount()):
+                for row in range(table.rowCount()):
                     try:
-                        x = float(widget.item(row, 0).text())
-                        y = float(widget.item(row, 1).text())
+                        x = float(table.item(row, 0).text())
+                        y = float(table.item(row, 1).text())
                         points.append((x, y))
                     except (ValueError, AttributeError):
                         # Handle empty or invalid cells
                         pass
                 return points
             
-            # Store the getter function with the widget
-            widget.get_value = get_table_value
+            # Store both the getter function and the reference to the table with the container
+            container.get_value = get_table_value
+            container.table_widget = table  # Store a reference to the actual table
             
             widget = container
 
@@ -372,13 +373,7 @@ class NodePropertiesDialog(QDialog):
             elif isinstance(widget, QComboBox):
                 value = widget.currentText()
             elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
-                # This is our table container widget
-                table_widget = widget.layout().itemAt(0).widget()
-                if isinstance(table_widget, QTableWidget):
-                    # Use the custom get_value method we attached to the QTableWidget
-                    value = table_widget.get_value()
-                else:
-                    value = None
+                value = widget.get_value()
             else:  # QLineEdit
                 value = widget.text()
                 
