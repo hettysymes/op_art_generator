@@ -11,7 +11,7 @@ from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
 import os
 import svgwrite
-from node import InvalidInputNodesLength, GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode
+from node import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -148,10 +148,10 @@ class NodeItem(QGraphicsRectItem):
             return self.node_type.node_class(self.node_id, [], self.property_values)
         extracted_nodes = []
         for node in input_nodes:
-            if node is None:
-                extracted_nodes.append(None)
-            else:
+            if node:
                 extracted_nodes.append(node.get_node())
+            else:
+                extracted_nodes.append(EmptyNode(None, None, None))
         return self.node_type.node_class(self.node_id, extracted_nodes, self.property_values)
         
     def create_ports(self):
@@ -504,13 +504,6 @@ class PipelineScene(QGraphicsScene):
                         description="")
         ]
         
-        surface_warp_props = [
-            NodeProperty("Condition", "string", default_value="value > 0",
-                        description="Filter condition expression"),
-            NodeProperty("Keep Nulls", "bool", default_value=False,
-                        description="Keep null values when filtering")
-        ]
-        
         canvas_props = [
             NodeProperty("wh_ratio", "float", default_value=1.0, min_value=0.0,
                         description="")
@@ -518,12 +511,11 @@ class PipelineScene(QGraphicsScene):
 
         return [
             NodeType("Grid", input_count=2, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
-            NodeType("Cubic Function", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=cubic_fun_props, node_class=CubicFunNode),
-            NodeType("Piecewise Linear Function", input_count=0, output_count=1, color=QColor(220, 230, 250), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
-            NodeType("Position Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=PosWarpNode),
-            NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(220, 230, 250), properties=[], node_class=RelWarpNode),
+            NodeType("Cubic Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=cubic_fun_props, node_class=CubicFunNode),
+            NodeType("Piecewise Linear Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
+            NodeType("Position Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
+            NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
             NodeType("Shape Repeater", input_count=1, output_count=1, color=QColor(220, 250, 220), properties=shape_repeater_props, node_class=ShapeRepeaterNode),
-            NodeType("Surface Warp", input_count=1, output_count=1, color=QColor(250, 220, 220), properties=surface_warp_props),
             NodeType("Canvas", input_count=1, output_count=1, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode)
         ]
     
@@ -677,53 +669,40 @@ class PipelineScene(QGraphicsScene):
 
     def visualize_node(self, node):
         """Display a visualization of the node's output with fixed size"""
-        if node.node_type.node_class is not None:
-            width = 500
-            height = 500
+        width = 500
+        height = 500
 
-            try:
-                extracted_node = node.get_node()
-            except InvalidInputNodesLength as e:
-                # Show message if no visualizer is available
-                QMessageBox.information(None, "Visualization", 
-                                    f"No visualization available: {e}")
-                return
-                
-            svg_path = extracted_node.visualise(height, width/height)
-            if svg_path is None:
-                # Show message if no visualizer is available
-                QMessageBox.information(None, "Visualization", 
-                                    f"No visualization available for node type: {node.node_type.name}")
-                return
-            
-            # Create a dialog to display the SVG
-            dialog = QDialog()
-            dialog.setWindowTitle(f"Visualization: {node.title}")
-            dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-            
-            # Use QSvgWidget with fixed size
-            svg_widget = QSvgWidget(svg_path)
-            width = 500
-            height = 500
-            svg_widget.setFixedSize(width, height)
-            
-            # Create layout and set fixed size for dialog
-            layout = QVBoxLayout()
-            layout.setContentsMargins(10, 10, 10, 10)
-            layout.addWidget(svg_widget, 0, Qt.AlignCenter)
-            dialog.setLayout(layout)
-            
-            # Fix the dialog size to match the SVG size plus margins
-            dialog.setFixedSize(width, height)
-            
-            # Clean up the temporary file when the dialog is closed
-            dialog.finished.connect(lambda: os.remove(svg_path))
-            
-            dialog.exec_()
-        else:
+        svg_path = node.get_node().visualise(height, width/height)
+        if svg_path is None:
             # Show message if no visualizer is available
             QMessageBox.information(None, "Visualization", 
                                 f"No visualization available for node type: {node.node_type.name}")
+            return
+        
+        # Create a dialog to display the SVG
+        dialog = QDialog()
+        dialog.setWindowTitle(f"Visualization: {node.title}")
+        dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        
+        # Use QSvgWidget with fixed size
+        svg_widget = QSvgWidget(svg_path)
+        width = 500
+        height = 500
+        svg_widget.setFixedSize(width, height)
+        
+        # Create layout and set fixed size for dialog
+        layout = QVBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.addWidget(svg_widget, 0, Qt.AlignCenter)
+        dialog.setLayout(layout)
+        
+        # Fix the dialog size to match the SVG size plus margins
+        dialog.setFixedSize(width, height)
+        
+        # Clean up the temporary file when the dialog is closed
+        dialog.finished.connect(lambda: os.remove(svg_path))
+        
+        dialog.exec_()
 
     def contextMenuEvent(self, event):
         """Handle context menu events for the scene"""
@@ -877,25 +856,10 @@ class PipelineEditor(QMainWindow):
         self.view = PipelineView(self.scene)
         self.setCentralWidget(self.view)
         
-        # Add some example nodes
-        self.add_example_nodes()
-        
         # Create a status bar with instructions
         self.statusBar().showMessage("Right-click for node menu | Drag from output port (green) to input port (gray) to create connections")
         
         self.show()
-    
-    def add_example_nodes(self):
-        """Add some example nodes to the scene"""
-        grid = self.scene.node_types[0]
-        shape_repeater = self.scene.node_types[1]
-        surface_warp = self.scene.node_types[2]
-        canvas = self.scene.node_types[3]
-
-        node1 = self.scene.add_node_from_type(grid, QLineF(100, 100, 0, 0).p1())
-        node2 = self.scene.add_node_from_type(shape_repeater, QLineF(400, 100, 0, 0).p1())
-        node3 = self.scene.add_node_from_type(surface_warp, QLineF(400, 250, 0, 0).p1())
-        node4 = self.scene.add_node_from_type(canvas, QLineF(700, 175, 0, 0).p1())
 
 
 if __name__ == "__main__":

@@ -3,10 +3,16 @@ from Drawing import Drawing
 from utils import cubic_f
 import numpy as np
 
-class InvalidInputNodesLength(Exception):
-    """Custom exception for incorrect input_nodes length."""
-    def __init__(self, expected_length):
-        super().__init__(f"Requires {expected_length} input node(s).")
+class EmptyNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        pass
+
+    def compute(self, height, wh_ratio):
+        return
+
+    def visualise(self, height, wh_ratio):
+        return
 
 class CubicFunNode:
 
@@ -44,16 +50,13 @@ class CanvasNode:
         self.wh_ratio = properties['wh_ratio']
 
     def get_svg_path(self, height):
-        if self.input_node:
-            # Input, return input visualisation
-            return self.input_node.visualise(height, self.wh_ratio)
+        vis = self.input_node.visualise(height, self.wh_ratio)
+        if vis: return vis
         # No input, return blank canvas
-        d = BlankCanvas(str(self.node_id), height, self.wh_ratio)
-        return d.save()
+        return BlankCanvas(str(self.node_id), height, self.wh_ratio).save()
 
     def compute(self, height, wh_ratio):
-        if self.input_node:
-            return self.input_node.compute(height, wh_ratio)
+        return self.input_node.compute(height, wh_ratio)
 
     def visualise(self, height, wh_ratio):
         return
@@ -69,13 +72,12 @@ class BlankCanvas(Drawing):
 class PosWarpNode:
 
     def __init__(self, node_id, input_nodes, properties):
-        if input_nodes[0] is None:
-            raise InvalidInputNodesLength(1)
         self.node_id = node_id
         self.f_node = input_nodes[0]
 
     def compute(self, height, wh_ratio):
-        return PosWarp(self.f_node.compute(height, wh_ratio))
+        f = self.f_node.compute(height, wh_ratio)
+        if f: return PosWarp(f)
 
     def visualise(self, height, wh_ratio):
         return
@@ -83,13 +85,12 @@ class PosWarpNode:
 class RelWarpNode:
 
     def __init__(self, node_id, input_nodes, properties):
-        if input_nodes[0] is None:
-            raise InvalidInputNodesLength(1)
         self.node_id = node_id
         self.f_node = input_nodes[0]
 
     def compute(self, height, wh_ratio):
-        return RelWarp(self.f_node.compute(height, wh_ratio))
+        f = self.f_node.compute(height, wh_ratio)
+        if f: return RelWarp(f)
 
     def visualise(self, height, wh_ratio):
         return
@@ -104,15 +105,13 @@ class GridNode:
 
     def compute(self, height, wh_ratio):
         # Get warp functions
-        if self.x_warp_node is None:
+        x_warp = self.x_warp_node.compute(height, wh_ratio)
+        if x_warp is None:
             x_warp = PosWarp(lambda i: i)
-        else:
-            x_warp = self.x_warp_node.compute(height, wh_ratio)
 
-        if self.y_warp_node is None:
+        y_warp = self.y_warp_node.compute(height, wh_ratio)
+        if y_warp is None:
             y_warp = PosWarp(lambda i: i)
-        else:
-            y_warp = self.y_warp_node.compute(height, wh_ratio)
 
         width = wh_ratio * height
         v_line_xs = x_warp.sample(self.num_v_lines)*width
@@ -120,8 +119,7 @@ class GridNode:
         return v_line_xs, h_line_ys
 
     def visualise(self, height, wh_ratio):
-        d = GridDrawing(str(self.node_id), height, wh_ratio, self.compute(height, wh_ratio))
-        return d.save()
+        return GridDrawing(str(self.node_id), height, wh_ratio, self.compute(height, wh_ratio)).save()
 
 class GridDrawing(Drawing):
 
@@ -146,22 +144,25 @@ class ShapeRepeaterNode:
         self.shape = properties['shape']
 
     def compute(self, height, wh_ratio):
-        v_line_xs, h_line_ys = self.grid_node.compute(height, wh_ratio)
-        polygons = []
-        for i in range(1, len(v_line_xs)):
-            for j in range(1, len(h_line_ys)):
-                x1 = v_line_xs[i-1]
-                x2 = v_line_xs[i]
-                y1 = h_line_ys[j-1]
-                y2 = h_line_ys[j]
-                polygons.append({'points': [(x1, y1), (x1, y2), (x2, y2)],
-                                'fill': 'black',
-                                'stroke': 'none'})
-        return polygons
+        output = self.grid_node.compute(height, wh_ratio)
+        if output:
+            v_line_xs, h_line_ys = output
+            polygons = []
+            for i in range(1, len(v_line_xs)):
+                for j in range(1, len(h_line_ys)):
+                    x1 = v_line_xs[i-1]
+                    x2 = v_line_xs[i]
+                    y1 = h_line_ys[j-1]
+                    y2 = h_line_ys[j]
+                    polygons.append({'points': [(x1, y1), (x1, y2), (x2, y2)],
+                                    'fill': 'black',
+                                    'stroke': 'none'})
+            return polygons
 
     def visualise(self, height, wh_ratio):
-        d = ShapeRepeaterDrawing(str(self.node_id), height, wh_ratio, self.compute(height, wh_ratio))
-        return d.save()
+        polygons = self.compute(height, wh_ratio)
+        if polygons:
+            return ShapeRepeaterDrawing(str(self.node_id), height, wh_ratio, polygons).save()
 
 class ShapeRepeaterDrawing(Drawing):
 
