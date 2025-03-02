@@ -47,13 +47,12 @@ class CanvasNode:
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
         self.input_node = input_nodes[0]
-        self.wh_ratio = properties['wh_ratio']
 
-    def get_svg_path(self, height):
-        vis = self.input_node.visualise(height, self.wh_ratio)
+    def get_svg_path(self, height, wh_ratio):
+        vis = self.input_node.visualise(height, wh_ratio)
         if vis: return vis
         # No input, return blank canvas
-        return BlankCanvas(str(self.node_id), height, self.wh_ratio).save()
+        return BlankCanvas(str(self.node_id), height, wh_ratio).save()
 
     def compute(self, height, wh_ratio):
         return self.input_node.compute(height, wh_ratio)

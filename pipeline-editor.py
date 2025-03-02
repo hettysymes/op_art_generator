@@ -61,8 +61,6 @@ class NodeItem(QGraphicsRectItem):
         self.input_ports = []
         self.output_ports = []
         self.property_values = {}
-
-        self.height = height
         
         # Initialize property values with defaults
         for prop in self.node_type.properties:
@@ -77,7 +75,14 @@ class NodeItem(QGraphicsRectItem):
     def update_canvas_image(self):
         """Add an SVG image to the node"""
         assert self.node_type.node_class == CanvasNode
-        svg_path = self.get_node().get_svg_path(self.height)
+        wh_ratio = self.property_values['wh_ratio']
+        title_height = 30
+        margin_x = 10
+        margin_y = 10
+        width = self.rect().width()-2*margin_x
+        height = width/wh_ratio
+        self.setRect(0, 0, self.rect().width(), height+title_height+margin_y)
+        svg_path = self.get_node().get_svg_path(height, wh_ratio)
         if self.svg_item:
             # Remove existing SVG item if there is one
             scene = self.scene()
@@ -86,31 +91,13 @@ class NodeItem(QGraphicsRectItem):
         
         # Create new SVG item
         self.svg_item = QGraphicsSvgItem(svg_path)
-        
-        # Calculate margins (10% of width/height)
-        margin_x = self.rect().width() * 0.1
-        margin_y = self.rect().height() * 0.1
-        
-        # Calculate available space for SVG (accounting for title area)
-        title_height = 20  # Approximate height for the title
-        available_width = self.rect().width() - (2 * margin_x)
-        available_height = self.rect().height() - title_height - (2 * margin_y)
-        
-        # Scale SVG to fit within available space
-        svg_size = self.svg_item.boundingRect().size()
-        scale_x = available_width / svg_size.width()
-        scale_y = available_height / svg_size.height()
-        scale = min(scale_x, scale_y)  # Maintain aspect ratio
-        
-        self.svg_item.setScale(scale)
-        
-        # Position SVG within the node
-        svg_pos_x = margin_x
-        svg_pos_y = title_height + margin_y
-        
-        # Make SVG a child of the node item
+
+        # Center horizontally
+        svg_pos_x = (self.rect().width() - width) / 2
+
+        # Apply position
         self.svg_item.setParentItem(self)
-        self.svg_item.setPos(svg_pos_x, svg_pos_y)
+        self.svg_item.setPos(svg_pos_x, title_height)
         self.svg_item.setZValue(2)  # Above the rectangle but below other elements
 
     def get_input_nodes(self):
@@ -173,7 +160,8 @@ class NodeItem(QGraphicsRectItem):
         # Draw node title
         painter.setFont(QFont("Arial", 10))
         if self.node_type.node_class == CanvasNode:
-            painter.drawText(self.rect(), Qt.AlignTop | Qt.AlignHCenter, self.title)
+            title_rect = self.rect().adjusted(0, 10, 0, 0)  # Shift the top edge down
+            painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.title)
         else:
             painter.drawText(self.rect(), Qt.AlignCenter, self.title)
         
