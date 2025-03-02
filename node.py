@@ -140,12 +140,13 @@ class ShapeRepeaterNode:
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
         self.grid_node = input_nodes[0]
-        self.shape = properties['shape']
+        self.shape_node = input_nodes[1]
 
     def compute(self, height, wh_ratio):
-        output = self.grid_node.compute(height, wh_ratio)
-        if output:
-            v_line_xs, h_line_ys = output
+        grid_out = self.grid_node.compute(height, wh_ratio)
+        shape = self.shape_node.compute(height, wh_ratio)
+        if grid_out and shape:
+            v_line_xs, h_line_ys = grid_out
             polygons = []
             for i in range(1, len(v_line_xs)):
                 for j in range(1, len(h_line_ys)):
@@ -153,9 +154,10 @@ class ShapeRepeaterNode:
                     x2 = v_line_xs[i]
                     y1 = h_line_ys[j-1]
                     y2 = h_line_ys[j]
-                    polygons.append({'points': [(x1, y1), (x1, y2), (x2, y2)],
-                                    'fill': 'black',
-                                    'stroke': 'none'})
+                    new_points = [(x1 + x*(x2-x1), y1 + y*(y2-y1)) for x,y in shape['points']]
+                    polygons.append({'points': new_points,
+                                    'fill': shape['fill'],
+                                    'stroke': shape['stroke']})
             return polygons
 
     def visualise(self, height, wh_ratio):
@@ -173,6 +175,25 @@ class PolygonDrawer(Drawing):
         self.add_bg()
         for p in self.polygons:
             self.dwg_add(self.dwg.polygon(**p))
+
+class PolygonNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        self.node_id = node_id
+        self.points = properties['points']
+        self.fill = properties['fill']
+
+    def compute(self, height, wh_ratio):
+        return {'points': self.points,
+                'fill': self.fill,
+                'stroke': 'none'}
+
+    def visualise(self, height, wh_ratio):
+        width = wh_ratio * height
+        polygon = self.compute(height, wh_ratio)
+        new_points = [(x*width, y*height) for x,y in polygon['points']]
+        polygon['points'] = new_points
+        return PolygonDrawer(str(self.node_id), height, wh_ratio, [polygon]).save()
 
 class CheckerboardNode:
 
