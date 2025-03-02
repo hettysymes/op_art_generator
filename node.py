@@ -8,7 +8,7 @@ class EmptyNode:
     def __init__(self, node_id, input_nodes, properties):
         pass
 
-    def compute(self, height, wh_ratio):
+    def compute(self):
         return
 
     def visualise(self, height, wh_ratio):
@@ -23,7 +23,7 @@ class CubicFunNode:
         self.c_coeff = properties['c_coeff']
         self.d_coeff = properties['d_coeff']
 
-    def compute(self, height, wh_ratio):
+    def compute(self):
         return cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff)
 
     def visualise(self, height, wh_ratio):
@@ -35,7 +35,7 @@ class PiecewiseFunNode:
         self.node_id = node_id
         self.points = properties['points']
 
-    def compute(self, height, wh_ratio):
+    def compute(self):
         xs, ys = zip(*self.points)
         return lambda i: np.interp(i, xs, ys)
 
@@ -54,8 +54,8 @@ class CanvasNode:
         # No input, return blank canvas
         return BlankCanvas(str(self.node_id), height, wh_ratio).save()
 
-    def compute(self, height, wh_ratio):
-        return self.input_node.compute(height, wh_ratio)
+    def compute(self):
+        return self.input_node.compute()
 
     def visualise(self, height, wh_ratio):
         return
@@ -74,8 +74,8 @@ class PosWarpNode:
         self.node_id = node_id
         self.f_node = input_nodes[0]
 
-    def compute(self, height, wh_ratio):
-        f = self.f_node.compute(height, wh_ratio)
+    def compute(self):
+        f = self.f_node.compute()
         if f: return PosWarp(f)
 
     def visualise(self, height, wh_ratio):
@@ -87,8 +87,8 @@ class RelWarpNode:
         self.node_id = node_id
         self.f_node = input_nodes[0]
 
-    def compute(self, height, wh_ratio):
-        f = self.f_node.compute(height, wh_ratio)
+    def compute(self):
+        f = self.f_node.compute()
         if f: return RelWarp(f)
 
     def visualise(self, height, wh_ratio):
@@ -102,29 +102,30 @@ class GridNode:
         self.num_h_lines = properties['num_h_lines']
         self.x_warp_node, self.y_warp_node = input_nodes
 
-    def compute(self, height, wh_ratio):
+    def compute(self):
         # Get warp functions
-        x_warp = self.x_warp_node.compute(height, wh_ratio)
+        x_warp = self.x_warp_node.compute()
         if x_warp is None:
             x_warp = PosWarp(lambda i: i)
 
-        y_warp = self.y_warp_node.compute(height, wh_ratio)
+        y_warp = self.y_warp_node.compute()
         if y_warp is None:
             y_warp = PosWarp(lambda i: i)
 
-        width = wh_ratio * height
-        v_line_xs = x_warp.sample(self.num_v_lines)*width
-        h_line_ys = y_warp.sample(self.num_h_lines)*height
+        v_line_xs = x_warp.sample(self.num_v_lines)
+        h_line_ys = y_warp.sample(self.num_h_lines)
         return v_line_xs, h_line_ys
 
     def visualise(self, height, wh_ratio):
-        return GridDrawing(str(self.node_id), height, wh_ratio, self.compute(height, wh_ratio)).save()
+        return GridDrawing(str(self.node_id), height, wh_ratio, self.compute()).save()
 
 class GridDrawing(Drawing):
 
     def __init__(self, out_name, height, wh_ratio, inputs):
         super().__init__(out_name, height, wh_ratio)
         self.v_line_xs, self.h_line_ys = inputs
+        self.v_line_xs *= self.width
+        self.h_line_ys *= self.height
 
     def draw(self):
         self.add_bg()
@@ -142,9 +143,9 @@ class ShapeRepeaterNode:
         self.grid_node = input_nodes[0]
         self.shape_node = input_nodes[1]
 
-    def compute(self, height, wh_ratio):
-        grid_out = self.grid_node.compute(height, wh_ratio)
-        shape = self.shape_node.compute(height, wh_ratio)
+    def compute(self):
+        grid_out = self.grid_node.compute()
+        shape = self.shape_node.compute()
         if grid_out and shape:
             v_line_xs, h_line_ys = grid_out
             polygons = []
@@ -161,7 +162,7 @@ class ShapeRepeaterNode:
             return polygons
 
     def visualise(self, height, wh_ratio):
-        polygons = self.compute(height, wh_ratio)
+        polygons = self.compute()
         if polygons:
             return PolygonDrawer(str(self.node_id), height, wh_ratio, polygons).save()
 
@@ -174,6 +175,8 @@ class PolygonDrawer(Drawing):
     def draw(self):
         self.add_bg()
         for p in self.polygons:
+            scaled_points = [(x*self.width, y*self.height) for x,y in p['points']]
+            p['points'] = scaled_points
             self.dwg_add(self.dwg.polygon(**p))
 
 class PolygonNode:
@@ -183,17 +186,13 @@ class PolygonNode:
         self.points = properties['points']
         self.fill = properties['fill']
 
-    def compute(self, height, wh_ratio):
+    def compute(self):
         return {'points': self.points,
                 'fill': self.fill,
                 'stroke': 'none'}
 
     def visualise(self, height, wh_ratio):
-        width = wh_ratio * height
-        polygon = self.compute(height, wh_ratio)
-        new_points = [(x*width, y*height) for x,y in polygon['points']]
-        polygon['points'] = new_points
-        return PolygonDrawer(str(self.node_id), height, wh_ratio, [polygon]).save()
+        return PolygonDrawer(str(self.node_id), height, wh_ratio, [self.compute()]).save()
 
 class CheckerboardNode:
 
@@ -203,10 +202,10 @@ class CheckerboardNode:
         self.shape1_node = input_nodes[1]
         self.shape2_node = input_nodes[2]
 
-    def compute(self, height, wh_ratio):
-        grid_out = self.grid_node.compute(height, wh_ratio)
-        shape1 = self.shape1_node.compute(height, wh_ratio)
-        shape2 = self.shape2_node.compute(height, wh_ratio)
+    def compute(self):
+        grid_out = self.grid_node.compute()
+        shape1 = self.shape1_node.compute()
+        shape2 = self.shape2_node.compute()
         if grid_out and shape1 and shape2:
             v_line_xs, h_line_ys = grid_out
             polygons = []
@@ -228,6 +227,6 @@ class CheckerboardNode:
             return polygons
 
     def visualise(self, height, wh_ratio):
-        polygons = self.compute(height, wh_ratio)
+        polygons = self.compute()
         if polygons:
             return PolygonDrawer(str(self.node_id), height, wh_ratio, polygons).save()
