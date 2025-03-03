@@ -141,12 +141,12 @@ class ShapeRepeaterNode:
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
         self.grid_node = input_nodes[0]
-        self.shape_node = input_nodes[1]
+        self.element_node = input_nodes[1]
 
     def compute(self):
         grid_out = self.grid_node.compute()
-        shape = self.shape_node.compute()
-        if grid_out and shape:
+        element = self.element_node.compute() # TODO: list of polygons
+        if grid_out and element:
             v_line_xs, h_line_ys = grid_out
             polygons = []
             for i in range(1, len(v_line_xs)):
@@ -155,10 +155,11 @@ class ShapeRepeaterNode:
                     x2 = v_line_xs[i]
                     y1 = h_line_ys[j-1]
                     y2 = h_line_ys[j]
-                    new_points = [(x1 + x*(x2-x1), y1 + y*(y2-y1)) for x,y in shape['points']]
-                    polygons.append({'points': new_points,
-                                    'fill': shape['fill'],
-                                    'stroke': shape['stroke']})
+                    for p in element:
+                        new_points = [(x1 + x*(x2-x1), y1 + y*(y2-y1)) for x,y in p['points']]
+                        polygons.append({'points': new_points,
+                                         'fill': p['fill'],
+                                         'stroke': p['stroke']})
             return polygons
 
     def visualise(self, height, wh_ratio):
@@ -187,43 +188,44 @@ class PolygonNode:
         self.fill = properties['fill']
 
     def compute(self):
-        return {'points': self.points,
-                'fill': self.fill,
-                'stroke': 'none'}
+        return [{'points': self.points,
+                 'fill': self.fill,
+                 'stroke': 'none'}]
 
     def visualise(self, height, wh_ratio):
-        return PolygonDrawer(str(self.node_id), height, wh_ratio, [self.compute()]).save()
+        return PolygonDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
 
 class CheckerboardNode:
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
         self.grid_node = input_nodes[0]
-        self.shape1_node = input_nodes[1]
-        self.shape2_node = input_nodes[2]
+        self.element1_node = input_nodes[1]
+        self.element2_node = input_nodes[2]
 
     def compute(self):
         grid_out = self.grid_node.compute()
-        shape1 = self.shape1_node.compute()
-        shape2 = self.shape2_node.compute()
-        if grid_out and shape1 and shape2:
+        element1 = self.element1_node.compute()
+        element2 = self.element2_node.compute()
+        if grid_out and element1 and element2:
             v_line_xs, h_line_ys = grid_out
             polygons = []
-            shape1_starts = True
+            element1_starts = True
             for i in range(1, len(v_line_xs)):
-                shape1_turn = shape1_starts
+                element1_turn = element1_starts
                 for j in range(1, len(h_line_ys)):
                     x1 = v_line_xs[i-1]
                     x2 = v_line_xs[i]
                     y1 = h_line_ys[j-1]
                     y2 = h_line_ys[j]
-                    shape = shape1 if shape1_turn else shape2
-                    new_points = [(x1 + x*(x2-x1), y1 + y*(y2-y1)) for x,y in shape['points']]
-                    polygons.append({'points': new_points,
-                                    'fill': shape['fill'],
-                                    'stroke': shape['stroke']})
-                    shape1_turn = not shape1_turn
-                shape1_starts = not shape1_starts
+                    element = element1 if element1_turn else element2
+                    for p in element:
+                        new_points = [(x1 + x*(x2-x1), y1 + y*(y2-y1)) for x,y in p['points']]
+                        polygons.append({'points': new_points,
+                                         'fill': p['fill'],
+                                         'stroke': p['stroke']})
+                    element1_turn = not element1_turn
+                element1_starts = not element1_starts
             return polygons
 
     def visualise(self, height, wh_ratio):
