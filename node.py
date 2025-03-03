@@ -136,6 +136,28 @@ class GridDrawing(Drawing):
             # Draw horizontal line
             self.dwg_add(self.dwg.line((0, y), (self.width, y), stroke='black'))
 
+class Polygon:
+
+    def __init__(self, points, fill, stroke):
+        self.points = points
+        self.fill = fill
+        self.stroke = stroke
+
+    def translate(self, tx, ty):
+        return Polygon([(tx+x, ty+y) for x,y in self.points], 
+                       self.fill, 
+                       self.stroke)
+    
+    def scale(self, sx, sy):
+        return Polygon([(x*sx, y*sy) for x,y in self.points], 
+                       self.fill, 
+                       self.stroke)
+    
+    def get(self, dwg):
+        return dwg.polygon(points=self.points,
+                           fill=self.fill,
+                           stroke=self.stroke)
+
 class ShapeRepeaterNode:
 
     def __init__(self, node_id, input_nodes, properties):
@@ -156,10 +178,7 @@ class ShapeRepeaterNode:
                     y1 = h_line_ys[j-1]
                     y2 = h_line_ys[j]
                     for p in element:
-                        new_points = [(x1 + x*(x2-x1), y1 + y*(y2-y1)) for x,y in p['points']]
-                        polygons.append({'points': new_points,
-                                         'fill': p['fill'],
-                                         'stroke': p['stroke']})
+                        polygons.append(p.scale(x2-x1, y2-y1).translate(x1, y1))
             return polygons
 
     def visualise(self, height, wh_ratio):
@@ -176,9 +195,7 @@ class PolygonDrawer(Drawing):
     def draw(self):
         self.add_bg()
         for p in self.polygons:
-            scaled_points = [(x*self.width, y*self.height) for x,y in p['points']]
-            p['points'] = scaled_points
-            self.dwg_add(self.dwg.polygon(**p))
+            self.dwg_add(p.scale(self.width, self.height).get(self.dwg))
 
 class PolygonNode:
 
@@ -188,9 +205,7 @@ class PolygonNode:
         self.fill = properties['fill']
 
     def compute(self):
-        return [{'points': self.points,
-                 'fill': self.fill,
-                 'stroke': 'none'}]
+        return [Polygon(self.points, self.fill, 'none')]
 
     def visualise(self, height, wh_ratio):
         return PolygonDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
@@ -220,10 +235,7 @@ class CheckerboardNode:
                     y2 = h_line_ys[j]
                     element = element1 if element1_turn else element2
                     for p in element:
-                        new_points = [(x1 + x*(x2-x1), y1 + y*(y2-y1)) for x,y in p['points']]
-                        polygons.append({'points': new_points,
-                                         'fill': p['fill'],
-                                         'stroke': p['stroke']})
+                        polygons.append(p.scale(x2-x1, y2-y1).translate(x1, y1))
                     element1_turn = not element1_turn
                 element1_starts = not element1_starts
             return polygons
