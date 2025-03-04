@@ -146,7 +146,7 @@ class ShapeRepeaterNode:
 
     def compute(self):
         grid_out = self.grid_node.compute()
-        element = self.element_node.compute() # TODO: list of polygons
+        element = self.element_node.compute()
         if grid_out and element:
             v_line_xs, h_line_ys = grid_out
             ret_element = Element()
