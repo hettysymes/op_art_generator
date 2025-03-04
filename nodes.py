@@ -2,6 +2,7 @@ from Warp import PosWarp, RelWarp
 from Drawing import Drawing
 from utils import cubic_f
 import numpy as np
+from shapes import Element, Polygon, Ellipse
 
 class EmptyNode:
 
@@ -136,49 +137,6 @@ class GridDrawing(Drawing):
             # Draw horizontal line
             self.dwg_add(self.dwg.line((0, y), (self.width, y), stroke='black'))
 
-class Polygon:
-
-    def __init__(self, points, fill, stroke):
-        self.points = points
-        self.fill = fill
-        self.stroke = stroke
-
-    def translate(self, tx, ty):
-        return Polygon([(tx+x, ty+y) for x,y in self.points], 
-                       self.fill, 
-                       self.stroke)
-    
-    def scale(self, sx, sy):
-        return Polygon([(x*sx, y*sy) for x,y in self.points], 
-                       self.fill, 
-                       self.stroke)
-    
-    def get(self, dwg):
-        return dwg.polygon(points=self.points,
-                           fill=self.fill,
-                           stroke=self.stroke)
-
-class Ellipse:
-
-    def __init__(self, center, r, fill, stroke):
-        self.center = center
-        self.r = r
-        self.fill = fill
-        self.stroke = stroke
-
-    def translate(self, tx, ty):
-        return Ellipse((self.center[0] + tx, self.center[1] + ty),
-                        self.r, self.fill, self.stroke)
-    
-    def scale(self, sx, sy):
-        return Ellipse((self.center[0]*sx, self.center[1]*sy), (self.r[0]*sx, self.r[1]*sy), self.fill, self.stroke)
-    
-    def get(self, dwg):
-        return dwg.ellipse(center=self.center,
-                           r=self.r,
-                           fill=self.fill,
-                           stroke=self.stroke)
-
 class ShapeRepeaterNode:
 
     def __init__(self, node_id, input_nodes, properties):
@@ -191,32 +149,33 @@ class ShapeRepeaterNode:
         element = self.element_node.compute() # TODO: list of polygons
         if grid_out and element:
             v_line_xs, h_line_ys = grid_out
-            shapes = []
+            ret_element = Element()
             for i in range(1, len(v_line_xs)):
                 for j in range(1, len(h_line_ys)):
                     x1 = v_line_xs[i-1]
                     x2 = v_line_xs[i]
                     y1 = h_line_ys[j-1]
                     y2 = h_line_ys[j]
-                    for s in element:
-                        shapes.append(s.scale(x2-x1, y2-y1).translate(x1, y1))
-            return shapes
+                    for shape in element:
+                        ret_element.add(shape.scale(x2-x1, y2-y1).translate(x1, y1))
+            return ret_element
 
     def visualise(self, height, wh_ratio):
-        shapes = self.compute()
-        if shapes:
-            return ShapeDrawer(str(self.node_id), height, wh_ratio, shapes).save()
+        element = self.compute()
+        if element:
+            return ElementDrawer(str(self.node_id), height, wh_ratio, element).save()
 
-class ShapeDrawer(Drawing):
+class ElementDrawer(Drawing):
 
     def __init__(self, out_name, height, wh_ratio, inputs):
         super().__init__(out_name, height, wh_ratio)
-        self.shapes = inputs
+        assert isinstance(inputs, Element)
+        self.element = inputs
 
     def draw(self):
         self.add_bg()
-        for s in self.shapes:
-            self.dwg_add(s.scale(self.width, self.height).get(self.dwg))
+        for shape in self.element:
+            self.dwg_add(shape.scale(self.width, self.height).get(self.dwg))
 
 class PolygonNode:
 
@@ -226,10 +185,10 @@ class PolygonNode:
         self.fill = properties['fill']
 
     def compute(self):
-        return [Polygon(self.points, self.fill, 'none')]
+        return Element([Polygon(self.points, self.fill, 'none')])
 
     def visualise(self, height, wh_ratio):
-        return ShapeDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
+        return ElementDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
 
 class EllipseNode:
 
@@ -240,10 +199,10 @@ class EllipseNode:
         self.fill = properties['fill']
 
     def compute(self):
-        return [Ellipse((0.5, 0.5), (self.rx, self.ry), self.fill, 'none')]
+        return Element([Ellipse((0.5, 0.5), (self.rx, self.ry), self.fill, 'none')])
 
     def visualise(self, height, wh_ratio):
-        return ShapeDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
+        return ElementDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
 
 class CheckerboardNode:
 
@@ -259,7 +218,7 @@ class CheckerboardNode:
         element2 = self.element2_node.compute()
         if grid_out and element1 and element2:
             v_line_xs, h_line_ys = grid_out
-            shapes = []
+            ret_element = Element()
             element1_starts = True
             for i in range(1, len(v_line_xs)):
                 element1_turn = element1_starts
@@ -269,13 +228,13 @@ class CheckerboardNode:
                     y1 = h_line_ys[j-1]
                     y2 = h_line_ys[j]
                     element = element1 if element1_turn else element2
-                    for s in element:
-                        shapes.append(s.scale(x2-x1, y2-y1).translate(x1, y1))
+                    for shape in element:
+                        ret_element.add(shape.scale(x2-x1, y2-y1).translate(x1, y1))
                     element1_turn = not element1_turn
                 element1_starts = not element1_starts
-            return shapes
+            return ret_element
 
     def visualise(self, height, wh_ratio):
-        shapes = self.compute()
-        if shapes:
-            return ShapeDrawer(str(self.node_id), height, wh_ratio, shapes).save()
+        element = self.compute()
+        if element:
+            return ElementDrawer(str(self.node_id), height, wh_ratio, element).save()
