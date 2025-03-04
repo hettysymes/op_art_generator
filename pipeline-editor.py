@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
 from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
-from node import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode
+from node import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode, EllipseNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -497,6 +497,15 @@ class PipelineScene(QGraphicsScene):
                         description="")
         ]
 
+        ellipse_props = [
+            NodeProperty("rx", "float", default_value=0.5,
+                        description=""),
+            NodeProperty("ry", "float", default_value=0.5,
+                        description=""),
+            NodeProperty("fill", "string", default_value="black",
+                        description="")
+        ]
+
         return [
             NodeType("Grid", input_count=2, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
             NodeType("Cubic Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=cubic_fun_props, node_class=CubicFunNode),
@@ -506,7 +515,8 @@ class PipelineScene(QGraphicsScene):
             NodeType("Shape Repeater", input_count=2, output_count=1, color=QColor(220, 250, 220), properties=[], node_class=ShapeRepeaterNode),
             NodeType("Canvas", input_count=1, output_count=1, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode),
             NodeType("Checkerboard", input_count=3, output_count=1, color=QColor(220, 250, 220), properties=[], node_class=CheckerboardNode),
-            NodeType("Polygon", input_count=0, output_count=1, color=QColor(219, 167, 176), properties=polygon_props, node_class=PolygonNode)
+            NodeType("Polygon", input_count=0, output_count=1, color=QColor(219, 167, 176), properties=polygon_props, node_class=PolygonNode),
+            NodeType("Ellipse", input_count=0, output_count=1, color=QColor(219, 167, 176), properties=ellipse_props, node_class=EllipseNode)
         ]
     
     def add_node_from_type(self, node_type, pos):
