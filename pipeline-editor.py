@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
 from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
-from nodes import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode, EllipseNode
+from nodes import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode, EllipseNode, CustomFunNode
 import uuid
 
 class ConnectionSignals(QObject):
@@ -480,6 +480,11 @@ class PipelineScene(QGraphicsScene):
                         description="")
         ]
 
+        custom_fun_props = [
+            NodeProperty("fun_def", "string", default_value="x", 
+                        description="")
+        ]
+
         piecewise_fun_props = [
             NodeProperty("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)], 
                         description="")
@@ -510,6 +515,7 @@ class PipelineScene(QGraphicsScene):
             NodeType("Grid", input_count=2, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
             NodeType("Cubic Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=cubic_fun_props, node_class=CubicFunNode),
             NodeType("Piecewise Linear Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
+            NodeType("Custom Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=custom_fun_props, node_class=CustomFunNode),
             NodeType("Position Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
             NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
             NodeType("Shape Repeater", input_count=2, output_count=1, color=QColor(220, 250, 220), properties=[], node_class=ShapeRepeaterNode),

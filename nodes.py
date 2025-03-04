@@ -3,6 +3,7 @@ from Drawing import Drawing
 from utils import cubic_f
 import numpy as np
 from shapes import Element, Polygon, Ellipse
+import sympy as sp
 
 class EmptyNode:
 
@@ -26,6 +27,20 @@ class CubicFunNode:
 
     def compute(self):
         return cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff)
+
+    def visualise(self, height, wh_ratio):
+        return
+    
+class CustomFunNode:
+
+    def __init__(self, node_id, input_nodes, properties):
+        self.node_id = node_id
+        self.fun_def = properties['fun_def']
+
+    def compute(self):
+        x = sp.symbols('x')
+        parsed_expr = sp.sympify(self.fun_def)
+        return sp.lambdify(x, parsed_expr)
 
     def visualise(self, height, wh_ratio):
         return
