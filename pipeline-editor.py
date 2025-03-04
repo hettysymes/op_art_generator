@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
 from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
-from nodes import GridNode, ShapeRepeaterNode, CubicFunNode, PosWarpNode, RelWarpNode, PiecewiseFunNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode, EllipseNode, CustomFunNode
+from nodes import GridNode, ShapeRepeaterNode, PosWarpNode, RelWarpNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode, EllipseNode
+from function_nodes import CubicFunNode, PiecewiseFunNode, CustomFunNode
 import uuid
 
 class ConnectionSignals(QObject):
