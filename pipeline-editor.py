@@ -108,7 +108,7 @@ class NodeItem(QGraphicsRectItem):
         input_nodes = []
         for input_port in self.input_ports:
             if len(input_port.edges) > 0:
-                edge = input_port.edges[0] # TODO: assume only 0 or 1 edge
+                edge = input_port.edges[0] # Each input port can only have one edge
                 src_port = edge.source_port
                 input_nodes.append(src_port.parentItem())
             else:
@@ -118,20 +118,16 @@ class NodeItem(QGraphicsRectItem):
     def get_output_nodes(self):
         output_nodes = []
         for output_port in self.output_ports:
-            if len(output_port.edges) > 0:
-                edge = output_port.edges[0] # TODO: assume only 0 or 1 edge
+            for edge in output_port.edges: # Each output port can have 1+ edges
                 dest_port = edge.dest_port
                 output_nodes.append(dest_port.parentItem())
-            else:
-                output_nodes.append(None)
         return output_nodes
 
     def update_canvases(self):
         if self.node_type.node_class == CanvasNode:
             self.update_canvas_image()
-        output_nodes = self.get_output_nodes()
-        for output_node in output_nodes:
-            if output_node: output_node.update_canvases()
+        for output_node in self.get_output_nodes():
+            output_node.update_canvases()
 
     def get_node(self):
         input_nodes = self.get_input_nodes()
