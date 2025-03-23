@@ -12,6 +12,7 @@ from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
 from nodes import GridNode, ShapeRepeaterNode, PosWarpNode, RelWarpNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode, EllipseNode
 from function_nodes import CubicFunNode, PiecewiseFunNode, CustomFunNode
 import uuid
+from port_types import is_port_type_compatible
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
@@ -32,10 +33,10 @@ class NodeProperty:
 
 class NodeType:
     """Defines a type of node with specific inputs and outputs"""
-    def __init__(self, name, input_count=1, output_count=1, color=QColor(200, 230, 250), properties=None, node_class=None):
+    def __init__(self, name, node_class, color=QColor(200, 230, 250), properties=None):
         self.name = name
-        self.input_count = input_count
-        self.output_count = output_count
+        self.input_ports = node_class.INPUT_PORTS
+        self.output_ports = node_class.OUTPUT_PORTS
         self.color = color
         self.properties = properties or []
         self.node_class = node_class
@@ -142,15 +143,17 @@ class NodeItem(QGraphicsRectItem):
         
     def create_ports(self):
         # Create input ports (left side)
-        for i in range(self.node_type.input_count):
-            y_offset = (i + 1) * self.rect().height() / (self.node_type.input_count + 1)
-            input_port = PortItem(self, -10, y_offset, is_input=True)
+        input_count = len(self.node_type.input_ports)
+        for i, port_type in enumerate(self.node_type.input_ports):
+            y_offset = (i + 1) * self.rect().height() / (input_count + 1)
+            input_port = PortItem(self, port_type, -10, y_offset, is_input=True)
             self.input_ports.append(input_port)
         
         # Create output ports (right side)
-        for i in range(self.node_type.output_count):
-            y_offset = (i + 1) * self.rect().height() / (self.node_type.output_count + 1)
-            output_port = PortItem(self, self.rect().width() + 10, y_offset, is_input=False)
+        output_count = len(self.node_type.output_ports)
+        for i, port_type in enumerate(self.node_type.output_ports):
+            y_offset = (i + 1) * self.rect().height() / (output_count + 1)
+            output_port = PortItem(self, port_type, self.rect().width() + 10, y_offset, is_input=False)
             self.output_ports.append(output_port)
         
     def paint(self, painter, option, widget):
@@ -168,16 +171,14 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(QFont("Arial", 8))
         
         # Input port labels
-        if self.node_type.input_count > 1:
-            for i, port in enumerate(self.input_ports):
-                label_pos = port.pos() + QPointF(5, 0)  # Position just right of the port
-                painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"In {i+1}")
+        for i, port in enumerate(self.input_ports):
+            label_pos = port.pos() + QPointF(5, 0)  # Position just right of the port
+            painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"In {i+1}")
         
         # Output port labels
-        if self.node_type.output_count > 1:
-            for i, port in enumerate(self.output_ports):
-                label_pos = port.pos() + QPointF(-25, 0)  # Position just left of the port
-                painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"Out {i+1}")
+        for i, port in enumerate(self.output_ports):
+            label_pos = port.pos() + QPointF(-25, 0)  # Position just left of the port
+            painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"Out {i+1}")
         
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -192,13 +193,14 @@ class NodeItem(QGraphicsRectItem):
 class PortItem(QGraphicsEllipseItem):
     """Represents connection points on nodes"""
     
-    def __init__(self, parent, x, y, is_input=True):
+    def __init__(self, parent, port_type, x, y, is_input=True):
         size = 12  # Slightly larger port for easier clicking
         super().__init__(-size/2, -size/2, size, size, parent)
         self.setPos(x, y)
         self.setZValue(1)
         self.is_input = is_input
         self.edges = []
+        self.port_type = port_type
         
         # Make port interactive
         self.setAcceptHoverEvents(True)
@@ -513,17 +515,17 @@ class PipelineScene(QGraphicsScene):
         ]
 
         return [
-            NodeType("Grid", input_count=2, output_count=1, color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
-            NodeType("Cubic Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=cubic_fun_props, node_class=CubicFunNode),
-            NodeType("Piecewise Linear Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
-            NodeType("Custom Function", input_count=0, output_count=1, color=QColor(227, 180, 141), properties=custom_fun_props, node_class=CustomFunNode),
-            NodeType("Position Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
-            NodeType("Relative Warp", input_count=1, output_count=1, color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
-            NodeType("Shape Repeater", input_count=2, output_count=1, color=QColor(220, 250, 220), properties=[], node_class=ShapeRepeaterNode),
-            NodeType("Canvas", input_count=1, output_count=1, color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode),
-            NodeType("Checkerboard", input_count=3, output_count=1, color=QColor(220, 250, 220), properties=[], node_class=CheckerboardNode),
-            NodeType("Polygon", input_count=0, output_count=1, color=QColor(219, 167, 176), properties=polygon_props, node_class=PolygonNode),
-            NodeType("Ellipse", input_count=0, output_count=1, color=QColor(219, 167, 176), properties=ellipse_props, node_class=EllipseNode)
+            NodeType("Grid", color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
+            NodeType("Cubic Function", color=QColor(227, 180, 141), properties=cubic_fun_props, node_class=CubicFunNode),
+            NodeType("Piecewise Linear Function", color=QColor(227, 180, 141), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
+            NodeType("Custom Function", color=QColor(227, 180, 141), properties=custom_fun_props, node_class=CustomFunNode),
+            NodeType("Position Warp", color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
+            NodeType("Relative Warp", color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
+            NodeType("Shape Repeater", color=QColor(220, 250, 220), properties=[], node_class=ShapeRepeaterNode),
+            NodeType("Canvas", color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode),
+            NodeType("Checkerboard", color=QColor(220, 250, 220), properties=[], node_class=CheckerboardNode),
+            NodeType("Polygon", color=QColor(219, 167, 176), properties=polygon_props, node_class=PolygonNode),
+            NodeType("Ellipse", color=QColor(219, 167, 176), properties=ellipse_props, node_class=EllipseNode)
         ]
     
     def add_node_from_type(self, node_type, pos):
@@ -531,34 +533,6 @@ class PipelineScene(QGraphicsScene):
         new_node = NodeItem(pos.x(), pos.y(), 150, 80, node_type)
         self.addItem(new_node)
         return new_node
-    
-    def add_custom_node(self, pos):
-        """Add a custom node with user-defined inputs and outputs"""
-        node_name, ok = QInputDialog.getText(None, "Custom Node", "Enter node name:")
-        if not ok or not node_name:
-            return
-        
-        input_count, ok = QInputDialog.getInt(None, "Custom Node", "Number of input ports:", 1, 0, 10, 1)
-        if not ok:
-            return
-        
-        output_count, ok = QInputDialog.getInt(None, "Custom Node", "Number of output ports:", 1, 0, 10, 1)
-        if not ok:
-            return
-        
-        color = QColorDialog.getColor(QColor(200, 230, 250), None, "Select Node Color")
-        if not color.isValid():
-            color = QColor(200, 230, 250)
-        
-        # Define custom properties
-        custom_props = [
-            NodeProperty("Description", "string", default_value="Custom node"),
-            NodeProperty("Process Time", "float", default_value=1.0, min_value=0.1, max_value=100.0),
-            NodeProperty("Enabled", "bool", default_value=True)
-        ]
-        
-        custom_type = NodeType(node_name, input_count, output_count, color, properties=custom_props)
-        return self.add_node_from_type(custom_type, pos)
     
     def edit_node_properties(self, node):
         """Open a dialog to edit the node's properties"""
@@ -599,7 +573,8 @@ class PipelineScene(QGraphicsScene):
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.edges) > 0
                 
-                if not connection_exists and not target_has_connection:
+                if not connection_exists and not target_has_connection \
+                    and is_port_type_compatible(source_port.port_type, dest_port.port_type):
                     edge = EdgeItem(source_port, dest_port)
                     self.addItem(edge)
         
@@ -751,14 +726,9 @@ class PipelineScene(QGraphicsScene):
             
             # Add actions for each node type
             for node_type in self.node_types:
-                if node_type.name == "Custom Node":
-                    # Special handling for custom node
-                    action = QAction(node_type.name, add_node_menu)
-                    action.triggered.connect(lambda checked=False, pos=event.scenePos(): self.add_custom_node(pos))
-                else:
-                    action = QAction(node_type.name, add_node_menu)
-                    action.triggered.connect(lambda checked=False, nt=node_type, pos=event.scenePos(): 
-                                           self.add_node_from_type(nt, pos))
+                action = QAction(node_type.name, add_node_menu)
+                action.triggered.connect(lambda checked=False, nt=node_type, pos=event.scenePos(): 
+                                        self.add_node_from_type(nt, pos))
                 add_node_menu.addAction(action)
             
             menu.exec_(event.screenPos())

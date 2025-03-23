@@ -1,17 +1,11 @@
 from utils import cubic_f
+from port_types import PortType
 import sympy as sp
 import numpy as np
 
-class Function:
-    
-    def __init__(self, fun):
-        assert callable(fun)
-        self.fun = fun
-
-    def __call__(self, *args, **kwargs):
-        return self.fun(*args, **kwargs)
-
 class CubicFunNode:
+    INPUT_PORTS = []
+    OUTPUT_PORTS = [PortType.FUNCTION]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -21,12 +15,14 @@ class CubicFunNode:
         self.d_coeff = properties['d_coeff']
 
     def compute(self):
-        return Function(cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff))
+        return cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff)
 
     def visualise(self, height, wh_ratio):
         return
     
 class CustomFunNode:
+    INPUT_PORTS = []
+    OUTPUT_PORTS = [PortType.FUNCTION]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -35,12 +31,14 @@ class CustomFunNode:
     def compute(self):
         x = sp.symbols('x')
         parsed_expr = sp.sympify(self.fun_def)
-        return Function(sp.lambdify(x, parsed_expr))
+        return sp.lambdify(x, parsed_expr)
 
     def visualise(self, height, wh_ratio):
         return
     
 class PiecewiseFunNode:
+    INPUT_PORTS = []
+    OUTPUT_PORTS = [PortType.FUNCTION]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -48,7 +46,7 @@ class PiecewiseFunNode:
 
     def compute(self):
         xs, ys = zip(*self.points)
-        return Function(lambda i: np.interp(i, xs, ys))
+        return lambda i: np.interp(i, xs, ys)
 
     def visualise(self, height, wh_ratio):
         return

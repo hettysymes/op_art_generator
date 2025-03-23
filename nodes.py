@@ -1,9 +1,11 @@
 from Warp import PosWarp, RelWarp
 from Drawing import Drawing
 from shapes import Element, Polygon, Ellipse
-from function_nodes import Function
+from port_types import PortType
 
 class EmptyNode:
+    INPUT_PORTS = []
+    OUTPUT_PORTS = []
 
     def __init__(self, node_id, input_nodes, properties):
         pass
@@ -15,6 +17,8 @@ class EmptyNode:
         return
 
 class CanvasNode:
+    INPUT_PORTS = [PortType.VISUALISABLE]
+    OUTPUT_PORTS = []
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -41,6 +45,8 @@ class BlankCanvas(Drawing):
         self.add_bg()
 
 class PosWarpNode:
+    INPUT_PORTS = [PortType.FUNCTION]
+    OUTPUT_PORTS = [PortType.WARP]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -48,14 +54,14 @@ class PosWarpNode:
 
     def compute(self):
         f = self.f_node.compute()
-        if f:
-            assert isinstance(f, Function)
-            return PosWarp(f)
+        if f: return PosWarp(f)
 
     def visualise(self, height, wh_ratio):
         return
 
 class RelWarpNode:
+    INPUT_PORTS = [PortType.FUNCTION]
+    OUTPUT_PORTS = [PortType.WARP]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -63,14 +69,14 @@ class RelWarpNode:
 
     def compute(self):
         f = self.f_node.compute()
-        if f:
-            assert isinstance(f, Function)
-            return RelWarp(f)
+        if f: return RelWarp(f)
 
     def visualise(self, height, wh_ratio):
         return
 
 class GridNode:
+    INPUT_PORTS = [PortType.WARP, PortType.WARP]
+    OUTPUT_PORTS = [PortType.GRID]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -83,10 +89,14 @@ class GridNode:
         x_warp = self.x_warp_node.compute()
         if x_warp is None:
             x_warp = PosWarp(lambda i: i)
+        else:
+            assert isinstance(x_warp, PosWarp) or isinstance(x_warp, RelWarp)
 
         y_warp = self.y_warp_node.compute()
         if y_warp is None:
             y_warp = PosWarp(lambda i: i)
+        else:
+            assert isinstance(y_warp, PosWarp) or isinstance(y_warp, RelWarp)
 
         v_line_xs = x_warp.sample(self.num_v_lines)
         h_line_ys = y_warp.sample(self.num_h_lines)
@@ -113,6 +123,8 @@ class GridDrawing(Drawing):
             self.dwg_add(self.dwg.line((0, y), (self.width, y), stroke='black'))
 
 class ShapeRepeaterNode:
+    INPUT_PORTS = [PortType.GRID, PortType.ELEMENT]
+    OUTPUT_PORTS = [PortType.ELEMENT]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -153,6 +165,8 @@ class ElementDrawer(Drawing):
             self.dwg_add(shape.scale(self.width, self.height).get(self.dwg))
 
 class PolygonNode:
+    INPUT_PORTS = []
+    OUTPUT_PORTS = [PortType.ELEMENT]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -166,6 +180,8 @@ class PolygonNode:
         return ElementDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
 
 class EllipseNode:
+    INPUT_PORTS = []
+    OUTPUT_PORTS = [PortType.ELEMENT]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -180,6 +196,8 @@ class EllipseNode:
         return ElementDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
 
 class CheckerboardNode:
+    INPUT_PORTS = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
+    OUTPUT_PORTS = [PortType.ELEMENT]
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
