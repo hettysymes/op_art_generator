@@ -9,10 +9,14 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
 from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
+from PyQt5.QtWidgets import QGraphicsPathItem
+from PyQt5.QtGui import QPainterPath, QBrush, QPen, QColor
+from PyQt5.QtCore import Qt, QPointF
 from nodes import GridNode, ShapeRepeaterNode, PosWarpNode, RelWarpNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode, EllipseNode
 from function_nodes import CubicFunNode, PiecewiseFunNode, CustomFunNode
 import uuid
-from port_types import is_port_type_compatible
+from port_types import is_port_type_compatible, PortType
+import math
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
@@ -189,31 +193,95 @@ class NodeItem(QGraphicsRectItem):
                     
         return super().itemChange(change, value)
 
-
-class PortItem(QGraphicsEllipseItem):
-    """Represents connection points on nodes"""
+class PortItem(QGraphicsPathItem):
+    """Represents connection points on nodes with shapes based on port_type"""
     
     def __init__(self, parent, port_type, x, y, is_input=True):
-        size = 12  # Slightly larger port for easier clicking
-        super().__init__(-size/2, -size/2, size, size, parent)
-        self.setPos(x, y)
-        self.setZValue(1)
+        super().__init__(parent)
+        self.size = 12  # Base size for the port
         self.is_input = is_input
         self.edges = []
         self.port_type = port_type
         
+        # Create shape based on port_type
+        self.create_shape_for_port_type()
+        
+        # Position the port
+        self.setPos(x, y)
+        self.setZValue(1)
+        
         # Make port interactive
         self.setAcceptHoverEvents(True)
         
+        # Set appearance based on input/output status
         if is_input:
             self.setBrush(QBrush(QColor(100, 100, 100)))
             self.setCursor(Qt.ArrowCursor)
         else:
             self.setBrush(QBrush(QColor(50, 150, 50)))
-            self.setCursor(Qt.CrossCursor)  # Shows + cursor when hovering output ports
+            self.setCursor(Qt.CrossCursor)
         
         self.setPen(QPen(Qt.black, 1))
+    
+    def create_shape_for_port_type(self):
+        path = QPainterPath()
+        half_size = self.size / 2
         
+        if self.port_type == PortType.ELEMENT:
+            # Circle for number type
+            path.addEllipse(-half_size, -half_size, self.size, self.size)
+        elif self.port_type == PortType.GRID:
+            # Rounded rectangle for string type
+            path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
+        elif self.port_type == PortType.FUNCTION:
+            # Diamond for boolean type
+            points = [
+                QPointF(0, -half_size),          # Top
+                QPointF(half_size, 0),           # Right
+                QPointF(0, half_size),           # Bottom
+                QPointF(-half_size, 0)           # Left
+            ]
+            path.moveTo(points[0])
+            for i in range(1, 4):
+                path.lineTo(points[i])
+            path.closeSubpath()
+        
+        elif self.port_type == PortType.WARP:
+            # Square for array type
+            path.addRect(-half_size, -half_size, self.size, self.size)
+        
+        elif self.port_type == PortType.VISUALISABLE:
+            # Hexagon for object type
+            points = []
+            for i in range(6):
+                angle = i * (360 / 6) * (3.14159 / 180)
+                points.append(QPointF(half_size * 0.9 * math.cos(angle), 
+                                      half_size * 0.9 * math.sin(angle)))
+            
+            path.moveTo(points[0])
+            for i in range(1, 6):
+                path.lineTo(points[i])
+            path.closeSubpath()
+            
+        else:
+            # Default to triangle for other types
+            points = [
+                QPointF(0, -half_size),                    # Top
+                QPointF(half_size * 0.866, half_size/2),   # Bottom right
+                QPointF(-half_size * 0.866, half_size/2)   # Bottom left
+            ]
+            path.moveTo(points[0])
+            path.lineTo(points[1])
+            path.lineTo(points[2])
+            path.closeSubpath()
+        
+        self.setPath(path)
+    
+    def get_center_scene_pos(self):
+        # For a path item, we need to calculate the center differently
+        return self.mapToScene(self.boundingRect().center())
+    
+    # The rest of your methods remain the same
     def add_edge(self, edge):
         self.edges.append(edge)
         self.parentItem().update_canvases()
@@ -222,15 +290,10 @@ class PortItem(QGraphicsEllipseItem):
         if edge in self.edges:
             self.edges.remove(edge)
         self.parentItem().update_canvases()
-
-    def get_center_scene_pos(self):
-        return self.mapToScene(self.rect().center())
     
     def hoverEnterEvent(self, event):
-        # Highlight port on hover
         self.setPen(QPen(Qt.red, 2))
         if not self.is_input:
-            # Change cursor for output ports to indicate dragging availability
             self.setCursor(Qt.CrossCursor)
         super().hoverEnterEvent(event)
     
