@@ -1,4 +1,4 @@
-from Warp import PosWarp, RelWarp
+from ui.Warp import PosWarp, RelWarp
 from Drawing import Drawing
 from shapes import Element, Polygon, Ellipse
 from port_types import PortType
@@ -28,7 +28,7 @@ class CanvasNode:
         vis = self.input_node.visualise(height, wh_ratio)
         if vis: return vis
         # No input, return blank canvas
-        return BlankCanvas(str(self.node_id), height, wh_ratio).save()
+        return BlankCanvas(f"tmp/{str(self.node_id)}", height, wh_ratio).save()
 
     def compute(self):
         return self.input_node.compute()
@@ -103,7 +103,7 @@ class GridNode:
         return v_line_xs, h_line_ys
 
     def visualise(self, height, wh_ratio):
-        return GridDrawing(str(self.node_id), height, wh_ratio, self.compute()).save()
+        return GridDrawing(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
 class GridDrawing(Drawing):
 
@@ -150,7 +150,7 @@ class ShapeRepeaterNode:
     def visualise(self, height, wh_ratio):
         element = self.compute()
         if element:
-            return ElementDrawer(str(self.node_id), height, wh_ratio, element).save()
+            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, element).save()
 
 class ElementDrawer(Drawing):
 
@@ -177,7 +177,7 @@ class PolygonNode:
         return Element([Polygon(self.points, self.fill, 'none')])
 
     def visualise(self, height, wh_ratio):
-        return ElementDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
 class EllipseNode:
     INPUT_PORTS = []
@@ -193,7 +193,7 @@ class EllipseNode:
         return Element([Ellipse((0.5, 0.5), (self.rx, self.ry), self.fill, 'none')])
 
     def visualise(self, height, wh_ratio):
-        return ElementDrawer(str(self.node_id), height, wh_ratio, self.compute()).save()
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
 class CheckerboardNode:
     INPUT_PORTS = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
@@ -230,4 +230,4 @@ class CheckerboardNode:
     def visualise(self, height, wh_ratio):
         element = self.compute()
         if element:
-            return ElementDrawer(str(self.node_id), height, wh_ratio, element).save()
+            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, element).save()

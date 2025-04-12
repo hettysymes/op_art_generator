@@ -1,6 +1,7 @@
 import svgwrite
 import cairosvg
 from abc import ABC, abstractmethod
+import os
 
 class Drawing(ABC):
 
@@ -33,8 +34,11 @@ class Drawing(ABC):
 
     def save(self):
         self.draw()
+        # Create the filename directory if it doesn't exist
+        dir_path = os.path.dirname(self.dwg.filename)
+        os.makedirs(dir_path, exist_ok=True)
         self.dwg.save()
-        return f'{self.out_name}.svg'
+        return self.dwg.filename
 
     @abstractmethod
     def draw(self):

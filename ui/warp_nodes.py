@@ -1,4 +1,4 @@
-from Warp import PosWarp, RelWarp
+from ui.Warp import PosWarp, RelWarp
 
 class PosWarpNode:
 
