@@ -1,5 +1,6 @@
 out/
 ui/tmp
+.idea/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

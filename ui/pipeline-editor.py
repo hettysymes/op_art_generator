@@ -158,11 +158,8 @@ class NodeItem(QGraphicsRectItem):
         
         # Draw node title
         painter.setFont(QFont("Arial", 10))
-        if self.node_type.node_class == CanvasNode:
-            title_rect = self.rect().adjusted(0, 10, 0, 0)  # Shift the top edge down
-            painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.title)
-        else:
-            painter.drawText(self.rect(), Qt.AlignCenter, self.title)
+        title_rect = self.rect().adjusted(0, 10, 0, 0)  # Shift the top edge down
+        painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.title)
         
         # Draw port labels if there are multiple
         painter.setFont(QFont("Arial", 8))
@@ -493,7 +490,7 @@ class NodePropertiesDialog(QDialog):
         
         # Update the node's appearance
         self.node_item.update()
-        self.node_item.update_canvases()
+        self.node_item.update_visualisations()
         
         super().accept()
 
