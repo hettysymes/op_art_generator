@@ -12,7 +12,7 @@ from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtGui import QPainterPath, QBrush, QPen, QColor
 from PyQt5.QtCore import Qt, QPointF
-from nodes import GridNode, ShapeRepeaterNode, PosWarpNode, RelWarpNode, CanvasNode, EmptyNode, CheckerboardNode, PolygonNode, EllipseNode
+from nodes import GridNode, ShapeRepeaterNode, PosWarpNode, RelWarpNode, CanvasNode, Node, CheckerboardNode, PolygonNode, EllipseNode
 from function_nodes import CubicFunNode, PiecewiseFunNode, CustomFunNode
 import uuid
 from port_types import is_port_type_compatible, PortType
@@ -73,13 +73,11 @@ class NodeItem(QGraphicsRectItem):
         self.create_ports()
 
         self.svg_item = None
-        if self.node_type.node_class == CanvasNode:
-            self.update_canvas_image()
+        self.update_vis_image()
 
-    def update_canvas_image(self):
+    def update_vis_image(self):
         """Add an SVG image to the node"""
-        assert self.node_type.node_class == CanvasNode
-        wh_ratio = self.property_values['wh_ratio']
+        wh_ratio = 1 # TODO: canvas node has explicit wh_ratio
         title_height = 30
         margin_x = 10
         margin_y = 10
@@ -123,11 +121,10 @@ class NodeItem(QGraphicsRectItem):
                 output_nodes.append(dest_port.parentItem())
         return output_nodes
 
-    def update_canvases(self):
-        if self.node_type.node_class == CanvasNode:
-            self.update_canvas_image()
+    def update_visualisations(self):
+        self.update_vis_image()
         for output_node in self.get_output_nodes():
-            output_node.update_canvases()
+            output_node.update_visualisations()
 
     def get_node(self):
         input_nodes = self.get_input_nodes()
@@ -138,7 +135,7 @@ class NodeItem(QGraphicsRectItem):
             if node:
                 extracted_nodes.append(node.get_node())
             else:
-                extracted_nodes.append(EmptyNode(None, None, None))
+                extracted_nodes.append(Node(None, None, None))
         return self.node_type.node_class(self.node_id, extracted_nodes, self.property_values)
         
     def create_ports(self):
@@ -280,12 +277,12 @@ class PortItem(QGraphicsPathItem):
     # The rest of your methods remain the same
     def add_edge(self, edge):
         self.edges.append(edge)
-        self.parentItem().update_canvases()
+        self.parentItem().update_visualisations()
     
     def remove_edge(self, edge):
         if edge in self.edges:
             self.edges.remove(edge)
-        self.parentItem().update_canvases()
+        self.parentItem().update_visualisations()
     
     def hoverEnterEvent(self, event):
         self.setPen(QPen(Qt.red, 2))

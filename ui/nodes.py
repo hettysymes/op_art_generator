@@ -3,12 +3,18 @@ from Drawing import Drawing
 from shapes import Element, Polygon, Ellipse
 from port_types import PortType
 
-class EmptyNode:
+class Node:
     INPUT_PORTS = []
     OUTPUT_PORTS = []
 
     def __init__(self, node_id, input_nodes, properties):
-        pass
+        self.node_id = node_id
+
+    def get_svg_path(self, height, wh_ratio):
+        vis = self.visualise(height, wh_ratio)
+        if vis: return vis
+        # No visualisation, return blank canvas
+        return BlankCanvas(f"tmp/{str(self.node_id)}", height, wh_ratio).save()
 
     def compute(self):
         return
@@ -16,25 +22,19 @@ class EmptyNode:
     def visualise(self, height, wh_ratio):
         return
 
-class CanvasNode:
+class CanvasNode(Node):
     INPUT_PORTS = [PortType.VISUALISABLE]
     OUTPUT_PORTS = []
 
     def __init__(self, node_id, input_nodes, properties):
-        self.node_id = node_id
+        super().__init__(node_id, input_nodes, properties)
         self.input_node = input_nodes[0]
-
-    def get_svg_path(self, height, wh_ratio):
-        vis = self.input_node.visualise(height, wh_ratio)
-        if vis: return vis
-        # No input, return blank canvas
-        return BlankCanvas(f"tmp/{str(self.node_id)}", height, wh_ratio).save()
 
     def compute(self):
         return self.input_node.compute()
 
     def visualise(self, height, wh_ratio):
-        return
+        return self.input_node.visualise(height, wh_ratio)
 
 class BlankCanvas(Drawing):
 
@@ -44,12 +44,12 @@ class BlankCanvas(Drawing):
     def draw(self):
         self.add_bg()
 
-class PosWarpNode:
+class PosWarpNode(Node):
     INPUT_PORTS = [PortType.FUNCTION]
     OUTPUT_PORTS = [PortType.WARP]
 
     def __init__(self, node_id, input_nodes, properties):
-        self.node_id = node_id
+        super().__init__(node_id, input_nodes, properties)
         self.f_node = input_nodes[0]
 
     def compute(self):
@@ -59,12 +59,12 @@ class PosWarpNode:
     def visualise(self, height, wh_ratio):
         return
 
-class RelWarpNode:
+class RelWarpNode(Node):
     INPUT_PORTS = [PortType.FUNCTION]
     OUTPUT_PORTS = [PortType.WARP]
 
     def __init__(self, node_id, input_nodes, properties):
-        self.node_id = node_id
+        super().__init__(node_id, input_nodes, properties)
         self.f_node = input_nodes[0]
 
     def compute(self):
@@ -74,12 +74,12 @@ class RelWarpNode:
     def visualise(self, height, wh_ratio):
         return
 
-class GridNode:
+class GridNode(Node):
     INPUT_PORTS = [PortType.WARP, PortType.WARP]
     OUTPUT_PORTS = [PortType.GRID]
 
     def __init__(self, node_id, input_nodes, properties):
-        self.node_id = node_id
+        super().__init__(node_id, input_nodes, properties)
         self.num_v_lines = properties['num_v_lines']
         self.num_h_lines = properties['num_h_lines']
         self.x_warp_node, self.y_warp_node = input_nodes
@@ -122,12 +122,12 @@ class GridDrawing(Drawing):
             # Draw horizontal line
             self.dwg_add(self.dwg.line((0, y), (self.width, y), stroke='black'))
 
-class ShapeRepeaterNode:
+class ShapeRepeaterNode(Node):
     INPUT_PORTS = [PortType.GRID, PortType.ELEMENT]
     OUTPUT_PORTS = [PortType.ELEMENT]
 
     def __init__(self, node_id, input_nodes, properties):
-        self.node_id = node_id
+        super().__init__(node_id, input_nodes, properties)
         self.grid_node = input_nodes[0]
         self.element_node = input_nodes[1]
 
@@ -164,12 +164,12 @@ class ElementDrawer(Drawing):
         for shape in self.element:
             self.dwg_add(shape.scale(self.width, self.height).get(self.dwg))
 
-class PolygonNode:
+class PolygonNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.ELEMENT]
 
     def __init__(self, node_id, input_nodes, properties):
-        self.node_id = node_id
+        super().__init__(node_id, input_nodes, properties)
         self.points = properties['points']
         self.fill = properties['fill']
 
@@ -179,12 +179,12 @@ class PolygonNode:
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
-class EllipseNode:
+class EllipseNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.ELEMENT]
 
     def __init__(self, node_id, input_nodes, properties):
-        self.node_id = node_id
+        super().__init__(node_id, input_nodes, properties)
         self.rx = properties['rx']
         self.ry = properties['ry']
         self.fill = properties['fill']
@@ -195,12 +195,12 @@ class EllipseNode:
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
-class CheckerboardNode:
+class CheckerboardNode(Node):
     INPUT_PORTS = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
     OUTPUT_PORTS = [PortType.ELEMENT]
 
     def __init__(self, node_id, input_nodes, properties):
-        self.node_id = node_id
+        super().__init__(node_id, input_nodes, properties)
         self.grid_node = input_nodes[0]
         self.element1_node = input_nodes[1]
         self.element2_node = input_nodes[2]
