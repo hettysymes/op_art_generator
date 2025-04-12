@@ -17,6 +17,10 @@ from function_nodes import CubicFunNode, PiecewiseFunNode, CustomFunNode
 import uuid
 from port_types import is_port_type_compatible, PortType
 import math
+import pickle
+
+from ui.Scene import Scene, NodeState
+
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
@@ -774,6 +778,19 @@ class PipelineScene(QGraphicsScene):
         elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
             # Context menu for empty space - Node type selection
             menu = QMenu()
+
+            # --- Save and Load Actions ---
+            save_action = QAction("Save Scene", menu)
+            save_action.triggered.connect(self.save_scene)
+            menu.addAction(save_action)
+
+            load_action = QAction("Load Scene", menu)
+            load_action.triggered.connect(self.load_scene)
+            menu.addAction(load_action)
+
+            menu.addSeparator()
+
+            # --- Add Node submenu ---
             add_node_menu = QMenu("Add Node", menu)
             menu.addMenu(add_node_menu)
             
@@ -785,6 +802,22 @@ class PipelineScene(QGraphicsScene):
                 add_node_menu.addAction(action)
             
             menu.exec_(event.screenPos())
+
+    def save_scene(self):
+        scene = Scene()
+        for item in self.items():
+            print(type(item))
+            if isinstance(item, NodeItem):
+                pass # TODO: save this node
+        with open("my_scene.pkl", "wb") as f:
+            pickle.dump(scene, f)
+        return "my_scene.pkl"
+
+    def load_scene(self):
+        with open("my_scene.pkl", "rb") as f:
+            scene = pickle.load(f)
+        for node in scene.nodes:
+            self.add_node_from_type(node.node_type, node.pos)
     
     def nodes(self):
         """Return all nodes in the scene"""
@@ -882,12 +915,11 @@ class PipelineEditor(QMainWindow):
         self.scene = PipelineScene()
         self.view = PipelineView(self.scene)
         self.setCentralWidget(self.view)
-        
+
         # Create a status bar with instructions
         self.statusBar().showMessage("Right-click for node menu | Drag from output port (green) to input port (gray) to create connections")
         
         self.show()
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
