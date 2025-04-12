@@ -19,7 +19,7 @@ from port_types import is_port_type_compatible, PortType
 import math
 import pickle
 
-from ui.Scene import Scene, NodeState
+from ui.Scene import Scene, NodeState, PortState, EdgeState
 
 
 class ConnectionSignals(QObject):
@@ -27,52 +27,37 @@ class ConnectionSignals(QObject):
     connectionStarted = pyqtSignal(object)  # Emits the source port
     connectionMade = pyqtSignal(object, object)  # Emits source and destination ports
 
-class NodeProperty:
-    """Defines a property for a node"""
-    def __init__(self, name, prop_type, default_value=None, min_value=None, max_value=None, 
-                 options=None, description=""):
-        self.name = name
-        self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
-        self.default_value = default_value
-        self.min_value = min_value
-        self.max_value = max_value
-        self.options = options  # For enum type
-        self.description = description
-
-class NodeType:
-    """Defines a type of node with specific inputs and outputs"""
-    def __init__(self, name, node_class, color=QColor(200, 230, 250), properties=None):
-        self.name = name
-        self.input_ports = node_class.INPUT_PORTS
-        self.output_ports = node_class.OUTPUT_PORTS
-        self.color = color
-        self.properties = properties or []
-        self.node_class = node_class
+# class NodeType:
+#     """Defines a type of node with specific inputs and outputs"""
+#     def __init__(self, name, node_class, color=QColor(200, 230, 250), properties=None):
+#         self.name = name
+#         self.input_ports = node_class.INPUT_PORTS
+#         self.output_ports = node_class.OUTPUT_PORTS
+#         self.color = color
+#         self.properties = properties or []
+#         self.node_class = node_class
 
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
     
-    def __init__(self, x, y, width, height, node_type):
+    def __init__(self, node_state: NodeState, width=150, height=80):
         super().__init__(0, 0, width, height)
-        self.node_id = uuid.uuid4()
-        self.setPos(x, y)
+        self.backend = node_state
+        self.uid = node_state.uid
+        self.setPos(node_state.x, node_state.y)
         self.setZValue(1)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         
-        self.setBrush(QBrush(node_type.color))
+        self.setBrush(QBrush(QColor(220, 230, 250)))
         self.setPen(QPen(Qt.black, 2))
-        
-        self.title = node_type.name
-        self.node_type = node_type
-        self.input_ports = []
-        self.output_ports = []
-        self.property_values = {}
+        self.node_state = node_state
+        self.node_class = node_state.node_class
         
         # Initialize property values with defaults
-        for prop in self.node_type.properties:
-            self.property_values[prop.name] = prop.default_value
+        for prop in self.node_class.PROPERTIES:
+            self.node_state.property_values[prop.name] = prop.default_value
         
         self.create_ports()
 
@@ -108,21 +93,23 @@ class NodeItem(QGraphicsRectItem):
 
     def get_input_nodes(self):
         input_nodes = []
-        for input_port in self.input_ports:
-            if len(input_port.edges) > 0:
-                edge = input_port.edges[0] # Each input port can only have one edge
-                src_port = edge.source_port
-                input_nodes.append(src_port.parentItem())
+        for input_port_id in self.node_state.input_port_ids:
+            input_port: PortItem = self.scene().scene.get(input_port_id)
+            if len(input_port.port_state.edge_ids) > 0:
+                edge_id = input_port.port_state.edge_ids[0] # Each input port can only have one edge
+                edge: EdgeItem = self.scene().scene.get(edge_id)
+                input_nodes.append(edge.source_port.parentItem())
             else:
                 input_nodes.append(None)
         return input_nodes
 
     def get_output_nodes(self):
         output_nodes = []
-        for output_port in self.output_ports:
-            for edge in output_port.edges: # Each output port can have 1+ edges
-                dest_port = edge.dest_port
-                output_nodes.append(dest_port.parentItem())
+        for output_port_id in self.node_state.output_port_ids:
+            output_port: PortItem = self.scene().scene.get(output_port_id)
+            for edge_id in output_port.port_state.edge_ids: # Each output port can have 1+ edges
+                edge: EdgeItem = self.scene().scene.get(edge_id)
+                output_nodes.append(edge.dest_port.parentItem())
         return output_nodes
 
     def update_visualisations(self):
@@ -133,29 +120,41 @@ class NodeItem(QGraphicsRectItem):
     def get_node(self):
         input_nodes = self.get_input_nodes()
         if len(input_nodes) == 0:
-            return self.node_type.node_class(self.node_id, [], self.property_values)
+            return self.node_class(self.uid, [], self.node_state.property_values)
         extracted_nodes = []
         for node in input_nodes:
             if node:
                 extracted_nodes.append(node.get_node())
             else:
                 extracted_nodes.append(Node(None, None, None))
-        return self.node_type.node_class(self.node_id, extracted_nodes, self.property_values)
+        return self.node_class(self.uid, extracted_nodes, self.node_state.property_values)
         
     def create_ports(self):
         # Create input ports (left side)
-        input_count = len(self.node_type.input_ports)
-        for i, port_type in enumerate(self.node_type.input_ports):
+        input_count = len(self.node_class.INPUT_PORTS)
+        for i, port_type in enumerate(self.node_class.INPUT_PORTS):
             y_offset = (i + 1) * self.rect().height() / (input_count + 1)
-            input_port = PortItem(self, port_type, -10, y_offset, is_input=True)
-            self.input_ports.append(input_port)
+            state_id = uuid.uuid4()
+            input_port = PortItem(PortState(state_id,
+                                            -10, y_offset,
+                                            self,
+                                            True,
+                                            [], port_type))
+            self.node_state.input_port_ids.append(state_id)
+            self.scene().scene.add(input_port)
         
         # Create output ports (right side)
-        output_count = len(self.node_type.output_ports)
-        for i, port_type in enumerate(self.node_type.output_ports):
+        output_count = len(self.node_class.OUTPUT_PORTS)
+        for i, port_type in enumerate(self.node_class.OUTPUT_PORTS):
             y_offset = (i + 1) * self.rect().height() / (output_count + 1)
-            output_port = PortItem(self, port_type, self.rect().width() + 10, y_offset, is_input=False)
-            self.output_ports.append(output_port)
+            state_id = uuid.uuid4()
+            output_port = PortItem(PortState(state_id,
+                                            self.rect().width() + 10, y_offset,
+                                            self,
+                                            False,
+                                            [], port_type))
+            self.node_state.output_port_ids.append(state_id)
+            self.scene().scene.add(output_port)
         
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
@@ -163,26 +162,30 @@ class NodeItem(QGraphicsRectItem):
         # Draw node title
         painter.setFont(QFont("Arial", 10))
         title_rect = self.rect().adjusted(0, 10, 0, 0)  # Shift the top edge down
-        painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.title)
+        painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.node_class.NAME)
         
         # Draw port labels if there are multiple
         painter.setFont(QFont("Arial", 8))
         
         # Input port labels
-        for i, port in enumerate(self.input_ports):
+        for i, port_id in enumerate(self.node_state.input_port_ids):
+            port = self.scene().scene.get(port_id)
             label_pos = port.pos() + QPointF(5, 0)  # Position just right of the port
             painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"In {i+1}")
         
         # Output port labels
-        for i, port in enumerate(self.output_ports):
+        for i, port_id in enumerate(self.node_state.output_port_ids):
+            port = self.scene().scene.get(port_id)
             label_pos = port.pos() + QPointF(-25, 0)  # Position just left of the port
             painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"Out {i+1}")
         
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
             # Update connected edges when node moves
-            for port in self.input_ports + self.output_ports:
-                for edge in port.edges:
+            for port_id in self.node_state.input_port_ids + self.node_state.output_port_ids:
+                port: PortItem = self.scene().scene.get(port_id)
+                for edge_id in port.port_state.edge_ids:
+                    edge: EdgeItem = self.scene().scene.get(edge_id)
                     edge.update_position()
                     
         return super().itemChange(change, value)
@@ -190,25 +193,25 @@ class NodeItem(QGraphicsRectItem):
 class PortItem(QGraphicsPathItem):
     """Represents connection points on nodes with shapes based on port_type"""
     
-    def __init__(self, parent, port_type, x, y, is_input=True):
-        super().__init__(parent)
+    def __init__(self, port_state: PortState):
+        super().__init__(self.scene().scene.get(port_state.parent_node_id))
+        self.backend = port_state
+        self.uid = port_state.uid
+        self.port_state = port_state
         self.size = 12  # Base size for the port
-        self.is_input = is_input
-        self.edges = []
-        self.port_type = port_type
         
         # Create shape based on port_type
         self.create_shape_for_port_type()
         
         # Position the port
-        self.setPos(x, y)
+        self.setPos(port_state.x, port_state.y)
         self.setZValue(1)
         
         # Make port interactive
         self.setAcceptHoverEvents(True)
         
         # Set appearance based on input/output status
-        if is_input:
+        if port_state.is_input:
             self.setBrush(QBrush(QColor(100, 100, 100)))
             self.setCursor(Qt.ArrowCursor)
         else:
@@ -220,14 +223,14 @@ class PortItem(QGraphicsPathItem):
     def create_shape_for_port_type(self):
         path = QPainterPath()
         half_size = self.size / 2
-        
-        if self.port_type == PortType.ELEMENT:
+        port_type = self.port_state.port_type
+        if port_type == PortType.ELEMENT:
             # Circle for number type
             path.addEllipse(-half_size, -half_size, self.size, self.size)
-        elif self.port_type == PortType.GRID:
+        elif port_type == PortType.GRID:
             # Rounded rectangle for string type
             path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
-        elif self.port_type == PortType.FUNCTION:
+        elif port_type == PortType.FUNCTION:
             # Diamond for boolean type
             points = [
                 QPointF(0, -half_size),          # Top
@@ -240,11 +243,11 @@ class PortItem(QGraphicsPathItem):
                 path.lineTo(points[i])
             path.closeSubpath()
         
-        elif self.port_type == PortType.WARP:
+        elif port_type == PortType.WARP:
             # Square for array type
             path.addRect(-half_size, -half_size, self.size, self.size)
         
-        elif self.port_type == PortType.VISUALISABLE:
+        elif port_type == PortType.VISUALISABLE:
             # Hexagon for object type
             points = []
             for i in range(6):
@@ -276,18 +279,18 @@ class PortItem(QGraphicsPathItem):
         return self.mapToScene(self.boundingRect().center())
     
     # The rest of your methods remain the same
-    def add_edge(self, edge):
-        self.edges.append(edge)
+    def add_edge(self, edge_id):
+        self.port_state.edge_ids.append(edge_id)
         self.parentItem().update_visualisations()
     
-    def remove_edge(self, edge):
-        if edge in self.edges:
-            self.edges.remove(edge)
+    def remove_edge(self, edge_id):
+        if edge_id in self.port_state.edge_ids:
+            self.port_state.edge_ids.remove(edge_id)
         self.parentItem().update_visualisations()
     
     def hoverEnterEvent(self, event):
         self.setPen(QPen(Qt.red, 2))
-        if not self.is_input:
+        if not self.port_state.is_input:
             self.setCursor(Qt.CrossCursor)
         super().hoverEnterEvent(event)
     
@@ -299,15 +302,17 @@ class PortItem(QGraphicsPathItem):
 class EdgeItem(QGraphicsLineItem):
     """Represents connections between nodes"""
     
-    def __init__(self, source_port, dest_port):
+    def __init__(self, edge_state: EdgeState):
         super().__init__()
+        self.backend = edge_state
+        self.uid = edge_state.uid
         self.setZValue(0)
 
-        self.source_port = source_port
-        self.dest_port = dest_port
+        self.source_port = self.scene().scene.get(edge_state.src_port_id)
+        self.dest_port = self.scene().scene.get(edge_state.dst_port_id)
         
-        self.source_port.add_edge(self)
-        self.dest_port.add_edge(self)
+        self.source_port.add_edge(self.uid)
+        self.dest_port.add_edge(self.uid)
         
         # Thicker line with rounded caps for better appearance
         self.setPen(QPen(Qt.black, 2.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
@@ -327,7 +332,7 @@ class NodePropertiesDialog(QDialog):
     
     def __init__(self, node_item, parent=None):
         super().__init__(parent)
-        self.node_item = node_item
+        self.node_item: NodeItem = node_item
         self.setWindowTitle(f"Properties: {node_item.title}")
         self.setMinimumWidth(400)
         
@@ -346,12 +351,12 @@ class NodePropertiesDialog(QDialog):
         form_layout.addRow("Node Name:", self.title_edit)
         
         # Add custom properties based on node type
-        if node_item.node_type.properties:
+        if node_item.node_class.PROPERTIES:
             props_group = QGroupBox("Node Properties")
             props_layout = QFormLayout()
             props_group.setLayout(props_layout)
             
-            for prop in node_item.node_type.properties:
+            for prop in node_item.node_class.PROPERTIES:
                 if prop.prop_type != "hidden":
                     widget = self.create_property_widget(prop, node_item.property_values.get(prop.name, prop.default_value))
                     props_layout.addRow(f"{prop.name}:", widget)
@@ -475,7 +480,7 @@ class NodePropertiesDialog(QDialog):
     def accept(self):
         """Apply properties and close dialog"""
         # Update node title
-        self.node_item.title = self.title_edit.text()
+        # self.node_item.title = self.title_edit.text()
         
         # Update custom properties
         for prop_name, widget in self.property_widgets.items():
@@ -490,7 +495,7 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
                 
-            self.node_item.property_values[prop_name] = value
+            self.node_item.node_state.property_values[prop_name] = value
         
         # Update the node's appearance
         self.node_item.update()
@@ -513,83 +518,33 @@ class PipelineScene(QGraphicsScene):
         self.source_port = None
         self.dest_port = None
         
-        # Node types
-        self.node_types = self.create_node_types()
+        self.scene = Scene()
         
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
     
-    def create_node_types(self):
-        """Create predefined node types with properties"""
-        grid_props = [
-            NodeProperty("num_v_lines", "int", default_value=5, 
-                        description="Number of squares in width of grid"),
-            NodeProperty("num_h_lines", "int", default_value=5, 
-                        description="Number of squares in height of grid")
-        ]
-
-        cubic_fun_props = [
-            NodeProperty("a_coeff", "float", default_value=3.22, 
-                        description=""),
-            NodeProperty("b_coeff", "float", default_value=-5.41, 
-                        description=""),
-            NodeProperty("c_coeff", "float", default_value=3.20, 
-                        description=""),
-            NodeProperty("d_coeff", "float", default_value=0, 
-                        description="")
-        ]
-
-        custom_fun_props = [
-            NodeProperty("fun_def", "string", default_value="x", 
-                        description="")
-        ]
-
-        piecewise_fun_props = [
-            NodeProperty("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)], 
-                        description="")
-        ]
-        
-        canvas_props = [
-            NodeProperty("wh_ratio", "float", default_value=1.0, min_value=0.0,
-                        description="")
-        ]
-
-        polygon_props = [
-            NodeProperty("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
-                        description=""),
-            NodeProperty("fill", "string", default_value="black",
-                        description="")
-        ]
-
-        ellipse_props = [
-            NodeProperty("rx", "float", default_value=0.5,
-                        description=""),
-            NodeProperty("ry", "float", default_value=0.5,
-                        description=""),
-            NodeProperty("fill", "string", default_value="black",
-                        description="")
-        ]
-
-        return [
-            NodeType("Grid", color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
-            NodeType("Cubic Function", color=QColor(227, 180, 141), properties=cubic_fun_props, node_class=CubicFunNode),
-            NodeType("Piecewise Linear Function", color=QColor(227, 180, 141), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
-            NodeType("Custom Function", color=QColor(227, 180, 141), properties=custom_fun_props, node_class=CustomFunNode),
-            NodeType("Position Warp", color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
-            NodeType("Relative Warp", color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
-            NodeType("Shape Repeater", color=QColor(220, 250, 220), properties=[], node_class=ShapeRepeaterNode),
-            NodeType("Canvas", color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode),
-            NodeType("Checkerboard", color=QColor(220, 250, 220), properties=[], node_class=CheckerboardNode),
-            NodeType("Polygon", color=QColor(219, 167, 176), properties=polygon_props, node_class=PolygonNode),
-            NodeType("Ellipse", color=QColor(219, 167, 176), properties=ellipse_props, node_class=EllipseNode)
-        ]
+    # def create_node_types(self):
+    #     """Create predefined node types with properties"""
+    #     return [
+    #         NodeType("Grid", color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
+    #         NodeType("Cubic Function", color=QColor(227, 180, 141), properties=cubic_fun_props, node_class=CubicFunNode),
+    #         NodeType("Piecewise Linear Function", color=QColor(227, 180, 141), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
+    #         NodeType("Custom Function", color=QColor(227, 180, 141), properties=custom_fun_props, node_class=CustomFunNode),
+    #         NodeType("Position Warp", color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
+    #         NodeType("Relative Warp", color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
+    #         NodeType("Shape Repeater", color=QColor(220, 250, 220), properties=[], node_class=ShapeRepeaterNode),
+    #         NodeType("Canvas", color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode),
+    #         NodeType("Checkerboard", color=QColor(220, 250, 220), properties=[], node_class=CheckerboardNode),
+    #         NodeType("Polygon", color=QColor(219, 167, 176), properties=polygon_props, node_class=PolygonNode),
+    #         NodeType("Ellipse", color=QColor(219, 167, 176), properties=ellipse_props, node_class=EllipseNode)
+    #     ]
     
-    def add_node_from_type(self, node_type, pos):
-        """Add a new node of the given type at the specified position"""
-        new_node = NodeItem(pos.x(), pos.y(), 150, 80, node_type)
-        self.addItem(new_node)
-        return new_node
+    # def add_node_from_type(self, node_type, pos):
+    #     """Add a new node of the given type at the specified position"""
+    #     new_node = NodeItem(pos.x(), pos.y(), 150, 80, node_type)
+    #     self.addItem(new_node)
+    #     return new_node
     
     def edit_node_properties(self, node):
         """Open a dialog to edit the node's properties"""
@@ -760,8 +715,8 @@ class PipelineScene(QGraphicsScene):
             properties_action = QAction("Properties...", menu)
             properties_action.triggered.connect(lambda: self.edit_node_properties(clicked_item))
             
-            rename_action = QAction("Rename Node", menu)
-            rename_action.triggered.connect(lambda: self.rename_node(clicked_item))
+            # rename_action = QAction("Rename Node", menu)
+            # rename_action.triggered.connect(lambda: self.rename_node(clicked_item))
             
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
@@ -771,7 +726,7 @@ class PipelineScene(QGraphicsScene):
             visualize_action.triggered.connect(lambda: self.visualize_node(clicked_item))
             
             menu.addAction(properties_action)
-            menu.addAction(rename_action)
+            # menu.addAction(rename_action)
             menu.addAction(delete_action)
             menu.addAction(visualize_action)  # Add the new action
             menu.exec_(event.screenPos())
@@ -804,47 +759,57 @@ class PipelineScene(QGraphicsScene):
             menu.exec_(event.screenPos())
 
     def save_scene(self):
-        scene = Scene()
-        for item in self.items():
-            print(type(item))
-            if isinstance(item, NodeItem):
-                pass # TODO: save this node
+        save_states = {}
+        for k, v in enumerate(self.states):
+            save_states[k] = v.backend
         with open("my_scene.pkl", "wb") as f:
-            pickle.dump(scene, f)
+            pickle.dump(save_states, f)
         return "my_scene.pkl"
 
     def load_scene(self):
         with open("my_scene.pkl", "rb") as f:
-            scene = pickle.load(f)
-        for node in scene.nodes:
-            self.add_node_from_type(node.node_type, node.pos)
+            save_states = pickle.load(f)
+        scene = Scene()
+        for _, v in enumerate(save_states):
+            if isinstance(v, NodeState):
+                scene.add(NodeItem(v))
+            elif isinstance(v, EdgeState):
+                scene.add(EdgeItem(v))
+            elif isinstance(v, PortState):
+                scene.add(PortItem(v))
+        return scene
     
-    def nodes(self):
-        """Return all nodes in the scene"""
-        return [item for item in self.items() if isinstance(item, NodeItem)]
-    
-    def rename_node(self, node):
-        """Rename the given node"""
-        new_name, ok = QInputDialog.getText(None, "Rename Node", "Enter new name:", text=node.title)
-        if ok and new_name:
-            node.title = new_name
-            node.update()
+    # def nodes(self):
+    #     """Return all nodes in the scene"""
+    #     return [item for item in self.items() if isinstance(item, NodeItem)]
+    #
+    # def rename_node(self, node):
+    #     """Rename the given node"""
+    #     new_name, ok = QInputDialog.getText(None, "Rename Node", "Enter new name:", text=node.title)
+    #     if ok and new_name:
+    #         node.title = new_name
+    #         node.update()
     
     def delete_edge(self, edge):
         """Delete the given edge"""
-        edge.source_port.remove_edge(edge)
-        edge.dest_port.remove_edge(edge)
+        edge.source_port.remove_edge(edge.uid)
+        edge.dest_port.remove_edge(edge.uid)
+        self.scene.remove(edge.uid)
         self.removeItem(edge)
     
-    def delete_node(self, node):
+    def delete_node(self, node: NodeItem):
         """Delete the given node and all its connections"""
         # Remove all connected edges first
-        for port in node.input_ports + node.output_ports:
-            for edge in list(port.edges):  # Use a copy to avoid issues while removing
+        for port_id in node.node_state.input_port_ids + node.node_state.output_port_ids:
+            port: PortItem = self.scene.get(port_id)
+            for edge_id in list(port.port_state.edge_ids):  # Use a copy to avoid issues while removing
+                edge: EdgeItem = self.scene.get(edge_id)
                 self.delete_edge(edge)
-        
-        self.removeItem(node)
 
+        for port_id in node.node_state.input_port_ids + node.node_state.output_port_ids:
+            self.scene.remove(port_id)
+        self.scene.remove(node.uid)
+        self.removeItem(node)
 
 class PipelineView(QGraphicsView):
     """View to interact with the pipeline scene"""

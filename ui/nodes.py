@@ -3,9 +3,23 @@ from Drawing import Drawing
 from shapes import Element, Polygon, Ellipse
 from port_types import PortType
 
+class NodeProperty:
+    """Defines a property for a node"""
+    def __init__(self, name, prop_type, default_value=None, min_value=None, max_value=None,
+                 options=None, description=""):
+        self.name = name
+        self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
+        self.default_value = default_value
+        self.min_value = min_value
+        self.max_value = max_value
+        self.options = options  # For enum type
+        self.description = description
+
 class Node:
     INPUT_PORTS = []
     OUTPUT_PORTS = []
+    NAME = "Empty"
+    PROPERTIES = []
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -25,6 +39,11 @@ class Node:
 class CanvasNode(Node):
     INPUT_PORTS = [PortType.VISUALISABLE]
     OUTPUT_PORTS = []
+    NAME = "Canvas"
+    PROPERTIES = [
+        NodeProperty("wh_ratio", "float", default_value=1.0, min_value=0.0,
+                    description="")
+    ]
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -47,6 +66,7 @@ class BlankCanvas(Drawing):
 class PosWarpNode(Node):
     INPUT_PORTS = [PortType.FUNCTION]
     OUTPUT_PORTS = [PortType.WARP]
+    NAME = "Pos Warp"
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -62,6 +82,7 @@ class PosWarpNode(Node):
 class RelWarpNode(Node):
     INPUT_PORTS = [PortType.FUNCTION]
     OUTPUT_PORTS = [PortType.WARP]
+    NAME = "Rel Warp"
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -77,6 +98,13 @@ class RelWarpNode(Node):
 class GridNode(Node):
     INPUT_PORTS = [PortType.WARP, PortType.WARP]
     OUTPUT_PORTS = [PortType.GRID]
+    NAME = "Grid"
+    PROPERTIES = [
+        NodeProperty("num_v_lines", "int", default_value=5,
+                     description="Number of squares in width of grid"),
+        NodeProperty("num_h_lines", "int", default_value=5,
+                     description="Number of squares in height of grid")
+    ]
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -125,6 +153,7 @@ class GridDrawing(Drawing):
 class ShapeRepeaterNode(Node):
     INPUT_PORTS = [PortType.GRID, PortType.ELEMENT]
     OUTPUT_PORTS = [PortType.ELEMENT]
+    NAME = "Shape Repeater"
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -167,6 +196,13 @@ class ElementDrawer(Drawing):
 class PolygonNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.ELEMENT]
+    NAME = "Polygon"
+    PROPERTIES = [
+        NodeProperty("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
+                    description=""),
+        NodeProperty("fill", "string", default_value="black",
+                    description="")
+    ]
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -182,6 +218,15 @@ class PolygonNode(Node):
 class EllipseNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.ELEMENT]
+    NAME = "Ellipse"
+    PROPERTIES = [
+        NodeProperty("rx", "float", default_value=0.5,
+                    description=""),
+        NodeProperty("ry", "float", default_value=0.5,
+                    description=""),
+        NodeProperty("fill", "string", default_value="black",
+                    description="")
+    ]
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -198,6 +243,7 @@ class EllipseNode(Node):
 class CheckerboardNode(Node):
     INPUT_PORTS = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
     OUTPUT_PORTS = [PortType.ELEMENT]
+    NAME = "Checkerboard"
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)

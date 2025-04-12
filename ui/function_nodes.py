@@ -1,4 +1,4 @@
-from ui.nodes import Node
+from ui.nodes import Node, NodeProperty
 from utils import cubic_f
 from port_types import PortType
 import sympy as sp
@@ -7,6 +7,17 @@ import numpy as np
 class CubicFunNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.FUNCTION]
+    NAME = "Cubic Function"
+    PROPERTIES = [
+        NodeProperty("a_coeff", "float", default_value=3.22,
+                    description=""),
+        NodeProperty("b_coeff", "float", default_value=-5.41,
+                    description=""),
+        NodeProperty("c_coeff", "float", default_value=3.20,
+                    description=""),
+        NodeProperty("d_coeff", "float", default_value=0,
+                    description="")
+    ]
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -24,6 +35,11 @@ class CubicFunNode(Node):
 class CustomFunNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.FUNCTION]
+    NAME = "Custom Function"
+    PROPERTIES = [
+        NodeProperty("fun_def", "string", default_value="x",
+                    description="")
+    ]
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
@@ -40,6 +56,11 @@ class CustomFunNode(Node):
 class PiecewiseFunNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.FUNCTION]
+    NAME = "Piecewise Function"
+    PROPERTIES = [
+        NodeProperty("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)],
+                    description="")
+    ]
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
