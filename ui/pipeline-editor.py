@@ -89,8 +89,8 @@ class ResizeHandle(QGraphicsRectItem):
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
 
-    def __init__(self, node_state: NodeState, width=150, height=80):
-        super().__init__(0, 0, width, height)
+    def __init__(self, node_state: NodeState):
+        super().__init__(0, 0, node_state.width, node_state.height)
         self.backend = node_state
         self.uid = node_state.uid
         self.setPos(node_state.x, node_state.y)
@@ -623,7 +623,7 @@ class PipelineScene(QGraphicsScene):
     
     def add_node_from_class(self, node_class, pos):
         """Add a new node of the given type at the specified position"""
-        new_node = NodeItem(NodeState(uuid.uuid4(), pos.x(), pos.y(), [], [], {}, node_class))
+        new_node = NodeItem(NodeState(uuid.uuid4(), pos.x(), pos.y(), [], [], {}, node_class, 150, 175))
         self.scene.add(new_node)
         self.addItem(new_node)
         new_node.create_ports()
