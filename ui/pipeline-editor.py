@@ -1,11 +1,11 @@
 import sys
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView, 
-                            QGraphicsItem, QGraphicsRectItem, QGraphicsEllipseItem, 
-                            QGraphicsLineItem, QMenu, QAction, QInputDialog, QColorDialog,
-                            QDialog, QVBoxLayout, QFormLayout, QLineEdit,
-                            QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
-                            QDialogButtonBox, QGroupBox, QMessageBox, QTableWidget, QTableWidgetItem, QWidget,
-                            QHBoxLayout)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
+                             QGraphicsItem, QGraphicsRectItem, QGraphicsEllipseItem,
+                             QGraphicsLineItem, QMenu, QAction, QInputDialog, QColorDialog,
+                             QDialog, QVBoxLayout, QFormLayout, QLineEdit,
+                             QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
+                             QDialogButtonBox, QGroupBox, QMessageBox, QTableWidget, QTableWidgetItem, QWidget,
+                             QHBoxLayout, QFileDialog)
 from PyQt5.QtCore import Qt, QLineF, pyqtSignal, QObject, QPointF
 from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QFont
 from PyQt5.QtSvg import QSvgWidget, QGraphicsSvgItem
@@ -709,21 +709,7 @@ class PipelineScene(QGraphicsScene):
             menu.addAction(visualize_action)  # Add the new action
             menu.exec_(event.screenPos())
         elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
-            # Context menu for empty space - Node type selection
             menu = QMenu()
-
-            # --- Save and Load Actions ---
-            save_action = QAction("Save Scene", menu)
-            save_action.triggered.connect(self.save_scene)
-            menu.addAction(save_action)
-
-            load_action = QAction("Load Scene", menu)
-            load_action.triggered.connect(self.load_scene)
-            menu.addAction(load_action)
-
-            menu.addSeparator()
-
-            # --- Add Node submenu ---
             add_node_menu = QMenu("Add Node", menu)
             menu.addMenu(add_node_menu)
             
@@ -736,18 +722,17 @@ class PipelineScene(QGraphicsScene):
             
             menu.exec_(event.screenPos())
 
-    def save_scene(self):
+    def save_scene(self, filepath):
         save_states = {}
         for k, v in self.scene.states.items():
             save_states[k] = v.backend
-        with open("my_scene.pkl", "wb") as f:
+        with open(filepath, "wb") as f:
             pickle.dump(save_states, f)
-        return "my_scene.pkl"
 
-    def load_scene(self):
-        with open("my_scene.pkl", "rb") as f:
+    def load_scene(self, filepath):
+        self.clear_scene()
+        with open(filepath, "rb") as f:
             save_states = pickle.load(f)
-        self.scene = Scene()
         node_ids = []
         for _, v in save_states.items():
             if isinstance(v, NodeState):
@@ -765,7 +750,13 @@ class PipelineScene(QGraphicsScene):
                 edge.set_ports()
         for uid in node_ids:
             self.scene.get(uid).update_vis_image()
-    
+
+    def clear_scene(self):
+        self.scene = Scene()
+        for item in self.items():
+            if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
+                self.removeItem(item)
+
     def delete_edge(self, edge):
         """Delete the given edge"""
         edge.source_port.remove_edge(edge.uid)
@@ -859,10 +850,69 @@ class PipelineEditor(QMainWindow):
         self.view = PipelineView(self.scene)
         self.setCentralWidget(self.view)
 
+        # Create menu bar
+        self.setup_menu()
+
         # Create a status bar with instructions
         self.statusBar().showMessage("Right-click for node menu | Drag from output port (green) to input port (gray) to create connections")
         
         self.show()
+
+    def setup_menu(self):
+        # Create the menu bar
+        menu_bar = self.menuBar()
+
+        # Create File menu
+        file_menu = menu_bar.addMenu("File")
+
+        # Add Save action
+        save_action = QAction("Save to file", self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.save_scene)
+        file_menu.addAction(save_action)
+
+        # Add Load action
+        load_action = QAction("Load from file", self)
+        load_action.setShortcut("Ctrl+L")
+        load_action.triggered.connect(self.load_scene)
+        file_menu.addAction(load_action)
+
+        scene_menu = menu_bar.addMenu("Scene")
+
+        # Add Clear action
+        clear_action = QAction("Clear Scene", self)
+        clear_action.setShortcut("Ctrl+C")
+        clear_action.triggered.connect(self.clear_scene)
+        scene_menu.addAction(clear_action)
+
+    def save_scene(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Pipeline Scene",
+            "",
+            "Pipeline Scene Files (*.pipeline);;All Files (*)"
+        )
+
+        if file_path:
+            self.scene.save_scene(file_path)
+            self.statusBar().showMessage(f"Scene saved to {file_path}", 3000)
+
+    def load_scene(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Load Pipeline Scene",
+            "",
+            "Pipeline Scene Files (*.pipeline);;All Files (*)"
+        )
+
+        if file_path:
+            self.scene.load_scene(file_path)
+            # Update the view to reflect the loaded scene
+            self.view.update()
+            self.statusBar().showMessage(f"Scene loaded from {file_path}", 3000)
+
+    def clear_scene(self):
+        self.scene.clear_scene()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
