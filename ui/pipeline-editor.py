@@ -308,14 +308,6 @@ class EdgeItem(QGraphicsLineItem):
         # Thicker line with rounded caps for better appearance
         self.setPen(QPen(Qt.black, 2.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         self.setFlag(QGraphicsItem.ItemIsSelectable)
-        
-        self.update_position()
-    
-    def update_position(self):
-        if self.source_port and self.dest_port:
-            source_pos = self.source_port.get_center_scene_pos()
-            dest_pos = self.dest_port.get_center_scene_pos()
-            self.setLine(QLineF(source_pos, dest_pos))
 
     def set_ports(self):
         self.source_port = self.scene().scene.get(self.backend.src_port_id)
@@ -323,6 +315,13 @@ class EdgeItem(QGraphicsLineItem):
         self.source_port.add_edge(self.uid)
         self.dest_port.add_edge(self.uid)
         self.dest_port.parentItem().update_visualisations()
+        self.update_position()
+
+    def update_position(self):
+        if self.source_port and self.dest_port:
+            source_pos = self.source_port.get_center_scene_pos()
+            dest_pos = self.dest_port.get_center_scene_pos()
+            self.setLine(QLineF(source_pos, dest_pos))
 
 
 class NodePropertiesDialog(QDialog):
@@ -331,7 +330,7 @@ class NodePropertiesDialog(QDialog):
     def __init__(self, node_item, parent=None):
         super().__init__(parent)
         self.node_item: NodeItem = node_item
-        self.setWindowTitle(f"Properties: {node_item.title}")
+        self.setWindowTitle(f"Properties: {node_item.node_class.NAME}")
         self.setMinimumWidth(400)
         
         # Main layout
@@ -345,7 +344,7 @@ class NodePropertiesDialog(QDialog):
         self.property_widgets = {}
         
         # Add general properties (title)
-        self.title_edit = QLineEdit(self.node_item.title)
+        self.title_edit = QLineEdit(self.node_item.node_class.NAME)
         form_layout.addRow("Node Name:", self.title_edit)
         
         # Add custom properties based on node type
@@ -356,7 +355,7 @@ class NodePropertiesDialog(QDialog):
             
             for prop in node_item.node_class.PROPERTIES:
                 if prop.prop_type != "hidden":
-                    widget = self.create_property_widget(prop, node_item.property_values.get(prop.name, prop.default_value))
+                    widget = self.create_property_widget(prop, node_item.node_state.property_values.get(prop.name, prop.default_value))
                     props_layout.addRow(f"{prop.name}:", widget)
                     self.property_widgets[prop.name] = widget
                     
@@ -674,12 +673,12 @@ class PipelineScene(QGraphicsScene):
         if svg_path is None:
             # Show message if no visualizer is available
             QMessageBox.information(None, "Visualization", 
-                                f"No visualization available for node type: {node.node_type.name}")
+                                f"No visualization available for node type: {node.node_class.NAME}")
             return
         
         # Create a dialog to display the SVG
         dialog = QDialog()
-        dialog.setWindowTitle(f"Visualization: {node.title}")
+        dialog.setWindowTitle(f"Visualization: {node.node_class.NAME}")
         dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         
         # Use QSvgWidget with fixed size
@@ -807,9 +806,10 @@ class PipelineScene(QGraphicsScene):
         """Delete the given edge"""
         edge.source_port.remove_edge(edge.uid)
         edge.dest_port.remove_edge(edge.uid)
+        dest_node = edge.dest_port.parentItem()
         self.scene.remove(edge.uid)
         self.removeItem(edge)
-        edge.dest_port.parentItem.update_visualisations()
+        dest_node.update_visualisations()
     
     def delete_node(self, node: NodeItem):
         """Delete the given node and all its connections"""
