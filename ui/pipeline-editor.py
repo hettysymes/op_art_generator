@@ -19,23 +19,12 @@ import math
 import pickle
 
 from ui.Scene import Scene, NodeState, PortState, EdgeState
-from ui.nodes import CanvasNode
 
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
     connectionStarted = pyqtSignal(object)  # Emits the source port
     connectionMade = pyqtSignal(object, object)  # Emits source and destination ports
-
-# class NodeType:
-#     """Defines a type of node with specific inputs and outputs"""
-#     def __init__(self, name, node_class, color=QColor(200, 230, 250), properties=None):
-#         self.name = name
-#         self.input_ports = node_class.INPUT_PORTS
-#         self.output_ports = node_class.OUTPUT_PORTS
-#         self.color = color
-#         self.properties = properties or []
-#         self.node_class = node_class
 
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
@@ -92,8 +81,8 @@ class NodeItem(QGraphicsRectItem):
         input_nodes = []
         for input_port_id in self.backend.input_port_ids:
             input_port: PortItem = self.scene().scene.get(input_port_id)
-            if len(input_port.port_state.edge_ids) > 0:
-                edge_id = input_port.port_state.edge_ids[0] # Each input port can only have one edge
+            if len(input_port.backend.edge_ids) > 0:
+                edge_id = input_port.backend.edge_ids[0] # Each input port can only have one edge
                 edge: EdgeItem = self.scene().scene.get(edge_id)
                 input_nodes.append(edge.source_port.parentItem())
             else:
@@ -104,7 +93,7 @@ class NodeItem(QGraphicsRectItem):
         output_nodes = []
         for output_port_id in self.backend.output_port_ids:
             output_port: PortItem = self.scene().scene.get(output_port_id)
-            for edge_id in output_port.port_state.edge_ids: # Each output port can have 1+ edges
+            for edge_id in output_port.backend.edge_ids: # Each output port can have 1+ edges
                 edge: EdgeItem = self.scene().scene.get(edge_id)
                 output_nodes.append(edge.dest_port.parentItem())
         return output_nodes
@@ -181,7 +170,7 @@ class NodeItem(QGraphicsRectItem):
             # Update connected edges when node moves
             for port_id in self.backend.input_port_ids + self.backend.output_port_ids:
                 port: PortItem = self.scene().scene.get(port_id)
-                for edge_id in port.port_state.edge_ids:
+                for edge_id in port.backend.edge_ids:
                     edge: EdgeItem = self.scene().scene.get(edge_id)
                     edge.update_position()
         elif change == QGraphicsItem.ItemPositionHasChanged:
@@ -197,21 +186,20 @@ class PortItem(QGraphicsPathItem):
         super().__init__(parent)
         self.backend = port_state
         self.uid = port_state.uid
-        self.port_state = port_state
         self.size = 12  # Base size for the port
         
         # Create shape based on port_type
         self.create_shape_for_port_type()
         
         # Position the port
-        self.setPos(port_state.x, port_state.y)
+        self.setPos(self.backend.x, self.backend.y)
         self.setZValue(1)
         
         # Make port interactive
         self.setAcceptHoverEvents(True)
         
         # Set appearance based on input/output status
-        if port_state.is_input:
+        if self.backend.is_input:
             self.setBrush(QBrush(QColor(100, 100, 100)))
             self.setCursor(Qt.ArrowCursor)
         else:
@@ -223,7 +211,7 @@ class PortItem(QGraphicsPathItem):
     def create_shape_for_port_type(self):
         path = QPainterPath()
         half_size = self.size / 2
-        port_type = self.port_state.port_type
+        port_type = self.backend.port_type
         if port_type == PortType.ELEMENT:
             # Circle for number type
             path.addEllipse(-half_size, -half_size, self.size, self.size)
@@ -280,15 +268,15 @@ class PortItem(QGraphicsPathItem):
     
     # The rest of your methods remain the same
     def add_edge(self, edge_id):
-        self.port_state.edge_ids.append(edge_id)
+        self.backend.edge_ids.append(edge_id)
     
     def remove_edge(self, edge_id):
-        if edge_id in self.port_state.edge_ids:
-            self.port_state.edge_ids.remove(edge_id)
+        if edge_id in self.backend.edge_ids:
+            self.backend.edge_ids.remove(edge_id)
     
     def hoverEnterEvent(self, event):
         self.setPen(QPen(Qt.red, 2))
-        if not self.port_state.is_input:
+        if not self.backend.is_input:
             self.setCursor(Qt.CrossCursor)
         super().hoverEnterEvent(event)
     
@@ -315,8 +303,6 @@ class EdgeItem(QGraphicsLineItem):
     def set_ports(self):
         self.source_port = self.scene().scene.get(self.backend.src_port_id)
         self.dest_port = self.scene().scene.get(self.backend.dst_port_id)
-        self.source_port.add_edge(self.uid)
-        self.dest_port.add_edge(self.uid)
         self.update_position()
 
     def update_position(self):
@@ -523,22 +509,6 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
     
-    # def create_node_types(self):
-    #     """Create predefined node types with properties"""
-    #     return [
-    #         NodeType("Grid", color=QColor(220, 230, 250), properties=grid_props, node_class=GridNode),
-    #         NodeType("Cubic Function", color=QColor(227, 180, 141), properties=cubic_fun_props, node_class=CubicFunNode),
-    #         NodeType("Piecewise Linear Function", color=QColor(227, 180, 141), properties=piecewise_fun_props, node_class=PiecewiseFunNode),
-    #         NodeType("Custom Function", color=QColor(227, 180, 141), properties=custom_fun_props, node_class=CustomFunNode),
-    #         NodeType("Position Warp", color=QColor(203, 174, 212), properties=[], node_class=PosWarpNode),
-    #         NodeType("Relative Warp", color=QColor(203, 174, 212), properties=[], node_class=RelWarpNode),
-    #         NodeType("Shape Repeater", color=QColor(220, 250, 220), properties=[], node_class=ShapeRepeaterNode),
-    #         NodeType("Canvas", color=QColor(240, 220, 240), properties=canvas_props, node_class=CanvasNode),
-    #         NodeType("Checkerboard", color=QColor(220, 250, 220), properties=[], node_class=CheckerboardNode),
-    #         NodeType("Polygon", color=QColor(219, 167, 176), properties=polygon_props, node_class=PolygonNode),
-    #         NodeType("Ellipse", color=QColor(219, 167, 176), properties=ellipse_props, node_class=EllipseNode)
-    #     ]
-    
     def add_node_from_class(self, node_class, pos):
         """Add a new node of the given type at the specified position"""
         new_node = NodeItem(NodeState(uuid.uuid4(), pos.x(), pos.y(), [], [], {}, node_class))
@@ -556,7 +526,7 @@ class PipelineScene(QGraphicsScene):
         
     def start_connection(self, source_port: PortItem):
         """Start creating a connection from the given source port"""
-        if source_port and not source_port.port_state.is_input:
+        if source_port and not source_port.backend.is_input:
             self.source_port = source_port
             start_pos = source_port.get_center_scene_pos()
             
@@ -579,21 +549,23 @@ class PipelineScene(QGraphicsScene):
             if source_port.parentItem() != dest_port.parentItem():
                 # Check if connection already exists
                 connection_exists = False
-                for edge_id in source_port.port_state.edge_ids:
+                for edge_id in source_port.backend.edge_ids:
                     edge: EdgeItem = self.scene.get(edge_id)
                     if hasattr(edge, 'dest_port') and edge.dest_port == dest_port:
                         connection_exists = True
                         break
                 
                 # Check if target port already has a connection
-                target_has_connection = len(dest_port.port_state.edge_ids) > 0
+                target_has_connection = len(dest_port.backend.edge_ids) > 0
                 
                 if not connection_exists and not target_has_connection \
-                    and is_port_type_compatible(source_port.port_state.port_type, dest_port.port_state.port_type):
-                    edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.port_state.uid, dest_port.port_state.uid))
+                    and is_port_type_compatible(source_port.backend.port_type, dest_port.backend.port_type):
+                    edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.backend.uid, dest_port.backend.uid))
                     self.scene.add(edge)
                     self.addItem(edge)
                     edge.set_ports()
+                    edge.source_port.add_edge(edge.uid)
+                    edge.dest_port.add_edge(edge.uid)
                     edge.dest_port.parentItem().update_visualisations()
         
         # Clean up temporary line
@@ -610,7 +582,7 @@ class PipelineScene(QGraphicsScene):
         if event.button() == Qt.LeftButton:
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
             
-            if isinstance(item, PortItem) and not item.port_state.is_input:
+            if isinstance(item, PortItem) and not item.backend.is_input:
                 # Start creating a connection if an output port is clicked
                 self.connection_signals.connectionStarted.emit(item)
                 event.accept()
@@ -625,7 +597,7 @@ class PipelineScene(QGraphicsScene):
             
             # Highlight input port if we're hovering over one
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
-            if isinstance(item, PortItem) and item.port_state.is_input:
+            if isinstance(item, PortItem) and item.backend.is_input:
                 if self.dest_port != item:
                     # Reset previous dest port highlighting
                     if self.dest_port:
@@ -648,7 +620,7 @@ class PipelineScene(QGraphicsScene):
         """Handle mouse release events for the scene"""
         if event.button() == Qt.LeftButton and self.source_port:
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
-            if isinstance(item, PortItem) and item.port_state.is_input:
+            if isinstance(item, PortItem) and item.backend.is_input:
                 # Create permanent connection
                 self.connection_signals.connectionMade.emit(self.source_port, item)
                 event.accept()
@@ -794,17 +766,6 @@ class PipelineScene(QGraphicsScene):
         for uid in node_ids:
             self.scene.get(uid).update_vis_image()
     
-    # def nodes(self):
-    #     """Return all nodes in the scene"""
-    #     return [item for item in self.items() if isinstance(item, NodeItem)]
-    #
-    # def rename_node(self, node):
-    #     """Rename the given node"""
-    #     new_name, ok = QInputDialog.getText(None, "Rename Node", "Enter new name:", text=node.title)
-    #     if ok and new_name:
-    #         node.title = new_name
-    #         node.update()
-    
     def delete_edge(self, edge):
         """Delete the given edge"""
         edge.source_port.remove_edge(edge.uid)
@@ -819,7 +780,7 @@ class PipelineScene(QGraphicsScene):
         # Remove all connected edges first
         for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
             port: PortItem = self.scene.get(port_id)
-            for edge_id in list(port.port_state.edge_ids):  # Use a copy to avoid issues while removing
+            for edge_id in list(port.backend.edge_ids):  # Use a copy to avoid issues while removing
                 edge: EdgeItem = self.scene.get(edge_id)
                 self.delete_edge(edge)
 
