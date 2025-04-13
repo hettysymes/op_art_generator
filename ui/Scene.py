@@ -1,27 +1,44 @@
+from ui.nodes import Node
+
 class Scene:
 
     def __init__(self):
-        self.nodes = []
+        self.states = {}
+
+    def add(self, elem):
+        self.states[elem.uid] = elem
+
+    def get(self, uid):
+        return self.states[uid]
+
+    def remove(self, uid):
+        del self.states[uid]
 
 class NodeState:
 
-    def __init__(self, pos, input_ports, output_ports, property_values, node_type):
-        self.pos = pos
-        self.input_ports = input_ports
-        self.output_ports = output_ports
+    def __init__(self, uid, x, y, input_port_ids, output_port_ids, property_values, node_class: Node):
+        self.uid = uid
+        self.x = x
+        self.y = y
+        self.input_port_ids = input_port_ids
+        self.output_port_ids = output_port_ids
         self.property_values = property_values
-        self.node_type = node_type
+        self.node_class = node_class
 
 class EdgeState:
 
-    def __init__(self, src_port, dst_port):
-        self.src_port = src_port
-        self.dst_port = dst_port
+    def __init__(self, uid, src_port_id, dst_port_id):
+        self.uid = uid
+        self.src_port_id = src_port_id
+        self.dst_port_id = dst_port_id
 
 class PortState:
 
-    def __init__(self, node, is_input, edges, port_type):
-        self.node = node
+    def __init__(self, uid, x, y, parent_node_id, is_input, edge_ids, port_type):
+        self.uid = uid
+        self.x = x
+        self.y = y
+        self.parent_node_id = parent_node_id
         self.is_input = is_input
-        self.edges = edges
+        self.edge_ids = edge_ids
         self.port_type = port_type
