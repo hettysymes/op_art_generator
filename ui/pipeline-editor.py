@@ -120,7 +120,7 @@ class NodeItem(QGraphicsRectItem):
         self.update_vis_image()
 
         # Update port positions to match the new dimensions
-        self.update_port_positions()
+        self.update_port_edge_positions()
 
         # Update backend state
         self.backend.width = width
@@ -262,20 +262,19 @@ class NodeItem(QGraphicsRectItem):
                     
         return super().itemChange(change, value)
 
-    def update_port_positions(self):
+    def update_port_edge_positions(self):
         """Update the positions of all ports based on current node dimensions"""
         # Update input ports (left side)
         input_count = len(self.backend.input_port_ids)
         for i, input_port_id in enumerate(self.backend.input_port_ids):
-            input_port = self.scene().scene.get(input_port_id)
+            input_port: PortItem = self.scene().scene.get(input_port_id)
             y_offset = (i + 1) * self.rect().height() / (input_count + 1)
             input_port.backend.x = -10  # Keep x position constant
             input_port.backend.y = y_offset
             input_port.setPos(input_port.backend.x, input_port.backend.y)
 
             # Update any connections to this port
-            if hasattr(input_port, 'update_connections'):
-                input_port.update_connections()
+            input_port.update_edge_positions()
 
         # Update output ports (right side)
         output_count = len(self.backend.output_port_ids)
@@ -287,8 +286,7 @@ class NodeItem(QGraphicsRectItem):
             output_port.setPos(output_port.backend.x, output_port.backend.y)
 
             # Update any connections to this port
-            if hasattr(output_port, 'update_connections'):
-                output_port.update_connections()
+            output_port.update_edge_positions()
 
 
 class PortItem(QGraphicsPathItem):
@@ -395,6 +393,11 @@ class PortItem(QGraphicsPathItem):
     def hoverLeaveEvent(self, event):
         self.setPen(QPen(Qt.black, 1))
         super().hoverLeaveEvent(event)
+
+    def update_edge_positions(self):
+        for edge_id in self.backend.edge_ids:
+            edge = self.scene().scene.get(edge_id)
+            edge.update_position()
     
 
 class EdgeItem(QGraphicsLineItem):
