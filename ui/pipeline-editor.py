@@ -768,40 +768,6 @@ class PipelineScene(QGraphicsScene):
         
         super().mouseReleaseEvent(event)
 
-    def visualize_node(self, node):
-        """Display a visualization of the node's output with fixed size"""
-        width = 500
-        height = 500
-
-        svg_path = node.get_node().visualise(height, width/height)
-        if svg_path is None:
-            # Show message if no visualizer is available
-            QMessageBox.information(None, "Visualization", 
-                                f"No visualization available for node type: {node.node_class.NAME}")
-            return
-        
-        # Create a dialog to display the SVG
-        dialog = QDialog()
-        dialog.setWindowTitle(f"Visualization: {node.node_class.NAME}")
-        dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        
-        # Use QSvgWidget with fixed size
-        svg_widget = QSvgWidget(svg_path)
-        width = 500
-        height = 500
-        svg_widget.setFixedSize(width, height)
-        
-        # Create layout and set fixed size for dialog
-        layout = QVBoxLayout()
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.addWidget(svg_widget, 0, Qt.AlignCenter)
-        dialog.setLayout(layout)
-        
-        # Fix the dialog size to match the SVG size plus margins
-        dialog.setFixedSize(width, height)
-        
-        dialog.exec_()
-
     def contextMenuEvent(self, event):
         """Handle context menu events for the scene"""
         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
@@ -825,13 +791,8 @@ class PipelineScene(QGraphicsScene):
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
             
-            # Add visualize action
-            visualize_action = QAction("Visualize", menu)
-            visualize_action.triggered.connect(lambda: self.visualize_node(clicked_item))
-            
             menu.addAction(properties_action)
             menu.addAction(delete_action)
-            menu.addAction(visualize_action)  # Add the new action
             menu.exec_(event.screenPos())
         elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
             menu = QMenu()
