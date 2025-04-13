@@ -26,9 +26,69 @@ class ConnectionSignals(QObject):
     connectionStarted = pyqtSignal(object)  # Emits the source port
     connectionMade = pyqtSignal(object, object)  # Emits source and destination ports
 
+
+from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtGui import QBrush, QPen, QColor
+from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsItem
+from PyQt5.QtSvg import QGraphicsSvgItem
+
+
+class ResizeHandle(QGraphicsRectItem):
+    """Resize handle for NodeItem"""
+
+    def __init__(self, parent, position, size=8):
+        super().__init__(0, 0, size, size)
+        self.setParentItem(parent)
+        self.position = position  # 'bottomright', 'bottomleft', etc.
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
+        self.setBrush(QBrush(QColor(50, 50, 50)))
+        self.setPen(QPen(Qt.black, 1))
+        self.setCursor(Qt.SizeFDiagCursor)  # Diagonal resize cursor
+        self.setZValue(3)  # Above the node
+        self.update_position()
+
+    def update_position(self):
+        """Update handle position based on parent node size"""
+        parent_rect = self.parentItem().rect()
+        if self.position == 'bottomright':
+            self.setPos(parent_rect.width() - self.rect().width(),
+                        parent_rect.height() - self.rect().height())
+        elif self.position == 'bottomleft':
+            self.setPos(0, parent_rect.height() - self.rect().height())
+        elif self.position == 'topright':
+            self.setPos(parent_rect.width() - self.rect().width(), 0)
+        elif self.position == 'topleft':
+            self.setPos(0, 0)
+
+    def mouseMoveEvent(self, event):
+        # Override to handle resize logic
+        parent = self.parentItem()
+        orig_pos = event.lastScenePos()
+        new_pos = event.scenePos()
+        dx = new_pos.x() - orig_pos.x()
+        dy = new_pos.y() - orig_pos.y()
+
+        # Get current dimensions
+        rect = parent.rect()
+
+        # Minimum size constraints
+        min_width = 80
+        min_height = 60
+
+        if self.position == 'bottomright':
+            new_width = max(min_width, rect.width() + dx)
+            new_height = max(min_height, rect.height() + dy)
+            parent.resize(new_width, new_height)
+
+        # You can add other positions as needed
+        # Skip default implementation to prevent the handle itself from moving
+        event.accept()
+
+
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
-    
+
     def __init__(self, node_state: NodeState, width=150, height=80):
         super().__init__(0, 0, width, height)
         self.backend = node_state
@@ -38,44 +98,67 @@ class NodeItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        
+
         self.setBrush(QBrush(QColor(220, 230, 250)))
         self.setPen(QPen(Qt.black, 2))
         self.node_class = self.backend.node_class
 
+        # Initialize property values if needed
         if not self.backend.property_values:
-            # Initialize property values with defaults
             for prop in self.node_class.PROPERTIES:
                 self.backend.property_values[prop.name] = prop.default_value
 
         self.svg_item = None
 
+        # Add resize handle
+        self.resize_handle = ResizeHandle(self, 'bottomright')
+
+    def resize(self, width, height):
+        """Resize the node to the specified dimensions"""
+        self.setRect(0, 0, width, height)
+        self.resize_handle.update_position()
+        self.update_vis_image()
+
+        # Update port positions to match the new dimensions
+        self.update_port_positions()
+
+        # Update backend state
+        self.backend.width = width
+        self.backend.height = height
+
     def update_vis_image(self):
-        """Add an SVG image to the node"""
-        wh_ratio = 1 # TODO: canvas node has explicit wh_ratio
+        """Add an SVG image to the node that scales with node size"""
         title_height = 30
         margin_x = 10
         margin_y = 10
-        width = self.rect().width()-2*margin_x
-        height = width/wh_ratio
-        self.setRect(0, 0, self.rect().width(), height+title_height+margin_y)
-        svg_path = self.get_node().get_svg_path(height, wh_ratio)
+
+        # Available space for SVG
+        svg_width = self.rect().width() - 2 * margin_x
+        svg_height = self.rect().height() - title_height - margin_y
+
+        # Get SVG path
+        wh_ratio = svg_width / svg_height if svg_height > 0 else 1
+        svg_path = self.get_node().get_svg_path(svg_height, wh_ratio)
+
+        # Remove existing SVG if necessary
         if self.svg_item:
-            # Remove existing SVG item if there is one
             scene = self.scene()
             if scene and self.svg_item in scene.items():
                 scene.removeItem(self.svg_item)
-        
+
         # Create new SVG item
         self.svg_item = QGraphicsSvgItem(svg_path)
 
         # Center horizontally
-        svg_pos_x = (self.rect().width() - width) / 2
+        svg_pos_x = (self.rect().width() - svg_width) / 2
 
         # Apply position
         self.svg_item.setParentItem(self)
         self.svg_item.setPos(svg_pos_x, title_height)
-        self.svg_item.setZValue(2)  # Above the rectangle but below other elements
+        self.svg_item.setZValue(2)
+
+        # Scale SVG to fit
+        self.svg_item.setScale(svg_width / self.svg_item.boundingRect().width())
 
     def get_input_nodes(self):
         input_nodes = []
@@ -178,6 +261,35 @@ class NodeItem(QGraphicsRectItem):
             self.backend.y = self.pos().y()
                     
         return super().itemChange(change, value)
+
+    def update_port_positions(self):
+        """Update the positions of all ports based on current node dimensions"""
+        # Update input ports (left side)
+        input_count = len(self.backend.input_port_ids)
+        for i, input_port_id in enumerate(self.backend.input_port_ids):
+            input_port = self.scene().scene.get(input_port_id)
+            y_offset = (i + 1) * self.rect().height() / (input_count + 1)
+            input_port.backend.x = -10  # Keep x position constant
+            input_port.backend.y = y_offset
+            input_port.setPos(input_port.backend.x, input_port.backend.y)
+
+            # Update any connections to this port
+            if hasattr(input_port, 'update_connections'):
+                input_port.update_connections()
+
+        # Update output ports (right side)
+        output_count = len(self.backend.output_port_ids)
+        for i, output_port_id in enumerate(self.backend.output_port_ids):
+            output_port = self.scene().scene.get(output_port_id)
+            y_offset = (i + 1) * self.rect().height() / (output_count + 1)
+            output_port.backend.x = self.rect().width() + 10
+            output_port.backend.y = y_offset
+            output_port.setPos(output_port.backend.x, output_port.backend.y)
+
+            # Update any connections to this port
+            if hasattr(output_port, 'update_connections'):
+                output_port.update_connections()
+
 
 class PortItem(QGraphicsPathItem):
     """Represents connection points on nodes with shapes based on port_type"""
