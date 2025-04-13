@@ -2,9 +2,14 @@ from ui.Warp import PosWarp, RelWarp
 from Drawing import Drawing
 from shapes import Element, Polygon, Ellipse
 from port_types import PortType
+from utils import cubic_f
+from port_types import PortType
+import sympy as sp
+import numpy as np
 
 class NodeProperty:
     """Defines a property for a node"""
+
     def __init__(self, name, prop_type, default_value=None, min_value=None, max_value=None,
                  options=None, description=""):
         self.name = name
@@ -14,6 +19,7 @@ class NodeProperty:
         self.max_value = max_value
         self.options = options  # For enum type
         self.description = description
+
 
 class Node:
     INPUT_PORTS = []
@@ -36,13 +42,14 @@ class Node:
     def visualise(self, height, wh_ratio):
         return
 
+
 class CanvasNode(Node):
     INPUT_PORTS = [PortType.VISUALISABLE]
     OUTPUT_PORTS = []
     NAME = "Canvas"
     PROPERTIES = [
         NodeProperty("wh_ratio", "float", default_value=1.0, min_value=0.0,
-                    description="")
+                     description="")
     ]
 
     def __init__(self, node_id, input_nodes, properties):
@@ -55,6 +62,7 @@ class CanvasNode(Node):
     def visualise(self, height, wh_ratio):
         return self.input_node.visualise(height, wh_ratio)
 
+
 class BlankCanvas(Drawing):
 
     def __init__(self, out_name, height, wh_ratio):
@@ -62,6 +70,7 @@ class BlankCanvas(Drawing):
 
     def draw(self):
         self.add_bg()
+
 
 class PosWarpNode(Node):
     INPUT_PORTS = [PortType.FUNCTION]
@@ -79,6 +88,7 @@ class PosWarpNode(Node):
     def visualise(self, height, wh_ratio):
         return
 
+
 class RelWarpNode(Node):
     INPUT_PORTS = [PortType.FUNCTION]
     OUTPUT_PORTS = [PortType.WARP]
@@ -94,6 +104,7 @@ class RelWarpNode(Node):
 
     def visualise(self, height, wh_ratio):
         return
+
 
 class GridNode(Node):
     INPUT_PORTS = [PortType.WARP, PortType.WARP]
@@ -133,6 +144,7 @@ class GridNode(Node):
     def visualise(self, height, wh_ratio):
         return GridDrawing(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
+
 class GridDrawing(Drawing):
 
     def __init__(self, out_name, height, wh_ratio, inputs):
@@ -149,6 +161,7 @@ class GridDrawing(Drawing):
         for y in self.h_line_ys:
             # Draw horizontal line
             self.dwg_add(self.dwg.line((0, y), (self.width, y), stroke='black'))
+
 
 class ShapeRepeaterNode(Node):
     INPUT_PORTS = [PortType.GRID, PortType.ELEMENT]
@@ -168,18 +181,19 @@ class ShapeRepeaterNode(Node):
             ret_element = Element()
             for i in range(1, len(v_line_xs)):
                 for j in range(1, len(h_line_ys)):
-                    x1 = v_line_xs[i-1]
+                    x1 = v_line_xs[i - 1]
                     x2 = v_line_xs[i]
-                    y1 = h_line_ys[j-1]
+                    y1 = h_line_ys[j - 1]
                     y2 = h_line_ys[j]
                     for shape in element:
-                        ret_element.add(shape.scale(x2-x1, y2-y1).translate(x1, y1))
+                        ret_element.add(shape.scale(x2 - x1, y2 - y1).translate(x1, y1))
             return ret_element
 
     def visualise(self, height, wh_ratio):
         element = self.compute()
         if element:
             return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, element).save()
+
 
 class ElementDrawer(Drawing):
 
@@ -193,15 +207,16 @@ class ElementDrawer(Drawing):
         for shape in self.element:
             self.dwg_add(shape.scale(self.width, self.height).get(self.dwg))
 
+
 class PolygonNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.ELEMENT]
     NAME = "Polygon"
     PROPERTIES = [
         NodeProperty("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
-                    description=""),
+                     description=""),
         NodeProperty("fill", "string", default_value="black",
-                    description="")
+                     description="")
     ]
 
     def __init__(self, node_id, input_nodes, properties):
@@ -215,17 +230,18 @@ class PolygonNode(Node):
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
+
 class EllipseNode(Node):
     INPUT_PORTS = []
     OUTPUT_PORTS = [PortType.ELEMENT]
     NAME = "Ellipse"
     PROPERTIES = [
         NodeProperty("rx", "float", default_value=0.5,
-                    description=""),
+                     description=""),
         NodeProperty("ry", "float", default_value=0.5,
-                    description=""),
+                     description=""),
         NodeProperty("fill", "string", default_value="black",
-                    description="")
+                     description="")
     ]
 
     def __init__(self, node_id, input_nodes, properties):
@@ -239,6 +255,7 @@ class EllipseNode(Node):
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+
 
 class CheckerboardNode(Node):
     INPUT_PORTS = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
@@ -262,13 +279,13 @@ class CheckerboardNode(Node):
             for i in range(1, len(v_line_xs)):
                 element1_turn = element1_starts
                 for j in range(1, len(h_line_ys)):
-                    x1 = v_line_xs[i-1]
+                    x1 = v_line_xs[i - 1]
                     x2 = v_line_xs[i]
-                    y1 = h_line_ys[j-1]
+                    y1 = h_line_ys[j - 1]
                     y2 = h_line_ys[j]
                     element = element1 if element1_turn else element2
                     for shape in element:
-                        ret_element.add(shape.scale(x2-x1, y2-y1).translate(x1, y1))
+                        ret_element.add(shape.scale(x2 - x1, y2 - y1).translate(x1, y1))
                     element1_turn = not element1_turn
                 element1_starts = not element1_starts
             return ret_element
@@ -277,3 +294,79 @@ class CheckerboardNode(Node):
         element = self.compute()
         if element:
             return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, element).save()
+
+class CubicFunNode(Node):
+    INPUT_PORTS = []
+    OUTPUT_PORTS = [PortType.FUNCTION]
+    NAME = "Cubic Function"
+    PROPERTIES = [
+        NodeProperty("a_coeff", "float", default_value=3.22,
+                     description=""),
+        NodeProperty("b_coeff", "float", default_value=-5.41,
+                     description=""),
+        NodeProperty("c_coeff", "float", default_value=3.20,
+                     description=""),
+        NodeProperty("d_coeff", "float", default_value=0,
+                     description="")
+    ]
+
+    def __init__(self, node_id, input_nodes, properties):
+        super().__init__(node_id, input_nodes, properties)
+        self.a_coeff = properties['a_coeff']
+        self.b_coeff = properties['b_coeff']
+        self.c_coeff = properties['c_coeff']
+        self.d_coeff = properties['d_coeff']
+
+    def compute(self):
+        return cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff)
+
+    def visualise(self, height, wh_ratio):
+        return
+
+
+class CustomFunNode(Node):
+    INPUT_PORTS = []
+    OUTPUT_PORTS = [PortType.FUNCTION]
+    NAME = "Custom Function"
+    PROPERTIES = [
+        NodeProperty("fun_def", "string", default_value="x",
+                     description="")
+    ]
+
+    def __init__(self, node_id, input_nodes, properties):
+        super().__init__(node_id, input_nodes, properties)
+        self.fun_def = properties['fun_def']
+
+    def compute(self):
+        x = sp.symbols('x')
+        parsed_expr = sp.sympify(self.fun_def)
+        return sp.lambdify(x, parsed_expr)
+
+    def visualise(self, height, wh_ratio):
+        return
+
+
+class PiecewiseFunNode(Node):
+    INPUT_PORTS = []
+    OUTPUT_PORTS = [PortType.FUNCTION]
+    NAME = "Piecewise Function"
+    PROPERTIES = [
+        NodeProperty("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)],
+                     description="")
+    ]
+
+    def __init__(self, node_id, input_nodes, properties):
+        super().__init__(node_id, input_nodes, properties)
+        self.points = properties['points']
+
+    def compute(self):
+        xs, ys = zip(*self.points)
+        return lambda i: np.interp(i, xs, ys)
+
+    def visualise(self, height, wh_ratio):
+        return
+
+
+node_classes = [CanvasNode, PosWarpNode, RelWarpNode, GridNode, ShapeRepeaterNode, PolygonNode, EllipseNode,
+                CheckerboardNode,
+                CubicFunNode, CustomFunNode, PiecewiseFunNode]
