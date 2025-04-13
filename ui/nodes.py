@@ -26,6 +26,7 @@ class Node:
     OUTPUT_PORTS = []
     NAME = "Empty"
     PROPERTIES = []
+    RESIZABLE = True
 
     def __init__(self, node_id, input_nodes, properties):
         self.node_id = node_id
@@ -48,9 +49,12 @@ class CanvasNode(Node):
     OUTPUT_PORTS = []
     NAME = "Canvas"
     PROPERTIES = [
-        NodeProperty("wh_ratio", "float", default_value=1.0, min_value=0.0,
+        NodeProperty("width", "int", default_value=150, max_value=500, min_value=1,
+                     description=""),
+        NodeProperty("height", "int", default_value=150, max_value=500, min_value=1,
                      description="")
     ]
+    RESIZABLE = False
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
