@@ -19,6 +19,7 @@ import math
 import pickle
 
 from ui.Scene import Scene, NodeState, PortState, EdgeState
+from ui.nodes import CanvasNode
 
 
 class ConnectionSignals(QObject):
@@ -85,12 +86,20 @@ class ResizeHandle(QGraphicsRectItem):
         # Skip default implementation to prevent the handle itself from moving
         event.accept()
 
-
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
 
+    TITLE_HEIGHT = 20
+    MARGIN_X = 10
+    MARGIN_Y = 10
+
     def __init__(self, node_state: NodeState):
-        super().__init__(0, 0, node_state.width, node_state.height)
+        if node_state.node_class.RESIZABLE:
+            width, height = NodeItem.node_size_from_svg_size(node_state.svg_width, node_state.svg_height)
+        else:
+            # Assumes it's a canvas node
+            width, height = NodeItem.node_size_from_svg_size(node_state.property_values.get('width', 150), node_state.property_values.get('height', 150))
+        super().__init__(0, 0, width, height)
         self.backend = node_state
         self.uid = node_state.uid
         self.setPos(node_state.x, node_state.y)
@@ -109,36 +118,39 @@ class NodeItem(QGraphicsRectItem):
                 self.backend.property_values[prop.name] = prop.default_value
 
         self.svg_item = None
+        self.resize_handle = None
 
-        # Add resize handle
-        self.resize_handle = ResizeHandle(self, 'bottomright')
+        if self.node_class.RESIZABLE:
+            # Add resize handle
+            self.resize_handle = ResizeHandle(self, 'bottomright')
 
     def resize(self, width, height):
         """Resize the node to the specified dimensions"""
         self.setRect(0, 0, width, height)
-        self.resize_handle.update_position()
+        if self.resize_handle:
+            self.resize_handle.update_position()
         self.update_vis_image()
 
         # Update port positions to match the new dimensions
         self.update_port_edge_positions()
 
         # Update backend state
-        self.backend.width = width
-        self.backend.height = height
+        self.backend.svg_width, self.backend.svg_height = NodeItem.svg_size_from_node_size(width, height)
+
+    @staticmethod
+    def node_size_from_svg_size(svg_w, svg_h):
+        return svg_w + 2 * NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
+
+    @staticmethod
+    def svg_size_from_node_size(rect_w, rect_h):
+        return rect_w - 2 * NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size"""
-        title_height = 30
-        margin_x = 10
-        margin_y = 10
-
-        # Available space for SVG
-        svg_width = self.rect().width() - 2 * margin_x
-        svg_height = self.rect().height() - title_height - margin_y
 
         # Get SVG path
-        wh_ratio = svg_width / svg_height if svg_height > 0 else 1
-        svg_path = self.get_node().get_svg_path(svg_height, wh_ratio)
+        wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
+        svg_path = self.get_node().get_svg_path(self.backend.svg_height, wh_ratio)
 
         # Remove existing SVG if necessary
         if self.svg_item:
@@ -150,15 +162,15 @@ class NodeItem(QGraphicsRectItem):
         self.svg_item = QGraphicsSvgItem(svg_path)
 
         # Center horizontally
-        svg_pos_x = (self.rect().width() - svg_width) / 2
+        svg_pos_x = (self.rect().width() - self.backend.svg_width) / 2
 
         # Apply position
         self.svg_item.setParentItem(self)
-        self.svg_item.setPos(svg_pos_x, title_height)
+        self.svg_item.setPos(svg_pos_x, NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y)
         self.svg_item.setZValue(2)
 
         # Scale SVG to fit
-        self.svg_item.setScale(svg_width / self.svg_item.boundingRect().width())
+        self.svg_item.setScale(self.backend.svg_width / self.svg_item.boundingRect().width())
 
     def get_input_nodes(self):
         input_nodes = []
@@ -579,8 +591,6 @@ class NodePropertiesDialog(QDialog):
             
     def accept(self):
         """Apply properties and close dialog"""
-        # Update node title
-        # self.node_item.title = self.title_edit.text()
         
         # Update custom properties
         for prop_name, widget in self.property_widgets.items():
@@ -596,6 +606,10 @@ class NodePropertiesDialog(QDialog):
                 value = widget.text()
                 
             self.node_item.backend.property_values[prop_name] = value
+            if prop_name == 'width' or prop_name == 'height':
+                svg_width = self.node_item.backend.property_values.get('width', self.node_item.rect().width())
+                svg_height = self.node_item.backend.property_values.get('height', self.node_item.rect().height())
+                self.node_item.resize(*NodeItem.node_size_from_svg_size(svg_width, svg_height))
         
         # Update the node's appearance
         self.node_item.update()
@@ -626,7 +640,7 @@ class PipelineScene(QGraphicsScene):
     
     def add_node_from_class(self, node_class, pos):
         """Add a new node of the given type at the specified position"""
-        new_node = NodeItem(NodeState(uuid.uuid4(), pos.x(), pos.y(), [], [], {}, node_class, 150, 175))
+        new_node = NodeItem(NodeState(uuid.uuid4(), pos.x(), pos.y(), [], [], {}, node_class, 150, 150))
         self.scene.add(new_node)
         self.addItem(new_node)
         new_node.create_ports()
@@ -808,9 +822,6 @@ class PipelineScene(QGraphicsScene):
             properties_action = QAction("Properties...", menu)
             properties_action.triggered.connect(lambda: self.edit_node_properties(clicked_item))
             
-            # rename_action = QAction("Rename Node", menu)
-            # rename_action.triggered.connect(lambda: self.rename_node(clicked_item))
-            
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
             
@@ -819,7 +830,6 @@ class PipelineScene(QGraphicsScene):
             visualize_action.triggered.connect(lambda: self.visualize_node(clicked_item))
             
             menu.addAction(properties_action)
-            # menu.addAction(rename_action)
             menu.addAction(delete_action)
             menu.addAction(visualize_action)  # Add the new action
             menu.exec_(event.screenPos())

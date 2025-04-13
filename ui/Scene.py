@@ -16,7 +16,7 @@ class Scene:
 
 class NodeState:
 
-    def __init__(self, uid, x, y, input_port_ids, output_port_ids, property_values, node_class: Node, width, height):
+    def __init__(self, uid, x, y, input_port_ids, output_port_ids, property_values, node_class: Node, svg_width, svg_height):
         self.uid = uid
         self.x = x
         self.y = y
@@ -24,8 +24,8 @@ class NodeState:
         self.output_port_ids = output_port_ids
         self.property_values = property_values
         self.node_class = node_class
-        self.width = width
-        self.height = height
+        self.svg_width = svg_width
+        self.svg_height = svg_height
 
 class EdgeState:
 
