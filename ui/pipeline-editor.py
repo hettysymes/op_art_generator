@@ -52,12 +52,12 @@ class NodeItem(QGraphicsRectItem):
         
         self.setBrush(QBrush(QColor(220, 230, 250)))
         self.setPen(QPen(Qt.black, 2))
-        self.node_state = node_state
-        self.node_class = node_state.node_class
-        
-        # Initialize property values with defaults
-        for prop in self.node_class.PROPERTIES:
-            self.node_state.property_values[prop.name] = prop.default_value
+        self.node_class = self.backend.node_class
+
+        if not self.backend.property_values:
+            # Initialize property values with defaults
+            for prop in self.node_class.PROPERTIES:
+                self.backend.property_values[prop.name] = prop.default_value
 
         self.svg_item = None
 
@@ -90,7 +90,7 @@ class NodeItem(QGraphicsRectItem):
 
     def get_input_nodes(self):
         input_nodes = []
-        for input_port_id in self.node_state.input_port_ids:
+        for input_port_id in self.backend.input_port_ids:
             input_port: PortItem = self.scene().scene.get(input_port_id)
             if len(input_port.port_state.edge_ids) > 0:
                 edge_id = input_port.port_state.edge_ids[0] # Each input port can only have one edge
@@ -102,7 +102,7 @@ class NodeItem(QGraphicsRectItem):
 
     def get_output_nodes(self):
         output_nodes = []
-        for output_port_id in self.node_state.output_port_ids:
+        for output_port_id in self.backend.output_port_ids:
             output_port: PortItem = self.scene().scene.get(output_port_id)
             for edge_id in output_port.port_state.edge_ids: # Each output port can have 1+ edges
                 edge: EdgeItem = self.scene().scene.get(edge_id)
@@ -117,14 +117,14 @@ class NodeItem(QGraphicsRectItem):
     def get_node(self):
         input_nodes = self.get_input_nodes()
         if len(input_nodes) == 0:
-            return self.node_class(self.uid, [], self.node_state.property_values)
+            return self.node_class(self.uid, [], self.backend.property_values)
         extracted_nodes = []
         for node in input_nodes:
             if node:
                 extracted_nodes.append(node.get_node())
             else:
                 extracted_nodes.append(Node(None, None, None))
-        return self.node_class(self.uid, extracted_nodes, self.node_state.property_values)
+        return self.node_class(self.uid, extracted_nodes, self.backend.property_values)
         
     def create_ports(self):
         # Create input ports (left side)
@@ -134,10 +134,10 @@ class NodeItem(QGraphicsRectItem):
             state_id = uuid.uuid4()
             input_port = PortItem(PortState(state_id,
                                             -10, y_offset,
-                                            self,
+                                            self.uid,
                                             True,
                                             [], port_type), self)
-            self.node_state.input_port_ids.append(state_id)
+            self.backend.input_port_ids.append(state_id)
             self.scene().scene.add(input_port)
         
         # Create output ports (right side)
@@ -147,10 +147,10 @@ class NodeItem(QGraphicsRectItem):
             state_id = uuid.uuid4()
             output_port = PortItem(PortState(state_id,
                                             self.rect().width() + 10, y_offset,
-                                            self,
+                                            self.uid,
                                             False,
                                             [], port_type), self)
-            self.node_state.output_port_ids.append(state_id)
+            self.backend.output_port_ids.append(state_id)
             self.scene().scene.add(output_port)
         
     def paint(self, painter, option, widget):
@@ -165,13 +165,13 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(QFont("Arial", 8))
         
         # Input port labels
-        for i, port_id in enumerate(self.node_state.input_port_ids):
+        for i, port_id in enumerate(self.backend.input_port_ids):
             port = self.scene().scene.get(port_id)
             label_pos = port.pos() + QPointF(5, 0)  # Position just right of the port
             painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"In {i+1}")
         
         # Output port labels
-        for i, port_id in enumerate(self.node_state.output_port_ids):
+        for i, port_id in enumerate(self.backend.output_port_ids):
             port = self.scene().scene.get(port_id)
             label_pos = port.pos() + QPointF(-25, 0)  # Position just left of the port
             painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"Out {i+1}")
@@ -179,11 +179,14 @@ class NodeItem(QGraphicsRectItem):
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
             # Update connected edges when node moves
-            for port_id in self.node_state.input_port_ids + self.node_state.output_port_ids:
+            for port_id in self.backend.input_port_ids + self.backend.output_port_ids:
                 port: PortItem = self.scene().scene.get(port_id)
                 for edge_id in port.port_state.edge_ids:
                     edge: EdgeItem = self.scene().scene.get(edge_id)
                     edge.update_position()
+        elif change == QGraphicsItem.ItemPositionHasChanged:
+            self.backend.x = self.pos().x()
+            self.backend.y = self.pos().y()
                     
         return super().itemChange(change, value)
 
@@ -314,7 +317,6 @@ class EdgeItem(QGraphicsLineItem):
         self.dest_port = self.scene().scene.get(self.backend.dst_port_id)
         self.source_port.add_edge(self.uid)
         self.dest_port.add_edge(self.uid)
-        self.dest_port.parentItem().update_visualisations()
         self.update_position()
 
     def update_position(self):
@@ -355,7 +357,7 @@ class NodePropertiesDialog(QDialog):
             
             for prop in node_item.node_class.PROPERTIES:
                 if prop.prop_type != "hidden":
-                    widget = self.create_property_widget(prop, node_item.node_state.property_values.get(prop.name, prop.default_value))
+                    widget = self.create_property_widget(prop, node_item.backend.property_values.get(prop.name, prop.default_value))
                     props_layout.addRow(f"{prop.name}:", widget)
                     self.property_widgets[prop.name] = widget
                     
@@ -492,7 +494,7 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
                 
-            self.node_item.node_state.property_values[prop_name] = value
+            self.node_item.backend.property_values[prop_name] = value
         
         # Update the node's appearance
         self.node_item.update()
@@ -592,6 +594,7 @@ class PipelineScene(QGraphicsScene):
                     self.scene.add(edge)
                     self.addItem(edge)
                     edge.set_ports()
+                    edge.dest_port.parentItem().update_visualisations()
         
         # Clean up temporary line
         if self.temp_line:
@@ -763,7 +766,7 @@ class PipelineScene(QGraphicsScene):
 
     def save_scene(self):
         save_states = {}
-        for k, v in enumerate(self.states):
+        for k, v in self.scene.states.items():
             save_states[k] = v.backend
         with open("my_scene.pkl", "wb") as f:
             pickle.dump(save_states, f)
@@ -774,7 +777,7 @@ class PipelineScene(QGraphicsScene):
             save_states = pickle.load(f)
         self.scene = Scene()
         node_ids = []
-        for _, v in enumerate(save_states):
+        for _, v in save_states.items():
             if isinstance(v, NodeState):
                 node = NodeItem(v)
                 self.scene.add(node)
@@ -782,7 +785,7 @@ class PipelineScene(QGraphicsScene):
                 for port_id in v.input_port_ids + v.output_port_ids:
                     self.scene.add(PortItem(save_states[port_id], node))
                 node_ids.append(v.uid)
-        for _, v in enumerate(save_states):
+        for _, v in save_states.items():
             if isinstance(v, EdgeState):
                 edge = EdgeItem(v)
                 self.scene.add(edge)
@@ -814,13 +817,13 @@ class PipelineScene(QGraphicsScene):
     def delete_node(self, node: NodeItem):
         """Delete the given node and all its connections"""
         # Remove all connected edges first
-        for port_id in node.node_state.input_port_ids + node.node_state.output_port_ids:
+        for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
             port: PortItem = self.scene.get(port_id)
             for edge_id in list(port.port_state.edge_ids):  # Use a copy to avoid issues while removing
                 edge: EdgeItem = self.scene.get(edge_id)
                 self.delete_edge(edge)
 
-        for port_id in node.node_state.input_port_ids + node.node_state.output_port_ids:
+        for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
             self.scene.remove(port_id)
         self.scene.remove(node.uid)
         self.removeItem(node)
