@@ -1,5 +1,6 @@
 from ui.Warp import PosWarp, RelWarp
 
+
 class PosWarpNode:
 
     def __init__(self, node_id, input_nodes, properties):
@@ -12,6 +13,7 @@ class PosWarpNode:
 
     def visualise(self, height, wh_ratio):
         return
+
 
 class RelWarpNode:
 

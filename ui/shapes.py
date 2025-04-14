@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class Element:
 
     def __init__(self, shapes=None):
@@ -17,6 +18,7 @@ class Element:
     def __iter__(self):
         return iter(self.shapes)
 
+
 class Shape(ABC):
 
     @abstractmethod
@@ -31,6 +33,7 @@ class Shape(ABC):
     def get(self, dwg):
         pass
 
+
 class Polygon(Shape):
 
     def __init__(self, points, fill, stroke):
@@ -39,19 +42,20 @@ class Polygon(Shape):
         self.stroke = stroke
 
     def translate(self, tx, ty):
-        return Polygon([(x+tx, y+ty) for x,y in self.points], 
-                       self.fill, 
+        return Polygon([(x + tx, y + ty) for x, y in self.points],
+                       self.fill,
                        self.stroke)
-    
+
     def scale(self, sx, sy):
-        return Polygon([(x*sx, y*sy) for x,y in self.points], 
-                       self.fill, 
+        return Polygon([(x * sx, y * sy) for x, y in self.points],
+                       self.fill,
                        self.stroke)
-    
+
     def get(self, dwg):
         return dwg.polygon(points=self.points,
                            fill=self.fill,
                            stroke=self.stroke)
+
 
 class Ellipse(Shape):
 
@@ -62,12 +66,13 @@ class Ellipse(Shape):
         self.stroke = stroke
 
     def translate(self, tx, ty):
-        return Ellipse((self.center[0]+tx, self.center[1]+ty),
-                        self.r, self.fill, self.stroke)
-    
+        return Ellipse((self.center[0] + tx, self.center[1] + ty),
+                       self.r, self.fill, self.stroke)
+
     def scale(self, sx, sy):
-        return Ellipse((self.center[0]*sx, self.center[1]*sy), (self.r[0]*sx, self.r[1]*sy), self.fill, self.stroke)
-    
+        return Ellipse((self.center[0] * sx, self.center[1] * sy), (self.r[0] * sx, self.r[1] * sy), self.fill,
+                       self.stroke)
+
     def get(self, dwg):
         return dwg.ellipse(center=self.center,
                            r=self.r,

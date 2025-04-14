@@ -1,11 +1,12 @@
-from ui.Warp import PosWarp, RelWarp
-from Drawing import Drawing
-from shapes import Element, Polygon, Ellipse
-from port_types import PortType
-from utils import cubic_f
-from port_types import PortType
-import sympy as sp
 import numpy as np
+import sympy as sp
+
+from Drawing import Drawing
+from port_types import PortType
+from shapes import Element, Polygon, Ellipse
+from ui.Warp import PosWarp, RelWarp
+from utils import cubic_f
+
 
 class NodeProperty:
     """Defines a property for a node"""
@@ -298,6 +299,7 @@ class CheckerboardNode(Node):
         element = self.compute()
         if element:
             return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, element).save()
+
 
 class CubicFunNode(Node):
     INPUT_PORTS = []
