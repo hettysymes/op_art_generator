@@ -1,5 +1,6 @@
 import math
 import pickle
+import shutil
 import sys
 import uuid
 
@@ -11,7 +12,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
-                             QHBoxLayout, QFileDialog)
+                             QHBoxLayout, QFileDialog, QMessageBox)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 from nodes import Node, node_classes
@@ -28,7 +29,7 @@ class ConnectionSignals(QObject):
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QPen, QColor
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsItem
-from PyQt5.QtSvg import QGraphicsSvgItem
+from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
 
 
 class ResizeHandle(QGraphicsRectItem):
@@ -144,12 +145,13 @@ class NodeItem(QGraphicsRectItem):
     def svg_size_from_node_size(rect_w, rect_h):
         return rect_w - 2 * NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
+    def get_svg_path(self):
+        wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
+        return self.get_node().get_svg_path(self.backend.svg_height, wh_ratio)
+
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size"""
-
-        # Get SVG path
-        wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
-        svg_path = self.get_node().get_svg_path(self.backend.svg_height, wh_ratio)
+        svg_path = self.get_svg_path()
 
         # Remove existing SVG if necessary
         if self.svg_item:
@@ -618,6 +620,17 @@ class NodePropertiesDialog(QDialog):
         super().accept()
 
 
+def save_as_svg(clicked_item: NodeItem):
+    file_path, _ = QFileDialog.getSaveFileName(
+        None, "Save SVG",
+        f"{clicked_item.node_class.NAME}_{str(clicked_item.uid)[:6]}.svg",
+        "SVG Files (*.svg)"
+    )
+
+    if file_path:
+        shutil.copy(clicked_item.get_svg_path(), file_path)
+
+
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
@@ -793,6 +806,15 @@ class PipelineScene(QGraphicsScene):
 
             menu.addAction(properties_action)
             menu.addAction(delete_action)
+            menu.exec_(event.screenPos())
+        elif isinstance(clicked_item, QGraphicsSvgItem):
+            clicked_item = clicked_item.parentItem() # Refer to parent node
+
+            menu = QMenu()
+            save_svg_action = QAction("Save as SVG", menu)
+            save_svg_action.triggered.connect(lambda: save_as_svg(clicked_item))
+
+            menu.addAction(save_svg_action)
             menu.exec_(event.screenPos())
         elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
             menu = QMenu()
