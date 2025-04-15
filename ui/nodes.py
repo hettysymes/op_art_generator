@@ -84,10 +84,10 @@ class UnitNode(Node):
 
 class CombinationNode(Node):
 
-    def __init__(self, node_id, input_nodes, prop_vals):
+    def __init__(self, node_id, input_nodes, prop_vals, selection_index):
         self.unit_node = None
         self.selections = None
-        self.selection_index = None
+        self.selection_index = selection_index
         self.init_selections()
         super().__init__(node_id, input_nodes, prop_vals)
 
@@ -96,7 +96,7 @@ class CombinationNode(Node):
 
     def init_attributes(self):
         self.init_selections()
-        self.set_selection(0, at_init=True)
+        self.set_selection(self.selection_index, at_init=True)
 
     def set_selection(self, index, at_init=False):
         self.selection_index = index
@@ -488,12 +488,13 @@ class PiecewiseFunNode(UnitNode):
 
 class ShapeNode(CombinationNode):
     DISPLAY = "Shape"
+    SELECTIONS = [PolygonNode, EllipseNode]
 
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
+    def __init__(self, node_id, input_nodes, properties, selection_index):
+        super().__init__(node_id, input_nodes, properties, selection_index)
 
     def init_selections(self):
-        self.selections = [PolygonNode, EllipseNode]
+        self.selections = ShapeNode.SELECTIONS
 
 
 node_classes = [CanvasNode, PosWarpNode, RelWarpNode, GridNode, ShapeRepeaterNode, ShapeNode,

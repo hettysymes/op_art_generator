@@ -645,10 +645,15 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
 
-    def add_node_from_class(self, node_class, pos):
+    def add_node_from_class(self, node_class, pos, index=None):
         """Add a new node of the given type at the specified position"""
         uid = uuid.uuid4()
-        new_node = NodeItem(NodeState(uid, pos.x(), pos.y(), [], [], node_class(uid, None, None), 150, 150))
+        if index is None:
+            node = node_class(uid, None, None)
+        else:
+            node = node_class(uid, None, None, index)
+
+        new_node = NodeItem(NodeState(uid, pos.x(), pos.y(), [], [], node, 150, 150))
         self.scene.add(new_node)
         self.addItem(new_node)
         new_node.create_ports()
@@ -803,7 +808,7 @@ class PipelineScene(QGraphicsScene):
                 submenu = QMenu(f"Change {clicked_item.node.__class__.DISPLAY} to...")
                 for i in range(len(clicked_item.node.selections)):
                     if i == clicked_item.node.selection_index: continue
-                    change_action = QAction(f"{clicked_item.node.selections[i].DISPLAY}", submenu)
+                    change_action = QAction(clicked_item.node.selections[i].DISPLAY, submenu)
                     change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
                     submenu.addAction(change_action)
                 menu.addMenu(submenu)
@@ -827,10 +832,19 @@ class PipelineScene(QGraphicsScene):
 
             # Add actions for each node type
             for node_class in node_classes:
-                action = QAction(node_class.DISPLAY, add_node_menu)
-                action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos():
-                                         self.add_node_from_class(nt, pos))
-                add_node_menu.addAction(action)
+                if issubclass(node_class, CombinationNode):
+                    submenu = QMenu(node_class.DISPLAY)
+                    for i in range(len(node_class.SELECTIONS)):
+                        change_action = QAction(node_class.SELECTIONS[i].DISPLAY, submenu)
+                        change_action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos(), index=i:
+                                             self.add_node_from_class(nt, pos, index))
+                        submenu.addAction(change_action)
+                    add_node_menu.addMenu(submenu)
+                else:
+                    action = QAction(node_class.DISPLAY, add_node_menu)
+                    action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos():
+                                             self.add_node_from_class(nt, pos))
+                    add_node_menu.addAction(action)
 
             menu.exec_(event.screenPos())
 
