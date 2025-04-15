@@ -602,7 +602,7 @@ class NodePropertiesDialog(QDialog):
                 value = widget.text()
 
             self.node_item.node.prop_vals[prop_name] = value
-            if prop_name == 'width' or prop_name == 'height':
+            if (not self.node_item.node.resizable) and (prop_name == 'width' or prop_name == 'height'):
                 svg_width = self.node_item.node.prop_vals.get('width', self.node_item.rect().width())
                 svg_height = self.node_item.node.prop_vals.get('height', self.node_item.rect().height())
                 self.node_item.resize(*NodeItem.node_size_from_svg_size(svg_width, svg_height))

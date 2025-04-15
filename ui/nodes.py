@@ -248,9 +248,9 @@ class GridNode(UnitNode):
         self.out_port_types = [PortType.GRID]
         self.prop_type_list = PropTypeList(
             [
-                PropType("num_v_lines", "int", default_value=5,
+                PropType("width", "int", default_value=5,
                          description="Number of squares in width of grid"),
-                PropType("num_h_lines", "int", default_value=5,
+                PropType("height", "int", default_value=5,
                          description="Number of squares in height of grid")
             ]
         )
@@ -269,8 +269,8 @@ class GridNode(UnitNode):
         else:
             assert isinstance(y_warp, PosWarp) or isinstance(y_warp, RelWarp)
 
-        v_line_xs = x_warp.sample(self.prop_vals['num_v_lines'])
-        h_line_ys = y_warp.sample(self.prop_vals['num_h_lines'])
+        v_line_xs = x_warp.sample(self.prop_vals['width']+1)
+        h_line_ys = y_warp.sample(self.prop_vals['height']+1)
         return v_line_xs, h_line_ys
 
     def visualise(self, height, wh_ratio):
