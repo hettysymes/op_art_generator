@@ -653,7 +653,7 @@ class PipelineScene(QGraphicsScene):
 
     def add_node_from_class(self, node_class, pos):
         """Add a new node of the given type at the specified position"""
-        new_node = NodeItem(NodeState(uuid.uuid4(), pos.x(), pos.y(), [], [], {}, node_class, 150, 150))
+        new_node = NodeItem(NodeState(uuid.uuid4(), pos.x(), pos.y(), [], [], node_class(), 150, 150))
         self.scene.add(new_node)
         self.addItem(new_node)
         new_node.create_ports()

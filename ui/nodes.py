@@ -10,7 +10,19 @@ from ui.Warp import PosWarp, RelWarp
 from utils import cubic_f
 
 
-class NodeProperty:
+class PropTypeList:
+
+    def __init__(self, prop_types):
+        self.prop_types = prop_types
+
+    def get_default_values(self):
+        prop_vals = {}
+        for prop_type in self.prop_types:
+            prop_vals[prop_type.name] = prop_type.default_value
+        return prop_vals
+
+
+class PropType:
     """Defines a property for a node"""
 
     def __init__(self, name, prop_type, default_value=None, min_value=None, max_value=None,
@@ -25,29 +37,29 @@ class NodeProperty:
 
 
 class Node(ABC):
-    NAME = "Node"
-    RESIZABLE = True
 
-    def __init__(self, node_id, input_nodes, properties):
+    def __init__(self, node_id, input_nodes=None, prop_vals=None):
         self.node_id = node_id
+        self.input_nodes = input_nodes
+        self.prop_vals = prop_vals
+
+        # To override
+        self.name = "Node"
+        self.resizable = True
+        self.in_port_types = []
+        self.out_port_types = []
+        self.prop_type_list = None
+
+    def get_prop_vals(self):
+        if not self.prop_vals:
+            self.prop_vals = self.prop_type_list.get_default_values()
+        return self.prop_vals
 
     def get_svg_path(self, height, wh_ratio):
         vis = self.visualise(height, wh_ratio)
         if vis: return vis
         # No visualisation, return blank canvas
         return BlankCanvas(f"tmp/{str(self.node_id)}", height, wh_ratio).save()
-
-    @abstractmethod
-    def input_ports(self):
-        pass
-
-    @abstractmethod
-    def output_ports(self):
-        pass
-
-    @abstractmethod
-    def properties(self):
-        pass
 
     @abstractmethod
     def compute(self):
@@ -59,22 +71,10 @@ class Node(ABC):
 
 
 class UnitNode(Node):
-    NAME = "Empty"
-    INPUT_PORTS = []
-    OUTPUT_PORTS = []
-    PROPERTIES = []
 
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
-
-    def input_ports(self):
-        return UnitNode.INPUT_PORTS
-
-    def output_ports(self):
-        return UnitNode.OUTPUT_PORTS
-
-    def properties(self):
-        return UnitNode.PROPERTIES
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Empty"
 
     def compute(self):
         return
@@ -82,27 +82,22 @@ class UnitNode(Node):
     def visualise(self, height, wh_ratio):
         return
 
-class CanvasNode(Node):
-    NAME = "Canvas"
-    RESIZABLE = False
 
-    INPUT_PORTS = [PortType.VISUALISABLE]
-    PROPERTIES = [
-        NodeProperty("width", "int", default_value=150, max_value=500, min_value=1,
-                     description=""),
-        NodeProperty("height", "int", default_value=150, max_value=500, min_value=1,
-                     description="")
-    ]
+class CanvasNode(Node):
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
+        self.name = "Canvas"
+        self.resizable = False
+        self.in_port_types = [PortType.VISUALISABLE]
+        self.prop_type_list = PropTypeList([
+            PropType("width", "int", default_value=150, max_value=500, min_value=1,
+                     description=""),
+            PropType("height", "int", default_value=150, max_value=500, min_value=1,
+                     description="")
+        ])
+
         self.input_node = input_nodes[0]
-
-    def input_ports(self):
-        return CanvasNode.INPUT_PORTS
-
-    def properties(self):
-        return CanvasNode.PROPERTIES
 
     def compute(self):
         return self.input_node.compute()
@@ -121,79 +116,51 @@ class BlankCanvas(Drawing):
 
 
 class PosWarpNode(UnitNode):
-    NAME = "Pos Warp"
 
-    INPUT_PORTS = [PortType.FUNCTION]
-    OUTPUT_PORTS = [PortType.WARP]
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Pos Warp"
+        self.in_port_types = [PortType.FUNCTION]
+        self.out_port_types = [PortType.WARP]
 
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
         self.f_node = input_nodes[0]
-
-    def input_ports(self):
-        return PosWarpNode.INPUT_PORTS
-
-    def output_ports(self):
-        return PosWarpNode.OUTPUT_PORTS
 
     def compute(self):
         f = self.f_node.compute()
         if f: return PosWarp(f)
 
-    def visualise(self, height, wh_ratio):
-        return
-
 
 class RelWarpNode(UnitNode):
-    NAME = "Rel Warp"
 
-    INPUT_PORTS = [PortType.FUNCTION]
-    OUTPUT_PORTS = [PortType.WARP]
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Rel Warp"
+        self.in_port_types = [PortType.FUNCTION]
+        self.out_port_types = [PortType.WARP]
 
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
         self.f_node = input_nodes[0]
-
-    def input_ports(self):
-        return RelWarpNode.INPUT_PORTS
-
-    def output_ports(self):
-        return RelWarpNode.OUTPUT_PORTS
 
     def compute(self):
         f = self.f_node.compute()
         if f: return RelWarp(f)
 
-    def visualise(self, height, wh_ratio):
-        return
-
 
 class GridNode(UnitNode):
-    NAME = "Grid"
 
-    INPUT_PORTS = [PortType.WARP, PortType.WARP]
-    OUTPUT_PORTS = [PortType.GRID]
-    PROPERTIES = [
-        NodeProperty("num_v_lines", "int", default_value=5,
-                     description="Number of squares in width of grid"),
-        NodeProperty("num_h_lines", "int", default_value=5,
-                     description="Number of squares in height of grid")
-    ]
-
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
-        self.num_v_lines = properties['num_v_lines']
-        self.num_h_lines = properties['num_h_lines']
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Grid"
+        self.in_port_types = [PortType.WARP, PortType.WARP]
+        self.out_port_types = [PortType.GRID]
+        self.prop_type_list = PropTypeList(
+            [
+                PropType("num_v_lines", "int", default_value=5,
+                         description="Number of squares in width of grid"),
+                PropType("num_h_lines", "int", default_value=5,
+                         description="Number of squares in height of grid")
+            ]
+        )
         self.x_warp_node, self.y_warp_node = input_nodes
-
-    def input_ports(self):
-        return GridNode.INPUT_PORTS
-
-    def output_ports(self):
-        return GridNode.OUTPUT_PORTS
-
-    def properties(self):
-        return GridNode.PROPERTIES
 
     def compute(self):
         # Get warp functions
@@ -209,8 +176,9 @@ class GridNode(UnitNode):
         else:
             assert isinstance(y_warp, PosWarp) or isinstance(y_warp, RelWarp)
 
-        v_line_xs = x_warp.sample(self.num_v_lines)
-        h_line_ys = y_warp.sample(self.num_h_lines)
+        prop_vals = self.get_prop_vals()
+        v_line_xs = x_warp.sample(prop_vals['num_v_lines'])
+        h_line_ys = y_warp.sample(prop_vals['num_h_lines'])
         return v_line_xs, h_line_ys
 
     def visualise(self, height, wh_ratio):
@@ -236,21 +204,15 @@ class GridDrawing(Drawing):
 
 
 class ShapeRepeaterNode(UnitNode):
-    NAME = "Shape Repeater"
 
-    INPUT_PORTS = [PortType.GRID, PortType.ELEMENT]
-    OUTPUT_PORTS = [PortType.ELEMENT]
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Shape Repeater"
+        self.in_port_types = [PortType.GRID, PortType.ELEMENT]
+        self.out_port_types = [PortType.ELEMENT]
 
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
         self.grid_node = input_nodes[0]
         self.element_node = input_nodes[1]
-
-    def input_ports(self):
-        return ShapeRepeaterNode.INPUT_PORTS
-
-    def output_ports(self):
-        return ShapeRepeaterNode.OUTPUT_PORTS
 
     def compute(self):
         grid_out = self.grid_node.compute()
@@ -288,83 +250,64 @@ class ElementDrawer(Drawing):
 
 
 class PolygonNode(UnitNode):
-    NAME = "Polygon"
 
-    OUTPUT_PORTS = [PortType.ELEMENT]
-    PROPERTIES = [
-        NodeProperty("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
-                     description=""),
-        NodeProperty("fill", "string", default_value="black",
-                     description="")
-    ]
-
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
-        self.points = properties['points']
-        self.fill = properties['fill']
-
-    def output_ports(self):
-        return PolygonNode.OUTPUT_PORTS
-
-    def properties(self):
-        return PolygonNode.PROPERTIES
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Polygon"
+        self.out_port_types = [PortType.ELEMENT]
+        self.prop_type_list = PropTypeList(
+            [
+                PropType("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
+                         description=""),
+                PropType("fill", "string", default_value="black",
+                         description="")
+            ]
+        )
 
     def compute(self):
-        return Element([Polygon(self.points, self.fill, 'none')])
+        prop_vals = self.get_prop_vals()
+        return Element([Polygon(prop_vals['points'], prop_vals['fill'], 'none')])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
 
 class EllipseNode(UnitNode):
-    NAME = "Ellipse"
 
-    OUTPUT_PORTS = [PortType.ELEMENT]
-    PROPERTIES = [
-        NodeProperty("rx", "float", default_value=0.5,
-                     description=""),
-        NodeProperty("ry", "float", default_value=0.5,
-                     description=""),
-        NodeProperty("fill", "string", default_value="black",
-                     description="")
-    ]
-
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
-        self.rx = properties['rx']
-        self.ry = properties['ry']
-        self.fill = properties['fill']
-
-    def output_ports(self):
-        return EllipseNode.OUTPUT_PORTS
-
-    def properties(self):
-        return EllipseNode.PROPERTIES
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Ellipse"
+        self.out_port_types = [PortType.ELEMENT]
+        self.prop_type_list = PropTypeList(
+            [
+                PropType("rx", "float", default_value=0.5,
+                         description=""),
+                PropType("ry", "float", default_value=0.5,
+                         description=""),
+                PropType("fill", "string", default_value="black",
+                         description="")
+            ]
+        )
 
     def compute(self):
-        return Element([Ellipse((0.5, 0.5), (self.rx, self.ry), self.fill, 'none')])
+        prop_vals = self.get_prop_vals()
+        return Element([Ellipse((0.5, 0.5), (prop_vals['rx'], prop_vals['ry']), prop_vals['fill'], 'none')])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
 
 class CheckerboardNode(UnitNode):
-    NAME = "Checkerboard"
 
-    INPUT_PORTS = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
-    OUTPUT_PORTS = [PortType.ELEMENT]
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Checkerboard"
+        self.in_port_types = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
+        self.out_port_types = [PortType.ELEMENT]
 
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
         self.grid_node = input_nodes[0]
         self.element1_node = input_nodes[1]
         self.element2_node = input_nodes[2]
-
-    def input_ports(self):
-        return CheckerboardNode.INPUT_PORTS
-
-    def output_ports(self):
-        return CheckerboardNode.OUTPUT_PORTS
 
     def compute(self):
         grid_out = self.grid_node.compute()
@@ -395,124 +338,92 @@ class CheckerboardNode(UnitNode):
 
 
 class CubicFunNode(UnitNode):
-    NAME = "Cubic Function"
 
-    OUTPUT_PORTS = [PortType.FUNCTION]
-    PROPERTIES = [
-        NodeProperty("a_coeff", "float", default_value=3.22,
-                     description=""),
-        NodeProperty("b_coeff", "float", default_value=-5.41,
-                     description=""),
-        NodeProperty("c_coeff", "float", default_value=3.20,
-                     description=""),
-        NodeProperty("d_coeff", "float", default_value=0,
-                     description="")
-    ]
-
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
-        self.a_coeff = properties['a_coeff']
-        self.b_coeff = properties['b_coeff']
-        self.c_coeff = properties['c_coeff']
-        self.d_coeff = properties['d_coeff']
-
-    def output_ports(self):
-        return CubicFunNode.OUTPUT_PORTS
-
-    def properties(self):
-        return CubicFunNode.PROPERTIES
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Cubic Function"
+        self.out_port_types = [PortType.FUNCTION]
+        self.prop_type_list = PropTypeList(
+            [
+                PropType("a_coeff", "float", default_value=3.22,
+                         description=""),
+                PropType("b_coeff", "float", default_value=-5.41,
+                         description=""),
+                PropType("c_coeff", "float", default_value=3.20,
+                         description=""),
+                PropType("d_coeff", "float", default_value=0,
+                         description="")
+            ]
+        )
 
     def compute(self):
-        return cubic_f(self.a_coeff, self.b_coeff, self.c_coeff, self.d_coeff)
-
-    def visualise(self, height, wh_ratio):
-        return
+        prop_vals = self.get_prop_vals()
+        return cubic_f(prop_vals['a_coeff'], prop_vals['b_coeff'], prop_vals['c_coeff'], prop_vals['d_coeff'])
 
 
 class CustomFunNode(UnitNode):
-    NAME = "Custom Function"
 
-    OUTPUT_PORTS = [PortType.FUNCTION]
-    PROPERTIES = [
-        NodeProperty("fun_def", "string", default_value="x",
-                     description="")
-    ]
-
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
-        self.fun_def = properties['fun_def']
-
-    def output_ports(self):
-        return CustomFunNode.OUTPUT_PORTS
-
-    def properties(self):
-        return CustomFunNode.PROPERTIES
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Custom Function"
+        self.out_port_types = [PortType.FUNCTION]
+        self.prop_type_list = PropTypeList(
+            [
+                PropType("fun_def", "string", default_value="x",
+                         description="")
+            ]
+        )
 
     def compute(self):
+        prop_vals = self.get_prop_vals()
         x = sp.symbols('x')
-        parsed_expr = sp.sympify(self.fun_def)
+        parsed_expr = sp.sympify(prop_vals['fun_def'])
         return sp.lambdify(x, parsed_expr)
-
-    def visualise(self, height, wh_ratio):
-        return
 
 
 class PiecewiseFunNode(UnitNode):
-    NAME = "Piecewise Function"
 
-    OUTPUT_PORTS = [PortType.FUNCTION]
-    PROPERTIES = [
-        NodeProperty("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)],
-                     description="")
-    ]
-
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
-        self.points = properties['points']
-
-    def output_ports(self):
-        return PiecewiseFunNode.OUTPUT_PORTS
-
-    def properties(self):
-        return PiecewiseFunNode.PROPERTIES
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.name = "Piecewise Function"
+        self.out_port_types = [PortType.FUNCTION]
+        self.prop_type_list = PropTypeList(
+            [
+                PropType("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)],
+                         description="")
+            ]
+        )
 
     def compute(self):
-        xs, ys = zip(*self.points)
+        prop_vals = self.get_prop_vals()
+        xs, ys = zip(*prop_vals['points'])
         return lambda i: np.interp(i, xs, ys)
-
-    def visualise(self, height, wh_ratio):
-        return
 
 
 class CombinationNode(Node):
-    SELECTIONS = []
 
-    def __init__(self, node_id, input_nodes, properties):
-        super().__init__(node_id, input_nodes, properties)
-        self.node = CombinationNode.SELECTIONS[properties['_selection']](node_id, input_nodes, properties)
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.selection_index = 0
 
-    def input_ports(self):
-        return self.node.input_ports()
+        # To override
+        self.selections = []
 
-    def output_ports(self):
-        return self.node.output_ports()
-
-    def properties(self):
-        return self.node.properties()
+    def get_unit_node(self):
+        return self.selections[self.selection_index](self.node_id, self.input_nodes, self.get_prop_vals())
 
     def compute(self):
-        return self.node.compute()
+        return self.get_unit_node().compute()
 
     def visualise(self, height, wh_ratio):
-        return self.node.visualise(height, wh_ratio)
+        return self.get_unit_node().visualise(height, wh_ratio)
 
 
 class ShapeNode(CombinationNode):
-    SELECTIONS = [PolygonNode, EllipseNode]
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
-        self.node = ShapeNode.SELECTIONS[properties['_selection']](node_id, input_nodes, properties)
+        self.selections = [PolygonNode, EllipseNode]
 
 
 node_classes = [CanvasNode, PosWarpNode, RelWarpNode, GridNode, ShapeRepeaterNode, ShapeNode,
