@@ -83,6 +83,32 @@ class UnitNode(Node):
         return
 
 
+class CombinationNode(Node):
+
+    def __init__(self, node_id, input_nodes, prop_vals):
+        super().__init__(node_id, input_nodes, prop_vals)
+        self.unit_node = None
+        self.selections = [] # To override
+        # Set selection here
+
+    def set_selection(self, index):
+        self.input_nodes = None
+        self.prop_vals = None
+        self.unit_node = self.selections[index](self.node_id, None, None)
+
+        self.name = self.unit_node.name
+        self.resizable = self.unit_node.resizable
+        self.in_port_types = self.unit_node.in_port_types
+        self.out_port_types = self.unit_node.out_port_types
+        self.prop_type_list = self.unit_node.prop_type_list
+
+    def compute(self):
+        return self.unit_node.compute()
+
+    def visualise(self, height, wh_ratio):
+        return self.unit_node.visualise(height, wh_ratio)
+
+
 class CanvasNode(Node):
 
     def __init__(self, node_id, input_nodes, properties):
@@ -400,30 +426,12 @@ class PiecewiseFunNode(UnitNode):
         return lambda i: np.interp(i, xs, ys)
 
 
-class CombinationNode(Node):
-
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
-        self.selection_index = 0
-
-        # To override
-        self.selections = []
-
-    def get_unit_node(self):
-        return self.selections[self.selection_index](self.node_id, self.input_nodes, self.get_prop_vals())
-
-    def compute(self):
-        return self.get_unit_node().compute()
-
-    def visualise(self, height, wh_ratio):
-        return self.get_unit_node().visualise(height, wh_ratio)
-
-
 class ShapeNode(CombinationNode):
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
         self.selections = [PolygonNode, EllipseNode]
+        self.set_selection(0)
 
 
 node_classes = [CanvasNode, PosWarpNode, RelWarpNode, GridNode, ShapeRepeaterNode, ShapeNode,
