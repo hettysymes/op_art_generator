@@ -108,6 +108,9 @@ class CombinationNode(Node):
         self.out_port_types = self.unit_node.out_port_types
         self.prop_type_list = self.unit_node.prop_type_list
         if not at_init:
+            for k in self.prop_vals:
+                if k in self.unit_node.prop_vals:
+                    self.unit_node.prop_vals[k] = self.prop_vals[k]
             self.prop_vals = self.unit_node.prop_vals
 
     def compute(self):
