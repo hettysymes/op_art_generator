@@ -833,13 +833,13 @@ class PipelineScene(QGraphicsScene):
             # Add actions for each node type
             for node_class in node_classes:
                 if issubclass(node_class, CombinationNode):
-                    submenu = QMenu(node_class.DISPLAY)
+                    submenu = add_node_menu.addMenu(node_class.DISPLAY)
                     for i in range(len(node_class.SELECTIONS)):
                         change_action = QAction(node_class.SELECTIONS[i].DISPLAY, submenu)
-                        change_action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos(), index=i:
-                                             self.add_node_from_class(nt, pos, index))
+                        from functools import partial
+                        handler = partial(self.add_node_from_class, node_class, event.scenePos(), i)
+                        change_action.triggered.connect(handler)
                         submenu.addAction(change_action)
-                    add_node_menu.addMenu(submenu)
                 else:
                     action = QAction(node_class.DISPLAY, add_node_menu)
                     action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos():

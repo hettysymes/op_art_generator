@@ -496,7 +496,17 @@ class ShapeNode(CombinationNode):
     def init_selections(self):
         self.selections = ShapeNode.SELECTIONS
 
+class WarpNode(CombinationNode):
+    DISPLAY = "Warp"
+    SELECTIONS = [PosWarpNode, RelWarpNode]
 
-node_classes = [CanvasNode, PosWarpNode, RelWarpNode, GridNode, ShapeRepeaterNode, ShapeNode,
+    def __init__(self, node_id, input_nodes, properties, selection_index):
+        super().__init__(node_id, input_nodes, properties, selection_index)
+
+    def init_selections(self):
+        self.selections = WarpNode.SELECTIONS
+
+
+node_classes = [CanvasNode, ShapeNode, GridNode, ShapeRepeaterNode, WarpNode,
                 CheckerboardNode,
                 CubicFunNode, CustomFunNode, PiecewiseFunNode]
