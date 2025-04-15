@@ -12,13 +12,13 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
-                             QHBoxLayout, QFileDialog, QMessageBox)
+                             QHBoxLayout, QFileDialog)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
-from nodes import Node, node_classes, UnitNode, ShapeNode
-from port_types import is_port_type_compatible, PortType
 from Scene import Scene, NodeState, PortState, EdgeState
 from nodes import CombinationNode
+from nodes import node_classes, UnitNode
+from port_types import is_port_type_compatible, PortType
 
 
 class ConnectionSignals(QObject):
@@ -30,7 +30,7 @@ class ConnectionSignals(QObject):
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QPen, QColor
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsItem
-from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
+from PyQt5.QtSvg import QGraphicsSvgItem
 
 
 class ResizeHandle(QGraphicsRectItem):
@@ -466,7 +466,7 @@ class NodePropertiesDialog(QDialog):
             for prop in node_item.node.prop_type_list:
                 if prop.prop_type != "hidden":
                     widget = self.create_property_widget(prop, node_item.node.prop_vals.get(prop.name,
-                                                                                                  prop.default_value))
+                                                                                            prop.default_value))
                     props_layout.addRow(f"{prop.name}:", widget)
                     self.property_widgets[prop.name] = widget
 
@@ -817,7 +817,7 @@ class PipelineScene(QGraphicsScene):
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
         elif isinstance(clicked_item, QGraphicsSvgItem):
-            clicked_item = clicked_item.parentItem() # Refer to parent node
+            clicked_item = clicked_item.parentItem()  # Refer to parent node
 
             menu = QMenu()
             save_svg_action = QAction("Save as SVG", menu)

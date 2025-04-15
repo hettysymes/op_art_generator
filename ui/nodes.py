@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import sympy as sp
+from matplotlib.figure import Figure
 
 from Drawing import Drawing
 from port_types import PortType
@@ -45,7 +46,7 @@ class Node(ABC):
         self.node_id = node_id
         self.input_nodes = input_nodes
         self.prop_vals = prop_vals
-        self.init_attributes() # To override
+        self.init_attributes()  # To override
         self.prop_vals = prop_vals if prop_vals else self.prop_type_list.get_default_values()
 
     def init_attributes(self):
@@ -166,6 +167,34 @@ class BlankCanvas(Drawing):
     def draw(self):
         self.add_bg()
 
+def create_graph_svg(height, wh_ratio, warp, filepath):
+
+    # Sample the function (1000 points for smooth curve)
+    num_samples = 1000
+    y = warp.sample(num_samples)
+    x = np.linspace(0, 1, num_samples)
+
+    # Create a Figure and plot the data
+    width = wh_ratio * height
+    dpi = 100
+    fig = Figure(figsize=(width / dpi, height / dpi), dpi=dpi)
+    ax = fig.add_subplot(111)
+
+    # Plot the function with appropriate styling
+    ax.plot(x, y, 'b-', linewidth=2)
+
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+
+    # Set axis limits to 0-1 range
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+
+    # Add grid for better readability
+    ax.grid(True, alpha=0.3)
+
+    fig.savefig(filepath, format='svg', bbox_inches='tight')
+    return filepath
 
 class PosWarpNode(UnitNode):
     DISPLAY = "Pos Warp"
@@ -184,6 +213,11 @@ class PosWarpNode(UnitNode):
         f = self.input_nodes[0].compute()
         if f: return PosWarp(f)
 
+    def visualise(self, height, wh_ratio):
+        warp = self.compute()
+        if warp:
+            return create_graph_svg(height, wh_ratio, self.compute(),f"tmp/{str(self.node_id)}")
+
 
 class RelWarpNode(UnitNode):
     DISPLAY = "Rel Warp"
@@ -201,6 +235,11 @@ class RelWarpNode(UnitNode):
     def compute(self):
         f = self.input_nodes[0].compute()
         if f: return RelWarp(f)
+
+    def visualise(self, height, wh_ratio):
+        warp = self.compute()
+        if warp:
+            return create_graph_svg(height, wh_ratio, self.compute(), f"tmp/{str(self.node_id)}")
 
 
 class GridNode(UnitNode):
@@ -364,7 +403,8 @@ class EllipseNode(UnitNode):
         )
 
     def compute(self):
-        return Element([Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), self.prop_vals['fill'], 'none')])
+        return Element(
+            [Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), self.prop_vals['fill'], 'none')])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
@@ -436,7 +476,8 @@ class CubicFunNode(UnitNode):
         )
 
     def compute(self):
-        return cubic_f(self.prop_vals['a_coeff'], self.prop_vals['b_coeff'], self.prop_vals['c_coeff'], self.prop_vals['d_coeff'])
+        return cubic_f(self.prop_vals['a_coeff'], self.prop_vals['b_coeff'], self.prop_vals['c_coeff'],
+                       self.prop_vals['d_coeff'])
 
 
 class CustomFunNode(UnitNode):
@@ -496,6 +537,7 @@ class ShapeNode(CombinationNode):
     def init_selections(self):
         self.selections = ShapeNode.SELECTIONS
 
+
 class WarpNode(CombinationNode):
     DISPLAY = "Warp"
     SELECTIONS = [PosWarpNode, RelWarpNode]
@@ -507,6 +549,16 @@ class WarpNode(CombinationNode):
         self.selections = WarpNode.SELECTIONS
 
 
-node_classes = [CanvasNode, ShapeNode, GridNode, ShapeRepeaterNode, WarpNode,
-                CheckerboardNode,
-                CubicFunNode, CustomFunNode, PiecewiseFunNode]
+class FunctionNode(CombinationNode):
+    DISPLAY = "Function"
+    SELECTIONS = [CubicFunNode, PiecewiseFunNode, CustomFunNode]
+
+    def __init__(self, node_id, input_nodes, properties, selection_index):
+        super().__init__(node_id, input_nodes, properties, selection_index)
+
+    def init_selections(self):
+        self.selections = FunctionNode.SELECTIONS
+
+
+node_classes = [GridNode, ShapeNode, ShapeRepeaterNode, CheckerboardNode, WarpNode,
+                FunctionNode, CanvasNode]
