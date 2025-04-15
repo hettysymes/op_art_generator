@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 from Drawing import Drawing
 from port_types import PortType
 from shapes import Element, Polygon, Ellipse
-from ui.Warp import PosWarp, RelWarp
+from ui.Warp import PosWarp, RelWarp, sample_fun
 from utils import cubic_f
 
 
@@ -167,12 +167,9 @@ class BlankCanvas(Drawing):
     def draw(self):
         self.add_bg()
 
-def create_graph_svg(height, wh_ratio, warp, filepath):
-
+def create_graph_svg(height, wh_ratio, y, filepath):
     # Sample the function (1000 points for smooth curve)
-    num_samples = 1000
-    y = warp.sample(num_samples)
-    x = np.linspace(0, 1, num_samples)
+    x = np.linspace(0, 1, len(y))
 
     # Create a Figure and plot the data
     width = wh_ratio * height
@@ -185,10 +182,6 @@ def create_graph_svg(height, wh_ratio, warp, filepath):
 
     ax.set_xlabel("x")
     ax.set_ylabel("y")
-
-    # Set axis limits to 0-1 range
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
 
     # Add grid for better readability
     ax.grid(True, alpha=0.3)
@@ -216,7 +209,7 @@ class PosWarpNode(UnitNode):
     def visualise(self, height, wh_ratio):
         warp = self.compute()
         if warp:
-            return create_graph_svg(height, wh_ratio, self.compute(),f"tmp/{str(self.node_id)}")
+            return create_graph_svg(height, wh_ratio, warp.sample(1000),f"tmp/{str(self.node_id)}")
 
 
 class RelWarpNode(UnitNode):
@@ -239,7 +232,7 @@ class RelWarpNode(UnitNode):
     def visualise(self, height, wh_ratio):
         warp = self.compute()
         if warp:
-            return create_graph_svg(height, wh_ratio, self.compute(), f"tmp/{str(self.node_id)}")
+            return create_graph_svg(height, wh_ratio, warp.sample(1000), f"tmp/{str(self.node_id)}")
 
 
 class GridNode(UnitNode):
@@ -479,6 +472,11 @@ class CubicFunNode(UnitNode):
         return cubic_f(self.prop_vals['a_coeff'], self.prop_vals['b_coeff'], self.prop_vals['c_coeff'],
                        self.prop_vals['d_coeff'])
 
+    def visualise(self, height, wh_ratio):
+        function = self.compute()
+        if function:
+            return create_graph_svg(height, wh_ratio, sample_fun(function, 1000),f"tmp/{str(self.node_id)}")
+
 
 class CustomFunNode(UnitNode):
     DISPLAY = "Custom Function"
@@ -503,6 +501,10 @@ class CustomFunNode(UnitNode):
         parsed_expr = sp.sympify(self.prop_vals['fun_def'])
         return sp.lambdify(x, parsed_expr)
 
+    def visualise(self, height, wh_ratio):
+        function = self.compute()
+        if function:
+            return create_graph_svg(height, wh_ratio, sample_fun(function, 1000),f"tmp/{str(self.node_id)}")
 
 class PiecewiseFunNode(UnitNode):
     DISPLAY = "Piecewise Function"
@@ -526,6 +528,10 @@ class PiecewiseFunNode(UnitNode):
         xs, ys = zip(*self.prop_vals['points'])
         return lambda i: np.interp(i, xs, ys)
 
+    def visualise(self, height, wh_ratio):
+        function = self.compute()
+        if function:
+            return create_graph_svg(height, wh_ratio, sample_fun(function, 1000),f"tmp/{str(self.node_id)}")
 
 class ShapeNode(CombinationNode):
     DISPLAY = "Shape"
