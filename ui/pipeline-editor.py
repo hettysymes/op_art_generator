@@ -15,9 +15,10 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QHBoxLayout, QFileDialog, QMessageBox)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
-from nodes import Node, node_classes
+from nodes import Node, node_classes, UnitNode, ShapeNode
 from port_types import is_port_type_compatible, PortType
-from ui.Scene import Scene, NodeState, PortState, EdgeState
+from Scene import Scene, NodeState, PortState, EdgeState
+from nodes import CombinationNode
 
 
 class ConnectionSignals(QObject):
@@ -93,12 +94,12 @@ class NodeItem(QGraphicsRectItem):
     MARGIN_Y = 10
 
     def __init__(self, node_state: NodeState):
-        if node_state.node_class.RESIZABLE:
+        if node_state.node.resizable:
             width, height = NodeItem.node_size_from_svg_size(node_state.svg_width, node_state.svg_height)
         else:
             # Assumes it's a canvas node
-            width, height = NodeItem.node_size_from_svg_size(node_state.property_values.get('width', 150),
-                                                             node_state.property_values.get('height', 150))
+            width, height = NodeItem.node_size_from_svg_size(node_state.node.prop_vals.get('width', 150),
+                                                             node_state.node.prop_vals.get('height', 150))
         super().__init__(0, 0, width, height)
         self.backend = node_state
         self.uid = node_state.uid
@@ -110,17 +111,12 @@ class NodeItem(QGraphicsRectItem):
 
         self.setBrush(QBrush(QColor(220, 230, 250)))
         self.setPen(QPen(Qt.black, 2))
-        self.node_class = self.backend.node_class
-
-        # Initialize property values if needed
-        if not self.backend.property_values:
-            for prop in self.node_class.PROPERTIES:
-                self.backend.property_values[prop.name] = prop.default_value
+        self.node = self.backend.node
 
         self.svg_item = None
         self.resize_handle = None
 
-        if self.node_class.RESIZABLE:
+        if self.node.resizable:
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
 
@@ -147,7 +143,7 @@ class NodeItem(QGraphicsRectItem):
 
     def get_svg_path(self):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
-        return self.get_node().get_svg_path(self.backend.svg_height, wh_ratio)
+        return self.update_node().get_svg_path(self.backend.svg_height, wh_ratio)
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size"""
@@ -173,7 +169,7 @@ class NodeItem(QGraphicsRectItem):
         # Scale SVG to fit
         self.svg_item.setScale(self.backend.svg_width / self.svg_item.boundingRect().width())
 
-    def get_input_nodes(self):
+    def get_input_node_items(self):
         input_nodes = []
         for input_port_id in self.backend.input_port_ids:
             input_port: PortItem = self.scene().scene.get(input_port_id)
@@ -185,7 +181,7 @@ class NodeItem(QGraphicsRectItem):
                 input_nodes.append(None)
         return input_nodes
 
-    def get_output_nodes(self):
+    def get_output_node_items(self):
         output_nodes = []
         for output_port_id in self.backend.output_port_ids:
             output_port: PortItem = self.scene().scene.get(output_port_id)
@@ -196,25 +192,27 @@ class NodeItem(QGraphicsRectItem):
 
     def update_visualisations(self):
         self.update_vis_image()
-        for output_node in self.get_output_nodes():
+        for output_node in self.get_output_node_items():
             output_node.update_visualisations()
 
-    def get_node(self):
-        input_nodes = self.get_input_nodes()
-        if len(input_nodes) == 0:
-            return self.node_class(self.uid, [], self.backend.property_values)
-        extracted_nodes = []
-        for node in input_nodes:
-            if node:
-                extracted_nodes.append(node.get_node())
-            else:
-                extracted_nodes.append(Node(None, None, None))
-        return self.node_class(self.uid, extracted_nodes, self.backend.property_values)
+    def update_node(self):
+        input_node_items = self.get_input_node_items()
+        if len(input_node_items) == 0:
+            self.node.input_nodes = []
+        else:
+            extracted_nodes = []
+            for node_item in input_node_items:
+                if node_item:
+                    extracted_nodes.append(node_item.node)
+                else:
+                    extracted_nodes.append(UnitNode(None, None, None))
+            self.node.input_nodes = extracted_nodes
+        return self.node
 
     def create_ports(self):
         # Create input ports (left side)
-        input_count = len(self.node_class.INPUT_PORTS)
-        for i, port_type in enumerate(self.node_class.INPUT_PORTS):
+        input_count = len(self.node.in_port_types)
+        for i, port_type in enumerate(self.node.in_port_types):
             y_offset = (i + 1) * self.rect().height() / (input_count + 1)
             state_id = uuid.uuid4()
             input_port = PortItem(PortState(state_id,
@@ -226,8 +224,8 @@ class NodeItem(QGraphicsRectItem):
             self.scene().scene.add(input_port)
 
         # Create output ports (right side)
-        output_count = len(self.node_class.OUTPUT_PORTS)
-        for i, port_type in enumerate(self.node_class.OUTPUT_PORTS):
+        output_count = len(self.node.out_port_types)
+        for i, port_type in enumerate(self.node.out_port_types):
             y_offset = (i + 1) * self.rect().height() / (output_count + 1)
             state_id = uuid.uuid4()
             output_port = PortItem(PortState(state_id,
@@ -244,7 +242,7 @@ class NodeItem(QGraphicsRectItem):
         # Draw node title
         painter.setFont(QFont("Arial", 10))
         title_rect = self.rect().adjusted(0, 10, 0, 0)  # Shift the top edge down
-        painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.node_class.NAME)
+        painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.node.name)
 
         # Draw port labels if there are multiple
         painter.setFont(QFont("Arial", 8))
@@ -446,7 +444,7 @@ class NodePropertiesDialog(QDialog):
     def __init__(self, node_item, parent=None):
         super().__init__(parent)
         self.node_item: NodeItem = node_item
-        self.setWindowTitle(f"Properties: {node_item.node_class.NAME}")
+        self.setWindowTitle(f"Properties: {node_item.node.name}")
         self.setMinimumWidth(400)
 
         # Main layout
@@ -459,20 +457,16 @@ class NodePropertiesDialog(QDialog):
 
         self.property_widgets = {}
 
-        # Add general properties (title)
-        self.title_edit = QLineEdit(self.node_item.node_class.NAME)
-        form_layout.addRow("Node Name:", self.title_edit)
-
         # Add custom properties based on node type
-        if node_item.node_class.PROPERTIES:
+        if node_item.node.prop_type_list:
             props_group = QGroupBox("Node Properties")
             props_layout = QFormLayout()
             props_group.setLayout(props_layout)
 
-            for prop in node_item.node_class.PROPERTIES:
+            for prop in node_item.node.prop_type_list:
                 if prop.prop_type != "hidden":
-                    widget = self.create_property_widget(prop, node_item.backend.property_values.get(prop.name,
-                                                                                                     prop.default_value))
+                    widget = self.create_property_widget(prop, node_item.node.prop_vals.get(prop.name,
+                                                                                                  prop.default_value))
                     props_layout.addRow(f"{prop.name}:", widget)
                     self.property_widgets[prop.name] = widget
 
@@ -607,10 +601,10 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
 
-            self.node_item.backend.property_values[prop_name] = value
+            self.node_item.node.prop_vals[prop_name] = value
             if prop_name == 'width' or prop_name == 'height':
-                svg_width = self.node_item.backend.property_values.get('width', self.node_item.rect().width())
-                svg_height = self.node_item.backend.property_values.get('height', self.node_item.rect().height())
+                svg_width = self.node_item.node.prop_vals.get('width', self.node_item.rect().width())
+                svg_height = self.node_item.node.prop_vals.get('height', self.node_item.rect().height())
                 self.node_item.resize(*NodeItem.node_size_from_svg_size(svg_width, svg_height))
 
         # Update the node's appearance
@@ -623,7 +617,7 @@ class NodePropertiesDialog(QDialog):
 def save_as_svg(clicked_item: NodeItem):
     file_path, _ = QFileDialog.getSaveFileName(
         None, "Save SVG",
-        f"{clicked_item.node_class.NAME}_{str(clicked_item.uid)[:6]}.svg",
+        f"{clicked_item.node.name}_{str(clicked_item.uid)[:6]}.svg",
         "SVG Files (*.svg)"
     )
 
@@ -651,9 +645,15 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
 
-    def add_node_from_class(self, node_class, pos):
+    def add_node_from_class(self, node_class, pos, index=None):
         """Add a new node of the given type at the specified position"""
-        new_node = NodeItem(NodeState(uuid.uuid4(), pos.x(), pos.y(), [], [], {}, node_class, 150, 150))
+        uid = uuid.uuid4()
+        if index is None:
+            node = node_class(uid, None, None)
+        else:
+            node = node_class(uid, None, None, index)
+
+        new_node = NodeItem(NodeState(uid, pos.x(), pos.y(), [], [], node, 150, 150))
         self.scene.add(new_node)
         self.addItem(new_node)
         new_node.create_ports()
@@ -804,6 +804,15 @@ class PipelineScene(QGraphicsScene):
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
 
+            if isinstance(clicked_item, NodeItem) and isinstance(clicked_item.node, CombinationNode):
+                submenu = QMenu(f"Change {clicked_item.node.__class__.DISPLAY} to...")
+                for i in range(len(clicked_item.node.selections)):
+                    if i == clicked_item.node.selection_index: continue
+                    change_action = QAction(clicked_item.node.selections[i].DISPLAY, submenu)
+                    change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
+                    submenu.addAction(change_action)
+                menu.addMenu(submenu)
+
             menu.addAction(properties_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
@@ -823,10 +832,19 @@ class PipelineScene(QGraphicsScene):
 
             # Add actions for each node type
             for node_class in node_classes:
-                action = QAction(node_class.NAME, add_node_menu)
-                action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos():
-                                         self.add_node_from_class(nt, pos))
-                add_node_menu.addAction(action)
+                if issubclass(node_class, CombinationNode):
+                    submenu = QMenu(node_class.DISPLAY)
+                    for i in range(len(node_class.SELECTIONS)):
+                        change_action = QAction(node_class.SELECTIONS[i].DISPLAY, submenu)
+                        change_action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos(), index=i:
+                                             self.add_node_from_class(nt, pos, index))
+                        submenu.addAction(change_action)
+                    add_node_menu.addMenu(submenu)
+                else:
+                    action = QAction(node_class.DISPLAY, add_node_menu)
+                    action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos():
+                                             self.add_node_from_class(nt, pos))
+                    add_node_menu.addAction(action)
 
             menu.exec_(event.screenPos())
 
@@ -887,6 +905,10 @@ class PipelineScene(QGraphicsScene):
             self.scene.remove(port_id)
         self.scene.remove(node.uid)
         self.removeItem(node)
+
+    def change_node_selection(self, clicked_item: NodeItem, i):
+        clicked_item.node.set_selection(i)
+        clicked_item.update_visualisations()
 
 
 class PipelineView(QGraphicsView):
