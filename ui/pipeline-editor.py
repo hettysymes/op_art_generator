@@ -1046,6 +1046,11 @@ class PipelineEditor(QMainWindow):
     def clear_scene(self):
         self.scene.clear_scene()
 
+    def closeEvent(self, event):
+        # Cleanup tmp folder storing svg images
+        shutil.rmtree('tmp', ignore_errors=True)
+        event.accept()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
