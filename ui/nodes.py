@@ -21,6 +21,9 @@ class PropTypeList:
             prop_vals[prop_type.name] = prop_type.default_value
         return prop_vals
 
+    def __iter__(self):
+        return iter(self.prop_types)
+
 
 class PropType:
     """Defines a property for a node"""
@@ -38,22 +41,19 @@ class PropType:
 
 class Node(ABC):
 
-    def __init__(self, node_id, input_nodes=None, prop_vals=None):
+    def __init__(self, node_id, input_nodes, prop_vals):
         self.node_id = node_id
         self.input_nodes = input_nodes
         self.prop_vals = prop_vals
+        self.init_attributes() # To override
+        self.prop_vals = prop_vals if prop_vals else self.prop_type_list.get_default_values()
 
-        # To override
+    def init_attributes(self):
         self.name = "Node"
         self.resizable = True
         self.in_port_types = []
         self.out_port_types = []
-        self.prop_type_list = None
-
-    def get_prop_vals(self):
-        if not self.prop_vals:
-            self.prop_vals = self.prop_type_list.get_default_values()
-        return self.prop_vals
+        self.prop_type_list = PropTypeList([])
 
     def get_svg_path(self, height, wh_ratio):
         vis = self.visualise(height, wh_ratio)
@@ -74,7 +74,6 @@ class UnitNode(Node):
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Empty"
 
     def compute(self):
         return
@@ -86,16 +85,20 @@ class UnitNode(Node):
 class CombinationNode(Node):
 
     def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
         self.unit_node = None
-        self.selections = [] # To override
-        # Set selection here
+        self.selections = None
+        self.init_selections()
+        super().__init__(node_id, input_nodes, prop_vals)
+
+    def init_selections(self):
+        self.selections = []
+
+    def init_attributes(self):
+        self.init_selections()
+        self.set_selection(0)
 
     def set_selection(self, index):
-        self.input_nodes = None
-        self.prop_vals = None
-        self.unit_node = self.selections[index](self.node_id, None, None)
-
+        self.unit_node = self.selections[index](self.node_id, self.input_nodes, self.prop_vals)
         self.name = self.unit_node.name
         self.resizable = self.unit_node.resizable
         self.in_port_types = self.unit_node.in_port_types
@@ -103,17 +106,22 @@ class CombinationNode(Node):
         self.prop_type_list = self.unit_node.prop_type_list
 
     def compute(self):
+        self.unit_node.input_nodes = self.input_nodes
+        self.unit_node.prop_vals = self.prop_vals
         return self.unit_node.compute()
 
     def visualise(self, height, wh_ratio):
+        self.unit_node.input_nodes = self.input_nodes
+        self.unit_node.prop_vals = self.prop_vals
         return self.unit_node.visualise(height, wh_ratio)
 
 
 class CanvasNode(Node):
+    DISPLAY = "Canvas"
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
-        self.name = "Canvas"
+        self.name = CanvasNode.DISPLAY
         self.resizable = False
         self.in_port_types = [PortType.VISUALISABLE]
         self.prop_type_list = PropTypeList([
@@ -123,13 +131,23 @@ class CanvasNode(Node):
                      description="")
         ])
 
-        self.input_node = input_nodes[0]
+    def init_attributes(self):
+        self.name = CanvasNode.DISPLAY
+        self.resizable = False
+        self.in_port_types = [PortType.VISUALISABLE]
+        self.out_port_types = []
+        self.prop_type_list = PropTypeList([
+            PropType("width", "int", default_value=150, max_value=500, min_value=1,
+                     description=""),
+            PropType("height", "int", default_value=150, max_value=500, min_value=1,
+                     description="")
+        ])
 
     def compute(self):
-        return self.input_node.compute()
+        return self.input_nodes[0].compute()
 
     def visualise(self, height, wh_ratio):
-        return self.input_node.visualise(height, wh_ratio)
+        return self.input_nodes[0].visualise(height, wh_ratio)
 
 
 class BlankCanvas(Drawing):
@@ -142,40 +160,50 @@ class BlankCanvas(Drawing):
 
 
 class PosWarpNode(UnitNode):
+    DISPLAY = "Pos Warp"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Pos Warp"
+
+    def init_attributes(self):
+        self.name = PosWarpNode.DISPLAY
+        self.resizable = True
         self.in_port_types = [PortType.FUNCTION]
         self.out_port_types = [PortType.WARP]
-
-        self.f_node = input_nodes[0]
+        self.prop_type_list = PropTypeList([])
 
     def compute(self):
-        f = self.f_node.compute()
+        f = self.input_nodes[0].compute()
         if f: return PosWarp(f)
 
 
 class RelWarpNode(UnitNode):
+    DISPLAY = "Rel Warp"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Rel Warp"
+
+    def init_attributes(self):
+        self.name = RelWarpNode.DISPLAY
+        self.resizable = True
         self.in_port_types = [PortType.FUNCTION]
         self.out_port_types = [PortType.WARP]
-
-        self.f_node = input_nodes[0]
+        self.prop_type_list = PropTypeList([])
 
     def compute(self):
-        f = self.f_node.compute()
+        f = self.input_nodes[0].compute()
         if f: return RelWarp(f)
 
 
 class GridNode(UnitNode):
+    DISPLAY = "Grid"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Grid"
+
+    def init_attributes(self):
+        self.name = GridNode.DISPLAY
+        self.resizable = True
         self.in_port_types = [PortType.WARP, PortType.WARP]
         self.out_port_types = [PortType.GRID]
         self.prop_type_list = PropTypeList(
@@ -186,25 +214,23 @@ class GridNode(UnitNode):
                          description="Number of squares in height of grid")
             ]
         )
-        self.x_warp_node, self.y_warp_node = input_nodes
 
     def compute(self):
         # Get warp functions
-        x_warp = self.x_warp_node.compute()
+        x_warp = self.input_nodes[0].compute()
         if x_warp is None:
             x_warp = PosWarp(lambda i: i)
         else:
             assert isinstance(x_warp, PosWarp) or isinstance(x_warp, RelWarp)
 
-        y_warp = self.y_warp_node.compute()
+        y_warp = self.input_nodes[1].compute()
         if y_warp is None:
             y_warp = PosWarp(lambda i: i)
         else:
             assert isinstance(y_warp, PosWarp) or isinstance(y_warp, RelWarp)
 
-        prop_vals = self.get_prop_vals()
-        v_line_xs = x_warp.sample(prop_vals['num_v_lines'])
-        h_line_ys = y_warp.sample(prop_vals['num_h_lines'])
+        v_line_xs = x_warp.sample(self.prop_vals['num_v_lines'])
+        h_line_ys = y_warp.sample(self.prop_vals['num_h_lines'])
         return v_line_xs, h_line_ys
 
     def visualise(self, height, wh_ratio):
@@ -230,19 +256,24 @@ class GridDrawing(Drawing):
 
 
 class ShapeRepeaterNode(UnitNode):
+    DISPLAY = "Shape Repeater"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Shape Repeater"
+        self.name = ShapeRepeaterNode.DISPLAY
         self.in_port_types = [PortType.GRID, PortType.ELEMENT]
         self.out_port_types = [PortType.ELEMENT]
 
-        self.grid_node = input_nodes[0]
-        self.element_node = input_nodes[1]
+    def init_attributes(self):
+        self.name = ShapeRepeaterNode.DISPLAY
+        self.resizable = True
+        self.in_port_types = [PortType.GRID, PortType.ELEMENT]
+        self.out_port_types = [PortType.ELEMENT]
+        self.prop_type_list = PropTypeList([])
 
     def compute(self):
-        grid_out = self.grid_node.compute()
-        element = self.element_node.compute()
+        grid_out = self.input_nodes[0].compute()
+        element = self.input_nodes[1].compute()
         if grid_out and element:
             v_line_xs, h_line_ys = grid_out
             ret_element = Element()
@@ -276,10 +307,15 @@ class ElementDrawer(Drawing):
 
 
 class PolygonNode(UnitNode):
+    DISPLAY = "Polygon"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Polygon"
+
+    def init_attributes(self):
+        self.name = PolygonNode.DISPLAY
+        self.resizable = True
+        self.in_port_types = []
         self.out_port_types = [PortType.ELEMENT]
         self.prop_type_list = PropTypeList(
             [
@@ -291,18 +327,22 @@ class PolygonNode(UnitNode):
         )
 
     def compute(self):
-        prop_vals = self.get_prop_vals()
-        return Element([Polygon(prop_vals['points'], prop_vals['fill'], 'none')])
+        return Element([Polygon(self.prop_vals['points'], self.prop_vals['fill'], 'none')])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
 
 class EllipseNode(UnitNode):
+    DISPLAY = "Ellipse"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Ellipse"
+
+    def init_attributes(self):
+        self.name = EllipseNode.DISPLAY
+        self.resizable = True
+        self.in_port_types = []
         self.out_port_types = [PortType.ELEMENT]
         self.prop_type_list = PropTypeList(
             [
@@ -316,29 +356,29 @@ class EllipseNode(UnitNode):
         )
 
     def compute(self):
-        prop_vals = self.get_prop_vals()
-        return Element([Ellipse((0.5, 0.5), (prop_vals['rx'], prop_vals['ry']), prop_vals['fill'], 'none')])
+        return Element([Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), self.prop_vals['fill'], 'none')])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
 
 class CheckerboardNode(UnitNode):
+    DISPLAY = "Checkerboard"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Checkerboard"
+
+    def init_attributes(self):
+        self.name = CheckerboardNode.DISPLAY
+        self.resizable = True
         self.in_port_types = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
         self.out_port_types = [PortType.ELEMENT]
-
-        self.grid_node = input_nodes[0]
-        self.element1_node = input_nodes[1]
-        self.element2_node = input_nodes[2]
+        self.prop_type_list = PropTypeList([])
 
     def compute(self):
-        grid_out = self.grid_node.compute()
-        element1 = self.element1_node.compute()
-        element2 = self.element2_node.compute()
+        grid_out = self.input_nodes[0].compute()
+        element1 = self.input_nodes[1].compute()
+        element2 = self.input_nodes[2].compute()
         if grid_out and element1 and element2:
             v_line_xs, h_line_ys = grid_out
             ret_element = Element()
@@ -364,10 +404,15 @@ class CheckerboardNode(UnitNode):
 
 
 class CubicFunNode(UnitNode):
+    DISPLAY = "Cubic Function"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Cubic Function"
+
+    def init_attributes(self):
+        self.name = CubicFunNode.DISPLAY
+        self.resizable = True
+        self.in_port_types = []
         self.out_port_types = [PortType.FUNCTION]
         self.prop_type_list = PropTypeList(
             [
@@ -383,15 +428,19 @@ class CubicFunNode(UnitNode):
         )
 
     def compute(self):
-        prop_vals = self.get_prop_vals()
-        return cubic_f(prop_vals['a_coeff'], prop_vals['b_coeff'], prop_vals['c_coeff'], prop_vals['d_coeff'])
+        return cubic_f(self.prop_vals['a_coeff'], self.prop_vals['b_coeff'], self.prop_vals['c_coeff'], self.prop_vals['d_coeff'])
 
 
 class CustomFunNode(UnitNode):
+    DISPLAY = "Custom Function"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Custom Function"
+
+    def init_attributes(self):
+        self.name = CustomFunNode.DISPLAY
+        self.resizable = True
+        self.in_port_types = []
         self.out_port_types = [PortType.FUNCTION]
         self.prop_type_list = PropTypeList(
             [
@@ -401,17 +450,21 @@ class CustomFunNode(UnitNode):
         )
 
     def compute(self):
-        prop_vals = self.get_prop_vals()
         x = sp.symbols('x')
-        parsed_expr = sp.sympify(prop_vals['fun_def'])
+        parsed_expr = sp.sympify(self.prop_vals['fun_def'])
         return sp.lambdify(x, parsed_expr)
 
 
 class PiecewiseFunNode(UnitNode):
+    DISPLAY = "Piecewise Function"
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = "Piecewise Function"
+
+    def init_attributes(self):
+        self.name = PiecewiseFunNode.DISPLAY
+        self.resizable = True
+        self.in_port_types = []
         self.out_port_types = [PortType.FUNCTION]
         self.prop_type_list = PropTypeList(
             [
@@ -421,17 +474,18 @@ class PiecewiseFunNode(UnitNode):
         )
 
     def compute(self):
-        prop_vals = self.get_prop_vals()
-        xs, ys = zip(*prop_vals['points'])
+        xs, ys = zip(*self.prop_vals['points'])
         return lambda i: np.interp(i, xs, ys)
 
 
 class ShapeNode(CombinationNode):
+    DISPLAY = "Shape"
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
+
+    def init_selections(self):
         self.selections = [PolygonNode, EllipseNode]
-        self.set_selection(0)
 
 
 node_classes = [CanvasNode, PosWarpNode, RelWarpNode, GridNode, ShapeRepeaterNode, ShapeNode,
