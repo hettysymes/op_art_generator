@@ -87,6 +87,7 @@ class CombinationNode(Node):
     def __init__(self, node_id, input_nodes, prop_vals):
         self.unit_node = None
         self.selections = None
+        self.selection_index = None
         self.init_selections()
         super().__init__(node_id, input_nodes, prop_vals)
 
@@ -95,15 +96,19 @@ class CombinationNode(Node):
 
     def init_attributes(self):
         self.init_selections()
-        self.set_selection(0)
+        self.set_selection(0, at_init=True)
 
-    def set_selection(self, index):
-        self.unit_node = self.selections[index](self.node_id, self.input_nodes, self.prop_vals)
+    def set_selection(self, index, at_init=False):
+        self.selection_index = index
+        prop_vals = self.prop_vals if at_init else None
+        self.unit_node = self.selections[index](self.node_id, self.input_nodes, prop_vals)
         self.name = self.unit_node.name
         self.resizable = self.unit_node.resizable
         self.in_port_types = self.unit_node.in_port_types
         self.out_port_types = self.unit_node.out_port_types
         self.prop_type_list = self.unit_node.prop_type_list
+        if not at_init:
+            self.prop_vals = self.unit_node.prop_vals
 
     def compute(self):
         self.unit_node.input_nodes = self.input_nodes

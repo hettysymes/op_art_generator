@@ -15,9 +15,10 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QHBoxLayout, QFileDialog, QMessageBox)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
-from nodes import Node, node_classes, UnitNode
+from nodes import Node, node_classes, UnitNode, ShapeNode
 from port_types import is_port_type_compatible, PortType
-from ui.Scene import Scene, NodeState, PortState, EdgeState
+from Scene import Scene, NodeState, PortState, EdgeState
+from nodes import CombinationNode
 
 
 class ConnectionSignals(QObject):
@@ -456,10 +457,6 @@ class NodePropertiesDialog(QDialog):
 
         self.property_widgets = {}
 
-        # Add general properties (title)
-        self.title_edit = QLineEdit(self.node_item.node.name)
-        form_layout.addRow("Node Name:", self.title_edit)
-
         # Add custom properties based on node type
         if node_item.node.prop_type_list:
             props_group = QGroupBox("Node Properties")
@@ -802,6 +799,15 @@ class PipelineScene(QGraphicsScene):
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
 
+            if isinstance(clicked_item, NodeItem) and isinstance(clicked_item.node, CombinationNode):
+                submenu = QMenu(f"Change {clicked_item.node.__class__.DISPLAY} to...")
+                for i in range(len(clicked_item.node.selections)):
+                    if i == clicked_item.node.selection_index: continue
+                    change_action = QAction(f"{clicked_item.node.selections[i].DISPLAY}", submenu)
+                    change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
+                    submenu.addAction(change_action)
+                menu.addMenu(submenu)
+
             menu.addAction(properties_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
@@ -885,6 +891,10 @@ class PipelineScene(QGraphicsScene):
             self.scene.remove(port_id)
         self.scene.remove(node.uid)
         self.removeItem(node)
+
+    def change_node_selection(self, clicked_item: NodeItem, i):
+        clicked_item.node.set_selection(i)
+        clicked_item.update_visualisations()
 
 
 class PipelineView(QGraphicsView):
