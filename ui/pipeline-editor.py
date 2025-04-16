@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QHBoxLayout, QFileDialog)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
-from ui.Scene import Scene, NodeState, PortState, EdgeState
+from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.nodes import CombinationNode, UnitNode
 from ui.port_defs import is_port_type_compatible, PortType
