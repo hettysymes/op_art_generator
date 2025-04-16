@@ -6,7 +6,7 @@ import uuid
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QFontMetrics
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -89,18 +89,20 @@ class ResizeHandle(QGraphicsRectItem):
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
 
-    LABEL_PAD = 5
     TITLE_HEIGHT = 20
-    MARGIN_X = 50
+    MARGIN_X = 5
     MARGIN_Y = 10
+    NO_LABEL_PAD = 5
     LABEL_FONT = QFont("Arial", 8)
 
     def __init__(self, node_state: NodeState):
+        self.left_max_width = NodeItem.NO_LABEL_PAD
+        self.right_max_width = NodeItem.NO_LABEL_PAD
         if node_state.node.resizable:
-            width, height = NodeItem.node_size_from_svg_size(node_state.svg_width, node_state.svg_height)
+            width, height = self.node_size_from_svg_size(node_state.svg_width, node_state.svg_height)
         else:
             # Assumes it's a canvas node
-            width, height = NodeItem.node_size_from_svg_size(node_state.node.prop_vals.get('width', 150),
+            width, height = self.node_size_from_svg_size(node_state.node.prop_vals.get('width', 150),
                                                              node_state.node.prop_vals.get('height', 150))
         super().__init__(0, 0, width, height)
         self.backend = node_state
@@ -133,15 +135,13 @@ class NodeItem(QGraphicsRectItem):
         self.update_port_edge_positions()
 
         # Update backend state
-        self.backend.svg_width, self.backend.svg_height = NodeItem.svg_size_from_node_size(width, height)
+        self.backend.svg_width, self.backend.svg_height = self.svg_size_from_node_size(width, height)
 
-    @staticmethod
-    def node_size_from_svg_size(svg_w, svg_h):
-        return svg_w + 2 * NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
+    def node_size_from_svg_size(self, svg_w, svg_h):
+        return svg_w + self.left_max_width + self.right_max_width + 2*NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
 
-    @staticmethod
-    def svg_size_from_node_size(rect_w, rect_h):
-        return rect_w - 2 * NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
+    def svg_size_from_node_size(self, rect_w, rect_h):
+        return rect_w - self.left_max_width - self.right_max_width - 2*NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
     def get_svg_path(self):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
@@ -159,17 +159,12 @@ class NodeItem(QGraphicsRectItem):
 
         # Create new SVG item
         self.svg_item = QGraphicsSvgItem(svg_path)
-
-        # Center horizontally
-        svg_pos_x = (self.rect().width() - self.backend.svg_width) / 2
+        svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
 
         # Apply position
         self.svg_item.setParentItem(self)
         self.svg_item.setPos(svg_pos_x, NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y)
         self.svg_item.setZValue(2)
-
-        # Scale SVG to fit
-        self.svg_item.setScale(self.backend.svg_width / self.svg_item.boundingRect().width())
 
     def get_input_node_items(self):
         input_nodes = []
@@ -238,6 +233,8 @@ class NodeItem(QGraphicsRectItem):
             self.backend.output_port_ids.append(state_id)
             self.scene().scene.add(output_port)
 
+        self.updateLabelContainers()
+
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
 
@@ -248,30 +245,46 @@ class NodeItem(QGraphicsRectItem):
 
         # Draw port labels if there are multiple
         painter.setFont(NodeItem.LABEL_FONT)
-        label_font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
+        font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
+        text_height = font_metrics.height()
 
-        # For input port labels
-        for i, port_id in enumerate(self.backend.input_port_ids):
-            port: PortItem = self.scene().scene.get(port_id)
+        # Draw input port labels (left side)
+        for port_id in self.backend.input_port_ids:
+            port = self.scene().scene.get(port_id)
             text = port.backend.port_def.name
-            rect = self.rect()
-            port_y = port.y()  # y-offset in parent coordinates
-            font_height = label_font_metrics.height()
-            # Calculate the position for vertical centering
-            text_y = port_y - (font_height / 2)
-            text_rect = QRectF(rect.left() + NodeItem.LABEL_PAD, text_y, rect.width(), font_height)
+
+            # Calculate port's position in this item's coordinate system
+            port_y = port.y()  # Since port is a child of this item
+
+            # Center text vertically with port
+            text_rect = QRectF(
+                NodeItem.MARGIN_X,  # Left padding
+                port_y - (text_height / 2),  # Vertical center alignment
+                self.left_max_width,  # Width minus padding
+                text_height  # Font height
+            )
+
+            # Draw the text
             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, text)
 
-        # Output port labels (similar adjustment)
-        for i, port_id in enumerate(self.backend.output_port_ids):
-            port: PortItem = self.scene().scene.get(port_id)
+        # Draw output port labels (right side)
+        rect = self.rect()
+        for port_id in self.backend.output_port_ids:
+            port = self.scene().scene.get(port_id)
             text = port.backend.port_def.name
-            rect = self.rect()
-            port_y = port.y() # y-offset in parent coordinates
-            font_height = label_font_metrics.height()
-            # Calculate the position for vertical centering
-            text_y = port_y - (font_height / 2)
-            text_rect = QRectF(rect.left(), text_y, rect.width() - NodeItem.LABEL_PAD, font_height)
+
+            # Calculate port's position in this item's coordinate system
+            port_y = port.y()  # Since port is a child of this item
+
+            # Center text vertically with port
+            text_rect = QRectF(
+                rect.width() - self.right_max_width - NodeItem.MARGIN_X,  # Right-aligned
+                port_y - (text_height / 2),  # Vertical center alignment
+                self.right_max_width,  # Width minus padding
+                text_height  # Font height
+            )
+
+            # Draw the text
             painter.drawText(text_rect, Qt.AlignRight | Qt.AlignVCenter, text)
 
     def itemChange(self, change, value):
@@ -313,6 +326,30 @@ class NodeItem(QGraphicsRectItem):
 
             # Update any connections to this port
             output_port.update_edge_positions()
+
+    def updateLabelContainers(self):
+        # Calculate the maximum width needed for each side
+        font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
+        self.left_max_width = NodeItem.NO_LABEL_PAD
+        self.right_max_width = NodeItem.NO_LABEL_PAD
+
+        # Calculate max width for input port labels
+        for port_id in self.backend.input_port_ids:
+            port = self.scene().scene.get(port_id)
+            text = port.backend.port_def.name
+            width = font_metrics.horizontalAdvance(text)
+            self.left_max_width = max(self.left_max_width, width)
+
+        # Calculate max width for output port labels
+        for port_id in self.backend.output_port_ids:
+            port = self.scene().scene.get(port_id)
+            text = port.backend.port_def.name
+            width = font_metrics.horizontalAdvance(text)
+            self.right_max_width = max(self.right_max_width, width)
+
+        width, height = self.node_size_from_svg_size(self.backend.svg_width, self.backend.svg_height)
+        self.resize(width, height)
+        self.update_vis_image()
 
 
 class PortItem(QGraphicsPathItem):
@@ -620,7 +657,7 @@ class NodePropertiesDialog(QDialog):
             if (not self.node_item.node.resizable) and (prop_name == 'width' or prop_name == 'height'):
                 svg_width = self.node_item.node.prop_vals.get('width', self.node_item.rect().width())
                 svg_height = self.node_item.node.prop_vals.get('height', self.node_item.rect().height())
-                self.node_item.resize(*NodeItem.node_size_from_svg_size(svg_width, svg_height))
+                self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width, svg_height))
 
         # Update the node's appearance
         self.node_item.update()
