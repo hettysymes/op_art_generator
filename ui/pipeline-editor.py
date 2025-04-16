@@ -232,7 +232,7 @@ class NodeItem(QGraphicsRectItem):
             self.backend.output_port_ids.append(state_id)
             self.scene().scene.add(output_port)
 
-        self.updateLabelContainers()
+        self.update_label_containers()
 
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
@@ -326,7 +326,7 @@ class NodeItem(QGraphicsRectItem):
             # Update any connections to this port
             output_port.update_edge_positions()
 
-    def updateLabelContainers(self):
+    def update_label_containers(self):
         # Calculate the maximum width needed for each side
         font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
         self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
@@ -927,7 +927,9 @@ class PipelineScene(QGraphicsScene):
                 self.addItem(edge)
                 edge.set_ports()
         for uid in node_ids:
-            self.scene.get(uid).update_vis_image()
+            node = self.scene.get(uid)
+            node.update_vis_image()
+            node.update_label_containers()
 
     def clear_scene(self):
         self.scene = Scene()
