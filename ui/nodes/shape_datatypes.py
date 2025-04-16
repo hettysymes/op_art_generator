@@ -1,3 +1,4 @@
+import math
 from abc import ABC, abstractmethod
 
 
@@ -78,3 +79,44 @@ class Ellipse(Shape):
                            r=self.r,
                            fill=self.fill,
                            stroke=self.stroke)
+
+
+class SineWave(Shape):
+
+    def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width):
+        self.amplitude = amplitude
+        self.wavelength = wavelength
+        self.centre_y = centre_y
+        self.phase = phase
+        self.x_min = x_min
+        self.x_max = x_max
+        self.stroke_width = stroke_width
+
+    def translate(self, tx, ty):
+        return SineWave(self.amplitude, self.wavelength,
+                        self.centre_y + ty, self.phase,
+                        self.x_min + tx, self.x_max + tx, self.stroke_width)
+
+    def scale(self, sx, sy):
+        return SineWave(self.amplitude * sy, self.wavelength * sx,
+                        self.centre_y * sy, self.phase,
+                        self.x_min * sx, self.x_max * sx, self.stroke_width)
+
+    def get(self, dwg):
+        num_samples = 100
+        points = []
+
+        # Generate 100 evenly spaced x-values between x_min and x_max
+        x_values = [self.x_min + i * (self.x_max - self.x_min) / (num_samples - 1) for i in range(num_samples)]
+
+        # Calculate corresponding y-values using the sine wave formula
+        for x in x_values:
+            # Standard sine wave equation: y = A * sin(2π * x / λ + φ) + centre_y
+            # where A is amplitude, λ is wavelength, and φ is phase
+            y = self.amplitude * math.sin(2 * math.pi * x / self.wavelength + math.radians(self.phase)) + self.centre_y
+            points.append((x, y))
+
+        return dwg.polyline(points=points,
+                            stroke='black',
+                            stroke_width=self.stroke_width,
+                            fill='none')

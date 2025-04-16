@@ -894,7 +894,6 @@ class PipelineScene(QGraphicsScene):
                         submenu.addAction(change_action)
                 else:
                     action = QAction(node_class.display_name(), add_node_menu)
-                    print(node_class)
                     action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos():
                                              self.add_node_from_class(nt, pos))
                     add_node_menu.addAction(action)

@@ -5,10 +5,11 @@ def cubic_f(a, b, c, d=0):
     return lambda x: a * (x ** 3) + b * (x ** 2) + c * x + d
 
 
-class SineWave:
-    def __init__(self, amplitude, wavelength):
+class SineWaveUtils:
+    def __init__(self, amplitude, wavelength, orientation):
         self.amplitude = amplitude
         self.wavelength = wavelength
+        self.orientation = orientation
 
     # Points of horizontal sine wave
     def sample(self, trough_x, trough_y, x_min, x_max, num_samples=100):

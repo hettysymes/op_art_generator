@@ -1,6 +1,6 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
-from ui.nodes.shape_datatypes import Element, Polygon, Ellipse
+from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave
 from ui.port_defs import PortDef, PortType
 
 POLYGON_NODE_INFO = UnitNodeInfo(
@@ -82,6 +82,44 @@ class EllipseNode(UnitNode):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
 
 
+SINE_WAVE_NODE_INFO = UnitNodeInfo(
+    name="Sine Wave",
+    resizable=True,
+    in_port_defs=[],
+    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    prop_type_list=PropTypeList(
+        [
+            PropType("amplitude", "float", default_value=0.5,
+                     description=""),
+            PropType("wavelength", "float", default_value=1.0,
+                     description=""),
+            PropType("centre_y", "float", default_value=0.5,
+                     description=""),
+            PropType("phase", "float", default_value=0.0,
+                     description="", min_value=-360, max_value=360),
+            PropType("x_min", "float", default_value=0.0,
+                     description=""),
+            PropType("x_max", "float", default_value=1.0,
+                     description=""),
+            PropType("stroke_width", "float", default_value=1.0,
+                     description="", min_value=0.0)
+        ]
+    )
+)
+
+
+class SineWaveNode(UnitNode):
+    UNIT_NODE_INFO = SINE_WAVE_NODE_INFO
+
+    def compute(self):
+        return Element([SineWave(self.prop_vals['amplitude'], self.prop_vals['wavelength'], self.prop_vals['centre_y'],
+                                 self.prop_vals['phase'], self.prop_vals['x_min'], self.prop_vals['x_max'],
+                                 self.prop_vals['stroke_width'])])
+
+    def visualise(self, height, wh_ratio):
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+
+
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, SineWaveNode]
