@@ -1,28 +1,14 @@
 from ui.nodes.drawers.grid_drawer import GridDrawing
-from ui.nodes.nodes import PropType, PropTypeList, UnitNode
-from ui.nodes.warp_utils import PosWarp
+from ui.nodes.node_info import GRID_NODE_INFO
+from ui.nodes.nodes import PropType, PropTypeList, UnitNode, UnitNodeInfo
+from ui.nodes.warp_utils import PosWarp, RelWarp
 from ui.port_defs import PortType, PortDef
 
-
 class GridNode(UnitNode):
-    DISPLAY = "Grid"
+    UNIT_NODE_INFO = GRID_NODE_INFO
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-
-    def init_attributes(self):
-        self.name = GridNode.DISPLAY
-        self.resizable = True
-        self.in_port_defs = [PortDef("X Warp", PortType.WARP), PortDef("Y Warp", PortType.WARP)]
-        self.out_port_defs = [PortDef("Grid", PortType.GRID)]
-        self.prop_type_list = PropTypeList(
-            [
-                PropType("width", "int", default_value=5,
-                         description="Number of squares in width of grid"),
-                PropType("height", "int", default_value=5,
-                         description="Number of squares in height of grid")
-            ]
-        )
 
     def compute(self):
         # Get warp functions

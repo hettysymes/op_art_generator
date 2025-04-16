@@ -1,22 +1,14 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.nodes import UnitNode, PropTypeList
+from ui.nodes.node_info import CHECKERBOARD_NODE_INFO
+from ui.nodes.nodes import UnitNode
 from ui.nodes.shape_datatypes import Element
-from ui.port_defs import PortDef, PortType
 
 
 class CheckerboardNode(UnitNode):
-    DISPLAY = "Checkerboard"
+    UNIT_NODE_INFO = CHECKERBOARD_NODE_INFO
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-
-    def init_attributes(self):
-        self.name = CheckerboardNode.DISPLAY
-        self.resizable = True
-        self.in_port_defs = [PortDef("Grid", PortType.GRID), PortDef("Drawing 1", PortType.ELEMENT),
-                             PortDef("Drawing 2", PortType.ELEMENT)]
-        self.out_port_defs = [PortDef("Drawing", PortType.ELEMENT)]
-        self.prop_type_list = PropTypeList([])
 
     def compute(self):
         grid_out = self.input_nodes[0].compute()

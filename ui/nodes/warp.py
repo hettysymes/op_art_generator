@@ -1,21 +1,14 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
-from ui.nodes.nodes import UnitNode, PropTypeList, CombinationNode
+from ui.nodes.node_info import POS_WARP_NODE_INFO, REL_WARP_NODE_INFO
+from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.warp_utils import PosWarp, RelWarp
-from ui.port_defs import PortDef, PortType
 
 
 class PosWarpNode(UnitNode):
-    DISPLAY = "Pos Warp"
+    UNIT_NODE_INFO = POS_WARP_NODE_INFO
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-
-    def init_attributes(self):
-        self.name = PosWarpNode.DISPLAY
-        self.resizable = True
-        self.in_port_defs = [PortDef("Function", PortType.FUNCTION)]
-        self.out_port_defs = [PortDef("Warp", PortType.WARP)]
-        self.prop_type_list = PropTypeList([])
 
     def compute(self):
         f = self.input_nodes[0].compute()
@@ -28,17 +21,10 @@ class PosWarpNode(UnitNode):
 
 
 class RelWarpNode(UnitNode):
-    DISPLAY = "Rel Warp"
+    UNIT_NODE_INFO = REL_WARP_NODE_INFO
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-
-    def init_attributes(self):
-        self.name = RelWarpNode.DISPLAY
-        self.resizable = True
-        self.in_port_defs = [PortDef("Function", PortType.FUNCTION)]
-        self.out_port_defs = [PortDef("Warp", PortType.WARP)]
-        self.prop_type_list = PropTypeList([])
 
     def compute(self):
         f = self.input_nodes[0].compute()
@@ -51,11 +37,5 @@ class RelWarpNode(UnitNode):
 
 
 class WarpNode(CombinationNode):
-    DISPLAY = "Warp"
+    NAME = "Warp"
     SELECTIONS = [PosWarpNode, RelWarpNode]
-
-    def __init__(self, node_id, input_nodes, properties, selection_index):
-        super().__init__(node_id, input_nodes, properties, selection_index)
-
-    def init_selections(self):
-        self.selections = WarpNode.SELECTIONS
