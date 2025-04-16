@@ -8,6 +8,12 @@ class PortType(Enum):
     ELEMENT = auto()
     VISUALISABLE = auto()
 
+class PortDef:
+
+    def __init__(self, name, port_type):
+        self.name = name
+        self.port_type = port_type
+
 
 visualisable_types = [PortType.GRID, PortType.ELEMENT]
 

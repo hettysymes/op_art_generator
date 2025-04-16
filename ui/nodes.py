@@ -6,7 +6,7 @@ import sympy as sp
 from matplotlib.figure import Figure
 
 from Drawing import Drawing
-from port_types import PortType
+from port_defs import PortType, PortDef
 from shapes import Element, Polygon, Ellipse
 from ui.Warp import PosWarp, RelWarp, sample_fun
 from utils import cubic_f
@@ -53,8 +53,8 @@ class Node(ABC):
     def init_attributes(self):
         self.name = "Node"
         self.resizable = True
-        self.in_port_types = []
-        self.out_port_types = []
+        self.in_port_defs = []
+        self.out_port_defs = []
         self.prop_type_list = PropTypeList([])
 
     def get_svg_path(self, height, wh_ratio):
@@ -106,8 +106,8 @@ class CombinationNode(Node):
         self.unit_node = self.selections[index](self.node_id, self.input_nodes, prop_vals)
         self.name = self.unit_node.name
         self.resizable = self.unit_node.resizable
-        self.in_port_types = self.unit_node.in_port_types
-        self.out_port_types = self.unit_node.out_port_types
+        self.in_port_defs = self.unit_node.in_port_defs
+        self.out_port_defs = self.unit_node.out_port_defs
         self.prop_type_list = self.unit_node.prop_type_list
         if not at_init:
             for k in self.prop_vals:
@@ -131,21 +131,12 @@ class CanvasNode(Node):
 
     def __init__(self, node_id, input_nodes, properties):
         super().__init__(node_id, input_nodes, properties)
-        self.name = CanvasNode.DISPLAY
-        self.resizable = False
-        self.in_port_types = [PortType.VISUALISABLE]
-        self.prop_type_list = PropTypeList([
-            PropType("width", "int", default_value=150, max_value=500, min_value=1,
-                     description=""),
-            PropType("height", "int", default_value=150, max_value=500, min_value=1,
-                     description="")
-        ])
 
     def init_attributes(self):
         self.name = CanvasNode.DISPLAY
         self.resizable = False
-        self.in_port_types = [PortType.VISUALISABLE]
-        self.out_port_types = []
+        self.in_port_defs = [PortDef("Drawing", PortType.VISUALISABLE)]
+        self.out_port_defs = []
         self.prop_type_list = PropTypeList([
             PropType("width", "int", default_value=150, max_value=500, min_value=1,
                      description=""),
@@ -200,8 +191,8 @@ class PosWarpNode(UnitNode):
     def init_attributes(self):
         self.name = PosWarpNode.DISPLAY
         self.resizable = True
-        self.in_port_types = [PortType.FUNCTION]
-        self.out_port_types = [PortType.WARP]
+        self.in_port_defs = [PortDef("Function", PortType.FUNCTION)]
+        self.out_port_defs = [PortDef("Warp", PortType.WARP)]
         self.prop_type_list = PropTypeList([])
 
     def compute(self):
@@ -223,8 +214,8 @@ class RelWarpNode(UnitNode):
     def init_attributes(self):
         self.name = RelWarpNode.DISPLAY
         self.resizable = True
-        self.in_port_types = [PortType.FUNCTION]
-        self.out_port_types = [PortType.WARP]
+        self.in_port_defs = [PortDef("Function", PortType.FUNCTION)]
+        self.out_port_defs = [PortDef("Warp", PortType.WARP)]
         self.prop_type_list = PropTypeList([])
 
     def compute(self):
@@ -246,8 +237,8 @@ class GridNode(UnitNode):
     def init_attributes(self):
         self.name = GridNode.DISPLAY
         self.resizable = True
-        self.in_port_types = [PortType.WARP, PortType.WARP]
-        self.out_port_types = [PortType.GRID]
+        self.in_port_defs = [PortDef("X Warp", PortType.WARP), PortDef("Y Warp", PortType.WARP)]
+        self.out_port_defs = [PortDef("Grid", PortType.GRID)]
         self.prop_type_list = PropTypeList(
             [
                 PropType("width", "int", default_value=5,
@@ -302,15 +293,12 @@ class ShapeRepeaterNode(UnitNode):
 
     def __init__(self, node_id, input_nodes, prop_vals):
         super().__init__(node_id, input_nodes, prop_vals)
-        self.name = ShapeRepeaterNode.DISPLAY
-        self.in_port_types = [PortType.GRID, PortType.ELEMENT]
-        self.out_port_types = [PortType.ELEMENT]
 
     def init_attributes(self):
         self.name = ShapeRepeaterNode.DISPLAY
         self.resizable = True
-        self.in_port_types = [PortType.GRID, PortType.ELEMENT]
-        self.out_port_types = [PortType.ELEMENT]
+        self.in_port_defs = [PortDef("Grid", PortType.GRID), PortDef("Drawing", PortType.ELEMENT)]
+        self.out_port_defs = [PortDef("Drawing", PortType.ELEMENT)]
         self.prop_type_list = PropTypeList([])
 
     def compute(self):
@@ -357,8 +345,8 @@ class PolygonNode(UnitNode):
     def init_attributes(self):
         self.name = PolygonNode.DISPLAY
         self.resizable = True
-        self.in_port_types = []
-        self.out_port_types = [PortType.ELEMENT]
+        self.in_port_defs = []
+        self.out_port_defs = [PortDef("Drawing", PortType.ELEMENT)]
         self.prop_type_list = PropTypeList(
             [
                 PropType("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
@@ -384,8 +372,8 @@ class EllipseNode(UnitNode):
     def init_attributes(self):
         self.name = EllipseNode.DISPLAY
         self.resizable = True
-        self.in_port_types = []
-        self.out_port_types = [PortType.ELEMENT]
+        self.in_port_defs = []
+        self.out_port_defs = [PortDef("Drawing", PortType.ELEMENT)]
         self.prop_type_list = PropTypeList(
             [
                 PropType("rx", "float", default_value=0.5,
@@ -414,8 +402,8 @@ class CheckerboardNode(UnitNode):
     def init_attributes(self):
         self.name = CheckerboardNode.DISPLAY
         self.resizable = True
-        self.in_port_types = [PortType.GRID, PortType.ELEMENT, PortType.ELEMENT]
-        self.out_port_types = [PortType.ELEMENT]
+        self.in_port_defs = [PortDef("Grid", PortType.GRID), PortDef("Drawing 1", PortType.ELEMENT), PortDef("Drawing 2", PortType.ELEMENT)]
+        self.out_port_defs = [PortDef("Drawing", PortType.ELEMENT)]
         self.prop_type_list = PropTypeList([])
 
     def compute(self):
@@ -455,8 +443,8 @@ class CubicFunNode(UnitNode):
     def init_attributes(self):
         self.name = CubicFunNode.DISPLAY
         self.resizable = True
-        self.in_port_types = []
-        self.out_port_types = [PortType.FUNCTION]
+        self.in_port_defs = []
+        self.out_port_defs = [PortDef("Function", PortType.FUNCTION)]
         self.prop_type_list = PropTypeList(
             [
                 PropType("a_coeff", "float", default_value=3.22,
@@ -489,8 +477,8 @@ class CustomFunNode(UnitNode):
     def init_attributes(self):
         self.name = CustomFunNode.DISPLAY
         self.resizable = True
-        self.in_port_types = []
-        self.out_port_types = [PortType.FUNCTION]
+        self.in_port_defs = []
+        self.out_port_defs = [PortDef("Function", PortType.FUNCTION)]
         self.prop_type_list = PropTypeList(
             [
                 PropType("fun_def", "string", default_value="x",
@@ -517,8 +505,8 @@ class PiecewiseFunNode(UnitNode):
     def init_attributes(self):
         self.name = PiecewiseFunNode.DISPLAY
         self.resizable = True
-        self.in_port_types = []
-        self.out_port_types = [PortType.FUNCTION]
+        self.in_port_defs = []
+        self.out_port_defs = [PortDef("Function", PortType.FUNCTION)]
         self.prop_type_list = PropTypeList(
             [
                 PropType("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)],

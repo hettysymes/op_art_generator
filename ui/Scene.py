@@ -40,11 +40,11 @@ class EdgeState:
 
 class PortState:
 
-    def __init__(self, uid, x, y, parent_node_id, is_input, edge_ids, port_type):
+    def __init__(self, uid, x, y, parent_node_id, is_input, edge_ids, port_def):
         self.uid = uid
         self.x = x
         self.y = y
         self.parent_node_id = parent_node_id
         self.is_input = is_input
         self.edge_ids = edge_ids
-        self.port_type = port_type
+        self.port_def = port_def

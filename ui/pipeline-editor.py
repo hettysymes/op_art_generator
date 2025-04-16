@@ -4,9 +4,9 @@ import shutil
 import sys
 import uuid
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 from Scene import Scene, NodeState, PortState, EdgeState
 from nodes import CombinationNode
 from nodes import node_classes, UnitNode
-from port_types import is_port_type_compatible, PortType
+from port_defs import is_port_type_compatible, PortType
 
 
 class ConnectionSignals(QObject):
@@ -89,9 +89,11 @@ class ResizeHandle(QGraphicsRectItem):
 class NodeItem(QGraphicsRectItem):
     """Represents a node/box in the pipeline"""
 
+    LABEL_PAD = 5
     TITLE_HEIGHT = 20
-    MARGIN_X = 10
+    MARGIN_X = 50
     MARGIN_Y = 10
+    LABEL_FONT = QFont("Arial", 8)
 
     def __init__(self, node_state: NodeState):
         if node_state.node.resizable:
@@ -211,28 +213,28 @@ class NodeItem(QGraphicsRectItem):
 
     def create_ports(self):
         # Create input ports (left side)
-        input_count = len(self.node.in_port_types)
-        for i, port_type in enumerate(self.node.in_port_types):
+        input_count = len(self.node.in_port_defs)
+        for i, port_def in enumerate(self.node.in_port_defs):
             y_offset = (i + 1) * self.rect().height() / (input_count + 1)
             state_id = uuid.uuid4()
             input_port = PortItem(PortState(state_id,
                                             -10, y_offset,
                                             self.uid,
                                             True,
-                                            [], port_type), self)
+                                            [], port_def), self)
             self.backend.input_port_ids.append(state_id)
             self.scene().scene.add(input_port)
 
         # Create output ports (right side)
-        output_count = len(self.node.out_port_types)
-        for i, port_type in enumerate(self.node.out_port_types):
+        output_count = len(self.node.out_port_defs)
+        for i, port_def in enumerate(self.node.out_port_defs):
             y_offset = (i + 1) * self.rect().height() / (output_count + 1)
             state_id = uuid.uuid4()
             output_port = PortItem(PortState(state_id,
                                              self.rect().width() + 10, y_offset,
                                              self.uid,
                                              False,
-                                             [], port_type), self)
+                                             [], port_def), self)
             self.backend.output_port_ids.append(state_id)
             self.scene().scene.add(output_port)
 
@@ -245,19 +247,32 @@ class NodeItem(QGraphicsRectItem):
         painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.node.name)
 
         # Draw port labels if there are multiple
-        painter.setFont(QFont("Arial", 8))
+        painter.setFont(NodeItem.LABEL_FONT)
+        label_font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
 
-        # Input port labels
+        # For input port labels
         for i, port_id in enumerate(self.backend.input_port_ids):
-            port = self.scene().scene.get(port_id)
-            label_pos = port.pos() + QPointF(5, 0)  # Position just right of the port
-            painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"In {i + 1}")
+            port: PortItem = self.scene().scene.get(port_id)
+            text = port.backend.port_def.name
+            rect = self.rect()
+            port_y = port.y()  # y-offset in parent coordinates
+            font_height = label_font_metrics.height()
+            # Calculate the position for vertical centering
+            text_y = port_y - (font_height / 2)
+            text_rect = QRectF(rect.left() + NodeItem.LABEL_PAD, text_y, rect.width(), font_height)
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, text)
 
-        # Output port labels
+        # Output port labels (similar adjustment)
         for i, port_id in enumerate(self.backend.output_port_ids):
-            port = self.scene().scene.get(port_id)
-            label_pos = port.pos() + QPointF(-25, 0)  # Position just left of the port
-            painter.drawText(int(label_pos.x()), int(label_pos.y() + 4), f"Out {i + 1}")
+            port: PortItem = self.scene().scene.get(port_id)
+            text = port.backend.port_def.name
+            rect = self.rect()
+            port_y = port.y() # y-offset in parent coordinates
+            font_height = label_font_metrics.height()
+            # Calculate the position for vertical centering
+            text_y = port_y - (font_height / 2)
+            text_rect = QRectF(rect.left(), text_y, rect.width() - NodeItem.LABEL_PAD, font_height)
+            painter.drawText(text_rect, Qt.AlignRight | Qt.AlignVCenter, text)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -332,7 +347,7 @@ class PortItem(QGraphicsPathItem):
     def create_shape_for_port_type(self):
         path = QPainterPath()
         half_size = self.size / 2
-        port_type = self.backend.port_type
+        port_type = self.backend.port_def.port_type
         if port_type == PortType.ELEMENT:
             # Circle for number type
             path.addEllipse(-half_size, -half_size, self.size, self.size)
@@ -701,7 +716,7 @@ class PipelineScene(QGraphicsScene):
                 target_has_connection = len(dest_port.backend.edge_ids) > 0
 
                 if not connection_exists and not target_has_connection \
-                        and is_port_type_compatible(source_port.backend.port_type, dest_port.backend.port_type):
+                        and is_port_type_compatible(source_port.backend.port_def.port_type, dest_port.backend.port_def.port_type):
                     edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.backend.uid, dest_port.backend.uid))
                     self.scene.add(edge)
                     self.addItem(edge)
