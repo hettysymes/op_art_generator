@@ -92,12 +92,11 @@ class NodeItem(QGraphicsRectItem):
     TITLE_HEIGHT = 20
     MARGIN_X = 5
     MARGIN_Y = 10
-    NO_LABEL_PAD = 5
     LABEL_FONT = QFont("Arial", 8)
 
     def __init__(self, node_state: NodeState):
-        self.left_max_width = NodeItem.NO_LABEL_PAD
-        self.right_max_width = NodeItem.NO_LABEL_PAD
+        self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
+        self.right_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
         if node_state.node.resizable:
             width, height = self.node_size_from_svg_size(node_state.svg_width, node_state.svg_height)
         else:
@@ -330,8 +329,8 @@ class NodeItem(QGraphicsRectItem):
     def updateLabelContainers(self):
         # Calculate the maximum width needed for each side
         font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
-        self.left_max_width = NodeItem.NO_LABEL_PAD
-        self.right_max_width = NodeItem.NO_LABEL_PAD
+        self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
+        self.right_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
 
         # Calculate max width for input port labels
         for port_id in self.backend.input_port_ids:
