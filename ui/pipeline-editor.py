@@ -515,10 +515,11 @@ class NodePropertiesDialog(QDialog):
 
             for prop in node_item.node.prop_type_list():
                 if prop.prop_type != "hidden":
-                    widget = self.create_property_widget(prop, node_item.node.prop_vals.get(prop.name,
+                    widget = self.create_property_widget(prop, node_item.node.prop_vals.get(prop.key_name,
                                                                                             prop.default_value))
-                    props_layout.addRow(f"{prop.name}:", widget)
-                    self.property_widgets[prop.name] = widget
+                    add_text = ":" if prop.auto_format else ""
+                    props_layout.addRow(prop.display_name + add_text, widget)
+                    self.property_widgets[prop.key_name] = widget
 
                     # Add tooltip if description is available
                     if prop.description:

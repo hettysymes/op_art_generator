@@ -11,7 +11,7 @@ class PropTypeList:
     def get_default_values(self):
         prop_vals = {}
         for prop_type in self.prop_types:
-            prop_vals[prop_type.name] = prop_type.default_value
+            prop_vals[prop_type.key_name] = prop_type.default_value
         return prop_vals
 
     def __iter__(self):
@@ -21,15 +21,17 @@ class PropTypeList:
 class PropType:
     """Defines a property for a node"""
 
-    def __init__(self, name, prop_type, default_value=None, min_value=None, max_value=None,
-                 options=None, description=""):
-        self.name = name
+    def __init__(self, key_name, prop_type, default_value=None, min_value=None, max_value=None,
+                 options=None, description="", display_name=None, auto_format=True):
+        self.key_name = key_name
+        self.display_name = display_name if display_name else key_name
         self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
         self.default_value = default_value
         self.min_value = min_value
         self.max_value = max_value
         self.options = options  # For enum type
         self.description = description
+        self.auto_format = auto_format
 
 
 class UnitNodeInfo:

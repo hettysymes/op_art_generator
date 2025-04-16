@@ -76,7 +76,7 @@ CUSTOM_FUN_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("fun_def", "string", default_value="x",
-                     description="")
+                     description="", display_name="f(x) =", auto_format=False)
         ]
     )
 )

@@ -6,7 +6,7 @@ class Hesitate(Drawing):
 
     def __init__(self, out_name, width, height,
                  rx=0.02,
-                 ry_f=lambda i: min(0.052*abs(i-0.365)+0.001, 0.02),
+                 ry_f=lambda x: min(0.052*abs(x-0.365)+0.001, 0.02),
                  num_hlines=37,
                  ellipse_start=True):
         super().__init__(out_name, width, height)
