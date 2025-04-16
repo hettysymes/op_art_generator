@@ -1,7 +1,6 @@
-import subprocess
-from utils import CubicBezierCurve, Ellipse, ColourIterator
-from Drawing import Drawing
-import math
+from ui.nodes.utils import Ellipse
+from ui.nodes.drawers.Drawing import Drawing
+
 
 class Hesitate(Drawing):
 

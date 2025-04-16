@@ -1,5 +1,5 @@
-from Drawing import Drawing
-from utils import cubic_f, CatmullRomCurve
+from ui.nodes.drawers.Drawing import Drawing
+from ui.nodes.utils import cubic_f, CatmullRomCurve
 from Warp import sample_fun
 import numpy as np
 

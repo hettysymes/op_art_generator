@@ -1,5 +1,4 @@
-from Drawing import Drawing
-import numpy as np
+from ui.nodes.drawers.Drawing import Drawing
 import random
 
 class Conversation(Drawing):

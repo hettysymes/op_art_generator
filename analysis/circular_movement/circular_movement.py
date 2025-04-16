@@ -1,7 +1,7 @@
 import svgwrite
 import cairosvg
-from utils import CubicBezierCurve
-from analyse import get_cubic_beziers
+from ui.nodes.utils import CubicBezierCurve
+
 
 class Drawing:
 

@@ -1,6 +1,6 @@
-from Drawing import Drawing
+from ui.nodes.drawers.Drawing import Drawing
 import random
-from utils import cubic_f
+from ui.nodes.utils import cubic_f
 from Warp import sample_fun
 import numpy as np
 

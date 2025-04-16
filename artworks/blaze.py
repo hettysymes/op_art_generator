@@ -1,5 +1,5 @@
-from utils import Circle
-from Drawing import Drawing
+from ui.nodes.utils import Circle
+from ui.nodes.drawers.Drawing import Drawing
 
 class Blaze(Drawing):
 

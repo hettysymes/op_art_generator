@@ -1,7 +1,7 @@
-from Drawing import Drawing
+from ui.nodes.drawers.Drawing import Drawing
 from Warp import sample_fun
 import numpy as np
-from utils import SineWave
+from ui.nodes.utils import SineWave
 import itertools
 
 class Arrest2(Drawing):

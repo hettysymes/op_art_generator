@@ -1,9 +1,9 @@
-from Drawing import Drawing
+from ui.nodes.drawers.Drawing import Drawing
 import numpy as np
 import random
-from utils import SineWave
+from ui.nodes.utils import SineWave
 import uuid
-import itertools
+
 
 class Carnival(Drawing):
 

@@ -14,7 +14,7 @@ class SineWave:
     def sample(self, trough_x, trough_y, x_min, x_max, num_samples=100):
         xs = np.linspace(x_min, x_max, num_samples)
         ys = self.amplitude * np.sin(np.pi * ((2 / self.wavelength) * xs + (3 / 2) - (
-                    2 / self.wavelength) * trough_x)) + trough_y + self.amplitude
+                2 / self.wavelength) * trough_x)) + trough_y + self.amplitude
         return list(zip(xs, ys))
 
 

@@ -6,7 +6,7 @@ import uuid
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QFontMetrics
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -15,10 +15,10 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QHBoxLayout, QFileDialog)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
-from Scene import Scene, NodeState, PortState, EdgeState
-from nodes import CombinationNode
-from nodes import node_classes, UnitNode
-from port_defs import is_port_type_compatible, PortType
+from ui.Scene import Scene, NodeState, PortState, EdgeState
+from ui.nodes.nodes import CombinationNode, UnitNode
+from ui.nodes.all_nodes import node_classes
+from ui.port_defs import is_port_type_compatible, PortType
 
 
 class ConnectionSignals(QObject):

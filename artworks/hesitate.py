@@ -1,4 +1,4 @@
-from Drawing import Drawing
+from ui.nodes.drawers.Drawing import Drawing
 from Warp import RelWarp
 import numpy as np
 

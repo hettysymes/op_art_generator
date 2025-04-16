@@ -1,4 +1,4 @@
-from ui.nodes import Node
+from ui.nodes.nodes import Node
 
 
 class Scene:
