@@ -31,6 +31,7 @@ class PropType:
         self.options = options  # For enum type
         self.description = description
 
+
 class UnitNodeInfo:
 
     def __init__(self, name, resizable, in_port_defs, out_port_defs, prop_type_list):
@@ -39,6 +40,7 @@ class UnitNodeInfo:
         self.in_port_defs = in_port_defs
         self.out_port_defs = out_port_defs
         self.prop_type_list = prop_type_list
+
 
 class Node(ABC):
 
@@ -85,6 +87,7 @@ class Node(ABC):
     def visualise(self, height, wh_ratio):
         pass
 
+
 class UnitNode(Node):
     UNIT_NODE_INFO = UnitNodeInfo(
         name="Unit Node",
@@ -110,6 +113,7 @@ class UnitNode(Node):
 
     def visualise(self, height, wh_ratio):
         return
+
 
 class CombinationNode(Node):
     NAME = "Combination Node"

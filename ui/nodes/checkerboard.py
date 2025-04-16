@@ -7,9 +7,6 @@ from ui.nodes.shape_datatypes import Element
 class CheckerboardNode(UnitNode):
     UNIT_NODE_INFO = CHECKERBOARD_NODE_INFO
 
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
-
     def compute(self):
         grid_out = self.input_nodes[0].compute()
         element1 = self.input_nodes[1].compute()

@@ -3,17 +3,13 @@ import sympy as sp
 
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.node_info import CUBIC_FUN_NODE_INFO, CUSTOM_FUN_NODE_INFO, PIECEWISE_FUN_NODE_INFO
-from ui.nodes.nodes import UnitNode, CombinationNode, PropTypeList, PropType
+from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.utils import cubic_f
 from ui.nodes.warp_utils import sample_fun
-from ui.port_defs import PortDef, PortType
 
 
 class CubicFunNode(UnitNode):
     UNIT_NODE_INFO = CUBIC_FUN_NODE_INFO
-
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
 
     def compute(self):
         return cubic_f(self.prop_vals['a_coeff'], self.prop_vals['b_coeff'], self.prop_vals['c_coeff'],
@@ -28,9 +24,6 @@ class CubicFunNode(UnitNode):
 class CustomFunNode(UnitNode):
     UNIT_NODE_INFO = CUSTOM_FUN_NODE_INFO
 
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
-
     def compute(self):
         x = sp.symbols('x')
         parsed_expr = sp.sympify(self.prop_vals['fun_def'])
@@ -44,9 +37,6 @@ class CustomFunNode(UnitNode):
 
 class PiecewiseFunNode(UnitNode):
     UNIT_NODE_INFO = PIECEWISE_FUN_NODE_INFO
-
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
 
     def compute(self):
         xs, ys = zip(*self.prop_vals['points'])

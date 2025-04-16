@@ -8,6 +8,7 @@ class PortType(Enum):
     ELEMENT = auto()
     VISUALISABLE = auto()
 
+
 class PortDef:
 
     def __init__(self, name, port_type):

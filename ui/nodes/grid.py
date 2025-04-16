@@ -1,14 +1,11 @@
 from ui.nodes.drawers.grid_drawer import GridDrawing
 from ui.nodes.node_info import GRID_NODE_INFO
-from ui.nodes.nodes import PropType, PropTypeList, UnitNode, UnitNodeInfo
+from ui.nodes.nodes import UnitNode
 from ui.nodes.warp_utils import PosWarp, RelWarp
-from ui.port_defs import PortType, PortDef
+
 
 class GridNode(UnitNode):
     UNIT_NODE_INFO = GRID_NODE_INFO
-
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
 
     def compute(self):
         # Get warp functions

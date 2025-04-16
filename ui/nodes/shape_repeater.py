@@ -1,15 +1,11 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_info import SHAPE_REPEATER_NODE_INFO
-from ui.nodes.nodes import PropTypeList, UnitNode
+from ui.nodes.nodes import UnitNode
 from ui.nodes.shape_datatypes import Element
-from ui.port_defs import PortDef, PortType
 
 
 class ShapeRepeaterNode(UnitNode):
     UNIT_NODE_INFO = SHAPE_REPEATER_NODE_INFO
-
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
 
     def compute(self):
         grid_out = self.input_nodes[0].compute()

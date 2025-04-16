@@ -7,9 +7,6 @@ from ui.nodes.warp_utils import PosWarp, RelWarp
 class PosWarpNode(UnitNode):
     UNIT_NODE_INFO = POS_WARP_NODE_INFO
 
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
-
     def compute(self):
         f = self.input_nodes[0].compute()
         if f: return PosWarp(f)
@@ -22,9 +19,6 @@ class PosWarpNode(UnitNode):
 
 class RelWarpNode(UnitNode):
     UNIT_NODE_INFO = REL_WARP_NODE_INFO
-
-    def __init__(self, node_id, input_nodes, prop_vals):
-        super().__init__(node_id, input_nodes, prop_vals)
 
     def compute(self):
         f = self.input_nodes[0].compute()

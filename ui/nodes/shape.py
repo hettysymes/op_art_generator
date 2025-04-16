@@ -18,6 +18,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
     )
 )
 
+
 class PolygonNode(UnitNode):
     UNIT_NODE_INFO = POLYGON_NODE_INFO
 
@@ -26,6 +27,7 @@ class PolygonNode(UnitNode):
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+
 
 RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
@@ -40,6 +42,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     )
 )
 
+
 class RectangleNode(UnitNode):
     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
 
@@ -48,6 +51,7 @@ class RectangleNode(UnitNode):
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+
 
 ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
@@ -65,6 +69,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
         ]
     )
 )
+
 
 class EllipseNode(UnitNode):
     UNIT_NODE_INFO = ELLIPSE_NODE_INFO

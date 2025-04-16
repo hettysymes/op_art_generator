@@ -16,8 +16,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 from ui.Scene import Scene, NodeState, PortState, EdgeState
-from ui.nodes.nodes import CombinationNode, UnitNode
 from ui.nodes.all_nodes import node_classes
+from ui.nodes.nodes import CombinationNode, UnitNode
 from ui.port_defs import is_port_type_compatible, PortType
 
 
@@ -102,7 +102,7 @@ class NodeItem(QGraphicsRectItem):
         else:
             # Assumes it's a canvas node
             width, height = self.node_size_from_svg_size(node_state.node.prop_vals.get('width', 150),
-                                                             node_state.node.prop_vals.get('height', 150))
+                                                         node_state.node.prop_vals.get('height', 150))
         super().__init__(0, 0, width, height)
         self.backend = node_state
         self.uid = node_state.uid
@@ -137,10 +137,10 @@ class NodeItem(QGraphicsRectItem):
         self.backend.svg_width, self.backend.svg_height = self.svg_size_from_node_size(width, height)
 
     def node_size_from_svg_size(self, svg_w, svg_h):
-        return svg_w + self.left_max_width + self.right_max_width + 2*NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
+        return svg_w + self.left_max_width + self.right_max_width + 2 * NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
 
     def svg_size_from_node_size(self, rect_w, rect_h):
-        return rect_w - self.left_max_width - self.right_max_width - 2*NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
+        return rect_w - self.left_max_width - self.right_max_width - 2 * NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
     def get_svg_path(self):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
@@ -751,7 +751,8 @@ class PipelineScene(QGraphicsScene):
                 target_has_connection = len(dest_port.backend.edge_ids) > 0
 
                 if not connection_exists and not target_has_connection \
-                        and is_port_type_compatible(source_port.backend.port_def.port_type, dest_port.backend.port_def.port_type):
+                        and is_port_type_compatible(source_port.backend.port_def.port_type,
+                                                    dest_port.backend.port_def.port_type):
                     edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.backend.uid, dest_port.backend.uid))
                     self.scene.add(edge)
                     self.addItem(edge)

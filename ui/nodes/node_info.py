@@ -1,5 +1,4 @@
 from ui.nodes.nodes import UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape import EllipseNode
 from ui.port_defs import PortDef, PortType
 
 # GRID
@@ -9,21 +8,15 @@ GRID_NODE_INFO = UnitNodeInfo(
     resizable=True,
     in_port_defs=[PortDef("X Warp", PortType.WARP), PortDef("Y Warp", PortType.WARP)],
     out_port_defs=[PortDef("Grid", PortType.GRID)],
-    prop_type_list= PropTypeList(
-            [
-                PropType("width", "int", default_value=5,
-                         description="Number of squares in width of grid"),
-                PropType("height", "int", default_value=5,
-                         description="Number of squares in height of grid")
-            ]
-        )
+    prop_type_list=PropTypeList(
+        [
+            PropType("width", "int", default_value=5,
+                     description="Number of squares in width of grid"),
+            PropType("height", "int", default_value=5,
+                     description="Number of squares in height of grid")
+        ]
+    )
 )
-
-# SHAPES
-
-
-
-
 
 # CANVAS
 
@@ -131,9 +124,3 @@ REL_WARP_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Warp", PortType.WARP)],
     prop_type_list=PropTypeList([])
 )
-
-
-
-
-
-
