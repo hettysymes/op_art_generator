@@ -11,7 +11,7 @@ ITERATOR_NODE_INFO = UnitNodeInfo(
     name="Iterator",
     resizable=True,
     in_port_defs=[PortDef("Function", PortType.FUNCTION), PortDef("Shape", PortType.ELEMENT)],
-    out_port_defs=[PortDef("Iterator", PortType.ITERATOR)],
+    out_port_defs=[PortDef("Iterator", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
             PropType("prop_to_change", "string", default_value="",
