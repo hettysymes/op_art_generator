@@ -1,4 +1,3 @@
-from ui.nodes.drawers.blank_canvas_drawer import BlankCanvas
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_info import CHECKERBOARD_NODE_INFO
 from ui.nodes.nodes import UnitNode

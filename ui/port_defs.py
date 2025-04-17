@@ -6,6 +6,7 @@ class PortType(Enum):
     WARP = auto()
     GRID = auto()
     ELEMENT = auto()
+    ITERATOR = auto()
     VISUALISABLE = auto()
 
 

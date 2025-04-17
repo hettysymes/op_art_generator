@@ -104,9 +104,9 @@ SINE_WAVE_NODE_INFO = UnitNodeInfo(
             PropType("stroke_width", "float", default_value=1.0,
                      description="", min_value=0.0),
             PropType("orientation", "float", default_value=0.0,
-                                 description="", min_value=-360.0, max_value=360.0),
+                     description="", min_value=-360.0, max_value=360.0),
             PropType("num_points", "int", default_value=100,
-                                description="", min_value=2, max_value=500, display_name="line resolution")
+                     description="", min_value=2, max_value=500, display_name="line resolution")
         ]
     )
 )
@@ -118,7 +118,8 @@ class SineWaveNode(UnitNode):
     def compute(self):
         return Element([SineWave(self.prop_vals['amplitude'], self.prop_vals['wavelength'], self.prop_vals['centre_y'],
                                  self.prop_vals['phase'], self.prop_vals['x_min'], self.prop_vals['x_max'],
-                                 self.prop_vals['stroke_width'], self.prop_vals['orientation'], self.prop_vals['num_points'])])
+                                 self.prop_vals['stroke_width'], self.prop_vals['orientation'],
+                                 self.prop_vals['num_points'])])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()

@@ -20,6 +20,9 @@ class Element:
     def __iter__(self):
         return iter(self.shapes)
 
+    def __getitem__(self, index):
+        return self.shapes[index]
+
 
 class Transformation(ABC):
 
@@ -44,6 +47,7 @@ class Scale(Transformation):
 
     def apply(self, base_shape):
         base_shape.scale(self.sx, self.sy)
+
 
 class Rotate(Transformation):
     def __init__(self, angle, centre):
@@ -126,7 +130,7 @@ class SineWave(Shape):
         self.x_min = x_min
         self.x_max = x_max
         self.stroke_width = stroke_width
-        self.transformations.append(Rotate(orientation, (0.5,0.5)))
+        self.transformations.append(Rotate(orientation, (0.5, 0.5)))
         self.num_points = num_points
 
     def base_shape(self, dwg):

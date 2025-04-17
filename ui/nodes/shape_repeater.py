@@ -7,9 +7,8 @@ from ui.nodes.shape_datatypes import Element
 class ShapeRepeaterNode(UnitNode):
     UNIT_NODE_INFO = SHAPE_REPEATER_NODE_INFO
 
-    def compute(self):
-        grid_out = self.input_nodes[0].compute()
-        element = self.input_nodes[1].compute()
+    @staticmethod
+    def helper(grid_out, element):
         if grid_out and element:
             v_line_xs, h_line_ys = grid_out
             ret_element = Element()
@@ -22,6 +21,11 @@ class ShapeRepeaterNode(UnitNode):
                     for shape in element:
                         ret_element.add(shape.scale(x2 - x1, y2 - y1).translate(x1, y1))
             return ret_element
+
+    def compute(self):
+        grid_out = self.input_nodes[0].compute()
+        element = self.input_nodes[1].compute()
+        return ShapeRepeaterNode.helper(grid_out, element)
 
     def visualise(self, height, wh_ratio):
         element = self.compute()
