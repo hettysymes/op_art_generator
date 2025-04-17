@@ -1,3 +1,4 @@
+import copy
 import math
 from abc import ABC, abstractmethod
 
@@ -19,40 +20,63 @@ class Element:
     def __iter__(self):
         return iter(self.shapes)
 
+class Transformation(ABC):
+
+    @abstractmethod
+    def apply(self, base_shape):
+        pass
+
+class Translate(Transformation):
+    def __init__(self, tx, ty):
+        self.tx = tx
+        self.ty = ty
+
+    def apply(self, base_shape):
+        base_shape.translate(self.tx, self.ty)
+
+class Scale(Transformation):
+    def __init__(self, sx, sy):
+        self.sx = sx
+        self.sy = sy
+
+    def apply(self, base_shape):
+        base_shape.scale(self.sx, self.sy)
 
 class Shape(ABC):
 
-    @abstractmethod
+    def __init__(self):
+        self.transformations = []
+
     def translate(self, tx, ty):
-        pass
+        new_obj = copy.deepcopy(self)
+        new_obj.transformations.append(Translate(tx, ty))
+        return new_obj
 
-    @abstractmethod
     def scale(self, sx, sy):
-        pass
+        new_obj = copy.deepcopy(self)
+        new_obj.transformations.append(Scale(sx, sy))
+        return new_obj
 
     @abstractmethod
-    def get(self, dwg):
+    def base_shape(self, dwg):
         pass
+
+    def get(self, dwg):
+        base_shape = self.base_shape(dwg)
+        for t in reversed(self.transformations):
+            t.apply(base_shape)
+        return base_shape
 
 
 class Polygon(Shape):
 
     def __init__(self, points, fill, stroke):
+        super().__init__()
         self.points = points
         self.fill = fill
         self.stroke = stroke
 
-    def translate(self, tx, ty):
-        return Polygon([(x + tx, y + ty) for x, y in self.points],
-                       self.fill,
-                       self.stroke)
-
-    def scale(self, sx, sy):
-        return Polygon([(x * sx, y * sy) for x, y in self.points],
-                       self.fill,
-                       self.stroke)
-
-    def get(self, dwg):
+    def base_shape(self, dwg):
         return dwg.polygon(points=self.points,
                            fill=self.fill,
                            stroke=self.stroke)
@@ -61,20 +85,13 @@ class Polygon(Shape):
 class Ellipse(Shape):
 
     def __init__(self, center, r, fill, stroke):
+        super().__init__()
         self.center = center
         self.r = r
         self.fill = fill
         self.stroke = stroke
 
-    def translate(self, tx, ty):
-        return Ellipse((self.center[0] + tx, self.center[1] + ty),
-                       self.r, self.fill, self.stroke)
-
-    def scale(self, sx, sy):
-        return Ellipse((self.center[0] * sx, self.center[1] * sy), (self.r[0] * sx, self.r[1] * sy), self.fill,
-                       self.stroke)
-
-    def get(self, dwg):
+    def base_shape(self, dwg):
         return dwg.ellipse(center=self.center,
                            r=self.r,
                            fill=self.fill,
@@ -84,6 +101,7 @@ class Ellipse(Shape):
 class SineWave(Shape):
 
     def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width):
+        super().__init__()
         self.amplitude = amplitude
         self.wavelength = wavelength
         self.centre_y = centre_y
@@ -92,17 +110,7 @@ class SineWave(Shape):
         self.x_max = x_max
         self.stroke_width = stroke_width
 
-    def translate(self, tx, ty):
-        return SineWave(self.amplitude, self.wavelength,
-                        self.centre_y + ty, self.phase,
-                        self.x_min + tx, self.x_max + tx, self.stroke_width)
-
-    def scale(self, sx, sy):
-        return SineWave(self.amplitude * sy, self.wavelength * sx,
-                        self.centre_y * sy, self.phase,
-                        self.x_min * sx, self.x_max * sx, self.stroke_width)
-
-    def get(self, dwg):
+    def base_shape(self, dwg):
         num_samples = 100
         points = []
 
