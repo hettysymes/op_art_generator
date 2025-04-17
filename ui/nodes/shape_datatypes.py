@@ -20,11 +20,13 @@ class Element:
     def __iter__(self):
         return iter(self.shapes)
 
+
 class Transformation(ABC):
 
     @abstractmethod
     def apply(self, base_shape):
         pass
+
 
 class Translate(Transformation):
     def __init__(self, tx, ty):
@@ -34,6 +36,7 @@ class Translate(Transformation):
     def apply(self, base_shape):
         base_shape.translate(self.tx, self.ty)
 
+
 class Scale(Transformation):
     def __init__(self, sx, sy):
         self.sx = sx
@@ -41,6 +44,7 @@ class Scale(Transformation):
 
     def apply(self, base_shape):
         base_shape.scale(self.sx, self.sy)
+
 
 class Shape(ABC):
 
@@ -127,4 +131,5 @@ class SineWave(Shape):
         return dwg.polyline(points=points,
                             stroke='black',
                             stroke_width=self.stroke_width,
-                            fill='none')
+                            fill='none',
+                            style='vector-effect: non-scaling-stroke')

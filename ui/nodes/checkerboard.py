@@ -1,6 +1,8 @@
+from ui.nodes.drawers.blank_canvas_drawer import BlankCanvas
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_info import CHECKERBOARD_NODE_INFO
 from ui.nodes.nodes import UnitNode
+from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Element
 
 
@@ -11,7 +13,12 @@ class CheckerboardNode(UnitNode):
         grid_out = self.input_nodes[0].compute()
         element1 = self.input_nodes[1].compute()
         element2 = self.input_nodes[2].compute()
-        if grid_out and element1 and element2:
+        if grid_out and (element1 or element2):
+            default_elem = RectangleNode(None, None, {'fill': 'white'}).compute()
+            if not element1:
+                element1 = default_elem
+            if not element2:
+                element2 = default_elem
             v_line_xs, h_line_ys = grid_out
             ret_element = Element()
             element1_starts = True
