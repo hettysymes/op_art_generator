@@ -45,6 +45,14 @@ class Scale(Transformation):
     def apply(self, base_shape):
         base_shape.scale(self.sx, self.sy)
 
+class Rotate(Transformation):
+    def __init__(self, angle, centre):
+        self.angle = angle
+        self.centre = centre
+
+    def apply(self, base_shape):
+        base_shape.rotate(self.angle, self.centre)
+
 
 class Shape(ABC):
 
@@ -59,6 +67,11 @@ class Shape(ABC):
     def scale(self, sx, sy):
         new_obj = copy.deepcopy(self)
         new_obj.transformations.append(Scale(sx, sy))
+        return new_obj
+
+    def rotate(self, angle, centre):
+        new_obj = copy.deepcopy(self)
+        new_obj.transformations.append(Rotate(angle, centre))
         return new_obj
 
     @abstractmethod
@@ -104,7 +117,7 @@ class Ellipse(Shape):
 
 class SineWave(Shape):
 
-    def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width):
+    def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, orientation, num_points):
         super().__init__()
         self.amplitude = amplitude
         self.wavelength = wavelength
@@ -113,13 +126,14 @@ class SineWave(Shape):
         self.x_min = x_min
         self.x_max = x_max
         self.stroke_width = stroke_width
+        self.transformations.append(Rotate(orientation, (0.5,0.5)))
+        self.num_points = num_points
 
     def base_shape(self, dwg):
-        num_samples = 100
         points = []
 
         # Generate 100 evenly spaced x-values between x_min and x_max
-        x_values = [self.x_min + i * (self.x_max - self.x_min) / (num_samples - 1) for i in range(num_samples)]
+        x_values = [self.x_min + i * (self.x_max - self.x_min) / (self.num_points - 1) for i in range(self.num_points)]
 
         # Calculate corresponding y-values using the sine wave formula
         for x in x_values:
