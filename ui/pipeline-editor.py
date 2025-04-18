@@ -646,39 +646,21 @@ class NodePropertiesDialog(QDialog):
                         color_str = index.data()
                         if color_str:
                             color = QColor(color_str)
+                            # Fill the entire cell with the color
                             painter.fillRect(option.rect, color)
 
                             # Add a border around the color swatch
                             painter.setPen(QPen(Qt.black, 1))
                             painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
 
-                            # Add color hex as text if needed
-                            # painter.setPen(QPen(Qt.white if color.lightness() < 128 else Qt.black))
-                            # painter.drawText(option.rect, Qt.AlignCenter, color_str)
-                    else:
-                        super().paint(painter, option, index)
+                            # The key part: prevent default text drawing
+                            return
+                    # Only call the base implementation if we didn't handle it above
+                    super().paint(painter, option, index)
 
-                def createEditor(self, parent, option, index):
-                    if index.column() == 0:
-                        color_dialog = QColorDialog(parent)
-                        color = QColor(index.data()) if index.data() else QColor("#000000")
-                        color_dialog.setCurrentColor(color)
-                        return color_dialog
-                    return super().createEditor(parent, option, index)
-
-                def setEditorData(self, editor, index):
-                    if index.column() == 0:
-                        color = QColor(index.data()) if index.data() else QColor("#000000")
-                        editor.setCurrentColor(color)
-                    else:
-                        super().setEditorData(editor, index)
-
-                def setModelData(self, editor, model, index):
-                    if index.column() == 0:
-                        color = editor.currentColor()
-                        model.setData(index, color.name())
-                    else:
-                        super().setModelData(editor, model, index)
+                def displayText(self, value, locale):
+                    # Return empty string to prevent text display
+                    return ""
 
             # Apply the delegate to the table
             table.setItemDelegate(ColorDelegate())
@@ -691,7 +673,10 @@ class NodePropertiesDialog(QDialog):
             table.setRowCount(len(colours))
 
             for row, colour in enumerate(colours):
-                table.setItem(row, 0, QTableWidgetItem(colour))
+                item = QTableWidgetItem(colour)
+                # This flag can help prevent the text from being displayed
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                table.setItem(row, 0, item)
 
             # Add buttons to add/remove rows
             button_widget = QWidget()
@@ -709,7 +694,9 @@ class NodePropertiesDialog(QDialog):
                     selected_color = color_dialog.selectedColor().name()
                     row = table.rowCount()
                     table.setRowCount(row + 1)
-                    table.setItem(row, 0, QTableWidgetItem(selected_color))
+                    item = QTableWidgetItem(selected_color)
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                    table.setItem(row, 0, item)
 
             # Remove row function
             def remove_row():
@@ -718,18 +705,21 @@ class NodePropertiesDialog(QDialog):
                     table.setRowCount(row - 1)
 
             # Double-click to edit/select color for existing rows
-            def on_double_click(index):
-                if index.column() == 0:
+            def on_cell_clicked(row, column):
+                if column == 0:
                     color_dialog = QColorDialog()
-                    current_color = QColor(table.item(index.row(), 0).text()) if table.item(index.row(), 0) else QColor(
-                        "#000000")
+                    current_item = table.item(row, column)
+                    current_color = QColor(current_item.text()) if current_item else QColor("#000000")
                     color_dialog.setCurrentColor(current_color)
 
                     if color_dialog.exec_():
                         selected_color = color_dialog.selectedColor().name()
-                        table.setItem(index.row(), 0, QTableWidgetItem(selected_color))
+                        new_item = QTableWidgetItem(selected_color)
+                        new_item.setFlags(new_item.flags() & ~Qt.ItemIsEditable)
+                        table.setItem(row, column, new_item)
 
-            table.doubleClicked.connect(on_double_click)
+            # Connect to cellDoubleClicked signal
+            table.cellDoubleClicked.connect(on_cell_clicked)
             add_button.clicked.connect(add_row)
             remove_button.clicked.connect(remove_row)
 
