@@ -12,14 +12,12 @@ from ui.port_defs import PortDef, PortType
 ITERATOR_NODE_INFO = UnitNodeInfo(
     name="Iterator",
     resizable=True,
-    in_port_defs=[PortDef("Iterable", PortType.ITERABLE), PortDef("Shape", PortType.ELEMENT)],
+    in_port_defs=[PortDef("Value list", PortType.VALUE_LIST), PortDef("Shape", PortType.ELEMENT)],
     out_port_defs=[PortDef("Iterator", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
             PropType("prop_to_change", "string", default_value="",
-                     description="", display_name="property to change"),
-            PropType("num_iterations", "int", default_value=5,
-                     description="", min_value=1, display_name="number of iterations")
+                     description="", display_name="property to change")
         ]
     )
 )
@@ -29,19 +27,12 @@ class IteratorNode(UnitNode):
     UNIT_NODE_INFO = ITERATOR_NODE_INFO
 
     def compute(self):
-        iter_node: Node = self.input_nodes[0]
-        iterable = iter_node.compute()
+        samples = self.input_nodes[0].compute()
         shape_node: Node = self.input_nodes[1]
         element = shape_node.compute()
-        if iterable and element:
+        if (samples is not None) and element:
             prop_key = self.prop_vals['prop_to_change']
             if prop_key in shape_node.prop_vals:
-                samples = []
-                if isinstance(iter_node, FunctionNode):
-                    # Compute iterations
-                    samples = sample_fun(iterable, self.prop_vals['num_iterations'])
-                elif isinstance(iter_node, ColourListNode):
-                    samples = iterable
                 ret = []
                 for sample in samples:
                     node_copy = copy.deepcopy(shape_node)
