@@ -1,16 +1,18 @@
-from PyQt5.QtWidgets import QWidget, QPushButton, QHBoxLayout, QColorDialog
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QColorDialog, QSpinBox
 from PyQt5.QtGui import QColor, QPainter
 from PyQt5.QtCore import Qt, pyqtSignal
 
 
 class ColorPreviewWidget(QWidget):
-    """Widget that displays a color preview."""
+    """Widget that displays a color preview and handles clicks."""
+    clicked = pyqtSignal()
 
-    def __init__(self, color=Qt.black, parent=None):
+    def __init__(self, color, parent=None):
         super().__init__(parent)
         self.color = color
-        self.setMinimumSize(24, 24)
-        self.setMaximumHeight(24)
+        self.setFixedSize(80, 20)
+        # Make it clear this is clickable
+        self.setCursor(Qt.PointingHandCursor)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -22,6 +24,11 @@ class ColorPreviewWidget(QWidget):
         self.color = color
         self.update()
 
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
+
 
 class ColorPropertyWidget(QWidget):
     """Widget for selecting colors in property editor."""
@@ -29,22 +36,17 @@ class ColorPropertyWidget(QWidget):
 
     def __init__(self, initial_color, parent=None):
         super().__init__(parent)
-        self.color = initial_color
+        self.color = initial_color if isinstance(initial_color, QColor) else QColor(initial_color)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Color preview
+        # Color preview (now clickable)
         self.preview = ColorPreviewWidget(self.color)
-
-        # Button to show color dialog
-        self.pickButton = QPushButton("Select...")
-        self.pickButton.clicked.connect(self.showColorDialog)
+        self.preview.clicked.connect(self.showColorDialog)
 
         layout.addWidget(self.preview)
-        layout.addWidget(self.pickButton)
         layout.setStretch(0, 1)
-        layout.setStretch(1, 0)
 
     def showColorDialog(self):
         color = QColorDialog.getColor(self.color, self, "Select Color")
@@ -53,8 +55,11 @@ class ColorPropertyWidget(QWidget):
             self.colorChanged.emit(self.color)
 
     def setColor(self, color):
-        self.color = color
-        self.preview.setColor(color)
+        self.color = color if isinstance(color, QColor) else QColor(color)
+        self.preview.setColor(self.color)
 
     def getColor(self):
         return self.color
+
+    def get_value(self):
+        return self.color.name()

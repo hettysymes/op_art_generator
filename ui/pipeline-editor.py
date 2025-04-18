@@ -644,9 +644,7 @@ class NodePropertiesDialog(QDialog):
 
         # Update custom properties
         for prop_name, widget in self.property_widgets.items():
-            if isinstance(widget, ColorPropertyWidget):
-                value = widget.getColor().name()
-            elif isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
+            if isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
                 value = widget.value()
             elif isinstance(widget, QCheckBox):
                 value = widget.isChecked()
