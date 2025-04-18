@@ -15,7 +15,7 @@ def create_graph_svg(height, wh_ratio, y, filepath, scatter=False):
     ax = fig.add_subplot(111)
 
     if scatter:
-        ax.scatter(x, y, color='blue', s=10)  # s controls the marker size
+        ax.scatter(x, y, color='blue', s=2)  # s controls the marker size
     else:
         ax.plot(x, y, 'b-', linewidth=2)
 
