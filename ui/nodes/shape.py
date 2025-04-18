@@ -1,3 +1,5 @@
+from PyQt5.QtCore import Qt
+
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave
@@ -12,7 +14,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
         [
             PropType("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
                      description=""),
-            PropType("fill", "string", default_value="black",
+            PropType("fill", "colour", default_value="#000000",
                      description="")
         ]
     )
@@ -36,7 +38,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
-            PropType("fill", "string", default_value="black",
+            PropType("fill", "colour", default_value="#000000",
                      description="")
         ]
     )
@@ -64,7 +66,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
                      description=""),
             PropType("ry", "float", default_value=0.5,
                      description=""),
-            PropType("fill", "string", default_value="black",
+            PropType("fill", "colour", default_value="#000000",
                      description="")
         ]
     )

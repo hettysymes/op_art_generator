@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QHBoxLayout, QFileDialog)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
+from ui.colour_prop_widget import ColorPropertyWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.nodes import CombinationNode, UnitNode
@@ -631,6 +632,8 @@ class NodePropertiesDialog(QDialog):
 
             widget = container
 
+        elif prop.prop_type == "colour":
+            widget = ColorPropertyWidget(QColor(current_value) or QColor(Qt.black))
         else:  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
 
@@ -641,7 +644,9 @@ class NodePropertiesDialog(QDialog):
 
         # Update custom properties
         for prop_name, widget in self.property_widgets.items():
-            if isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
+            if isinstance(widget, ColorPropertyWidget):
+                value = widget.getColor().name()
+            elif isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
                 value = widget.value()
             elif isinstance(widget, QCheckBox):
                 value = widget.isChecked()
