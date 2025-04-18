@@ -639,6 +639,53 @@ class NodePropertiesDialog(QDialog):
             table.setColumnCount(1)
             table.setHorizontalHeaderLabels(["Colour"])
 
+            # Custom delegate to display color swatches
+            class ColorDelegate(QStyledItemDelegate):
+                def paint(self, painter, option, index):
+                    if index.column() == 0:
+                        color_str = index.data()
+                        if color_str:
+                            color = QColor(color_str)
+                            painter.fillRect(option.rect, color)
+
+                            # Add a border around the color swatch
+                            painter.setPen(QPen(Qt.black, 1))
+                            painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+
+                            # Add color hex as text if needed
+                            # painter.setPen(QPen(Qt.white if color.lightness() < 128 else Qt.black))
+                            # painter.drawText(option.rect, Qt.AlignCenter, color_str)
+                    else:
+                        super().paint(painter, option, index)
+
+                def createEditor(self, parent, option, index):
+                    if index.column() == 0:
+                        color_dialog = QColorDialog(parent)
+                        color = QColor(index.data()) if index.data() else QColor("#000000")
+                        color_dialog.setCurrentColor(color)
+                        return color_dialog
+                    return super().createEditor(parent, option, index)
+
+                def setEditorData(self, editor, index):
+                    if index.column() == 0:
+                        color = QColor(index.data()) if index.data() else QColor("#000000")
+                        editor.setCurrentColor(color)
+                    else:
+                        super().setEditorData(editor, index)
+
+                def setModelData(self, editor, model, index):
+                    if index.column() == 0:
+                        color = editor.currentColor()
+                        model.setData(index, color.name())
+                    else:
+                        super().setModelData(editor, model, index)
+
+            # Apply the delegate to the table
+            table.setItemDelegate(ColorDelegate())
+
+            # Make rows a bit taller to better display the color swatches
+            table.verticalHeader().setDefaultSectionSize(30)
+
             # Populate with current data
             colours = current_value or prop.default_value or []
             table.setRowCount(len(colours))
@@ -656,9 +703,13 @@ class NodePropertiesDialog(QDialog):
 
             # Add row function
             def add_row():
-                row = table.rowCount()
-                table.setRowCount(row + 1)
-                table.setItem(row, 0, QTableWidgetItem("#000000"))
+                # Open color dialog directly when adding a new row
+                color_dialog = QColorDialog()
+                if color_dialog.exec_():
+                    selected_color = color_dialog.selectedColor().name()
+                    row = table.rowCount()
+                    table.setRowCount(row + 1)
+                    table.setItem(row, 0, QTableWidgetItem(selected_color))
 
             # Remove row function
             def remove_row():
@@ -666,6 +717,19 @@ class NodePropertiesDialog(QDialog):
                 if row > 0:
                     table.setRowCount(row - 1)
 
+            # Double-click to edit/select color for existing rows
+            def on_double_click(index):
+                if index.column() == 0:
+                    color_dialog = QColorDialog()
+                    current_color = QColor(table.item(index.row(), 0).text()) if table.item(index.row(), 0) else QColor(
+                        "#000000")
+                    color_dialog.setCurrentColor(current_color)
+
+                    if color_dialog.exec_():
+                        selected_color = color_dialog.selectedColor().name()
+                        table.setItem(index.row(), 0, QTableWidgetItem(selected_color))
+
+            table.doubleClicked.connect(on_double_click)
             add_button.clicked.connect(add_row)
             remove_button.clicked.connect(remove_row)
 
