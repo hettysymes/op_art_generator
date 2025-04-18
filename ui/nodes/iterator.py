@@ -1,6 +1,8 @@
 import copy
 
+from ui.nodes.colour_list import ColourListNode
 from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.function import FunctionNode
 from ui.nodes.grid import GridNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
 from ui.nodes.shape_datatypes import Element
@@ -10,7 +12,7 @@ from ui.port_defs import PortDef, PortType
 ITERATOR_NODE_INFO = UnitNodeInfo(
     name="Iterator",
     resizable=True,
-    in_port_defs=[PortDef("Function", PortType.FUNCTION), PortDef("Shape", PortType.ELEMENT)],
+    in_port_defs=[PortDef("Iterable", PortType.ITERABLE), PortDef("Shape", PortType.ELEMENT)],
     out_port_defs=[PortDef("Iterator", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
@@ -27,16 +29,21 @@ class IteratorNode(UnitNode):
     UNIT_NODE_INFO = ITERATOR_NODE_INFO
 
     def compute(self):
-        function = self.input_nodes[0].compute()
+        iter_node: Node = self.input_nodes[0]
+        iterable = iter_node.compute()
         shape_node: Node = self.input_nodes[1]
         element = shape_node.compute()
-        if function and element:
+        if iterable and element:
             prop_key = self.prop_vals['prop_to_change']
             if prop_key in shape_node.prop_vals:
-                # Compute iterations
-                sampled_f = sample_fun(function, self.prop_vals['num_iterations'])
+                samples = []
+                if isinstance(iter_node, FunctionNode):
+                    # Compute iterations
+                    samples = sample_fun(iterable, self.prop_vals['num_iterations'])
+                elif isinstance(iter_node, ColourListNode):
+                    samples = iterable
                 ret = []
-                for sample in sampled_f:
+                for sample in samples:
                     node_copy = copy.deepcopy(shape_node)
                     node_copy.prop_vals[prop_key] = sample
                     ret.append(node_copy.compute())

@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
-                             QHBoxLayout, QFileDialog)
+                             QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 from ui.colour_prop_widget import ColorPropertyWidget
@@ -625,6 +625,70 @@ class NodePropertiesDialog(QDialog):
                         # Handle empty or invalid cells
                         pass
                 return points
+
+            # Store both the getter function and the reference to the table with the container
+            container.get_value = get_table_value
+            container.table_widget = table  # Store a reference to the actual table
+
+            widget = container
+        elif prop.prop_type == "colour_table":
+            # Create a table widget
+            table = QTableWidget()
+
+            # Set up the basic table structure
+            table.setColumnCount(1)
+            table.setHorizontalHeaderLabels(["Colour"])
+
+            # Populate with current data
+            colours = current_value or prop.default_value or []
+            table.setRowCount(len(colours))
+
+            for row, colour in enumerate(colours):
+                table.setItem(row, 0, QTableWidgetItem(colour))
+
+            # Add buttons to add/remove rows
+            button_widget = QWidget()
+            button_layout = QHBoxLayout(button_widget)
+            button_layout.setContentsMargins(0, 0, 0, 0)
+
+            add_button = QPushButton("+")
+            remove_button = QPushButton("-")
+
+            # Add row function
+            def add_row():
+                row = table.rowCount()
+                table.setRowCount(row + 1)
+                table.setItem(row, 0, QTableWidgetItem("#000000"))
+
+            # Remove row function
+            def remove_row():
+                row = table.rowCount()
+                if row > 0:
+                    table.setRowCount(row - 1)
+
+            add_button.clicked.connect(add_row)
+            remove_button.clicked.connect(remove_row)
+
+            button_layout.addWidget(add_button)
+            button_layout.addWidget(remove_button)
+
+            # Create a container for the table and buttons
+            container = QWidget()
+            layout = QVBoxLayout(container)
+            layout.addWidget(table)
+            layout.addWidget(button_widget)
+
+            # Function to get the current value from the table
+            def get_table_value():
+                colours = []
+                for row in range(table.rowCount()):
+                    try:
+                        colour = table.item(row, 0).text()
+                        colours.append(colour)
+                    except (ValueError, AttributeError):
+                        # Handle empty or invalid cells
+                        pass
+                return colours
 
             # Store both the getter function and the reference to the table with the container
             container.get_value = get_table_value
