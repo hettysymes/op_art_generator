@@ -30,6 +30,10 @@ class Transformation(ABC):
     def apply(self, base_shape):
         pass
 
+    @abstractmethod
+    def apply_to_point(self, point):
+        pass
+
 
 class Translate(Transformation):
     def __init__(self, tx, ty):
@@ -38,6 +42,9 @@ class Translate(Transformation):
 
     def apply(self, base_shape):
         base_shape.translate(self.tx, self.ty)
+
+    def apply_to_point(self, point):
+        return point[0]+self.tx, point[1]+self.ty
 
 
 class Scale(Transformation):
@@ -48,6 +55,9 @@ class Scale(Transformation):
     def apply(self, base_shape):
         base_shape.scale(self.sx, self.sy)
 
+    def apply_to_point(self, point):
+        return point[0]*self.sx, point[1]*self.sy
+
 
 class Rotate(Transformation):
     def __init__(self, angle, centre):
@@ -56,6 +66,22 @@ class Rotate(Transformation):
 
     def apply(self, base_shape):
         base_shape.rotate(self.angle, self.centre)
+
+    def apply_to_point(self, point):
+        angle_radians = math.radians(self.angle)
+
+        # Translate point back to origin
+        x = point[0] - self.centre[0]
+        y = point[1] - self.centre[1]
+
+        # Rotate
+        rotated_x = x * math.cos(angle_radians) - y * math.sin(angle_radians)
+        rotated_y = x * math.sin(angle_radians) + y * math.cos(angle_radians)
+
+        # Translate point back
+        x = rotated_x + self.centre[0]
+        y = rotated_y + self.centre[1]
+        return x, y
 
 
 class Shape(ABC):
@@ -88,6 +114,29 @@ class Shape(ABC):
             t.apply(base_shape)
         return base_shape
 
+class PolyLine(Shape):
+
+    def __init__(self, points, stroke, stroke_width):
+        super().__init__()
+        self.points = points
+        self.stroke = stroke
+        self.stroke_width = stroke_width
+
+    def base_shape(self, dwg):
+        return dwg.polyline(points=self.points,
+                            stroke=self.stroke,
+                            stroke_width=self.stroke_width,
+                            fill='none',
+                            style='vector-effect: non-scaling-stroke')
+
+    def get_points(self):
+        transformed_points = []
+        for p in self.points:
+            transformed_p = p
+            for t in self.transformations:
+                transformed_p = t.apply_to_point(transformed_p)
+            transformed_points.append(transformed_p)
+        return transformed_points
 
 class Polygon(Shape):
 
@@ -118,36 +167,20 @@ class Ellipse(Shape):
                            fill=self.fill,
                            stroke=self.stroke)
 
-
-class SineWave(Shape):
+class SineWave(PolyLine):
 
     def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, orientation, num_points):
-        super().__init__()
-        self.amplitude = amplitude
-        self.wavelength = wavelength
-        self.centre_y = centre_y
-        self.phase = phase
-        self.x_min = x_min
-        self.x_max = x_max
-        self.stroke_width = stroke_width
-        self.transformations.append(Rotate(orientation, (0.5, 0.5)))
-        self.num_points = num_points
-
-    def base_shape(self, dwg):
         points = []
 
         # Generate 100 evenly spaced x-values between x_min and x_max
-        x_values = [self.x_min + i * (self.x_max - self.x_min) / (self.num_points - 1) for i in range(self.num_points)]
+        x_values = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
 
         # Calculate corresponding y-values using the sine wave formula
         for x in x_values:
             # Standard sine wave equation: y = A * sin(2π * x / λ + φ) + centre_y
             # where A is amplitude, λ is wavelength, and φ is phase
-            y = self.amplitude * math.sin(2 * math.pi * x / self.wavelength + math.radians(self.phase)) + self.centre_y
+            y = amplitude * math.sin(2 * math.pi * x / wavelength + math.radians(phase)) + centre_y
             points.append((x, y))
 
-        return dwg.polyline(points=points,
-                            stroke='black',
-                            stroke_width=self.stroke_width,
-                            fill='none',
-                            style='vector-effect: non-scaling-stroke')
+        super().__init__(points, 'black', stroke_width)
+        self.transformations.append(Rotate(orientation, (0.5, 0.5)))
