@@ -1,5 +1,6 @@
 from ui.nodes.canvas import CanvasNode
 from ui.nodes.checkerboard import CheckerboardNode
+from ui.nodes.colour_filler import ColourFillerNode
 from ui.nodes.colour_list import ColourListNode
 from ui.nodes.function import FunctionNode
 from ui.nodes.function_sampler import FunSamplerNode
@@ -10,4 +11,4 @@ from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.nodes.warp import WarpNode
 
 node_classes = [GridNode, ShapeNode, ShapeRepeaterNode, CheckerboardNode, WarpNode,
-                FunctionNode, CanvasNode, IteratorNode, ColourListNode, FunSamplerNode]
+                FunctionNode, CanvasNode, IteratorNode, ColourListNode, FunSamplerNode, ColourFillerNode]

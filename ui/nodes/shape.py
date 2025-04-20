@@ -25,7 +25,7 @@ class PolygonNode(UnitNode):
     UNIT_NODE_INFO = POLYGON_NODE_INFO
 
     def compute(self):
-        return Element([Polygon(self.prop_vals['points'], self.prop_vals['fill'], 'none')])
+        return Element([Polygon(self.prop_vals['points'], self.prop_vals['fill'])])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
@@ -49,7 +49,7 @@ class RectangleNode(UnitNode):
     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
 
     def compute(self):
-        return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], self.prop_vals['fill'], 'none')])
+        return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], self.prop_vals['fill'])])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()

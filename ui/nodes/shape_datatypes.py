@@ -23,6 +23,9 @@ class Element:
     def __getitem__(self, index):
         return self.shapes[index]
 
+    def __len__(self):
+        return len(self.shapes)
+
 
 class Transformation(ABC):
 
@@ -140,16 +143,15 @@ class PolyLine(Shape):
 
 class Polygon(Shape):
 
-    def __init__(self, points, fill, stroke):
+    def __init__(self, points, fill):
         super().__init__()
         self.points = points
         self.fill = fill
-        self.stroke = stroke
 
     def base_shape(self, dwg):
         return dwg.polygon(points=self.points,
                            fill=self.fill,
-                           stroke=self.stroke)
+                           stroke='none')
 
 
 class Ellipse(Shape):
