@@ -691,7 +691,7 @@ class NodePropertiesDialog(QDialog):
                 # Open color dialog directly when adding a new row
                 color_dialog = QColorDialog()
                 if color_dialog.exec_():
-                    selected_color = color_dialog.selectedColor().name()
+                    selected_color = color_dialog.selectedColor().getRgb()
                     row = table.rowCount()
                     table.setRowCount(row + 1)
                     item = QTableWidgetItem(selected_color)
@@ -709,11 +709,11 @@ class NodePropertiesDialog(QDialog):
                 if column == 0:
                     color_dialog = QColorDialog()
                     current_item = table.item(row, column)
-                    current_color = QColor(current_item.text()) if current_item else QColor("#000000")
+                    current_color = QColor(current_item.text()) if current_item else QColor(0,0,0,255)
                     color_dialog.setCurrentColor(current_color)
 
                     if color_dialog.exec_():
-                        selected_color = color_dialog.selectedColor().name()
+                        selected_color = color_dialog.selectedColor().getRgb()
                         new_item = QTableWidgetItem(selected_color)
                         new_item.setFlags(new_item.flags() & ~Qt.ItemIsEditable)
                         table.setItem(row, column, new_item)
@@ -751,7 +751,8 @@ class NodePropertiesDialog(QDialog):
             widget = container
 
         elif prop.prop_type == "colour":
-            widget = ColorPropertyWidget(QColor(current_value) or QColor(Qt.black))
+            r,g,b,a = current_value
+            widget = ColorPropertyWidget(QColor(r,g,b,a) or QColor(0,0,0,255))
         else:  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
 

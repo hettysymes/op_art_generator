@@ -5,6 +5,10 @@ from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, Un
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave
 from ui.port_defs import PortDef, PortType
 
+def process_rgb(rgb_val):
+    r,g,b,a = rgb_val
+    return f'rgb({r},{g},{b})', a/255
+
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
@@ -14,7 +18,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
         [
             PropType("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
                      description=""),
-            PropType("fill", "colour", default_value="#000000",
+            PropType("fill", "colour", default_value=(0,0,0,255),
                      description="")
         ]
     )
@@ -25,7 +29,8 @@ class PolygonNode(UnitNode):
     UNIT_NODE_INFO = POLYGON_NODE_INFO
 
     def compute(self):
-        return Element([Polygon(self.prop_vals['points'], self.prop_vals['fill'])])
+        fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+        return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
@@ -38,7 +43,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
-            PropType("fill", "colour", default_value="#000000",
+            PropType("fill", "colour", default_value=(0,0,0,255),
                      description="")
         ]
     )
@@ -49,7 +54,8 @@ class RectangleNode(UnitNode):
     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
 
     def compute(self):
-        return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], self.prop_vals['fill'])])
+        fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+        return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
@@ -66,7 +72,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
                      description=""),
             PropType("ry", "float", default_value=0.5,
                      description=""),
-            PropType("fill", "colour", default_value="#000000",
+            PropType("fill", "colour", default_value=(0,0,0,255),
                      description="")
         ]
     )
@@ -77,8 +83,9 @@ class EllipseNode(UnitNode):
     UNIT_NODE_INFO = ELLIPSE_NODE_INFO
 
     def compute(self):
+        fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element(
-            [Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), self.prop_vals['fill'], 'none')])
+            [Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'none')])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()

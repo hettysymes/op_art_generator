@@ -143,30 +143,34 @@ class PolyLine(Shape):
 
 class Polygon(Shape):
 
-    def __init__(self, points, fill):
+    def __init__(self, points, fill, fill_opacity):
         super().__init__()
         self.points = points
         self.fill = fill
+        self.fill_opacity = fill_opacity
 
     def base_shape(self, dwg):
         return dwg.polygon(points=self.points,
                            fill=self.fill,
+                           fill_opacity=self.fill_opacity,
                            stroke='none')
 
 
 class Ellipse(Shape):
 
-    def __init__(self, center, r, fill, stroke):
+    def __init__(self, center, r, fill, fill_opacity, stroke):
         super().__init__()
         self.center = center
         self.r = r
         self.fill = fill
+        self.fill_opacity = fill_opacity
         self.stroke = stroke
 
     def base_shape(self, dwg):
         return dwg.ellipse(center=self.center,
                            r=self.r,
                            fill=self.fill,
+                           fill_opacity=self.fill_opacity,
                            stroke=self.stroke)
 
 class SineWave(PolyLine):
