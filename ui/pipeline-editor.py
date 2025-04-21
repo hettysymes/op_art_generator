@@ -6,7 +6,7 @@ import uuid
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QDoubleValidator
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QDoubleValidator, QDropEvent
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -570,104 +570,71 @@ class NodePropertiesDialog(QDialog):
                 def __init__(self, parent=None):
                     super().__init__(parent)
 
+                    self.setColumnCount(1)
+                    self.setHorizontalHeaderLabels(["Coordinate Points (X, Y)"])
+                    self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
                     self.setEditTriggers(QAbstractItemView.NoEditTriggers)
-
-                    # Set selection behavior
+                    self.setSelectionMode(QAbstractItemView.ExtendedSelection)
                     self.setSelectionBehavior(QAbstractItemView.SelectRows)
-                    self.setSelectionMode(QAbstractItemView.SingleSelection)
 
-                    # Turn off the default drag and drop mode
-                    self.setDragDropMode(QAbstractItemView.NoDragDrop)
+                    self.setDragEnabled(True)
+                    self.setAcceptDrops(True)
+                    self.viewport().setAcceptDrops(True)
+                    self.setDragDropMode(QAbstractItemView.DragDrop)  # <--- Not InternalMove
+                    self.setDragDropOverwriteMode(False)
+                    self.setDropIndicatorShown(True)
 
-                    # For tracking mouse movement and rows
-                    self.press_row = -1
-                    self.current_row = -1
-                    self.is_dragging = False
+                def mimeData(self, items):
+                    mime_data = super().mimeData(items)
+                    mime_data.setText("drag-row")
+                    return mime_data
 
-                def mousePressEvent(self, event):
-                    if event.button() == Qt.LeftButton:
-                        self.press_row = self.rowAt(event.pos().y())
-                        if self.press_row >= 0:
-                            self.selectRow(self.press_row)
-                            self.is_dragging = True
-                    super().mousePressEvent(event)
+                def dropEvent(self, event: QDropEvent):
+                    if event.source() == self:
+                        drop_row = self.drop_on(event)
 
-                def mouseMoveEvent(self, event):
-                    if self.is_dragging and self.press_row >= 0:
-                        current_row = self.rowAt(event.pos().y())
-                        if current_row >= 0 and current_row != self.current_row:
-                            self.current_row = current_row
-                            # Visual feedback - could add highlighting or other indicators here
-                    super().mouseMoveEvent(event)
+                        selected_rows = sorted(set(index.row() for index in self.selectedIndexes()))
+                        items_to_move = []
 
-                def mouseReleaseEvent(self, event):
-                    if event.button() == Qt.LeftButton and self.is_dragging and self.press_row >= 0:
-                        release_row = self.rowAt(event.pos().y())
+                        # Grab data from selected rows
+                        for row in selected_rows:
+                            item = self.item(row, 0)
+                            new_item = QTableWidgetItem(item.text())
+                            new_item.setData(Qt.UserRole, item.data(Qt.UserRole))
+                            new_item.setTextAlignment(Qt.AlignCenter)
+                            items_to_move.append(new_item)
 
-                        # Only move if we have valid rows and they're different
-                        if release_row >= 0 and release_row != self.press_row:
-                            self.swapRows(self.press_row, release_row)
-                            self.selectRow(release_row)
+                        # Remove selected rows (in reverse order to avoid shifting)
+                        for row in reversed(selected_rows):
+                            self.removeRow(row)
+                            if row < drop_row:
+                                drop_row -= 1
 
-                    # Reset drag state
-                    self.is_dragging = False
-                    self.press_row = -1
-                    self.current_row = -1
+                        # Insert rows at new position
+                        for i, item in enumerate(items_to_move):
+                            self.insertRow(drop_row + i)
+                            self.setItem(drop_row + i, 0, item)
+                            self.selectRow(drop_row + i)
 
-                    super().mouseReleaseEvent(event)
+                        event.accept()
+                    else:
+                        super().dropEvent(event)
 
-                def swapRows(self, from_row, to_row):
-                    # Get data from all columns of source row
-                    source_data = []
-                    for col in range(self.columnCount()):
-                        item = self.item(from_row, col)
-                        if item:
-                            # Capture all relevant data
-                            data = {
-                                'text': item.text(),
-                                'userData': item.data(Qt.UserRole),
-                                'alignment': item.textAlignment()
-                            }
-                            source_data.append(data)
-                        else:
-                            source_data.append(None)
+                def drop_on(self, event):
+                    index = self.indexAt(event.pos())
+                    if not index.isValid():
+                        return self.rowCount()
+                    return index.row() + 1 if self.is_below(event.pos(), index) else index.row()
 
-                    # If we're moving down, we need to move from bottom to top
-                    # to avoid overwriting data
-                    if from_row < to_row:
-                        # Move all rows between from_row+1 and to_row up by 1
-                        for row in range(from_row, to_row):
-                            for col in range(self.columnCount()):
-                                next_item = self.item(row + 1, col)
-                                if next_item:
-                                    # Create a new item with the data from the next row
-                                    new_item = QTableWidgetItem(next_item.text())
-                                    new_item.setData(Qt.UserRole, next_item.data(Qt.UserRole))
-                                    new_item.setTextAlignment(next_item.textAlignment())
-                                    self.setItem(row, col, new_item)
-                                else:
-                                    self.setItem(row, col, None)
-                    else:  # moving up
-                        # Move all rows between to_row and from_row-1 down by 1
-                        for row in range(from_row, to_row, -1):
-                            for col in range(self.columnCount()):
-                                prev_item = self.item(row - 1, col)
-                                if prev_item:
-                                    # Create a new item with the data from the previous row
-                                    new_item = QTableWidgetItem(prev_item.text())
-                                    new_item.setData(Qt.UserRole, prev_item.data(Qt.UserRole))
-                                    new_item.setTextAlignment(prev_item.textAlignment())
-                                    self.setItem(row, col, new_item)
-                                else:
-                                    self.setItem(row, col, None)
-
-                    # Finally, set the source data to the destination row
-                    for col, data in enumerate(source_data):
-                        if data:
-                            new_item = QTableWidgetItem(data['text'])
-                            new_item.setData(Qt.UserRole, data['userData'])
-                            new_item.setTextAlignment(data['alignment'])
-                            self.setItem(to_row, col, new_item)
+                def is_below(self, pos, index):
+                    rect = self.visualRect(index)
+                    margin = 2
+                    if pos.y() - rect.top() < margin:
+                        return False
+                    elif rect.bottom() - pos.y() < margin:
+                        return True
+                    return rect.contains(pos) and pos.y() >= rect.center().y()
 
             # Create our custom table widget
             table = ReorderableTableWidget()
