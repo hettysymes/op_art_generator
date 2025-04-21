@@ -636,6 +636,20 @@ class NodePropertiesDialog(QDialog):
                         return True
                     return rect.contains(pos) and pos.y() >= rect.center().y()
 
+                def dragEnterEvent(self, event):
+                    if event.source() == self:
+                        event.setDropAction(Qt.MoveAction)
+                        event.accept()
+                    else:
+                        super().dragEnterEvent(event)
+
+                def dragMoveEvent(self, event):
+                    if event.source() == self:
+                        event.setDropAction(Qt.MoveAction)
+                        event.accept()
+                    else:
+                        super().dragMoveEvent(event)
+
             # Create our custom table widget
             table = ReorderableTableWidget()
 
