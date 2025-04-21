@@ -8,6 +8,7 @@ class PortType(Enum):
     ELEMENT = auto()
     VALUE_LIST = auto()
     ITERABLE = auto()
+    GRADIENT = auto()
     VISUALISABLE = auto()
 
 

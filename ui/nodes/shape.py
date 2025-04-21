@@ -1,13 +1,8 @@
-from PyQt5.QtCore import Qt
-
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave
+from ui.nodes.utils import process_rgb
 from ui.port_defs import PortDef, PortType
-
-def process_rgb(rgb_val):
-    r,g,b,a = rgb_val
-    return f'rgb({r},{g},{b})', a/255
 
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
@@ -18,7 +13,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
         [
             PropType("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
                      description=""),
-            PropType("fill", "colour", default_value=(0,0,0,255),
+            PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description="")
         ]
     )
@@ -33,7 +28,7 @@ class PolygonNode(UnitNode):
         return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
 
     def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
 
 
 RECTANGLE_NODE_INFO = UnitNodeInfo(
@@ -43,7 +38,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
-            PropType("fill", "colour", default_value=(0,0,0,255),
+            PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description="")
         ]
     )
@@ -58,7 +53,7 @@ class RectangleNode(UnitNode):
         return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
 
     def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
 
 
 ELLIPSE_NODE_INFO = UnitNodeInfo(
@@ -72,7 +67,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
                      description=""),
             PropType("ry", "float", default_value=0.5,
                      description=""),
-            PropType("fill", "colour", default_value=(0,0,0,255),
+            PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description="")
         ]
     )
@@ -88,7 +83,7 @@ class EllipseNode(UnitNode):
             [Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'none')])
 
     def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
 
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
@@ -131,7 +126,7 @@ class SineWaveNode(UnitNode):
                                  self.prop_vals['num_points'])])
 
     def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
 
 
 class ShapeNode(CombinationNode):

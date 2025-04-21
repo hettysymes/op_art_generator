@@ -1,7 +1,6 @@
 import itertools
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.node_info import SHAPE_REPEATER_NODE_INFO
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape_datatypes import Element, PolyLine, Polygon
 from ui.port_defs import PortDef, PortType
@@ -17,6 +16,7 @@ COLOUR_FILLER_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList([])
 )
 
+
 class ColourFillerNode(UnitNode):
     UNIT_NODE_INFO = COLOUR_FILLER_NODE_INFO
 
@@ -27,9 +27,9 @@ class ColourFillerNode(UnitNode):
             ret_elem = Element()
             colour_it = itertools.cycle(colours)
             for i in range(1, len(element)):
-                assert isinstance(element[i-1], PolyLine)
+                assert isinstance(element[i - 1], PolyLine)
                 assert isinstance(element[i], PolyLine)
-                points = element[i-1].get_points() + list(reversed(element[i].get_points()))
+                points = element[i - 1].get_points() + list(reversed(element[i].get_points()))
                 ret_elem.add(Polygon(points, next(colour_it)))
             return ret_elem
 

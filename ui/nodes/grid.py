@@ -1,7 +1,22 @@
 from ui.nodes.drawers.grid_drawer import GridDrawing
-from ui.nodes.node_info import GRID_NODE_INFO
-from ui.nodes.nodes import UnitNode
+from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.warp_utils import PosWarp, RelWarp
+from ui.port_defs import PortDef, PortType
+
+GRID_NODE_INFO = UnitNodeInfo(
+    name="Grid",
+    resizable=True,
+    in_port_defs=[PortDef("X Warp", PortType.WARP), PortDef("Y Warp", PortType.WARP)],
+    out_port_defs=[PortDef("Grid", PortType.GRID)],
+    prop_type_list=PropTypeList(
+        [
+            PropType("width", "int", default_value=5,
+                     description="Number of squares in width of grid"),
+            PropType("height", "int", default_value=5,
+                     description="Number of squares in height of grid")
+        ]
+    )
+)
 
 
 class GridNode(UnitNode):

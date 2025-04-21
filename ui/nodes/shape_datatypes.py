@@ -47,7 +47,7 @@ class Translate(Transformation):
         base_shape.translate(self.tx, self.ty)
 
     def apply_to_point(self, point):
-        return point[0]+self.tx, point[1]+self.ty
+        return point[0] + self.tx, point[1] + self.ty
 
 
 class Scale(Transformation):
@@ -59,7 +59,7 @@ class Scale(Transformation):
         base_shape.scale(self.sx, self.sy)
 
     def apply_to_point(self, point):
-        return point[0]*self.sx, point[1]*self.sy
+        return point[0] * self.sx, point[1] * self.sy
 
 
 class Rotate(Transformation):
@@ -117,6 +117,7 @@ class Shape(ABC):
             t.apply(base_shape)
         return base_shape
 
+
 class PolyLine(Shape):
 
     def __init__(self, points, stroke, stroke_width):
@@ -140,6 +141,7 @@ class PolyLine(Shape):
                 transformed_p = t.apply_to_point(transformed_p)
             transformed_points.append(transformed_p)
         return transformed_points
+
 
 class Polygon(Shape):
 
@@ -172,6 +174,7 @@ class Ellipse(Shape):
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
                            stroke=self.stroke)
+
 
 class SineWave(PolyLine):
 

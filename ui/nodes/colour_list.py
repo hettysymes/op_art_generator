@@ -1,11 +1,8 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.drawers.grid_drawer import GridDrawing
 from ui.nodes.grid import GridNode
-from ui.nodes.node_info import GRID_NODE_INFO
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Element
-from ui.nodes.warp_utils import PosWarp, RelWarp
 from ui.port_defs import PortDef, PortType
 
 COLOUR_LIST_NODE_INFO = UnitNodeInfo(
@@ -20,6 +17,7 @@ COLOUR_LIST_NODE_INFO = UnitNodeInfo(
         ]
     )
 )
+
 
 class ColourListNode(UnitNode):
     UNIT_NODE_INFO = COLOUR_LIST_NODE_INFO
@@ -40,6 +38,8 @@ class ColourListNode(UnitNode):
                     x2 = v_line_xs[i]
                     y1 = h_line_ys[j - 1]
                     y2 = h_line_ys[j]
-                    ret_element.add(RectangleNode(None, None, {'fill': colours[col_index]}).compute()[0].scale(x2 - x1, y2 - y1).translate(x1, y1))
+                    ret_element.add(RectangleNode(None, None, {'fill': colours[col_index]}).compute()[0].scale(x2 - x1,
+                                                                                                               y2 - y1).translate(
+                        x1, y1))
                     col_index += 1
             return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, ret_element).save()

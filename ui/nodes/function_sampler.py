@@ -1,12 +1,6 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
-from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.drawers.grid_drawer import GridDrawing
-from ui.nodes.grid import GridNode
-from ui.nodes.node_info import GRID_NODE_INFO
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Element
-from ui.nodes.warp_utils import PosWarp, RelWarp, sample_fun
+from ui.nodes.warp_utils import sample_fun
 from ui.port_defs import PortDef, PortType
 
 FUN_SAMPLER_NODE = UnitNodeInfo(
@@ -22,6 +16,7 @@ FUN_SAMPLER_NODE = UnitNodeInfo(
     )
 )
 
+
 class FunSamplerNode(UnitNode):
     UNIT_NODE_INFO = FUN_SAMPLER_NODE
 
@@ -34,4 +29,3 @@ class FunSamplerNode(UnitNode):
         samples = self.compute()
         if samples is not None:
             return create_graph_svg(height, wh_ratio, samples, f"tmp/{str(self.node_id)}", scatter=True)
-

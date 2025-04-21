@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from ui.nodes.drawers.blank_canvas_drawer import BlankCanvas
+from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.shape_datatypes import Element
 
 
 class PropTypeList:
@@ -55,7 +56,7 @@ class Node(ABC):
         vis = self.visualise(height, wh_ratio)
         if vis: return vis
         # No visualisation, return blank canvas
-        return BlankCanvas(f"tmp/{str(self.node_id)}", height, wh_ratio).save()
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (Element(), None)).save()
 
     def name(self):
         return self.node_info().name

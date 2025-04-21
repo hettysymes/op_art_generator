@@ -1,12 +1,9 @@
 import copy
 
-from ui.nodes.colour_list import ColourListNode
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.function import FunctionNode
 from ui.nodes.grid import GridNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
 from ui.nodes.shape_datatypes import Element
-from ui.nodes.warp_utils import sample_fun
 from ui.port_defs import PortDef, PortType
 
 ITERATOR_NODE_INFO = UnitNodeInfo(

@@ -1,7 +1,4 @@
-import itertools
-
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.node_info import SHAPE_REPEATER_NODE_INFO
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape_datatypes import Element
 from ui.port_defs import PortType, PortDef
@@ -16,6 +13,7 @@ OVERLAY_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList([])
 )
+
 
 class OverlayNode(UnitNode):
     UNIT_NODE_INFO = OVERLAY_NODE_INFO

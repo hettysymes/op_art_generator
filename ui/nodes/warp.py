@@ -1,7 +1,15 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
-from ui.nodes.node_info import POS_WARP_NODE_INFO, REL_WARP_NODE_INFO
-from ui.nodes.nodes import UnitNode, CombinationNode
+from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList
 from ui.nodes.warp_utils import PosWarp, RelWarp
+from ui.port_defs import PortDef, PortType
+
+POS_WARP_NODE_INFO = UnitNodeInfo(
+    name="Position Warp",
+    resizable=True,
+    in_port_defs=[PortDef("Function", PortType.FUNCTION)],
+    out_port_defs=[PortDef("Warp", PortType.WARP)],
+    prop_type_list=PropTypeList([])
+)
 
 
 class PosWarpNode(UnitNode):
@@ -15,6 +23,15 @@ class PosWarpNode(UnitNode):
         warp = self.compute()
         if warp:
             return create_graph_svg(height, wh_ratio, warp.sample(1000), f"tmp/{str(self.node_id)}")
+
+
+REL_WARP_NODE_INFO = UnitNodeInfo(
+    name="Relative Warp",
+    resizable=True,
+    in_port_defs=[PortDef("Function", PortType.FUNCTION)],
+    out_port_defs=[PortDef("Warp", PortType.WARP)],
+    prop_type_list=PropTypeList([])
+)
 
 
 class RelWarpNode(UnitNode):

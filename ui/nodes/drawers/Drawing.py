@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 import cairosvg
 import svgwrite
 
+from ui.nodes.utils import process_rgb
+
 
 class Drawing(ABC):
 
@@ -22,8 +24,9 @@ class Drawing(ABC):
         element['clip-path'] = "url(#viewbox-clip)"
         self.dwg.add(element)
 
-    def add_bg(self, fill='white'):
-        self.dwg_add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill=fill))
+    def add_bg(self, colour=(255, 255, 255, 255)):
+        fill, fill_opacity = process_rgb(colour)
+        self.dwg_add(self.dwg.rect(insert=(0, 0), size=(self.width, self.height), fill=fill, fill_opacity=fill_opacity))
 
     def save_both(self):
         self.dwg.save()

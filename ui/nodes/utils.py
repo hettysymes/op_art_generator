@@ -1,6 +1,11 @@
 import numpy as np
 
 
+def process_rgb(rgb_val):
+    r, g, b, a = rgb_val
+    return f'rgb({r},{g},{b})', a / 255
+
+
 def cubic_f(a, b, c, d=0):
     return lambda x: a * (x ** 3) + b * (x ** 2) + c * x + d
 

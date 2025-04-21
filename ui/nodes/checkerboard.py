@@ -1,8 +1,20 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.node_info import CHECKERBOARD_NODE_INFO
-from ui.nodes.nodes import UnitNode
+from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Element
+from ui.port_defs import PortType, PortDef
+
+CHECKERBOARD_NODE_INFO = UnitNodeInfo(
+    name="Checkerboard",
+    resizable=True,
+    in_port_defs=[
+        PortDef("Grid", PortType.GRID),
+        PortDef("Drawing 1", PortType.ELEMENT),
+        PortDef("Drawing 2", PortType.ELEMENT)
+    ],
+    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    prop_type_list=PropTypeList([])
+)
 
 
 class CheckerboardNode(UnitNode):
@@ -13,7 +25,7 @@ class CheckerboardNode(UnitNode):
         element1 = self.input_nodes[1].compute()
         element2 = self.input_nodes[2].compute()
         if grid_out and (element1 or element2):
-            default_elem = RectangleNode(None, None, {'fill': (255,255,255,255)}).compute()
+            default_elem = RectangleNode(None, None, {'fill': (255, 255, 255, 0)}).compute()
             if not element1:
                 element1 = default_elem
             if not element2:
@@ -38,4 +50,4 @@ class CheckerboardNode(UnitNode):
     def visualise(self, height, wh_ratio):
         element = self.compute()
         if element:
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, element).save()
+            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (element, None)).save()

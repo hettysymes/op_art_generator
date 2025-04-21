@@ -1,9 +1,20 @@
 import itertools
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.node_info import SHAPE_REPEATER_NODE_INFO
-from ui.nodes.nodes import UnitNode
+from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape_datatypes import Element
+from ui.port_defs import PortDef, PortType
+
+SHAPE_REPEATER_NODE_INFO = UnitNodeInfo(
+    name="Shape Repeater",
+    resizable=True,
+    in_port_defs=[
+        PortDef("Grid", PortType.GRID),
+        PortDef("Drawing", PortType.ELEMENT)
+    ],
+    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    prop_type_list=PropTypeList([])
+)
 
 
 class ShapeRepeaterNode(UnitNode):
@@ -35,4 +46,4 @@ class ShapeRepeaterNode(UnitNode):
     def visualise(self, height, wh_ratio):
         element = self.compute()
         if element:
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, element).save()
+            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (element, None)).save()

@@ -28,4 +28,3 @@ def create_graph_svg(height, wh_ratio, y, filepath, scatter=False):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     fig.savefig(filepath, format='svg', bbox_inches='tight')
     return filepath
-
