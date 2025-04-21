@@ -4,15 +4,16 @@ import shutil
 import sys
 import uuid
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QDoubleValidator
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
-                             QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog)
+                             QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
+                             QAbstractItemView)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 from ui.colour_prop_widget import ColorPropertyWidget
@@ -565,49 +566,220 @@ class NodePropertiesDialog(QDialog):
                 widget.setCurrentIndex(index)
 
         elif prop.prop_type == "table":
-            # Create a table widget
-            table = QTableWidget()
+            class ReorderableTableWidget(QTableWidget):
+                def __init__(self, parent=None):
+                    super().__init__(parent)
 
-            # Set up the basic table structure
-            table.setColumnCount(2)
-            table.setHorizontalHeaderLabels(["X", "Y"])
+                    # Set selection behavior
+                    self.setSelectionBehavior(QAbstractItemView.SelectRows)
+                    self.setSelectionMode(QAbstractItemView.SingleSelection)
+
+                    # Turn off the default drag and drop mode
+                    self.setDragDropMode(QAbstractItemView.NoDragDrop)
+
+                    # For tracking mouse movement and rows
+                    self.press_row = -1
+                    self.current_row = -1
+                    self.is_dragging = False
+
+                def mousePressEvent(self, event):
+                    if event.button() == Qt.LeftButton:
+                        self.press_row = self.rowAt(event.pos().y())
+                        if self.press_row >= 0:
+                            self.selectRow(self.press_row)
+                            self.is_dragging = True
+                    super().mousePressEvent(event)
+
+                def mouseMoveEvent(self, event):
+                    if self.is_dragging and self.press_row >= 0:
+                        current_row = self.rowAt(event.pos().y())
+                        if current_row >= 0 and current_row != self.current_row:
+                            self.current_row = current_row
+                            # Visual feedback - could add highlighting or other indicators here
+                    super().mouseMoveEvent(event)
+
+                def mouseReleaseEvent(self, event):
+                    if event.button() == Qt.LeftButton and self.is_dragging and self.press_row >= 0:
+                        release_row = self.rowAt(event.pos().y())
+
+                        # Only move if we have valid rows and they're different
+                        if release_row >= 0 and release_row != self.press_row:
+                            self.swapRows(self.press_row, release_row)
+                            self.selectRow(release_row)
+
+                    # Reset drag state
+                    self.is_dragging = False
+                    self.press_row = -1
+                    self.current_row = -1
+
+                    super().mouseReleaseEvent(event)
+
+                def swapRows(self, from_row, to_row):
+                    # Get data from all columns of source row
+                    source_data = []
+                    for col in range(self.columnCount()):
+                        item = self.item(from_row, col)
+                        if item:
+                            # Capture all relevant data
+                            data = {
+                                'text': item.text(),
+                                'userData': item.data(Qt.UserRole),
+                                'alignment': item.textAlignment()
+                            }
+                            source_data.append(data)
+                        else:
+                            source_data.append(None)
+
+                    # If we're moving down, we need to move from bottom to top
+                    # to avoid overwriting data
+                    if from_row < to_row:
+                        # Move all rows between from_row+1 and to_row up by 1
+                        for row in range(from_row, to_row):
+                            for col in range(self.columnCount()):
+                                next_item = self.item(row + 1, col)
+                                if next_item:
+                                    # Create a new item with the data from the next row
+                                    new_item = QTableWidgetItem(next_item.text())
+                                    new_item.setData(Qt.UserRole, next_item.data(Qt.UserRole))
+                                    new_item.setTextAlignment(next_item.textAlignment())
+                                    self.setItem(row, col, new_item)
+                                else:
+                                    self.setItem(row, col, None)
+                    else:  # moving up
+                        # Move all rows between to_row and from_row-1 down by 1
+                        for row in range(from_row, to_row, -1):
+                            for col in range(self.columnCount()):
+                                prev_item = self.item(row - 1, col)
+                                if prev_item:
+                                    # Create a new item with the data from the previous row
+                                    new_item = QTableWidgetItem(prev_item.text())
+                                    new_item.setData(Qt.UserRole, prev_item.data(Qt.UserRole))
+                                    new_item.setTextAlignment(prev_item.textAlignment())
+                                    self.setItem(row, col, new_item)
+                                else:
+                                    self.setItem(row, col, None)
+
+                    # Finally, set the source data to the destination row
+                    for col, data in enumerate(source_data):
+                        if data:
+                            new_item = QTableWidgetItem(data['text'])
+                            new_item.setData(Qt.UserRole, data['userData'])
+                            new_item.setTextAlignment(data['alignment'])
+                            self.setItem(to_row, col, new_item)
+
+            # Create our custom table widget
+            table = ReorderableTableWidget()
+
+            # Set up the basic table structure with single column
+            table.setColumnCount(1)
+            table.setHorizontalHeaderLabels(["Coordinate Points (X, Y)"])
+
+            # Make column stretch to fill available space
+            table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+            # Apply stylesheet for rectangle items with centered text
+            table.setStyleSheet("""
+                QTableWidget::item {
+                    border: 1px solid #aaa;
+                    border-radius: 3px;
+                    padding: 5px;
+                    background-color: #f5f5f5;
+                    text-align: center;
+                }
+                QTableWidget::item:selected {
+                    background-color: #d0d9ea;
+                }
+            """)
+
+            # Custom delegate to ensure text alignment is centered
+            class CenteredItemDelegate(QStyledItemDelegate):
+                def initStyleOption(self, option, index):
+                    super().initStyleOption(option, index)
+                    option.displayAlignment = Qt.AlignCenter
+
+            # Apply the delegate to the table
+            centered_delegate = CenteredItemDelegate()
+            table.setItemDelegate(centered_delegate)
 
             # Populate with current data
-            points = current_value or prop.default_value or []
-            table.setRowCount(len(points))
+            points_data = current_value or prop.default_value or []
+            table.setRowCount(len(points_data))
+            for row, (x, y) in enumerate(points_data):
+                item = QTableWidgetItem(f"({x}, {y})")
+                item.setTextAlignment(Qt.AlignCenter)
+                # Store the actual values as item data for retrieval later
+                item.setData(Qt.UserRole, (x, y))
+                table.setItem(row, 0, item)
 
-            for row, (x, y) in enumerate(points):
-                table.setItem(row, 0, QTableWidgetItem(str(x)))
-                table.setItem(row, 1, QTableWidgetItem(str(y)))
-
-            # Add buttons to add/remove rows
+            # Add button to add points
             button_widget = QWidget()
             button_layout = QHBoxLayout(button_widget)
             button_layout.setContentsMargins(0, 0, 0, 0)
 
             add_button = QPushButton("+")
-            remove_button = QPushButton("-")
 
-            # Add row function
-            def add_row():
-                row = table.rowCount()
-                table.setRowCount(row + 1)
-                table.setItem(row, 0, QTableWidgetItem("0.0"))
-                table.setItem(row, 1, QTableWidgetItem("0.0"))
+            # Add point dialog function
+            def add_point():
+                dialog = QDialog()
+                dialog.setWindowTitle("Add Coordinate Point")
+                dialog_layout = QVBoxLayout(dialog)
 
-            # Remove row function
-            def remove_row():
-                row = table.rowCount()
-                if row > 0:
-                    table.setRowCount(row - 1)
+                form_layout = QFormLayout()
+                x_input = QLineEdit("0.0")
+                y_input = QLineEdit("0.0")
 
-            add_button.clicked.connect(add_row)
-            remove_button.clicked.connect(remove_row)
+                # Add validators to ensure numerical input
+                validator = QDoubleValidator()
+                x_input.setValidator(validator)
+                y_input.setValidator(validator)
 
+                form_layout.addRow("X:", x_input)
+                form_layout.addRow("Y:", y_input)
+                dialog_layout.addLayout(form_layout)
+
+                button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+                button_box.accepted.connect(dialog.accept)
+                button_box.rejected.connect(dialog.reject)
+                dialog_layout.addWidget(button_box)
+
+                if dialog.exec_():
+                    try:
+                        x_val = float(x_input.text())
+                        y_val = float(y_input.text())
+
+                        # Add new point to the table
+                        row = table.rowCount()
+                        table.setRowCount(row + 1)
+
+                        item = QTableWidgetItem(f"({x_val}, {y_val})")
+                        item.setTextAlignment(Qt.AlignCenter)
+                        item.setData(Qt.UserRole, (x_val, y_val))
+                        table.setItem(row, 0, item)
+
+                    except ValueError:
+                        pass  # Invalid input, ignore
+
+            add_button.clicked.connect(add_point)
             button_layout.addWidget(add_button)
-            button_layout.addWidget(remove_button)
 
-            # Create a container for the table and buttons
+            # Set up context menu for deletion
+            def show_context_menu(position):
+                # Get the row at the requested position
+                row = table.rowAt(position.y())
+
+                if row >= 0:  # Valid row
+                    menu = QMenu()
+                    delete_action = menu.addAction("Delete")
+
+                    action = menu.exec_(table.viewport().mapToGlobal(position))
+
+                    if action == delete_action:
+                        table.removeRow(row)
+
+            table.setContextMenuPolicy(Qt.CustomContextMenu)
+            table.customContextMenuRequested.connect(show_context_menu)
+
+            # Create a container for the table and button
             container = QWidget()
             layout = QVBoxLayout(container)
             layout.addWidget(table)
@@ -617,13 +789,12 @@ class NodePropertiesDialog(QDialog):
             def get_table_value():
                 points = []
                 for row in range(table.rowCount()):
-                    try:
-                        x = float(table.item(row, 0).text())
-                        y = float(table.item(row, 1).text())
-                        points.append((x, y))
-                    except (ValueError, AttributeError):
-                        # Handle empty or invalid cells
-                        pass
+                    item = table.item(row, 0)
+                    if item:
+                        # Retrieve the actual tuple data stored in UserRole
+                        point_data = item.data(Qt.UserRole)
+                        if point_data:
+                            points.append(point_data)
                 return points
 
             # Store both the getter function and the reference to the table with the container
