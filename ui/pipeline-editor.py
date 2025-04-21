@@ -570,6 +570,8 @@ class NodePropertiesDialog(QDialog):
                 def __init__(self, parent=None):
                     super().__init__(parent)
 
+                    self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
                     # Set selection behavior
                     self.setSelectionBehavior(QAbstractItemView.SelectRows)
                     self.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -718,17 +720,15 @@ class NodePropertiesDialog(QDialog):
 
             add_button = QPushButton("+")
 
-            # Add point dialog function
-            def add_point():
+            def show_point_dialog(initial_x=None, initial_y=None):
                 dialog = QDialog()
-                dialog.setWindowTitle("Add Coordinate Point")
+                dialog.setWindowTitle("Coordinate Point")
                 dialog_layout = QVBoxLayout(dialog)
 
                 form_layout = QFormLayout()
-                x_input = QLineEdit("0.0")
-                y_input = QLineEdit("0.0")
+                x_input = QLineEdit(str(initial_x) if initial_x is not None else "0.0")
+                y_input = QLineEdit(str(initial_y) if initial_y is not None else "0.0")
 
-                # Add validators to ensure numerical input
                 validator = QDoubleValidator()
                 x_input.setValidator(validator)
                 y_input.setValidator(validator)
@@ -744,37 +744,56 @@ class NodePropertiesDialog(QDialog):
 
                 if dialog.exec_():
                     try:
-                        x_val = float(x_input.text())
-                        y_val = float(y_input.text())
-
-                        # Add new point to the table
-                        row = table.rowCount()
-                        table.setRowCount(row + 1)
-
-                        item = QTableWidgetItem(f"({x_val}, {y_val})")
-                        item.setTextAlignment(Qt.AlignCenter)
-                        item.setData(Qt.UserRole, (x_val, y_val))
-                        table.setItem(row, 0, item)
-
+                        return float(x_input.text()), float(y_input.text())
                     except ValueError:
-                        pass  # Invalid input, ignore
+                        return None
+                return None
+
+            # Add point dialog function
+            def add_point():
+                result = show_point_dialog()
+                if result:
+                    x_val, y_val = result
+
+                    row = table.rowCount()
+                    table.setRowCount(row + 1)
+
+                    item = QTableWidgetItem(f"({x_val}, {y_val})")
+                    item.setTextAlignment(Qt.AlignCenter)
+                    item.setData(Qt.UserRole, (x_val, y_val))
+                    table.setItem(row, 0, item)
 
             add_button.clicked.connect(add_point)
             button_layout.addWidget(add_button)
 
-            # Set up context menu for deletion
+            # Set up context menu for deletion and editing
             def show_context_menu(position):
-                # Get the row at the requested position
                 row = table.rowAt(position.y())
 
-                if row >= 0:  # Valid row
+                if row >= 0:
                     menu = QMenu()
+                    edit_action = menu.addAction("Edit")
                     delete_action = menu.addAction("Delete")
 
                     action = menu.exec_(table.viewport().mapToGlobal(position))
 
                     if action == delete_action:
                         table.removeRow(row)
+
+                    elif action == edit_action:
+                        item = table.item(row, 0)
+                        if not item:
+                            return
+                        x_val, y_val = item.data(Qt.UserRole)
+                        result = show_point_dialog(x_val, y_val)
+
+                        if result:
+                            new_x, new_y = result
+
+                            new_item = QTableWidgetItem(f"({new_x}, {new_y})")
+                            new_item.setTextAlignment(Qt.AlignCenter)
+                            new_item.setData(Qt.UserRole, (new_x, new_y))
+                            table.setItem(row, 0, new_item)
 
             table.setContextMenuPolicy(Qt.CustomContextMenu)
             table.customContextMenuRequested.connect(show_context_menu)
