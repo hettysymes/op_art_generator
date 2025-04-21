@@ -2,6 +2,8 @@ import copy
 import math
 from abc import ABC, abstractmethod
 
+from ui.nodes.gradient_datatype import Gradient
+
 
 class Element:
 
@@ -152,6 +154,8 @@ class Polygon(Shape):
         self.fill_opacity = fill_opacity
 
     def base_shape(self, dwg):
+        if isinstance(self.fill, Gradient):
+            self.fill = self.fill.get(dwg)
         return dwg.polygon(points=self.points,
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
@@ -169,6 +173,8 @@ class Ellipse(Shape):
         self.stroke = stroke
 
     def base_shape(self, dwg):
+        if isinstance(self.fill, Gradient):
+            self.fill = self.fill.get(dwg)
         return dwg.ellipse(center=self.center,
                            r=self.r,
                            fill=self.fill,

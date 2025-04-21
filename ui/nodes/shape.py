@@ -7,7 +7,7 @@ from ui.port_defs import PortDef, PortType
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
-    in_port_defs=[],
+    in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
@@ -24,7 +24,12 @@ class PolygonNode(UnitNode):
     UNIT_NODE_INFO = POLYGON_NODE_INFO
 
     def compute(self):
-        fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+        gradient = self.input_nodes[0].compute()
+        if gradient:
+            fill = gradient
+            fill_opacity = 255
+        else:
+            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
 
     def visualise(self, height, wh_ratio):
@@ -34,7 +39,7 @@ class PolygonNode(UnitNode):
 RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
     resizable=True,
-    in_port_defs=[],
+    in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
@@ -49,7 +54,12 @@ class RectangleNode(UnitNode):
     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
 
     def compute(self):
-        fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+        gradient = self.input_nodes[0].compute()
+        if gradient:
+            fill = gradient
+            fill_opacity = 255
+        else:
+            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
 
     def visualise(self, height, wh_ratio):
@@ -59,7 +69,7 @@ class RectangleNode(UnitNode):
 ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
     resizable=True,
-    in_port_defs=[],
+    in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
@@ -78,7 +88,12 @@ class EllipseNode(UnitNode):
     UNIT_NODE_INFO = ELLIPSE_NODE_INFO
 
     def compute(self):
-        fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+        gradient = self.input_nodes[0].compute()
+        if gradient:
+            fill = gradient
+            fill_opacity = 255
+        else:
+            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element(
             [Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'none')])
 
