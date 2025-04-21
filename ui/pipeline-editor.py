@@ -688,7 +688,7 @@ class NodePropertiesDialog(QDialog):
             points_data = current_value or prop.default_value or []
             table.setRowCount(len(points_data))
             for row, (x, y) in enumerate(points_data):
-                item = QTableWidgetItem(f"({x}, {y})")
+                item = QTableWidgetItem(f"({x:.2f}, {y:.2f})")
                 item.setTextAlignment(Qt.AlignCenter)
                 # Store the actual values as item data for retrieval later
                 item.setData(Qt.UserRole, (x, y))
@@ -701,18 +701,22 @@ class NodePropertiesDialog(QDialog):
 
             add_button = QPushButton("+")
 
-            def show_point_dialog(initial_x=None, initial_y=None):
+            def show_point_dialog(initial_x=0.0, initial_y=0.0):
                 dialog = QDialog()
                 dialog.setWindowTitle("Coordinate Point")
                 dialog_layout = QVBoxLayout(dialog)
 
                 form_layout = QFormLayout()
-                x_input = QLineEdit(str(initial_x) if initial_x is not None else "0.0")
-                y_input = QLineEdit(str(initial_y) if initial_y is not None else "0.0")
 
-                validator = QDoubleValidator()
-                x_input.setValidator(validator)
-                y_input.setValidator(validator)
+                x_input = QDoubleSpinBox()
+                x_input.setRange(0, 1)  # Adjust the range as needed
+                x_input.setDecimals(2)
+                x_input.setValue(initial_x)
+
+                y_input = QDoubleSpinBox()
+                y_input.setRange(0, 1)
+                y_input.setDecimals(2)
+                y_input.setValue(initial_y)
 
                 form_layout.addRow("X:", x_input)
                 form_layout.addRow("Y:", y_input)
@@ -725,7 +729,7 @@ class NodePropertiesDialog(QDialog):
 
                 if dialog.exec_():
                     try:
-                        return float(x_input.text()), float(y_input.text())
+                        return x_input.value(), y_input.value()
                     except ValueError:
                         return None
                 return None
@@ -739,7 +743,7 @@ class NodePropertiesDialog(QDialog):
                     row = table.rowCount()
                     table.setRowCount(row + 1)
 
-                    item = QTableWidgetItem(f"({x_val}, {y_val})")
+                    item = QTableWidgetItem(f"({x_val:.2f}, {y_val:.2f})")
                     item.setTextAlignment(Qt.AlignCenter)
                     item.setData(Qt.UserRole, (x_val, y_val))
                     table.setItem(row, 0, item)
@@ -771,7 +775,7 @@ class NodePropertiesDialog(QDialog):
                         if result:
                             new_x, new_y = result
 
-                            new_item = QTableWidgetItem(f"({new_x}, {new_y})")
+                            new_item = QTableWidgetItem(f"({new_x:.2f}, {new_y:.2f})")
                             new_item.setTextAlignment(Qt.AlignCenter)
                             new_item.setData(Qt.UserRole, (new_x, new_y))
                             table.setItem(row, 0, new_item)
