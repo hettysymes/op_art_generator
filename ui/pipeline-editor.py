@@ -173,9 +173,9 @@ class NodeItem(QGraphicsRectItem):
         for input_port_id in self.backend.input_port_ids:
             input_port: PortItem = self.scene().scene.get(input_port_id)
             if len(input_port.backend.edge_ids) > 0:
-                edge_id = input_port.backend.edge_ids[0]  # Each input port can only have one edge
-                edge: EdgeItem = self.scene().scene.get(edge_id)
-                input_nodes.append(edge.source_port.parentItem())
+                for edge_id in input_port.backend.edge_ids:
+                    edge: EdgeItem = self.scene().scene.get(edge_id)
+                    input_nodes.append(edge.source_port.parentItem())
             else:
                 input_nodes.append(None)
         return input_nodes
@@ -1055,10 +1055,8 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.backend.edge_ids) > 0
-
-                if not connection_exists and not target_has_connection \
-                        and is_port_type_compatible(source_port.backend.port_def.port_type,
-                                                    dest_port.backend.port_def.port_type):
+                if not connection_exists and is_port_type_compatible(source_port.backend.port_def.port_type,
+                                                    dest_port.backend.port_def.port_type) and (dest_port.backend.port_def.input_multiple or not target_has_connection):
                     edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.backend.uid, dest_port.backend.uid))
                     self.scene.add(edge)
                     self.addItem(edge)

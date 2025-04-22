@@ -14,9 +14,10 @@ class PortType(Enum):
 
 class PortDef:
 
-    def __init__(self, name, port_type):
+    def __init__(self, name, port_type, input_multiple=False):
         self.name = name
         self.port_type = port_type
+        self.input_multiple = input_multiple
 
 
 visualisable_types = [PortType.GRID, PortType.ELEMENT]

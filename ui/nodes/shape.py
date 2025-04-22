@@ -1,3 +1,6 @@
+from cairosvg.shapes import polyline
+from numpy.ma.core import indices
+
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.point_ref import PointRef
@@ -50,7 +53,7 @@ class SineWaveNode(UnitNode):
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
-    in_port_defs=[PortDef("Gradient", PortType.GRADIENT), PortDef("Import Points", PortType.ELEMENT)],
+    in_port_defs=[PortDef("Gradient", PortType.GRADIENT), PortDef("Import Points", PortType.ELEMENT, input_multiple=True)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
@@ -67,33 +70,36 @@ class PolygonNode(UnitNode):
 
     def compute(self):
         gradient = self.input_nodes[0].compute()
-        polyline_node = self.input_nodes[1]
-        import_elem = polyline_node.compute()
+        polyline_nodes = self.input_nodes[1:]
+        import_elem = polyline_nodes[0].compute()
         if gradient:
             fill = gradient
             fill_opacity = 255
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+        # Process input polylines
+        polyline_node_ids = []
         if import_elem:
-            found = False
-            for p in self.prop_vals['points']:
-                if isinstance(p, PointRef) and p.node_id == polyline_node.node_id:
-                    found = True
-                    p.points = import_elem[0].get_points()
-                    break
-            if not found:
-                self.prop_vals['points'].append(PointRef(polyline_node))
-        else:
-            found = False
-            i = 0
-            while i < len(self.prop_vals['points']):
-                p = self.prop_vals['points'][i]
-                if isinstance(p, PointRef):
-                    found = True
-                    break
-                i += 1
-            if found:
-                del self.prop_vals['points'][i]
+            polyline_node_ids = [pn.node_id for pn in polyline_nodes]
+        indices_to_remove = []
+        for i, p in enumerate(self.prop_vals['points']):
+            if isinstance(p, PointRef):
+                if p.node_id in polyline_node_ids:
+                    # Polyline found - update its points
+                    index = polyline_node_ids.index(p.node_id)
+                    p.points = polyline_nodes[index].compute()[0].get_points()
+                    polyline_node_ids[index] = None
+                else:
+                    # Polyline has been removed
+                    indices_to_remove.append(i)
+        # Remove no longer existing polylines
+        for i in reversed(indices_to_remove):
+            del self.prop_vals['points'][i]
+        # Add new polylines
+        for i, pn_id in enumerate(polyline_node_ids):
+            if pn_id is not None:
+                self.prop_vals['points'].append(PointRef(polyline_nodes[i]))
+        # Return element
         return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
 
     def visualise(self, height, wh_ratio):
