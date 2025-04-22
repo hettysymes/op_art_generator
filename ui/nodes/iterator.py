@@ -52,4 +52,4 @@ class IteratorNode(UnitNode):
                     y2 = h_line_ys[j]
                     ret_element.add(elements[elem_index][0].scale(x2 - x1, y2 - y1).translate(x1, y1))
                     elem_index += 1
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, ret_element).save()
+            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (ret_element, None)).save()
