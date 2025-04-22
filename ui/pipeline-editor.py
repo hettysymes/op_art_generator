@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
-                             QAbstractItemView)
+                             QAbstractItemView, QStyleOptionViewItem)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 from ui.colour_prop_widget import ColorPropertyWidget
@@ -764,29 +764,29 @@ class NodePropertiesDialog(QDialog):
                 row = table.rowAt(position.y())
 
                 if row >= 0:
-                    menu = QMenu()
-                    edit_action = menu.addAction("Edit")
-                    delete_action = menu.addAction("Delete")
+                    item = table.item(row, 0)
+                    item_data = item.data(Qt.UserRole)
+                    if not isinstance(item_data, PointRef):
+                        menu = QMenu()
+                        edit_action = menu.addAction("Edit")
+                        delete_action = menu.addAction("Delete")
 
-                    action = menu.exec_(table.viewport().mapToGlobal(position))
+                        action = menu.exec_(table.viewport().mapToGlobal(position))
 
-                    if action == delete_action:
-                        table.removeRow(row)
+                        if action == delete_action:
+                            table.removeRow(row)
 
-                    elif action == edit_action:
-                        item = table.item(row, 0)
-                        if not item:
-                            return
-                        x_val, y_val = item.data(Qt.UserRole)
-                        result = show_point_dialog(x_val, y_val)
+                        elif action == edit_action:
+                            x_val, y_val = item_data
+                            result = show_point_dialog(x_val, y_val)
 
-                        if result:
-                            new_x, new_y = result
+                            if result:
+                                new_x, new_y = result
 
-                            new_item = QTableWidgetItem(f"({new_x:.2f}, {new_y:.2f})")
-                            new_item.setTextAlignment(Qt.AlignCenter)
-                            new_item.setData(Qt.UserRole, (new_x, new_y))
-                            table.setItem(row, 0, new_item)
+                                new_item = QTableWidgetItem(f"({new_x:.2f}, {new_y:.2f})")
+                                new_item.setTextAlignment(Qt.AlignCenter)
+                                new_item.setData(Qt.UserRole, (new_x, new_y))
+                                table.setItem(row, 0, new_item)
 
             table.setContextMenuPolicy(Qt.CustomContextMenu)
             table.customContextMenuRequested.connect(show_context_menu)
