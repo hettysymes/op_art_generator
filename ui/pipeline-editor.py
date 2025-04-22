@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 from ui.colour_prop_widget import ColorPropertyWidget
+from ui.nodes.shape import PointRef
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.nodes import CombinationNode, UnitNode
@@ -687,11 +688,18 @@ class NodePropertiesDialog(QDialog):
             # Populate with current data
             points_data = current_value or prop.default_value or []
             table.setRowCount(len(points_data))
-            for row, (x, y) in enumerate(points_data):
-                item = QTableWidgetItem(f"({x:.2f}, {y:.2f})")
+            for row, point in enumerate(points_data):
+                if isinstance(point, PointRef):
+                    start_x, start_y = point.points[0]
+                    stop_x, stop_y = point.points[-1]
+                    string = f"{point.node_type} ({point.node_id.hex[:3]}) ({start_x:.2f}, {start_y:.2f}) ({stop_x:.2f}, {stop_y:.2f})"
+                else:
+                    x, y = point
+                    string = f"({x:.2f}, {y:.2f})"
+                item = QTableWidgetItem(string)
                 item.setTextAlignment(Qt.AlignCenter)
                 # Store the actual values as item data for retrieval later
-                item.setData(Qt.UserRole, (x, y))
+                item.setData(Qt.UserRole, point)
                 table.setItem(row, 0, item)
 
             # Add button to add points

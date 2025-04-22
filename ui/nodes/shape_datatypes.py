@@ -3,6 +3,7 @@ import math
 from abc import ABC, abstractmethod
 
 from ui.nodes.gradient_datatype import Gradient
+from ui.nodes.point_ref import PointRef
 
 
 class Element:
@@ -156,7 +157,13 @@ class Polygon(Shape):
     def base_shape(self, dwg):
         if isinstance(self.fill, Gradient):
             self.fill = self.fill.get(dwg)
-        return dwg.polygon(points=self.points,
+        points = []
+        for p in self.points:
+            if isinstance(p, PointRef):
+                points += p.points
+            else:
+                points.append(p)
+        return dwg.polygon(points=points,
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
                            stroke='none')

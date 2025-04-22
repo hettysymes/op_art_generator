@@ -8,7 +8,7 @@ from ui.nodes.gradient import GradientNode
 from ui.nodes.grid import GridNode
 from ui.nodes.iterator import IteratorNode
 from ui.nodes.overlay import OverlayNode
-from ui.nodes.shape import ShapeNode
+from ui.nodes.shape import ShapeNode, PolygonNode
 from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.nodes.warp import WarpNode
 

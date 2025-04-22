@@ -1,3 +1,4 @@
+import copy
 from abc import ABC, abstractmethod
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
@@ -12,7 +13,7 @@ class PropTypeList:
     def get_default_values(self):
         prop_vals = {}
         for prop_type in self.prop_types:
-            prop_vals[prop_type.key_name] = prop_type.default_value
+            prop_vals[prop_type.key_name] = copy.deepcopy(prop_type.default_value)
         return prop_vals
 
     def __iter__(self):
