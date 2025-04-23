@@ -160,7 +160,7 @@ class Polygon(Shape):
         points = []
         for p in self.points:
             if isinstance(p, PointRef):
-                points += p.points
+                points += p.get_points()
             else:
                 points.append(p)
         return dwg.polygon(points=points,

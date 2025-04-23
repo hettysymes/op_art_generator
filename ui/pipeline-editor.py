@@ -705,7 +705,8 @@ class NodePropertiesDialog(QDialog):
                 if isinstance(point, PointRef):
                     start_x, start_y = point.points[0]
                     stop_x, stop_y = point.points[-1]
-                    item.setText(f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) → ({stop_x:.2f}, {stop_y:.2f})")
+                    arrow = '←' if point.reversed else '→'
+                    item.setText(f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
                     item.setBackground(QColor(237, 130, 157))
                 else:
                     x, y = point
@@ -781,8 +782,8 @@ class NodePropertiesDialog(QDialog):
                 if row >= 0:
                     item = table.item(row, 0)
                     item_data = item.data(Qt.UserRole)
+                    menu = QMenu()
                     if not isinstance(item_data, PointRef):
-                        menu = QMenu()
                         edit_action = menu.addAction("Edit")
                         delete_action = menu.addAction("Delete")
 
@@ -803,6 +804,19 @@ class NodePropertiesDialog(QDialog):
                                 new_item.setData(Qt.UserRole, (new_x, new_y))
                                 table.setItem(row, 0, new_item)
                                 table.setRowHeight(row, 40)
+                    else:
+                        reverse_action = menu.addAction("Reverse points")
+                        action = menu.exec_(table.viewport().mapToGlobal(position))
+                        if action == reverse_action:
+                            item_data.reverse()
+                            start_x_n, start_y_n = item_data.points[0]
+                            stop_x_n, stop_y_n = item_data.points[-1]
+                            arrow = '←' if point.reversed else '→'
+                            new_item = QTableWidgetItem(f"{item_data.node_type} (id: #{item_data.node_id.hex[:3]})\n({start_x_n:.2f}, {start_y_n:.2f}) {arrow} ({stop_x_n:.2f}, {stop_y_n:.2f})")
+                            new_item.setTextAlignment(Qt.AlignCenter)
+                            new_item.setData(Qt.UserRole, item_data)
+                            table.setItem(row, 0, new_item)
+                            table.setRowHeight(row, 40)
 
             table.setContextMenuPolicy(Qt.CustomContextMenu)
             table.customContextMenuRequested.connect(show_context_menu)
