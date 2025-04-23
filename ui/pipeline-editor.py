@@ -661,25 +661,28 @@ class NodePropertiesDialog(QDialog):
             table.setItemDelegate(centered_delegate)
             table.setWordWrap(True)
 
-            # Populate with current data
-            points_data = current_value or prop.default_value or []
-            table.setRowCount(len(points_data))
-            for row, point in enumerate(points_data):
+            def add_point_item(point, row, table):
                 item = QTableWidgetItem()
+                item.setTextAlignment(Qt.AlignCenter)
+                item.setData(Qt.UserRole, point)
                 if isinstance(point, PointRef):
                     start_x, start_y = point.points[0]
                     stop_x, stop_y = point.points[-1]
                     arrow = '←' if point.reversed else '→'
-                    item.setText(f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
+                    item.setText(
+                        f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
                     item.setBackground(QColor(237, 130, 157))
                 else:
                     x, y = point
                     item.setText(f"({x:.2f}, {y:.2f})")
-                item.setTextAlignment(Qt.AlignCenter)
-                # Store the actual values as item data for retrieval later
-                item.setData(Qt.UserRole, point)
                 table.setItem(row, 0, item)
                 table.setRowHeight(row, 40)
+
+            # Populate with current data
+            points_data = current_value or prop.default_value or []
+            table.setRowCount(len(points_data))
+            for row, point in enumerate(points_data):
+                add_point_item(point, row, table)
 
             # Add button to add points
             button_widget = QWidget()
@@ -725,16 +728,9 @@ class NodePropertiesDialog(QDialog):
             def add_point():
                 result = show_point_dialog()
                 if result:
-                    x_val, y_val = result
-
                     row = table.rowCount()
                     table.setRowCount(row + 1)
-
-                    item = QTableWidgetItem(f"({x_val:.2f}, {y_val:.2f})")
-                    item.setTextAlignment(Qt.AlignCenter)
-                    item.setData(Qt.UserRole, (x_val, y_val))
-                    table.setItem(row, 0, item)
-                    table.setRowHeight(row, 40)
+                    add_point_item(result, row, table)
 
             add_button.clicked.connect(add_point)
             button_layout.addWidget(add_button)
@@ -761,26 +757,13 @@ class NodePropertiesDialog(QDialog):
                             result = show_point_dialog(x_val, y_val)
 
                             if result:
-                                new_x, new_y = result
-
-                                new_item = QTableWidgetItem(f"({new_x:.2f}, {new_y:.2f})")
-                                new_item.setTextAlignment(Qt.AlignCenter)
-                                new_item.setData(Qt.UserRole, (new_x, new_y))
-                                table.setItem(row, 0, new_item)
-                                table.setRowHeight(row, 40)
+                                add_point_item(result, row, table)
                     else:
                         reverse_action = menu.addAction("Reverse points")
                         action = menu.exec_(table.viewport().mapToGlobal(position))
                         if action == reverse_action:
                             item_data.reverse()
-                            start_x_n, start_y_n = item_data.points[0]
-                            stop_x_n, stop_y_n = item_data.points[-1]
-                            arrow = '←' if point.reversed else '→'
-                            new_item = QTableWidgetItem(f"{item_data.node_type} (id: #{item_data.node_id.hex[:3]})\n({start_x_n:.2f}, {start_y_n:.2f}) {arrow} ({stop_x_n:.2f}, {stop_y_n:.2f})")
-                            new_item.setTextAlignment(Qt.AlignCenter)
-                            new_item.setData(Qt.UserRole, item_data)
-                            table.setItem(row, 0, new_item)
-                            table.setRowHeight(row, 40)
+                            add_point_item(item_data, row, table)
 
             table.setContextMenuPolicy(Qt.CustomContextMenu)
             table.customContextMenuRequested.connect(show_context_menu)
