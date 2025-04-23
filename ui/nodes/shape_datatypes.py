@@ -185,13 +185,14 @@ class Polygon(Shape):
 
 class Ellipse(Shape):
 
-    def __init__(self, center, r, fill, fill_opacity, stroke):
+    def __init__(self, center, r, fill, fill_opacity, stroke, stroke_width):
         super().__init__()
         self.center = center
         self.r = r
         self.fill = fill
         self.fill_opacity = fill_opacity
         self.stroke = stroke
+        self.stroke_width = stroke_width
 
     def base_shape(self, dwg):
         if isinstance(self.fill, Gradient):
@@ -201,6 +202,8 @@ class Ellipse(Shape):
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
                            stroke=self.stroke,
+                           stroke_width=self.stroke_width,
+                           style='vector-effect: non-scaling-stroke',
                            id=self.shape_id)
 
 

@@ -154,7 +154,9 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
             PropType("ry", "float", default_value=0.5,
                      description=""),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="")
+                     description=""),
+            PropType("stroke_width", "float", default_value=1.0,
+                                 description="", min_value=0.0)
         ]
     )
 )
@@ -171,7 +173,7 @@ class EllipseNode(UnitNode):
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element(
-            [Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'none')])
+            [Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
