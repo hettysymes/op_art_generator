@@ -177,7 +177,7 @@ class EllipseNode(UnitNode):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
 
 ELEMENT_NODE_INFO = UnitNodeInfo(
-    name="Element",
+    name="Drawing",
     resizable=True,
     selectable=False,
     in_port_defs=[],

@@ -102,6 +102,8 @@ class NodeItem(QGraphicsRectItem):
     LABEL_FONT = QFont("Arial", 8)
 
     def __init__(self, node_state: NodeState):
+        self.svg_items = None
+        self.svg_item = None
         self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
         self.right_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
         if node_state.node.resizable():
@@ -157,17 +159,20 @@ class NodeItem(QGraphicsRectItem):
         svg_path, selectable_shapes = self.get_svg_path()
 
         # Remove existing SVG items if necessary
-        if hasattr(self, 'svg_items') and self.svg_items:
+        if self.svg_items:
             for item in self.svg_items:
                 scene = self.scene()
                 if scene and item in scene.items():
                     scene.removeItem(item)
-            self.svg_items = []
-        else:
-            self.svg_items = []
+        self.svg_items = []
+
+        if self.svg_item:
+            scene = self.scene()
+            if scene and self.svg_item in scene.items():
+                scene.removeItem(self.svg_item)
 
         # Create SVG renderer
-        self.svg_renderer = QSvgRenderer(svg_path)
+        svg_renderer = QSvgRenderer(svg_path)
 
         # Load the SVG file as XML
         dom_document = QDomDocument()
@@ -190,12 +195,6 @@ class NodeItem(QGraphicsRectItem):
             self.svg_item.setZValue(2)
 
         else:
-            # Handle regular SVG with selectable elements
-            self.svg_items = []
-
-            # Create SVG renderer
-            self.svg_renderer = QSvgRenderer(svg_path)
-
             # Load the SVG file as XML
             dom_document = QDomDocument()
             with open(svg_path, 'r') as file:
@@ -203,7 +202,7 @@ class NodeItem(QGraphicsRectItem):
                 dom_document.setContent(content)
 
             # Process SVG elements to make them selectable (existing code)
-            def process_element(element, selectable_shapes):
+            def process_element(element, inp_selectable_shapes):
                 # SVG elements we're interested in making selectable
                 selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
 
@@ -219,7 +218,7 @@ class NodeItem(QGraphicsRectItem):
                         if element_id:
                             if tag_name in selectable_types:
                                 # Create a selectable item for this element
-                                selectable_item = SelectableSvgElement(element_id, self.svg_renderer, selectable_shapes, self)
+                                selectable_item = SelectableSvgElement(element_id, svg_renderer, inp_selectable_shapes, self)
                                 selectable_item.setParentItem(self)
                                 selectable_item.setPos(svg_pos_x, svg_pos_y)
                                 selectable_item.setZValue(2)
