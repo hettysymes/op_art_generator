@@ -13,4 +13,6 @@ class ElementDrawer(Drawing):
         if self.bg_col is not None:
             self.add_bg(self.bg_col)
         for shape in self.element:
-            self.dwg_add(shape.scale(self.width, self.height).get(self.dwg))
+            s = shape.scale(self.width, self.height)
+            self.selectable_shapes.append(s)
+            self.dwg_add(s.get(self.dwg))

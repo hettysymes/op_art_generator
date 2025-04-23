@@ -1,5 +1,6 @@
 import ast
 import math
+import os
 import pickle
 import shutil
 import sys
@@ -16,13 +17,16 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
                              QAbstractItemView, QStyleOptionViewItem)
 from PyQt5.QtWidgets import QGraphicsPathItem
+from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.nodes.shape import PointRef
+from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.nodes import CombinationNode, UnitNode
 from ui.port_defs import is_port_type_compatible, PortType
+from ui.selectable_renderer import SelectableSvgElement
 
 
 class ConnectionSignals(QObject):
@@ -34,7 +38,7 @@ class ConnectionSignals(QObject):
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QPen, QColor
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsItem
-from PyQt5.QtSvg import QGraphicsSvgItem
+from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
 
 
 class ResizeHandle(QGraphicsRectItem):
@@ -99,6 +103,8 @@ class NodeItem(QGraphicsRectItem):
     LABEL_FONT = QFont("Arial", 8)
 
     def __init__(self, node_state: NodeState):
+        self.svg_items = None
+        self.svg_item = None
         self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
         self.right_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
         if node_state.node.resizable():
@@ -120,7 +126,6 @@ class NodeItem(QGraphicsRectItem):
         self.setPen(QPen(Qt.black, 2))
         self.node = self.backend.node
 
-        self.svg_item = None
         self.resize_handle = None
 
         if self.node.resizable():
@@ -151,23 +156,87 @@ class NodeItem(QGraphicsRectItem):
         return self.update_node().get_svg_path(self.backend.svg_height, wh_ratio)
 
     def update_vis_image(self):
-        """Add an SVG image to the node that scales with node size"""
-        svg_path = self.get_svg_path()
+        """Add an SVG image to the node that scales with node size and has selectable elements"""
+        svg_path, selectable_shapes = self.get_svg_path()
 
-        # Remove existing SVG if necessary
+        # Remove existing SVG items if necessary
+        if self.svg_items:
+            for item in self.svg_items:
+                scene = self.scene()
+                if scene and item in scene.items():
+                    scene.removeItem(item)
+        self.svg_items = []
+
         if self.svg_item:
             scene = self.scene()
             if scene and self.svg_item in scene.items():
                 scene.removeItem(self.svg_item)
 
-        # Create new SVG item
-        self.svg_item = QGraphicsSvgItem(svg_path)
-        svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
+        # Create SVG renderer
+        svg_renderer = QSvgRenderer(svg_path)
 
-        # Apply position
-        self.svg_item.setParentItem(self)
-        self.svg_item.setPos(svg_pos_x, NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y)
-        self.svg_item.setZValue(2)
+        # Load the SVG file as XML
+        dom_document = QDomDocument()
+        with open(svg_path, 'r') as file:
+            content = file.read()
+            dom_document.setContent(content)
+
+        # Base position for all SVG elements
+        svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
+        svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
+
+        # Check file extension
+        if not self.node.selectable():
+            # Handle matplotlib or non-selectable SVG - use standard QGraphicsSvgItem
+            self.svg_item = QGraphicsSvgItem(svg_path)
+
+            # Apply position
+            self.svg_item.setParentItem(self)
+            self.svg_item.setPos(svg_pos_x, svg_pos_y)
+            self.svg_item.setZValue(2)
+
+        else:
+            # Load the SVG file as XML
+            dom_document = QDomDocument()
+            with open(svg_path, 'r') as file:
+                content = file.read()
+                dom_document.setContent(content)
+
+            # Process SVG elements to make them selectable (existing code)
+            def process_element(element, inp_selectable_shapes):
+                # SVG elements we're interested in making selectable
+                selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
+
+                # Process all child elements
+                child = element.firstChild()
+                while not child.isNull():
+                    if child.isElement():
+                        element_node = child.toElement()
+                        tag_name = element_node.tagName()
+                        element_id = element_node.attribute('id')
+
+                        # Only process elements with IDs
+                        if element_id:
+                            if tag_name in selectable_types:
+                                # Create a selectable item for this element
+                                selectable_item = SelectableSvgElement(element_id, svg_renderer, inp_selectable_shapes, self)
+                                selectable_item.setParentItem(self)
+                                selectable_item.setPos(svg_pos_x, svg_pos_y)
+                                selectable_item.setZValue(2)
+                                self.svg_items.append(selectable_item)
+
+                            # For groups, process children
+                            if tag_name == 'g' or tag_name == 'svg':
+                                process_element(element_node)
+
+                    child = child.nextSibling()
+
+            # Start processing from root element
+            root = dom_document.documentElement()
+            process_element(root, selectable_shapes)
+
+    def add_new_node(self, node):
+        return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)
 
     def get_input_node_items(self):
         input_nodes = []
@@ -574,118 +643,12 @@ class NodePropertiesDialog(QDialog):
                 widget.setCurrentIndex(index)
 
         elif prop.prop_type == "table":
-            class ReorderableTableWidget(QTableWidget):
-                def __init__(self, parent=None):
-                    super().__init__(parent)
-
-                    self.setColumnCount(1)
-                    self.setHorizontalHeaderLabels(["Coordinate Points (X, Y)"])
-                    self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-
-                    self.setEditTriggers(QAbstractItemView.NoEditTriggers)
-                    self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-                    self.setSelectionBehavior(QAbstractItemView.SelectRows)
-
-                    self.setDragEnabled(True)
-                    self.setAcceptDrops(True)
-                    self.viewport().setAcceptDrops(True)
-                    self.setDragDropMode(QAbstractItemView.DragDrop)  # <--- Not InternalMove
-                    self.setDragDropOverwriteMode(False)
-                    self.setDropIndicatorShown(True)
-
-                def mimeData(self, items):
-                    mime_data = super().mimeData(items)
-                    mime_data.setText("drag-row")
-                    return mime_data
-
-                def dropEvent(self, event: QDropEvent):
-                    if event.source() == self:
-                        drop_row = self.drop_on(event)
-
-                        selected_rows = sorted(set(index.row() for index in self.selectedIndexes()))
-                        items_to_move = []
-
-                        # Grab data from selected rows
-                        for row in selected_rows:
-                            item = self.item(row, 0)
-                            new_item = QTableWidgetItem(item.text())
-                            new_item.setData(Qt.UserRole, item.data(Qt.UserRole))
-                            new_item.setTextAlignment(Qt.AlignCenter)
-                            if isinstance(item.data(Qt.UserRole), PointRef):
-                                new_item.setBackground(QColor(237, 130, 157))
-                            items_to_move.append(new_item)
-
-                        # Remove selected rows (in reverse order to avoid shifting)
-                        for row in reversed(selected_rows):
-                            self.removeRow(row)
-                            if row < drop_row:
-                                drop_row -= 1
-
-                        # Insert rows at new position
-                        for i, item in enumerate(items_to_move):
-                            self.insertRow(drop_row + i)
-                            self.setItem(drop_row + i, 0, item)
-                            self.selectRow(drop_row + i)
-
-                        for row in range(table.rowCount()):
-                            self.setRowHeight(row, 40)
-
-                        event.accept()
-                    else:
-                        super().dropEvent(event)
-
-                def drop_on(self, event):
-                    index = self.indexAt(event.pos())
-                    if not index.isValid():
-                        return self.rowCount()
-                    return index.row() + 1 if self.is_below(event.pos(), index) else index.row()
-
-                def is_below(self, pos, index):
-                    rect = self.visualRect(index)
-                    margin = 2
-                    if pos.y() - rect.top() < margin:
-                        return False
-                    elif rect.bottom() - pos.y() < margin:
-                        return True
-                    return rect.contains(pos) and pos.y() >= rect.center().y()
-
-                def dragEnterEvent(self, event):
-                    if event.source() == self:
-                        event.setDropAction(Qt.MoveAction)
-                        event.accept()
-                    else:
-                        super().dragEnterEvent(event)
-
-                def dragMoveEvent(self, event):
-                    if event.source() == self:
-                        event.setDropAction(Qt.MoveAction)
-                        event.accept()
-                    else:
-                        super().dragMoveEvent(event)
-
             # Create our custom table widget
             table = ReorderableTableWidget()
 
             # Set up the basic table structure with single column
             table.setColumnCount(1)
             table.setHorizontalHeaderLabels(["Coordinate Points (X, Y)"])
-
-            # Make column stretch to fill available space
-            table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-
-            # Apply stylesheet for rectangle items with centered text
-            # table.setStyleSheet("""
-            #     QTableWidget::item {
-            #         border: 1px solid #aaa;
-            #         border-radius: 3px;
-            #         padding: 5px;
-            #         background-color: #f5f5f5;
-            #         text-align: center;
-            #     }
-            #     QTableWidget::item:selected {
-            #         background-color: #d0d9ea;
-            #     }
-            # """)
 
             # Custom delegate to ensure text alignment is centered
             class CenteredItemDelegate(QStyledItemDelegate):
@@ -905,10 +868,11 @@ class NodePropertiesDialog(QDialog):
                 # Open color dialog directly when adding a new row
                 color_dialog = QColorDialog()
                 if color_dialog.exec_():
-                    selected_color = color_dialog.selectedColor().getRgb()
+                    sel_col = color_dialog.selectedColor()
+                    string_col = str((sel_col.red(), sel_col.green(), sel_col.blue(), sel_col.alpha()))
                     row = table.rowCount()
                     table.setRowCount(row + 1)
-                    item = QTableWidgetItem(selected_color)
+                    item = QTableWidgetItem(string_col)
                     item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                     table.setItem(row, 0, item)
 
@@ -1010,7 +974,7 @@ def save_as_svg(clicked_item: NodeItem):
     )
 
     if file_path:
-        shutil.copy(clicked_item.get_svg_path(), file_path)
+        shutil.copy(clicked_item.get_svg_path()[0], file_path)
 
 
 class PipelineScene(QGraphicsScene):
@@ -1040,8 +1004,10 @@ class PipelineScene(QGraphicsScene):
             node = node_class(uid, None, None)
         else:
             node = node_class(uid, None, None, index)
+        return self.add_new_node(pos, node)
 
-        new_node = NodeItem(NodeState(uid, pos.x(), pos.y(), [], [], node, 150, 150))
+    def add_new_node(self, pos, node):
+        new_node = NodeItem(NodeState(node.node_id, pos.x(), pos.y(), [], [], node, 150, 150))
         self.scene.add(new_node)
         self.addItem(new_node)
         new_node.create_ports()

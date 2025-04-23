@@ -13,6 +13,7 @@ from ui.port_defs import PortType, PortDef
 GRADIENT_NODE_INFO = UnitNodeInfo(
     name="Gradient",
     resizable=True,
+    selectable=True,
     in_port_defs=[],
     out_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
     prop_type_list=PropTypeList([

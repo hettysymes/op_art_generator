@@ -6,6 +6,7 @@ from ui.port_defs import PortDef, PortType
 GRID_NODE_INFO = UnitNodeInfo(
     name="Grid",
     resizable=True,
+    selectable=False,
     in_port_defs=[PortDef("X Warp", PortType.WARP), PortDef("Y Warp", PortType.WARP)],
     out_port_defs=[PortDef("Grid", PortType.GRID)],
     prop_type_list=PropTypeList(

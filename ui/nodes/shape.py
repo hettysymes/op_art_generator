@@ -1,16 +1,19 @@
+import uuid
+
 from cairosvg.shapes import polyline
 from numpy.ma.core import indices
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.point_ref import PointRef
-from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave
-from ui.nodes.utils import process_rgb
+from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape
+from ui.nodes.utils import process_rgb, rev_process_rgb
 from ui.port_defs import PortDef, PortType
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
     name="Sine Wave",
     resizable=True,
+    selectable=True,
     in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
@@ -53,6 +56,7 @@ class SineWaveNode(UnitNode):
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
+    selectable=True,
     in_port_defs=[PortDef("Gradient", PortType.GRADIENT), PortDef("Import Points", PortType.ELEMENT, input_multiple=True)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
@@ -109,6 +113,7 @@ class PolygonNode(UnitNode):
 RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
     resizable=True,
+    selectable=True,
     in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
@@ -139,6 +144,7 @@ class RectangleNode(UnitNode):
 ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
     resizable=True,
+    selectable=True,
     in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
@@ -170,6 +176,30 @@ class EllipseNode(UnitNode):
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
 
+ELEMENT_NODE_INFO = UnitNodeInfo(
+    name="Drawing",
+    resizable=True,
+    selectable=False,
+    in_port_defs=[],
+    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    prop_type_list=PropTypeList([])
+)
+
+class ElementNode(UnitNode):
+    UNIT_NODE_INFO = ELEMENT_NODE_INFO
+
+    def compute(self):
+        return Element([self.prop_vals['shape']])
+
+    def visualise(self, height, wh_ratio):
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+
+def get_node_from_shape(shape: Shape):
+    return ElementNode(
+        uuid.uuid4(),
+        [],
+        {'shape': shape.remove_final_scale()}
+    )
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"

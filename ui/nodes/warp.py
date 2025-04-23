@@ -6,6 +6,7 @@ from ui.port_defs import PortDef, PortType
 POS_WARP_NODE_INFO = UnitNodeInfo(
     name="Position Warp",
     resizable=True,
+    selectable=False,
     in_port_defs=[PortDef("Function", PortType.FUNCTION)],
     out_port_defs=[PortDef("Warp", PortType.WARP)],
     prop_type_list=PropTypeList([])
@@ -28,6 +29,7 @@ class PosWarpNode(UnitNode):
 REL_WARP_NODE_INFO = UnitNodeInfo(
     name="Relative Warp",
     resizable=True,
+    selectable=False,
     in_port_defs=[PortDef("Function", PortType.FUNCTION)],
     out_port_defs=[PortDef("Warp", PortType.WARP)],
     prop_type_list=PropTypeList([])

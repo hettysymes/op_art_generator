@@ -1,5 +1,6 @@
 import copy
 import math
+import uuid
 from abc import ABC, abstractmethod
 
 from ui.nodes.gradient_datatype import Gradient
@@ -94,20 +95,32 @@ class Shape(ABC):
 
     def __init__(self):
         self.transformations = []
+        self.shape_id = uuid.uuid4()
 
     def translate(self, tx, ty):
         new_obj = copy.deepcopy(self)
+        new_obj.shape_id = uuid.uuid4()
         new_obj.transformations.append(Translate(tx, ty))
         return new_obj
 
     def scale(self, sx, sy):
         new_obj = copy.deepcopy(self)
+        new_obj.shape_id = uuid.uuid4()
         new_obj.transformations.append(Scale(sx, sy))
         return new_obj
 
     def rotate(self, angle, centre):
         new_obj = copy.deepcopy(self)
+        new_obj.shape_id = uuid.uuid4()
         new_obj.transformations.append(Rotate(angle, centre))
+        return new_obj
+
+    def remove_final_scale(self):
+        assert len(self.transformations) > 0
+        assert isinstance(self.transformations[-1], Scale)
+        new_obj = copy.deepcopy(self)
+        new_obj.shape_id = uuid.uuid4()
+        del new_obj.transformations[-1]
         return new_obj
 
     @abstractmethod
@@ -134,7 +147,8 @@ class PolyLine(Shape):
                             stroke=self.stroke,
                             stroke_width=self.stroke_width,
                             fill='none',
-                            style='vector-effect: non-scaling-stroke')
+                            style='vector-effect: non-scaling-stroke',
+                            id=self.shape_id)
 
     def get_points(self):
         transformed_points = []
@@ -166,8 +180,8 @@ class Polygon(Shape):
         return dwg.polygon(points=points,
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
-                           stroke='none')
-
+                           stroke='none',
+                           id=self.shape_id)
 
 class Ellipse(Shape):
 
@@ -186,7 +200,8 @@ class Ellipse(Shape):
                            r=self.r,
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
-                           stroke=self.stroke)
+                           stroke=self.stroke,
+                           id=self.shape_id)
 
 
 class SineWave(PolyLine):

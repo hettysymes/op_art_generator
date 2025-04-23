@@ -9,6 +9,7 @@ from ui.port_defs import PortDef, PortType
 ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(
     name="Iterator Selector",
     resizable=True,
+    selectable=False,
     in_port_defs=[PortDef("Iterator", PortType.ELEMENT)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(

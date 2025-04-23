@@ -14,6 +14,7 @@ class Drawing(ABC):
         self.height = height
         self.width = wh_ratio * height
         self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(self.width, self.height))
+        self.selectable_shapes = []
 
         # Define clipping that clips everything outside of view box
         clip = self.dwg.defs.add(self.dwg.clipPath(id="viewbox-clip"))
@@ -43,7 +44,7 @@ class Drawing(ABC):
         dir_path = os.path.dirname(self.dwg.filename)
         os.makedirs(dir_path, exist_ok=True)
         self.dwg.save()
-        return self.dwg.filename
+        return self.dwg.filename, self.selectable_shapes
 
     @abstractmethod
     def draw(self):

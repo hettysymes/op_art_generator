@@ -7,6 +7,7 @@ from ui.port_defs import PortType, PortDef
 CHECKERBOARD_NODE_INFO = UnitNodeInfo(
     name="Checkerboard",
     resizable=True,
+    selectable=True,
     in_port_defs=[
         PortDef("Grid", PortType.GRID),
         PortDef("Drawing 1", PortType.ELEMENT),
