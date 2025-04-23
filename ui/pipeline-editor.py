@@ -1,3 +1,4 @@
+import ast
 import math
 import pickle
 import shutil
@@ -858,7 +859,7 @@ class NodePropertiesDialog(QDialog):
                     if index.column() == 0:
                         color_str = index.data()
                         if color_str:
-                            color = QColor(color_str)
+                            color = QColor(*ast.literal_eval(color_str))
                             # Fill the entire cell with the color
                             painter.fillRect(option.rect, color)
 
@@ -886,7 +887,7 @@ class NodePropertiesDialog(QDialog):
             table.setRowCount(len(colours))
 
             for row, colour in enumerate(colours):
-                item = QTableWidgetItem(colour)
+                item = QTableWidgetItem(str(colour))
                 # This flag can help prevent the text from being displayed
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                 table.setItem(row, 0, item)
@@ -926,8 +927,9 @@ class NodePropertiesDialog(QDialog):
                     color_dialog.setCurrentColor(current_color)
 
                     if color_dialog.exec_():
-                        selected_color = color_dialog.selectedColor().getRgb()
-                        new_item = QTableWidgetItem(selected_color)
+                        sel_col = color_dialog.selectedColor()
+                        string_col = str((sel_col.red(), sel_col.green(), sel_col.blue(), sel_col.alpha()))
+                        new_item = QTableWidgetItem(string_col)
                         new_item.setFlags(new_item.flags() & ~Qt.ItemIsEditable)
                         table.setItem(row, column, new_item)
 
@@ -951,7 +953,7 @@ class NodePropertiesDialog(QDialog):
                 for row in range(table.rowCount()):
                     try:
                         colour = table.item(row, 0).text()
-                        colours.append(colour)
+                        colours.append(ast.literal_eval(colour))
                     except (ValueError, AttributeError):
                         # Handle empty or invalid cells
                         pass

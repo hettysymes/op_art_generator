@@ -3,6 +3,7 @@ import itertools
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape_datatypes import Element, PolyLine, Polygon
+from ui.nodes.utils import process_rgb
 from ui.port_defs import PortDef, PortType
 
 COLOUR_FILLER_NODE_INFO = UnitNodeInfo(
@@ -30,10 +31,11 @@ class ColourFillerNode(UnitNode):
                 assert isinstance(element[i - 1], PolyLine)
                 assert isinstance(element[i], PolyLine)
                 points = element[i - 1].get_points() + list(reversed(element[i].get_points()))
-                ret_elem.add(Polygon(points, next(colour_it)))
+                fill, fill_opacity = process_rgb(next(colour_it))
+                ret_elem.add(Polygon(points, fill, fill_opacity))
             return ret_elem
 
     def visualise(self, height, wh_ratio):
         element = self.compute()
         if element:
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, element).save()
+            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (element, None)).save()

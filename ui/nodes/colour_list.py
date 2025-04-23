@@ -12,7 +12,7 @@ COLOUR_LIST_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Colours", PortType.VALUE_LIST)],
     prop_type_list=PropTypeList(
         [
-            PropType("colours", "colour_table", default_value=["#000000", "#ff0000", "#00ff00", "#0000ff"],
+            PropType("colours", "colour_table", default_value=[(0, 0, 0, 255), (255, 0, 0, 255), (0, 255, 0, 255)],
                      description=""),
         ]
     )
@@ -38,8 +38,7 @@ class ColourListNode(UnitNode):
                     x2 = v_line_xs[i]
                     y1 = h_line_ys[j - 1]
                     y2 = h_line_ys[j]
-                    ret_element.add(RectangleNode(None, None, {'fill': colours[col_index]}).compute()[0].scale(x2 - x1,
-                                                                                                               y2 - y1).translate(
-                        x1, y1))
+                    ret_element.add(RectangleNode(None, [UnitNode(None, None, None)], {'fill': colours[col_index]}).compute()[0].scale(x2 - x1,
+                                                                                                               y2 - y1).translate(x1, y1))
                     col_index += 1
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, ret_element).save()
+            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (ret_element, None)).save()
