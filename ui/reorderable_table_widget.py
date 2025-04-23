@@ -52,9 +52,6 @@ class ReorderableTableWidget(QTableWidget):
                 self.setItem(drop_row + i, 0, item)
                 self.selectRow(drop_row + i)
 
-            for row in range(self.rowCount()):
-                self.setRowHeight(row, 40)
-
             event.accept()
         else:
             super().dropEvent(event)

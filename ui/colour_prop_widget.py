@@ -58,8 +58,5 @@ class ColorPropertyWidget(QWidget):
         self.color = color if isinstance(color, QColor) else QColor(color)
         self.preview.setColor(self.color)
 
-    def getColor(self):
-        return self.color
-
     def get_value(self):
         return self.color.getRgb()

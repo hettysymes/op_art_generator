@@ -660,7 +660,6 @@ class NodePropertiesDialog(QDialog):
                     item.setText(f"({x:.2f}, {y:.2f})")
                 if (row is not None) and (table is not None):
                     table.setItem(row, 0, item)
-                    table.setRowHeight(row, 40)
                 return item
 
             # Create our custom table widget
@@ -679,6 +678,7 @@ class NodePropertiesDialog(QDialog):
             # Apply the delegate to the table
             centered_delegate = CenteredItemDelegate()
             table.setItemDelegate(centered_delegate)
+            table.verticalHeader().setDefaultSectionSize(40)
             table.setWordWrap(True)
 
             # Populate with current data
@@ -799,6 +799,7 @@ class NodePropertiesDialog(QDialog):
                 string_col = str((colour.red(), colour.green(), colour.blue(), colour.alpha()))
                 item = QTableWidgetItem(string_col)
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                item.setData(Qt.UserRole, colour)
                 if (row is not None) and (table is not None):
                     table.setItem(row, 0, item)
                 return item
@@ -856,6 +857,7 @@ class NodePropertiesDialog(QDialog):
             def add_row():
                 # Open color dialog directly when adding a new row
                 color_dialog = QColorDialog()
+                color_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
                 if color_dialog.exec_():
                     sel_col = color_dialog.selectedColor()
                     row = table.rowCount()
@@ -866,8 +868,9 @@ class NodePropertiesDialog(QDialog):
             def on_cell_clicked(row, column):
                 if column == 0:
                     color_dialog = QColorDialog()
+                    color_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
                     current_item = table.item(row, column)
-                    current_color = QColor(current_item.text()) if current_item else QColor(0,0,0,255)
+                    current_color = current_item.data(Qt.UserRole)
                     color_dialog.setCurrentColor(current_color)
                     if color_dialog.exec_():
                         sel_col = color_dialog.selectedColor()
