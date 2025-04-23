@@ -9,7 +9,7 @@ def rev_process_rgb(fill, fill_opacity):
     match = re.match(r"rgb\((\d+),(\d+),(\d+)\)", fill)
     assert match
     r, g, b = map(int, match.groups())
-    a = fill_opacity * 255
+    a = int(fill_opacity * 255)
     return (r,g,b,a)
 
 

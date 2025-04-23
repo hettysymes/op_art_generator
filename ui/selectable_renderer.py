@@ -77,4 +77,5 @@ class SelectableSvgElement(QGraphicsItem):
         for s in self.selectable_shapes:
             if str(s.shape_id) == self.element_id:
                 node = get_node_from_shape(s)
-                self.parent.add_new_node(node)
+                if node:
+                    self.parent.add_new_node(node)
