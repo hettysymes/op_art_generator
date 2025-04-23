@@ -881,6 +881,19 @@ class NodePropertiesDialog(QDialog):
             add_button.clicked.connect(add_row)
             button_layout.addWidget(add_button)
 
+            # Set up context menu for deletion
+            def show_context_menu(position):
+                row = table.rowAt(position.y())
+                if row >= 0:
+                    menu = QMenu()
+                    delete_action = menu.addAction("Delete")
+                    action = menu.exec_(table.viewport().mapToGlobal(position))
+                    if action == delete_action:
+                        table.removeRow(row)
+
+            table.setContextMenuPolicy(Qt.CustomContextMenu)
+            table.customContextMenuRequested.connect(show_context_menu)
+
             # Create a container for the table and buttons
             container = QWidget()
             layout = QVBoxLayout(container)
