@@ -2,15 +2,18 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
 
+from ui.nodes.shape import get_node_from_shape
+
 
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""
 
-    def __init__(self, element_id, renderer, selectable_shapes):
+    def __init__(self, element_id, renderer, selectable_shapes, parent):
         super().__init__()
         self.element_id = element_id
         self.renderer = renderer
         self.selectable_shapes = selectable_shapes
+        self.parent = parent
 
         # Set flags for interaction - selectable but NOT movable
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -73,5 +76,5 @@ class SelectableSvgElement(QGraphicsItem):
         """Handle the 'Extract into node' action."""
         for s in self.selectable_shapes:
             if str(s.shape_id) == self.element_id:
-                print(f"Found {s}")
-                return
+                node = get_node_from_shape(s)
+                self.parent.add_new_node(node)

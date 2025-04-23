@@ -219,7 +219,7 @@ class NodeItem(QGraphicsRectItem):
                         if element_id:
                             if tag_name in selectable_types:
                                 # Create a selectable item for this element
-                                selectable_item = SelectableSvgElement(element_id, self.svg_renderer, selectable_shapes)
+                                selectable_item = SelectableSvgElement(element_id, self.svg_renderer, selectable_shapes, self)
                                 selectable_item.setParentItem(self)
                                 selectable_item.setPos(svg_pos_x, svg_pos_y)
                                 selectable_item.setZValue(2)
@@ -234,6 +234,9 @@ class NodeItem(QGraphicsRectItem):
             # Start processing from root element
             root = dom_document.documentElement()
             process_element(root, selectable_shapes)
+
+    def add_new_node(self, node):
+        return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)
 
     def get_input_node_items(self):
         input_nodes = []
@@ -1106,8 +1109,10 @@ class PipelineScene(QGraphicsScene):
             node = node_class(uid, None, None)
         else:
             node = node_class(uid, None, None, index)
+        return self.add_new_node(pos, node)
 
-        new_node = NodeItem(NodeState(uid, pos.x(), pos.y(), [], [], node, 150, 150))
+    def add_new_node(self, pos, node):
+        new_node = NodeItem(NodeState(node.node_id, pos.x(), pos.y(), [], [], node, 150, 150))
         self.scene.add(new_node)
         self.addItem(new_node)
         new_node.create_ports()

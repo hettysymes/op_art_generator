@@ -1,11 +1,13 @@
+import uuid
+
 from cairosvg.shapes import polyline
 from numpy.ma.core import indices
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.point_ref import PointRef
-from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave
-from ui.nodes.utils import process_rgb
+from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape
+from ui.nodes.utils import process_rgb, rev_process_rgb
 from ui.port_defs import PortDef, PortType
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
@@ -174,6 +176,16 @@ class EllipseNode(UnitNode):
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
 
+def get_node_from_shape(shape: Shape):
+    if isinstance(shape, Polygon):
+        return PolygonNode(
+            uuid.uuid4(),
+            [UnitNode(None, None, None)]*2,
+            {
+                'points': shape.points,
+                'fill': rev_process_rgb(shape.fill, shape.fill_opacity)
+            }
+        )
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
