@@ -1,5 +1,6 @@
 import copy
 import math
+import uuid
 from abc import ABC, abstractmethod
 
 from ui.nodes.gradient_datatype import Gradient
@@ -134,7 +135,8 @@ class PolyLine(Shape):
                             stroke=self.stroke,
                             stroke_width=self.stroke_width,
                             fill='none',
-                            style='vector-effect: non-scaling-stroke')
+                            style='vector-effect: non-scaling-stroke',
+                            id=f"polyline_{uuid.uuid4()}")
 
     def get_points(self):
         transformed_points = []
@@ -166,7 +168,8 @@ class Polygon(Shape):
         return dwg.polygon(points=points,
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
-                           stroke='none')
+                           stroke='none',
+                           id=f"polygon_{uuid.uuid4()}")
 
 
 class Ellipse(Shape):
@@ -186,7 +189,8 @@ class Ellipse(Shape):
                            r=self.r,
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
-                           stroke=self.stroke)
+                           stroke=self.stroke,
+                           id=f"ellipse_{uuid.uuid4()}")
 
 
 class SineWave(PolyLine):

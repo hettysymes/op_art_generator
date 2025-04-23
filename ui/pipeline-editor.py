@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
                              QAbstractItemView, QStyleOptionViewItem)
 from PyQt5.QtWidgets import QGraphicsPathItem
+from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.nodes.shape import PointRef
@@ -23,6 +24,7 @@ from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.nodes import CombinationNode, UnitNode
 from ui.port_defs import is_port_type_compatible, PortType
+from ui.selectable_renderer import SelectableSvgElement
 
 
 class ConnectionSignals(QObject):
@@ -34,7 +36,7 @@ class ConnectionSignals(QObject):
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QPen, QColor
 from PyQt5.QtWidgets import QGraphicsRectItem, QGraphicsItem
-from PyQt5.QtSvg import QGraphicsSvgItem
+from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
 
 
 class ResizeHandle(QGraphicsRectItem):
@@ -120,7 +122,6 @@ class NodeItem(QGraphicsRectItem):
         self.setPen(QPen(Qt.black, 2))
         self.node = self.backend.node
 
-        self.svg_item = None
         self.resize_handle = None
 
         if self.node.resizable():
@@ -151,23 +152,66 @@ class NodeItem(QGraphicsRectItem):
         return self.update_node().get_svg_path(self.backend.svg_height, wh_ratio)
 
     def update_vis_image(self):
-        """Add an SVG image to the node that scales with node size"""
+        """Add an SVG image to the node that scales with node size and has selectable elements"""
         svg_path = self.get_svg_path()
 
-        # Remove existing SVG if necessary
-        if self.svg_item:
-            scene = self.scene()
-            if scene and self.svg_item in scene.items():
-                scene.removeItem(self.svg_item)
+        # Remove existing SVG items if necessary
+        if hasattr(self, 'svg_items') and self.svg_items:
+            for item in self.svg_items:
+                scene = self.scene()
+                if scene and item in scene.items():
+                    scene.removeItem(item)
+            self.svg_items = []
+        else:
+            self.svg_items = []
 
-        # Create new SVG item
-        self.svg_item = QGraphicsSvgItem(svg_path)
+        # Create SVG renderer
+        self.svg_renderer = QSvgRenderer(svg_path)
+
+        # Load the SVG file as XML
+        dom_document = QDomDocument()
+        with open(svg_path, 'r') as file:
+            content = file.read()
+            dom_document.setContent(content)
+
+        # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
+        svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
 
-        # Apply position
-        self.svg_item.setParentItem(self)
-        self.svg_item.setPos(svg_pos_x, NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y)
-        self.svg_item.setZValue(2)
+        # Process SVG elements to make them selectable
+        def process_element(element):
+            # SVG elements we're interested in making selectable
+            selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
+
+            # Process all child elements
+            child = element.firstChild()
+            while not child.isNull():
+                if child.isElement():
+                    element_node = child.toElement()
+                    tag_name = element_node.tagName()
+                    element_id = element_node.attribute('id')
+
+                    # Only process elements with IDs
+                    if element_id:
+                        if tag_name in selectable_types:
+                            # Create a selectable item for this element
+                            selectable_item = SelectableSvgElement(element_id, self.svg_renderer)
+                            selectable_item.setParentItem(self)
+                            selectable_item.setPos(svg_pos_x, svg_pos_y)
+                            selectable_item.setZValue(2)
+                            self.svg_items.append(selectable_item)
+
+                        # For groups, process children
+                        if tag_name == 'g' or tag_name == 'svg':
+                            process_element(element_node)
+
+                child = child.nextSibling()
+
+        # Start processing from root element
+        root = dom_document.documentElement()
+        process_element(root)
+
+
 
     def get_input_node_items(self):
         input_nodes = []
