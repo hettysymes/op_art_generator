@@ -6,9 +6,10 @@ from ui.nodes.point_ref import PointRef
 
 
 class ReorderableTableWidget(QTableWidget):
-    def __init__(self, parent=None):
+    def __init__(self, add_item_fun, parent=None):
         super().__init__(parent)
 
+        self.add_item_fun = add_item_fun
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
@@ -36,11 +37,7 @@ class ReorderableTableWidget(QTableWidget):
             # Grab data from selected rows
             for row in selected_rows:
                 item = self.item(row, 0)
-                new_item = QTableWidgetItem(item.text())
-                new_item.setData(Qt.UserRole, item.data(Qt.UserRole))
-                new_item.setTextAlignment(Qt.AlignCenter)
-                if isinstance(item.data(Qt.UserRole), PointRef):
-                    new_item.setBackground(QColor(237, 130, 157))
+                new_item = self.add_item_fun(item.data(Qt.UserRole))
                 items_to_move.append(new_item)
 
             # Remove selected rows (in reverse order to avoid shifting)

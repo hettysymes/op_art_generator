@@ -643,8 +643,28 @@ class NodePropertiesDialog(QDialog):
                 widget.setCurrentIndex(index)
 
         elif prop.prop_type == "table":
+
+            def add_point_item(point, row=None, table=None):
+                item = QTableWidgetItem()
+                item.setTextAlignment(Qt.AlignCenter)
+                item.setData(Qt.UserRole, point)
+                if isinstance(point, PointRef):
+                    start_x, start_y = point.points[0]
+                    stop_x, stop_y = point.points[-1]
+                    arrow = '←' if point.reversed else '→'
+                    item.setText(
+                        f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
+                    item.setBackground(QColor(237, 130, 157))
+                else:
+                    x, y = point
+                    item.setText(f"({x:.2f}, {y:.2f})")
+                if (row is not None) and (table is not None):
+                    table.setItem(row, 0, item)
+                    table.setRowHeight(row, 40)
+                return item
+
             # Create our custom table widget
-            table = ReorderableTableWidget()
+            table = ReorderableTableWidget(add_point_item)
 
             # Set up the basic table structure with single column
             table.setColumnCount(1)
@@ -660,23 +680,6 @@ class NodePropertiesDialog(QDialog):
             centered_delegate = CenteredItemDelegate()
             table.setItemDelegate(centered_delegate)
             table.setWordWrap(True)
-
-            def add_point_item(point, row, table):
-                item = QTableWidgetItem()
-                item.setTextAlignment(Qt.AlignCenter)
-                item.setData(Qt.UserRole, point)
-                if isinstance(point, PointRef):
-                    start_x, start_y = point.points[0]
-                    stop_x, stop_y = point.points[-1]
-                    arrow = '←' if point.reversed else '→'
-                    item.setText(
-                        f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
-                    item.setBackground(QColor(237, 130, 157))
-                else:
-                    x, y = point
-                    item.setText(f"({x:.2f}, {y:.2f})")
-                table.setItem(row, 0, item)
-                table.setRowHeight(row, 40)
 
             # Populate with current data
             points_data = current_value or prop.default_value or []
