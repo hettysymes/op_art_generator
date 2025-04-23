@@ -6,6 +6,7 @@ from ui.port_defs import PortDef, PortType
 CANVAS_NODE_INFO = UnitNodeInfo(
     name="Canvas",
     resizable=False,
+    selectable=False,
     in_port_defs=[PortDef("Drawing", PortType.VISUALISABLE)],
     out_port_defs=[],
     prop_type_list=PropTypeList([

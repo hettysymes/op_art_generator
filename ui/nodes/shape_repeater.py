@@ -8,6 +8,7 @@ from ui.port_defs import PortDef, PortType
 SHAPE_REPEATER_NODE_INFO = UnitNodeInfo(
     name="Shape Repeater",
     resizable=True,
+    selectable=True,
     in_port_defs=[
         PortDef("Grid", PortType.GRID),
         PortDef("Drawing", PortType.ELEMENT)

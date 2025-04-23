@@ -10,6 +10,7 @@ from ui.port_defs import PortDef, PortType
 CUBIC_FUN_NODE_INFO = UnitNodeInfo(
     name="Cubic Function",
     resizable=True,
+    selectable=False,
     in_port_defs=[],
     out_port_defs=[PortDef("Function", PortType.FUNCTION)],
     prop_type_list=PropTypeList(
@@ -43,6 +44,7 @@ class CubicFunNode(UnitNode):
 CUSTOM_FUN_NODE_INFO = UnitNodeInfo(
     name="Custom Function",
     resizable=True,
+    selectable=False,
     in_port_defs=[],
     out_port_defs=[PortDef("Function", PortType.FUNCTION)],
     prop_type_list=PropTypeList(
@@ -71,6 +73,7 @@ class CustomFunNode(UnitNode):
 PIECEWISE_FUN_NODE_INFO = UnitNodeInfo(
     name="Piecewise Function",
     resizable=True,
+    selectable=False,
     in_port_defs=[],
     out_port_defs=[PortDef("Function", PortType.FUNCTION)],
     prop_type_list=PropTypeList(

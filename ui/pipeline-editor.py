@@ -1,5 +1,6 @@
 import ast
 import math
+import os
 import pickle
 import shutil
 import sys
@@ -178,38 +179,61 @@ class NodeItem(QGraphicsRectItem):
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
 
-        # Process SVG elements to make them selectable
-        def process_element(element):
-            # SVG elements we're interested in making selectable
-            selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
+        # Check file extension
+        if not self.node.selectable():
+            # Handle matplotlib or non-selectable SVG - use standard QGraphicsSvgItem
+            self.svg_item = QGraphicsSvgItem(svg_path)
 
-            # Process all child elements
-            child = element.firstChild()
-            while not child.isNull():
-                if child.isElement():
-                    element_node = child.toElement()
-                    tag_name = element_node.tagName()
-                    element_id = element_node.attribute('id')
+            # Apply position
+            self.svg_item.setParentItem(self)
+            self.svg_item.setPos(svg_pos_x, svg_pos_y)
+            self.svg_item.setZValue(2)
 
-                    # Only process elements with IDs
-                    if element_id:
-                        if tag_name in selectable_types:
-                            # Create a selectable item for this element
-                            selectable_item = SelectableSvgElement(element_id, self.svg_renderer)
-                            selectable_item.setParentItem(self)
-                            selectable_item.setPos(svg_pos_x, svg_pos_y)
-                            selectable_item.setZValue(2)
-                            self.svg_items.append(selectable_item)
+        else:
+            # Handle regular SVG with selectable elements
+            self.svg_items = []
 
-                        # For groups, process children
-                        if tag_name == 'g' or tag_name == 'svg':
-                            process_element(element_node)
+            # Create SVG renderer
+            self.svg_renderer = QSvgRenderer(svg_path)
 
-                child = child.nextSibling()
+            # Load the SVG file as XML
+            dom_document = QDomDocument()
+            with open(svg_path, 'r') as file:
+                content = file.read()
+                dom_document.setContent(content)
 
-        # Start processing from root element
-        root = dom_document.documentElement()
-        process_element(root)
+            # Process SVG elements to make them selectable (existing code)
+            def process_element(element):
+                # SVG elements we're interested in making selectable
+                selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
+
+                # Process all child elements
+                child = element.firstChild()
+                while not child.isNull():
+                    if child.isElement():
+                        element_node = child.toElement()
+                        tag_name = element_node.tagName()
+                        element_id = element_node.attribute('id')
+
+                        # Only process elements with IDs
+                        if element_id:
+                            if tag_name in selectable_types:
+                                # Create a selectable item for this element
+                                selectable_item = SelectableSvgElement(element_id, self.svg_renderer)
+                                selectable_item.setParentItem(self)
+                                selectable_item.setPos(svg_pos_x, svg_pos_y)
+                                selectable_item.setZValue(2)
+                                self.svg_items.append(selectable_item)
+
+                            # For groups, process children
+                            if tag_name == 'g' or tag_name == 'svg':
+                                process_element(element_node)
+
+                    child = child.nextSibling()
+
+            # Start processing from root element
+            root = dom_document.documentElement()
+            process_element(root)
 
 
 

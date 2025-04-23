@@ -11,6 +11,7 @@ from ui.port_defs import PortDef, PortType
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
     name="Sine Wave",
     resizable=True,
+    selectable=True,
     in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
@@ -53,6 +54,7 @@ class SineWaveNode(UnitNode):
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
+    selectable=True,
     in_port_defs=[PortDef("Gradient", PortType.GRADIENT), PortDef("Import Points", PortType.ELEMENT, input_multiple=True)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
@@ -109,6 +111,7 @@ class PolygonNode(UnitNode):
 RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
     resizable=True,
+    selectable=True,
     in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
@@ -139,6 +142,7 @@ class RectangleNode(UnitNode):
 ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
     resizable=True,
+    selectable=True,
     in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
