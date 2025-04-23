@@ -795,8 +795,16 @@ class NodePropertiesDialog(QDialog):
 
             widget = container
         elif prop.prop_type == "colour_table":
+            def add_colour_item(colour, row=None, table=None):
+                string_col = str((colour.red(), colour.green(), colour.blue(), colour.alpha()))
+                item = QTableWidgetItem(string_col)
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                if (row is not None) and (table is not None):
+                    table.setItem(row, 0, item)
+                return item
+
             # Create a table widget
-            table = QTableWidget()
+            table = ReorderableTableWidget(add_colour_item)
 
             # Set up the basic table structure
             table.setColumnCount(1)
@@ -834,12 +842,8 @@ class NodePropertiesDialog(QDialog):
             # Populate with current data
             colours = current_value or prop.default_value or []
             table.setRowCount(len(colours))
-
             for row, colour in enumerate(colours):
-                item = QTableWidgetItem(str(colour))
-                # This flag can help prevent the text from being displayed
-                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-                table.setItem(row, 0, item)
+                add_colour_item(QColor(*colour), row, table)
 
             # Add buttons to add/remove rows
             button_widget = QWidget()
@@ -847,7 +851,6 @@ class NodePropertiesDialog(QDialog):
             button_layout.setContentsMargins(0, 0, 0, 0)
 
             add_button = QPushButton("+")
-            remove_button = QPushButton("-")
 
             # Add row function
             def add_row():
@@ -855,18 +858,9 @@ class NodePropertiesDialog(QDialog):
                 color_dialog = QColorDialog()
                 if color_dialog.exec_():
                     sel_col = color_dialog.selectedColor()
-                    string_col = str((sel_col.red(), sel_col.green(), sel_col.blue(), sel_col.alpha()))
                     row = table.rowCount()
                     table.setRowCount(row + 1)
-                    item = QTableWidgetItem(string_col)
-                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-                    table.setItem(row, 0, item)
-
-            # Remove row function
-            def remove_row():
-                row = table.rowCount()
-                if row > 0:
-                    table.setRowCount(row - 1)
+                    add_colour_item(sel_col, row, table)
 
             # Double-click to edit/select color for existing rows
             def on_cell_clicked(row, column):
@@ -875,21 +869,14 @@ class NodePropertiesDialog(QDialog):
                     current_item = table.item(row, column)
                     current_color = QColor(current_item.text()) if current_item else QColor(0,0,0,255)
                     color_dialog.setCurrentColor(current_color)
-
                     if color_dialog.exec_():
                         sel_col = color_dialog.selectedColor()
-                        string_col = str((sel_col.red(), sel_col.green(), sel_col.blue(), sel_col.alpha()))
-                        new_item = QTableWidgetItem(string_col)
-                        new_item.setFlags(new_item.flags() & ~Qt.ItemIsEditable)
-                        table.setItem(row, column, new_item)
+                        add_colour_item(sel_col, row, table)
 
             # Connect to cellDoubleClicked signal
             table.cellDoubleClicked.connect(on_cell_clicked)
             add_button.clicked.connect(add_row)
-            remove_button.clicked.connect(remove_row)
-
             button_layout.addWidget(add_button)
-            button_layout.addWidget(remove_button)
 
             # Create a container for the table and buttons
             container = QWidget()
