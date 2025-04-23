@@ -240,8 +240,14 @@ class NodeItem(QGraphicsRectItem):
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
 
+        painter.setFont(QFont("Arial", 8))
+        painter.setPen(QColor("grey"))
+        id_rect = self.rect().adjusted(10, 10, 0, 0)  # Shift the top edge down
+        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{self.node.node_id.hex[:3]}")
+
         # Draw node title
         painter.setFont(QFont("Arial", 10))
+        painter.setPen(QColor("black"))
         title_rect = self.rect().adjusted(0, 10, 0, 0)  # Shift the top edge down
         painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.node.name())
 
@@ -604,6 +610,8 @@ class NodePropertiesDialog(QDialog):
                             new_item = QTableWidgetItem(item.text())
                             new_item.setData(Qt.UserRole, item.data(Qt.UserRole))
                             new_item.setTextAlignment(Qt.AlignCenter)
+                            if isinstance(item.data(Qt.UserRole), PointRef):
+                                new_item.setBackground(QColor(237, 130, 157))
                             items_to_move.append(new_item)
 
                         # Remove selected rows (in reverse order to avoid shifting)
@@ -617,6 +625,9 @@ class NodePropertiesDialog(QDialog):
                             self.insertRow(drop_row + i)
                             self.setItem(drop_row + i, 0, item)
                             self.selectRow(drop_row + i)
+
+                        for row in range(table.rowCount()):
+                            self.setRowHeight(row, 40)
 
                         event.accept()
                     else:
@@ -662,18 +673,18 @@ class NodePropertiesDialog(QDialog):
             table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
             # Apply stylesheet for rectangle items with centered text
-            table.setStyleSheet("""
-                QTableWidget::item {
-                    border: 1px solid #aaa;
-                    border-radius: 3px;
-                    padding: 5px;
-                    background-color: #f5f5f5;
-                    text-align: center;
-                }
-                QTableWidget::item:selected {
-                    background-color: #d0d9ea;
-                }
-            """)
+            # table.setStyleSheet("""
+            #     QTableWidget::item {
+            #         border: 1px solid #aaa;
+            #         border-radius: 3px;
+            #         padding: 5px;
+            #         background-color: #f5f5f5;
+            #         text-align: center;
+            #     }
+            #     QTableWidget::item:selected {
+            #         background-color: #d0d9ea;
+            #     }
+            # """)
 
             # Custom delegate to ensure text alignment is centered
             class CenteredItemDelegate(QStyledItemDelegate):
@@ -684,23 +695,26 @@ class NodePropertiesDialog(QDialog):
             # Apply the delegate to the table
             centered_delegate = CenteredItemDelegate()
             table.setItemDelegate(centered_delegate)
+            table.setWordWrap(True)
 
             # Populate with current data
             points_data = current_value or prop.default_value or []
             table.setRowCount(len(points_data))
             for row, point in enumerate(points_data):
+                item = QTableWidgetItem()
                 if isinstance(point, PointRef):
                     start_x, start_y = point.points[0]
                     stop_x, stop_y = point.points[-1]
-                    string = f"{point.node_type} ({point.node_id.hex[:3]}) ({start_x:.2f}, {start_y:.2f}) ({stop_x:.2f}, {stop_y:.2f})"
+                    item.setText(f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) → ({stop_x:.2f}, {stop_y:.2f})")
+                    item.setBackground(QColor(237, 130, 157))
                 else:
                     x, y = point
-                    string = f"({x:.2f}, {y:.2f})"
-                item = QTableWidgetItem(string)
+                    item.setText(f"({x:.2f}, {y:.2f})")
                 item.setTextAlignment(Qt.AlignCenter)
                 # Store the actual values as item data for retrieval later
                 item.setData(Qt.UserRole, point)
                 table.setItem(row, 0, item)
+                table.setRowHeight(row, 40)
 
             # Add button to add points
             button_widget = QWidget()
@@ -755,6 +769,7 @@ class NodePropertiesDialog(QDialog):
                     item.setTextAlignment(Qt.AlignCenter)
                     item.setData(Qt.UserRole, (x_val, y_val))
                     table.setItem(row, 0, item)
+                    table.setRowHeight(row, 40)
 
             add_button.clicked.connect(add_point)
             button_layout.addWidget(add_button)
@@ -787,6 +802,7 @@ class NodePropertiesDialog(QDialog):
                                 new_item.setTextAlignment(Qt.AlignCenter)
                                 new_item.setData(Qt.UserRole, (new_x, new_y))
                                 table.setItem(row, 0, new_item)
+                                table.setRowHeight(row, 40)
 
             table.setContextMenuPolicy(Qt.CustomContextMenu)
             table.customContextMenuRequested.connect(show_context_menu)
