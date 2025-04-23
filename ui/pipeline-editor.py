@@ -154,7 +154,7 @@ class NodeItem(QGraphicsRectItem):
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
-        svg_path = self.get_svg_path()
+        svg_path, selectable_shapes = self.get_svg_path()
 
         # Remove existing SVG items if necessary
         if hasattr(self, 'svg_items') and self.svg_items:
@@ -203,7 +203,7 @@ class NodeItem(QGraphicsRectItem):
                 dom_document.setContent(content)
 
             # Process SVG elements to make them selectable (existing code)
-            def process_element(element):
+            def process_element(element, selectable_shapes):
                 # SVG elements we're interested in making selectable
                 selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
 
@@ -219,7 +219,7 @@ class NodeItem(QGraphicsRectItem):
                         if element_id:
                             if tag_name in selectable_types:
                                 # Create a selectable item for this element
-                                selectable_item = SelectableSvgElement(element_id, self.svg_renderer)
+                                selectable_item = SelectableSvgElement(element_id, self.svg_renderer, selectable_shapes)
                                 selectable_item.setParentItem(self)
                                 selectable_item.setPos(svg_pos_x, svg_pos_y)
                                 selectable_item.setZValue(2)
@@ -233,9 +233,7 @@ class NodeItem(QGraphicsRectItem):
 
             # Start processing from root element
             root = dom_document.documentElement()
-            process_element(root)
-
-
+            process_element(root, selectable_shapes)
 
     def get_input_node_items(self):
         input_nodes = []
@@ -1078,7 +1076,7 @@ def save_as_svg(clicked_item: NodeItem):
     )
 
     if file_path:
-        shutil.copy(clicked_item.get_svg_path(), file_path)
+        shutil.copy(clicked_item.get_svg_path()[0], file_path)
 
 
 class PipelineScene(QGraphicsScene):

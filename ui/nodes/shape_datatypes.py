@@ -95,19 +95,23 @@ class Shape(ABC):
 
     def __init__(self):
         self.transformations = []
+        self.shape_id = uuid.uuid4()
 
     def translate(self, tx, ty):
         new_obj = copy.deepcopy(self)
+        new_obj.shape_id = uuid.uuid4()
         new_obj.transformations.append(Translate(tx, ty))
         return new_obj
 
     def scale(self, sx, sy):
         new_obj = copy.deepcopy(self)
+        new_obj.shape_id = uuid.uuid4()
         new_obj.transformations.append(Scale(sx, sy))
         return new_obj
 
     def rotate(self, angle, centre):
         new_obj = copy.deepcopy(self)
+        new_obj.shape_id = uuid.uuid4()
         new_obj.transformations.append(Rotate(angle, centre))
         return new_obj
 
@@ -136,7 +140,7 @@ class PolyLine(Shape):
                             stroke_width=self.stroke_width,
                             fill='none',
                             style='vector-effect: non-scaling-stroke',
-                            id=f"polyline_{uuid.uuid4()}")
+                            id=self.shape_id)
 
     def get_points(self):
         transformed_points = []
@@ -169,8 +173,7 @@ class Polygon(Shape):
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
                            stroke='none',
-                           id=f"polygon_{uuid.uuid4()}")
-
+                           id=self.shape_id)
 
 class Ellipse(Shape):
 
@@ -190,7 +193,7 @@ class Ellipse(Shape):
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
                            stroke=self.stroke,
-                           id=f"ellipse_{uuid.uuid4()}")
+                           id=self.shape_id)
 
 
 class SineWave(PolyLine):
