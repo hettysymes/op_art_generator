@@ -176,16 +176,30 @@ class EllipseNode(UnitNode):
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
 
+ELEMENT_NODE_INFO = UnitNodeInfo(
+    name="Element",
+    resizable=True,
+    selectable=False,
+    in_port_defs=[],
+    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    prop_type_list=PropTypeList([])
+)
+
+class ElementNode(UnitNode):
+    UNIT_NODE_INFO = ELEMENT_NODE_INFO
+
+    def compute(self):
+        return Element([self.prop_vals['shape']])
+
+    def visualise(self, height, wh_ratio):
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+
 def get_node_from_shape(shape: Shape):
-    if isinstance(shape, Polygon):
-        return PolygonNode(
-            uuid.uuid4(),
-            [UnitNode(None, None, None)]*2,
-            {
-                'points': shape.points,
-                'fill': rev_process_rgb(shape.fill, shape.fill_opacity)
-            }
-        )
+    return ElementNode(
+        uuid.uuid4(),
+        [],
+        {'shape': shape.remove_final_scale()}
+    )
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"

@@ -115,6 +115,14 @@ class Shape(ABC):
         new_obj.transformations.append(Rotate(angle, centre))
         return new_obj
 
+    def remove_final_scale(self):
+        assert len(self.transformations) > 0
+        assert isinstance(self.transformations[-1], Scale)
+        new_obj = copy.deepcopy(self)
+        new_obj.shape_id = uuid.uuid4()
+        del new_obj.transformations[-1]
+        return new_obj
+
     @abstractmethod
     def base_shape(self, dwg):
         pass
