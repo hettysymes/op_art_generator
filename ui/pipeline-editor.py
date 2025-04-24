@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
-                             QAbstractItemView, QStyleOptionViewItem)
+                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument
 
@@ -176,11 +176,8 @@ class NodeItem(QGraphicsRectItem):
         # Create SVG renderer
         svg_renderer = QSvgRenderer(svg_path)
 
-        # Load the SVG file as XML
-        dom_document = QDomDocument()
-        with open(svg_path, 'r') as file:
-            content = file.read()
-            dom_document.setContent(content)
+        # Get SVG dimensions - will be used for viewport clipping
+        svg_size = svg_renderer.defaultSize()
 
         # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
@@ -197,13 +194,25 @@ class NodeItem(QGraphicsRectItem):
             self.svg_item.setZValue(2)
 
         else:
+            # Create a viewport SVG item that will act as both a container and clipper
+            viewport_svg = QGraphicsSvgItem(svg_path)
+            viewport_svg.setParentItem(self)
+            viewport_svg.setPos(svg_pos_x, svg_pos_y)
+            viewport_svg.setZValue(1)  # Set below selectable items
+            self.svg_items.append(viewport_svg)
+
+            # Set clip path based on SVG's viewBox
+            clip_path = QPainterPath()
+            clip_path.addRect(QRectF(0, 0, svg_size.width(), svg_size.height()))
+            viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
+
             # Load the SVG file as XML
             dom_document = QDomDocument()
             with open(svg_path, 'r') as file:
                 content = file.read()
                 dom_document.setContent(content)
 
-            # Process SVG elements to make them selectable (existing code)
+            # Process SVG elements to make them selectable
             def process_element(element, inp_selectable_shapes):
                 # SVG elements we're interested in making selectable
                 selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
@@ -220,15 +229,16 @@ class NodeItem(QGraphicsRectItem):
                         if element_id:
                             if tag_name in selectable_types:
                                 # Create a selectable item for this element
-                                selectable_item = SelectableSvgElement(element_id, svg_renderer, inp_selectable_shapes, self)
-                                selectable_item.setParentItem(self)
-                                selectable_item.setPos(svg_pos_x, svg_pos_y)
-                                selectable_item.setZValue(2)
+                                selectable_item = SelectableSvgElement(element_id, svg_renderer, inp_selectable_shapes,
+                                                                       self)
+                                selectable_item.setParentItem(viewport_svg)  # Make it a child of the viewport
+                                selectable_item.setPos(0, 0)  # Position relative to viewport
+                                selectable_item.setZValue(3)  # Ensure it's above the viewport
                                 self.svg_items.append(selectable_item)
 
                             # For groups, process children
                             if tag_name == 'g' or tag_name == 'svg':
-                                process_element(element_node)
+                                process_element(element_node, inp_selectable_shapes)
 
                     child = child.nextSibling()
 
