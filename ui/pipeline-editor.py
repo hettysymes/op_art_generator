@@ -1,4 +1,5 @@
 import ast
+import copy
 import math
 import os
 import pickle
@@ -1143,6 +1144,9 @@ class PipelineScene(QGraphicsScene):
             properties_action = QAction("Properties...", menu)
             properties_action.triggered.connect(lambda: self.edit_node_properties(clicked_item))
 
+            duplicate_action = QAction("Duplicate Node", menu)
+            duplicate_action.triggered.connect(lambda: self.duplicate_node(clicked_item))
+
             delete_action = QAction("Delete Node", menu)
             delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
 
@@ -1156,6 +1160,7 @@ class PipelineScene(QGraphicsScene):
                 menu.addMenu(submenu)
 
             menu.addAction(properties_action)
+            menu.addAction(duplicate_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
         elif isinstance(clicked_item, QGraphicsSvgItem):
@@ -1254,6 +1259,10 @@ class PipelineScene(QGraphicsScene):
         clicked_item.node.set_selection(i)
         clicked_item.update_visualisations()
 
+    def duplicate_node(self, node_item: NodeItem):
+        new_node = copy.deepcopy(node_item.backend.node)
+        new_node.node_id = uuid.uuid4()
+        self.add_new_node(node_item.pos() + QPointF(10, 10), new_node)
 
 class PipelineView(QGraphicsView):
     """View to interact with the pipeline scene"""
