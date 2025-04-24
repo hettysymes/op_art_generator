@@ -4,6 +4,7 @@ from cairosvg.shapes import polyline
 from numpy.ma.core import indices
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape
@@ -74,34 +75,13 @@ class PolygonNode(UnitNode):
 
     def compute(self):
         gradient = self.input_nodes[0].compute()
-        polyline_nodes = self.input_nodes[1:]
-        import_elem = polyline_nodes[0].compute()
         if gradient:
             fill = gradient
             fill_opacity = 255
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         # Process input polylines
-        polyline_node_ids = []
-        if import_elem:
-            polyline_node_ids = [pn.node_id for pn in polyline_nodes]
-        indices_to_remove = []
-        for i, p in enumerate(self.prop_vals['points']):
-            if isinstance(p, ElemRef):
-                if p.node_id in polyline_node_ids:
-                    # Polyline already exists - mark as not to add
-                    index = polyline_node_ids.index(p.node_id)
-                    polyline_node_ids[index] = None
-                else:
-                    # Polyline has been removed
-                    indices_to_remove.append(i)
-        # Remove no longer existing polylines
-        for i in reversed(indices_to_remove):
-            del self.prop_vals['points'][i]
-        # Add new polylines
-        for i, pn_id in enumerate(polyline_node_ids):
-            if pn_id is not None:
-                self.prop_vals['points'].append(ElemRef(polyline_nodes[i]))
+        handle_multi_inputs(self.input_nodes[1:], self.prop_vals['points'])
         # Return element
         return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
 
