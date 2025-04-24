@@ -805,149 +805,64 @@ class NodePropertiesDialog(QDialog):
             container.table_widget = table  # Store a reference to the actual table
 
             widget = container
-        # elif prop.prop_type == "elem_table":
-        #
-        #     def add_elem_item(elem, row=None, table=None):
-        #         item = QTableWidgetItem()
-        #         item.setTextAlignment(Qt.AlignCenter)
-        #         item.setData(Qt.UserRole, elem)
-        #         item.setText()
-        #         if (row is not None) and (table is not None):
-        #             table.setItem(row, 0, item)
-        #         return item
-        #
-        #     # Create our custom table widget
-        #     table = ReorderableTableWidget(add_elem_item)
-        #
-        #     # Set up the basic table structure with single column
-        #     table.setColumnCount(1)
-        #     table.setHorizontalHeaderLabels(["Coordinate Points (X, Y)"])
-        #
-        #     # Custom delegate to ensure text alignment is centered
-        #     class CenteredItemDelegate(QStyledItemDelegate):
-        #         def initStyleOption(self, option, index):
-        #             super().initStyleOption(option, index)
-        #             option.displayAlignment = Qt.AlignCenter
-        #
-        #     # Apply the delegate to the table
-        #     centered_delegate = CenteredItemDelegate()
-        #     table.setItemDelegate(centered_delegate)
-        #     table.verticalHeader().setDefaultSectionSize(40)
-        #     table.setWordWrap(True)
-        #
-        #     # Populate with current data
-        #     points_data = current_value or prop.default_value or []
-        #     table.setRowCount(len(points_data))
-        #     for row, point in enumerate(points_data):
-        #         add_point_item(point, row, table)
-        #
-        #     # Add button to add points
-        #     button_widget = QWidget()
-        #     button_layout = QHBoxLayout(button_widget)
-        #     button_layout.setContentsMargins(0, 0, 0, 0)
-        #
-        #     add_button = QPushButton("+")
-        #
-        #     def show_point_dialog(initial_x=0.0, initial_y=0.0):
-        #         dialog = QDialog()
-        #         dialog.setWindowTitle("Coordinate Point")
-        #         dialog_layout = QVBoxLayout(dialog)
-        #
-        #         form_layout = QFormLayout()
-        #
-        #         x_input = QDoubleSpinBox()
-        #         x_input.setRange(0, 1)  # Adjust the range as needed
-        #         x_input.setDecimals(2)
-        #         x_input.setValue(initial_x)
-        #
-        #         y_input = QDoubleSpinBox()
-        #         y_input.setRange(0, 1)
-        #         y_input.setDecimals(2)
-        #         y_input.setValue(initial_y)
-        #
-        #         form_layout.addRow("X:", x_input)
-        #         form_layout.addRow("Y:", y_input)
-        #         dialog_layout.addLayout(form_layout)
-        #
-        #         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        #         button_box.accepted.connect(dialog.accept)
-        #         button_box.rejected.connect(dialog.reject)
-        #         dialog_layout.addWidget(button_box)
-        #
-        #         if dialog.exec_():
-        #             try:
-        #                 return x_input.value(), y_input.value()
-        #             except ValueError:
-        #                 return None
-        #         return None
-        #
-        #     # Add point dialog function
-        #     def add_point():
-        #         result = show_point_dialog()
-        #         if result:
-        #             row = table.rowCount()
-        #             table.setRowCount(row + 1)
-        #             add_point_item(result, row, table)
-        #
-        #     add_button.clicked.connect(add_point)
-        #     button_layout.addWidget(add_button)
-        #
-        #     # Set up context menu for deletion and editing
-        #     def show_context_menu(position):
-        #         row = table.rowAt(position.y())
-        #
-        #         if row >= 0:
-        #             item = table.item(row, 0)
-        #             item_data = item.data(Qt.UserRole)
-        #             menu = QMenu()
-        #             if not isinstance(item_data, ElemRef):
-        #                 edit_action = menu.addAction("Edit")
-        #                 delete_action = menu.addAction("Delete")
-        #
-        #                 action = menu.exec_(table.viewport().mapToGlobal(position))
-        #
-        #                 if action == delete_action:
-        #                     table.removeRow(row)
-        #
-        #                 elif action == edit_action:
-        #                     x_val, y_val = item_data
-        #                     result = show_point_dialog(x_val, y_val)
-        #
-        #                     if result:
-        #                         add_point_item(result, row, table)
-        #             else:
-        #                 reverse_action = menu.addAction("Reverse points")
-        #                 action = menu.exec_(table.viewport().mapToGlobal(position))
-        #                 if action == reverse_action:
-        #                     item_data.reverse()
-        #                     add_point_item(item_data, row, table)
-        #
-        #     table.setContextMenuPolicy(Qt.CustomContextMenu)
-        #     table.customContextMenuRequested.connect(show_context_menu)
-        #
-        #     # Create a container for the table and button
-        #     container = QWidget()
-        #     layout = QVBoxLayout(container)
-        #     layout.addWidget(table)
-        #     layout.addWidget(button_widget)
-        #
-        #     # Function to get the current value from the table
-        #     def get_table_value():
-        #         points = []
-        #         for row in range(table.rowCount()):
-        #             item = table.item(row, 0)
-        #             if item:
-        #                 # Retrieve the actual tuple data stored in UserRole
-        #                 point_data = item.data(Qt.UserRole)
-        #                 if point_data:
-        #                     points.append(point_data)
-        #         return points
-        #
-        #     # Store both the getter function and the reference to the table with the container
-        #     container.get_value = get_table_value
-        #     container.table_widget = table  # Store a reference to the actual table
-        #
-        #     widget = container
+        elif prop.prop_type == "elem_table":
+
+            def add_elem_item(elem_ref, row=None, table=None):
+                item = QTableWidgetItem()
+                item.setTextAlignment(Qt.AlignCenter)
+                item.setData(Qt.UserRole, elem_ref)
+                item.setText(f"{elem_ref.node_type} (id: #{elem_ref.node_id.hex[:3]})")
+                if (row is not None) and (table is not None):
+                    table.setItem(row, 0, item)
+                return item
+
+            # Create our custom table widget
+            table = ReorderableTableWidget(add_elem_item)
+
+            # Set up the basic table structure with single column
+            table.setColumnCount(1)
+            table.setHorizontalHeaderLabels(["Drawing"])
+
+            # Custom delegate to ensure text alignment is centered
+            class CenteredItemDelegate(QStyledItemDelegate):
+                def initStyleOption(self, option, index):
+                    super().initStyleOption(option, index)
+                    option.displayAlignment = Qt.AlignCenter
+
+            # Apply the delegate to the table
+            centered_delegate = CenteredItemDelegate()
+            table.setItemDelegate(centered_delegate)
+            table.verticalHeader().setDefaultSectionSize(40)
+            table.setWordWrap(True)
+
+            # Populate with current data
+            elem_refs = current_value or prop.default_value or []
+            table.setRowCount(len(elem_refs))
+            for row, elem_ref in enumerate(elem_refs):
+                add_elem_item(elem_ref, row, table)
+
+            # Create a container for the table and button
+            container = QWidget()
+            layout = QVBoxLayout(container)
+            layout.addWidget(table)
+
+            # Function to get the current value from the table
+            def get_table_value():
+                elem_refs = []
+                for row in range(table.rowCount()):
+                    item = table.item(row, 0)
+                    if item:
+                        # Retrieve the actual tuple data stored in UserRole
+                        elem_ref = item.data(Qt.UserRole)
+                        if elem_ref:
+                            elem_refs.append(elem_ref)
+                return elem_refs
+
+            # Store both the getter function and the reference to the table with the container
+            container.get_value = get_table_value
+            container.table_widget = table  # Store a reference to the actual table
+
+            widget = container
         elif prop.prop_type == "colour_table":
             def add_colour_item(colour, row=None, table=None):
                 string_col = str((colour.red(), colour.green(), colour.blue(), colour.alpha()))
