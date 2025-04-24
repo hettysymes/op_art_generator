@@ -17,6 +17,8 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList([
         PropType("num_samples", "int", default_value=72,
                  description="", min_value=1, display_name="number of samples"),
+        PropType("angle_diff", "float", default_value=20,
+                         description="", min_value=-360, max_value=360, display_name="angle difference"),
         PropType("ellipse_order", "elem_table", default_value=[],
                              description="", display_name="ellipse order")
     ])
@@ -32,7 +34,13 @@ class BlazeMakerNode(UnitNode):
         if self.input_nodes[0].compute():
             ret_elem = Element()
             ellipse_elems = [elem_ref.compute() for elem_ref in self.prop_vals['ellipse_order']]
-            samples_list = [EllipseSamplerNode.helper(elem, 0, self.prop_vals['num_samples']) for elem in ellipse_elems]
+            start_angle = 0
+            angle_diff = self.prop_vals['angle_diff']
+            samples_list = []
+            for elem in ellipse_elems:
+                start_angle += angle_diff
+                angle_diff *= -1
+                samples_list.append(EllipseSamplerNode.helper(elem, start_angle, self.prop_vals['num_samples']))
             lines = [[] for _ in range(self.prop_vals['num_samples'])]
             for samples in samples_list:
                 for i, sample in enumerate(samples):
