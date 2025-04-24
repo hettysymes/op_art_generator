@@ -5,7 +5,7 @@ from numpy.ma.core import indices
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
-from ui.nodes.point_ref import PointRef
+from ui.nodes.elem_ref import ElemRef
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape
 from ui.nodes.utils import process_rgb, rev_process_rgb
 from ui.port_defs import PortDef, PortType
@@ -61,7 +61,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList(
         [
-            PropType("points", "table", default_value=[(0, 0), (0, 1), (1, 1)],
+            PropType("points", "point_table", default_value=[(0, 0), (0, 1), (1, 1)],
                      description=""),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description="")
@@ -87,11 +87,10 @@ class PolygonNode(UnitNode):
             polyline_node_ids = [pn.node_id for pn in polyline_nodes]
         indices_to_remove = []
         for i, p in enumerate(self.prop_vals['points']):
-            if isinstance(p, PointRef):
+            if isinstance(p, ElemRef):
                 if p.node_id in polyline_node_ids:
-                    # Polyline found - update its points
+                    # Polyline already exists - mark as not to add
                     index = polyline_node_ids.index(p.node_id)
-                    p.points = polyline_nodes[index].compute()[0].get_points()
                     polyline_node_ids[index] = None
                 else:
                     # Polyline has been removed
@@ -102,7 +101,7 @@ class PolygonNode(UnitNode):
         # Add new polylines
         for i, pn_id in enumerate(polyline_node_ids):
             if pn_id is not None:
-                self.prop_vals['points'].append(PointRef(polyline_nodes[i]))
+                self.prop_vals['points'].append(ElemRef(polyline_nodes[i]))
         # Return element
         return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
 

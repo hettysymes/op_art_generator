@@ -4,7 +4,7 @@ import uuid
 from abc import ABC, abstractmethod
 
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.point_ref import PointRef
+from ui.nodes.elem_ref import ElemRef
 
 
 class Element:
@@ -173,7 +173,7 @@ class Polygon(Shape):
             self.fill = self.fill.get(dwg)
         points = []
         for p in self.points:
-            if isinstance(p, PointRef):
+            if isinstance(p, ElemRef):
                 points += p.get_points()
             else:
                 points.append(p)

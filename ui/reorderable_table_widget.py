@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QDropEvent, QColor
 from PyQt5.QtWidgets import QTableWidget, QHeaderView, QAbstractItemView, QTableWidgetItem
 
-from ui.nodes.point_ref import PointRef
+from ui.nodes.elem_ref import ElemRef
 
 
 class ReorderableTableWidget(QTableWidget):
