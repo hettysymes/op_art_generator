@@ -1,5 +1,6 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.elem_ref import ElemRef
+from ui.nodes.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Element, PolyLine
@@ -10,12 +11,14 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Input Samples", PortType.VALUE_LIST, input_multiple=True)
+        PortDef("Input Ellipses", PortType.ELEMENT, input_multiple=True)
     ],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
     prop_type_list=PropTypeList([
-        PropType("sample_order", "elem_table", default_value=[],
-                             description="", display_name="sample order")
+        PropType("num_samples", "int", default_value=72,
+                 description="", min_value=1, display_name="number of samples"),
+        PropType("ellipse_order", "elem_table", default_value=[],
+                             description="", display_name="ellipse order")
     ])
 )
 
@@ -24,15 +27,14 @@ class BlazeMakerNode(UnitNode):
     UNIT_NODE_INFO = BLAZE_MAKER_NODE_INFO
 
     def compute(self):
-        handle_multi_inputs(self.input_nodes, self.prop_vals['sample_order'])
+        handle_multi_inputs(self.input_nodes, self.prop_vals['ellipse_order'])
         # Return element
         if self.input_nodes[0].compute():
             ret_elem = Element()
-            samples_list = [elem_ref.compute() for elem_ref in self.prop_vals['sample_order']]
-            num_samples_each = len(samples_list[0])
-            lines = [[] for _ in range(num_samples_each)]
+            ellipse_elems = [elem_ref.compute() for elem_ref in self.prop_vals['ellipse_order']]
+            samples_list = [EllipseSamplerNode.helper(elem, 0, self.prop_vals['num_samples']) for elem in ellipse_elems]
+            lines = [[] for _ in range(self.prop_vals['num_samples'])]
             for samples in samples_list:
-                assert len(samples) == num_samples_each # TODO: add error message
                 for i, sample in enumerate(samples):
                     lines[i].append(sample)
             for line in lines:

@@ -33,18 +33,22 @@ class EllipseSamplerNode(UnitNode):
         y = ellipse.center[1] + ellipse.r[1] * math.sin(angle_rad)
         return x, y
 
-    def compute(self):
-        element = self.input_nodes[0].compute()
+    @staticmethod
+    def helper(element, start_angle, num_samples):
         if element:
             ellipse = element[0]
             assert isinstance(ellipse, Ellipse)
             samples = []
-            angle = math.radians(self.prop_vals['start_angle'])
-            step = 2 * math.pi / self.prop_vals['num_samples']
-            for _ in range(self.prop_vals['num_samples']):
+            angle = math.radians(start_angle)
+            step = 2 * math.pi / num_samples
+            for _ in range(num_samples):
                 samples.append(EllipseSamplerNode.angle_to_point(angle, ellipse))
                 angle += step
             return samples
+
+    def compute(self):
+        element = self.input_nodes[0].compute()
+        return EllipseSamplerNode.helper(element, self.prop_vals['start_angle'], self.prop_vals['num_samples'])
 
     def visualise(self, height, wh_ratio):
         points = self.compute()
