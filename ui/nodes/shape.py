@@ -153,6 +153,10 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
                      description=""),
             PropType("ry", "float", default_value=0.5,
                      description=""),
+            PropType("cx", "float", default_value=0.5,
+                                 description=""),
+            PropType("cy", "float", default_value=0.5,
+                                 description=""),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description=""),
             PropType("stroke_width", "float", default_value=1.0,
@@ -173,7 +177,46 @@ class EllipseNode(UnitNode):
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element(
-            [Ellipse((0.5, 0.5), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
+            [Ellipse((self.prop_vals['cx'], self.prop_vals['cy']), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
+
+    def visualise(self, height, wh_ratio):
+        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+
+CIRCLE_NODE_INFO = UnitNodeInfo(
+    name="Circle",
+    resizable=True,
+    selectable=True,
+    in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
+    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    prop_type_list=PropTypeList(
+        [
+            PropType("r", "float", default_value=0.5,
+                     description=""),
+            PropType("cx", "float", default_value=0.5,
+                                 description=""),
+            PropType("cy", "float", default_value=0.5,
+                                 description=""),
+            PropType("fill", "colour", default_value=(0, 0, 0, 255),
+                     description=""),
+            PropType("stroke_width", "float", default_value=1.0,
+                                 description="", min_value=0.0)
+        ]
+    )
+)
+
+
+class CircleNode(UnitNode):
+    UNIT_NODE_INFO = CIRCLE_NODE_INFO
+
+    def compute(self):
+        gradient = self.input_nodes[0].compute()
+        if gradient:
+            fill = gradient
+            fill_opacity = 255
+        else:
+            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+        return Element(
+            [Ellipse((self.prop_vals['cx'], self.prop_vals['cy']), (self.prop_vals['r'], self.prop_vals['r']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
 
     def visualise(self, height, wh_ratio):
         return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
@@ -205,4 +248,4 @@ def get_node_from_shape(shape: Shape):
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, SineWaveNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode]
