@@ -1,5 +1,6 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.elem_ref import ElemRef
+from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Element, PolyLine
 from ui.port_defs import PortType, PortDef
@@ -23,28 +24,9 @@ class BlazeMakerNode(UnitNode):
     UNIT_NODE_INFO = BLAZE_MAKER_NODE_INFO
 
     def compute(self):
-        sample_nodes = self.input_nodes
-        sample_node_ids = []
-        if sample_nodes[0].compute():
-            sample_node_ids = [sn.node_id for sn in sample_nodes]
-        indices_to_remove = []
-        for i, elem_ref in enumerate(self.prop_vals['sample_order']):
-            if elem_ref.node_id in sample_node_ids:
-                # Element already exists - mark as not to add
-                index = sample_node_ids.index(elem_ref.node_id)
-                sample_node_ids[index] = None
-            else:
-                # Element has been removed
-                indices_to_remove.append(i)
-        # Remove no longer existing elements
-        for i in reversed(indices_to_remove):
-            del self.prop_vals['sample_order'][i]
-        # Add new elements
-        for i, sn_id in enumerate(sample_node_ids):
-            if sn_id is not None:
-                self.prop_vals['sample_order'].append(ElemRef(sample_nodes[i]))
+        handle_multi_inputs(self.input_nodes, self.prop_vals['sample_order'])
         # Return element
-        if sample_nodes[0].compute():
+        if self.input_nodes[0].compute():
             ret_elem = Element()
             samples_list = [elem_ref.compute() for elem_ref in self.prop_vals['sample_order']]
             num_samples_each = len(samples_list[0])
