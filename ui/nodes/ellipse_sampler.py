@@ -30,7 +30,7 @@ class EllipseSamplerNode(UnitNode):
     @staticmethod
     def angle_to_point(angle_rad, ellipse):
         x = ellipse.center[0] + ellipse.r[0] * math.cos(angle_rad)
-        y = ellipse.center[0] + ellipse.r[0] * math.sin(angle_rad)
+        y = ellipse.center[1] + ellipse.r[1] * math.sin(angle_rad)
         return x, y
 
     def compute(self):
