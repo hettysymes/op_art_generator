@@ -1,3 +1,4 @@
+from ui.nodes.blaze_maker import BlazeMakerNode
 from ui.nodes.canvas import CanvasNode
 from ui.nodes.checkerboard import CheckerboardNode
 from ui.nodes.colour_filler import ColourFillerNode
@@ -16,4 +17,4 @@ from ui.nodes.warp import WarpNode
 
 node_classes = [GridNode, ShapeNode, ShapeRepeaterNode, CheckerboardNode, WarpNode,
                 FunctionNode, CanvasNode, IteratorNode, ColourListNode, FunSamplerNode, ColourFillerNode, OverlayNode,
-                GradientNode, IteratorSelectorNode, EllipseSamplerNode]
+                GradientNode, IteratorSelectorNode, EllipseSamplerNode, BlazeMakerNode]

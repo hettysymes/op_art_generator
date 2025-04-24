@@ -12,7 +12,7 @@ ELLIPSE_SAMPLER_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=False,
     in_port_defs=[PortDef("Ellipse", PortType.ELEMENT)],
-    out_port_defs=[PortDef("Samples", PortType.ITERABLE)],
+    out_port_defs=[PortDef("Samples", PortType.VALUE_LIST)],
     prop_type_list=PropTypeList(
         [
             PropType("start_angle", "float", default_value=0,

@@ -9,11 +9,11 @@ class ElemRef:
     def reverse(self):
         self.reversed = not self.reversed
 
-    def get_element(self):
+    def compute(self):
         return self.node.compute()
 
     def get_base_points(self):
-        return self.node.compute()[0].get_points()
+        return self.compute()[0].get_points()
 
     def get_points(self):
         points = self.get_base_points()

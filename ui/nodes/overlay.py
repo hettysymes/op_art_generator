@@ -46,7 +46,7 @@ class OverlayNode(UnitNode):
         # Return element
         shapes_list = []
         for elem_ref in self.prop_vals['elem_order']:
-            shapes_list += elem_ref.get_element().shapes
+            shapes_list += elem_ref.compute().shapes
         return Element(shapes_list)
 
     def visualise(self, height, wh_ratio):
