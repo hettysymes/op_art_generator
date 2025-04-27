@@ -20,7 +20,8 @@ ELLIPSE_SAMPLER_NODE_INFO = UnitNodeInfo(
             PropType("num_samples", "int", default_value=5,
                      description="", min_value=1, display_name="number of samples")
         ]
-    )
+    ),
+    description="Sample (angularly) equally-spaced points along the edge of an ellipse or circle."
 )
 
 

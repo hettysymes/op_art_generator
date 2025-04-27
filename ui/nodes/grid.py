@@ -16,7 +16,8 @@ GRID_NODE_INFO = UnitNodeInfo(
             PropType("height", "int", default_value=5,
                      description="Number of squares in height of grid")
         ]
-    )
+    ),
+    description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively."
 )
 
 

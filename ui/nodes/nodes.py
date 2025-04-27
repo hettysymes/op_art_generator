@@ -39,7 +39,7 @@ class PropType:
 
 class UnitNodeInfo:
 
-    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description=""):
+    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description):
         self.name = name
         self.resizable = resizable
         self.selectable = selectable
@@ -111,7 +111,8 @@ class UnitNode(Node):
         selectable=False,
         in_port_defs=[],
         out_port_defs=[],
-        prop_type_list=PropTypeList([])
+        prop_type_list=PropTypeList([]),
+        description=""
     )
 
     def __init__(self, node_id, input_nodes, prop_vals):

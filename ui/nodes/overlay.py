@@ -16,7 +16,8 @@ OVERLAY_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList([
         PropType("elem_order", "elem_table", default_value=[],
                              description="", display_name="drawing order")
-    ])
+    ]),
+    description="Overlay 2+ drawings and define their order."
 )
 
 

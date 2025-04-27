@@ -16,7 +16,8 @@ CANVAS_NODE_INFO = UnitNodeInfo(
                  description=""),
         PropType("bg_col", "colour", default_value=(255, 255, 255, 255),
                  description="", display_name="background colour")
-    ])
+    ]),
+    description="Place a drawing on a canvas, where the height and width can be set accurately, as well as the background colour."
 )
 
 

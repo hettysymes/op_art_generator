@@ -14,7 +14,8 @@ FUN_SAMPLER_NODE = UnitNodeInfo(
             PropType("num_samples", "int", default_value=5,
                      description="", min_value=1, display_name="number of samples")
         ]
-    )
+    ),
+    description="Sample a function f(x) at equal intervals in the range x ∈ [0, 1]."
 )
 
 

@@ -17,7 +17,8 @@ ITERATOR_NODE_INFO = UnitNodeInfo(
             PropType("prop_to_change", "string", default_value="",
                      description="", display_name="property to change")
         ]
-    )
+    ),
+    description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values."
 )
 
 

@@ -9,7 +9,8 @@ POS_WARP_NODE_INFO = UnitNodeInfo(
     selectable=False,
     in_port_defs=[PortDef("Function", PortType.FUNCTION)],
     out_port_defs=[PortDef("Warp", PortType.WARP)],
-    prop_type_list=PropTypeList([])
+    prop_type_list=PropTypeList([]),
+    description="Given a function, convert it to a warp by normalising f(x) to be between 0 & 1 for x ∈ [0,1]. The input function must pass through the origin."
 )
 
 
@@ -32,7 +33,8 @@ REL_WARP_NODE_INFO = UnitNodeInfo(
     selectable=False,
     in_port_defs=[PortDef("Function", PortType.FUNCTION)],
     out_port_defs=[PortDef("Warp", PortType.WARP)],
-    prop_type_list=PropTypeList([])
+    prop_type_list=PropTypeList([]),
+    description="Given a function, use it to accumulate positions based on evenly spaced indices between 0 & 1, giving a new list of samples which are normalised between 0 & 1. The input function must pass through the origin."
 )
 
 

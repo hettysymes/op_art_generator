@@ -14,7 +14,8 @@ CHECKERBOARD_NODE_INFO = UnitNodeInfo(
         PortDef("Drawing 2", PortType.ELEMENT)
     ],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
-    prop_type_list=PropTypeList([])
+    prop_type_list=PropTypeList([]),
+    description="Create a checkerboard pattern from a grid and two drawings. The two drawings are placed alternately in a checkerboard pattern on the grid."
 )
 
 

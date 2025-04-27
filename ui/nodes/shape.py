@@ -38,7 +38,8 @@ SINE_WAVE_NODE_INFO = UnitNodeInfo(
             PropType("num_points", "int", default_value=100,
                      description="", min_value=2, max_value=500, display_name="line resolution")
         ]
-    )
+    ),
+    description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
 )
 
 
@@ -68,7 +69,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
                      description="")
         ]
     ),
-    description="Create a polygon shape by defining the connecting points and deciding the fill colour. X and Y coordinates are defined between 0 and 1."
+    description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
 )
 
 class PolygonNode(UnitNode):
@@ -101,7 +102,8 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description="")
         ]
-    )
+    ),
+    description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape."
 )
 
 
@@ -142,7 +144,8 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
             PropType("stroke_width", "float", default_value=1.0,
                                  description="", min_value=0.0)
         ]
-    )
+    ),
+    description="Create an ellipse shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
 )
 
 
@@ -181,7 +184,8 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
             PropType("stroke_width", "float", default_value=1.0,
                                  description="", min_value=0.0)
         ]
-    )
+    ),
+    description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
 )
 
 
@@ -207,7 +211,8 @@ ELEMENT_NODE_INFO = UnitNodeInfo(
     selectable=False,
     in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
-    prop_type_list=PropTypeList([])
+    prop_type_list=PropTypeList([]),
+    description="Immutable drawing extracted from a previously rendered node."
 )
 
 class ElementNode(UnitNode):

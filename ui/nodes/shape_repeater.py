@@ -14,7 +14,8 @@ SHAPE_REPEATER_NODE_INFO = UnitNodeInfo(
         PortDef("Drawing", PortType.ELEMENT)
     ],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
-    prop_type_list=PropTypeList([])
+    prop_type_list=PropTypeList([]),
+    description="Repeat a drawing in a grid-like structure."
 )
 
 

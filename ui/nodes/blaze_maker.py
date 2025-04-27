@@ -24,7 +24,8 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
                  description=""),
         PropType("ellipses", "hidden", default_value=[],
                              description="")
-    ])
+    ]),
+    description="Input 2+ circle/ellipse shapes to create an image similar to those in the Blaze series by Bridget Riley."
 )
 
 

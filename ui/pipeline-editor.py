@@ -136,7 +136,7 @@ class NodeItem(QGraphicsRectItem):
         self.setAcceptHoverEvents(True)
 
         # Set the help text for this node
-        self._help_text = f"Help for {self.node.name()}:\n{self.node.description()}"
+        self._help_text = f"{self.node.name()} Help:\n{self.node.description()}"
 
         self.resize_handle = None
 

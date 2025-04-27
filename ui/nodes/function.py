@@ -24,7 +24,8 @@ CUBIC_FUN_NODE_INFO = UnitNodeInfo(
             PropType("d_coeff", "float", default_value=0,
                      description="")
         ]
-    )
+    ),
+    description="Define a cubic function."
 )
 
 
@@ -52,7 +53,8 @@ CUSTOM_FUN_NODE_INFO = UnitNodeInfo(
             PropType("fun_def", "string", default_value="x",
                      description="", display_name="f(x) =", auto_format=False)
         ]
-    )
+    ),
+    description="Define a custom function by entering an equation in terms of x."
 )
 
 
@@ -71,7 +73,7 @@ class CustomFunNode(UnitNode):
 
 
 PIECEWISE_FUN_NODE_INFO = UnitNodeInfo(
-    name="Piecewise Function",
+    name="Piecewise Linear Function",
     resizable=True,
     selectable=False,
     in_port_defs=[],
@@ -81,7 +83,8 @@ PIECEWISE_FUN_NODE_INFO = UnitNodeInfo(
             PropType("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)],
                      description="")
         ]
-    )
+    ),
+    description="Define a piecewise linear function by entering points the function passes through."
 )
 
 

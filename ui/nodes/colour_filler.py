@@ -15,7 +15,8 @@ COLOUR_FILLER_NODE_INFO = UnitNodeInfo(
         PortDef("Drawing", PortType.ELEMENT)
     ],
     out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
-    prop_type_list=PropTypeList([])
+    prop_type_list=PropTypeList([]),
+    description="Given a colour list and a drawing consisting of lines, cycle through the colours and use them to fill the gaps between the lines."
 )
 
 

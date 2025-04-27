@@ -17,7 +17,8 @@ ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(
             PropType("select_idx", "int", default_value=0, min_value=0,
                      description="", display_name="select index")
         ]
-    )
+    ),
+    description="Select one of the outputs of an Iterator node by inputting its index."
 )
 
 

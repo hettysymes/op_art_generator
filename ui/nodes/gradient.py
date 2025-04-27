@@ -21,7 +21,8 @@ GRADIENT_NODE_INFO = UnitNodeInfo(
                  description="", display_name="start colour"),
         PropType("stop_col", "colour", default_value=(255, 255, 255, 255),
                  description="", display_name="stop colour")
-    ])
+    ]),
+    description="Define a linear gradient. This can be passed to a shape node as its fill."
 )
 
 
