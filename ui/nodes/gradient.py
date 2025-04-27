@@ -6,16 +6,14 @@ from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
 from ui.nodes.utils import process_rgb
-from ui.port_defs import PortType, PortDef
-
-
+from ui.port_defs import PortType, PortDef, PT_Gradient
 
 GRADIENT_NODE_INFO = UnitNodeInfo(
     name="Gradient",
     resizable=True,
     selectable=True,
     in_port_defs=[],
-    out_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
+    out_port_defs=[PortDef("Gradient", PT_Gradient)],
     prop_type_list=PropTypeList([
         PropType("start_col", "colour", default_value=(255, 255, 255, 0),
                  description="", display_name="start colour"),

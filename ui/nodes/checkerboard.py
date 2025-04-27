@@ -2,18 +2,18 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Element
-from ui.port_defs import PortType, PortDef
+from ui.port_defs import PortType, PortDef, PT_Grid, PT_Element
 
 CHECKERBOARD_NODE_INFO = UnitNodeInfo(
     name="Checkerboard",
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Grid", PortType.GRID),
-        PortDef("Drawing 1", PortType.ELEMENT),
-        PortDef("Drawing 2", PortType.ELEMENT)
+        PortDef("Grid", PT_Grid),
+        PortDef("Drawing 1", PT_Element),
+        PortDef("Drawing 2", PT_Element)
     ],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([]),
     description="Create a checkerboard pattern from a grid and two drawings. The two drawings are placed alternately in a checkerboard pattern on the grid."
 )

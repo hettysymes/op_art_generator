@@ -5,16 +5,16 @@ from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Element, PolyLine, Polygon
 from ui.nodes.utils import process_rgb
-from ui.port_defs import PortType, PortDef
+from ui.port_defs import PortType, PortDef, PT_Ellipse, PT_Element
 
 BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     name="Blaze Maker",
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Input Ellipses", PortType.ELEMENT, input_multiple=True)
+        PortDef("Input Ellipses", PT_Ellipse, input_multiple=True)
     ],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
         PropType("num_samples", "int", default_value=72,
                  description="", min_value=1, display_name="number of samples"),

@@ -4,14 +4,14 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
 from ui.nodes.shape_datatypes import Element
-from ui.port_defs import PortDef, PortType
+from ui.port_defs import PortDef, PortType, PT_ValueList, PT_Element, PT_ElementList
 
 ITERATOR_NODE_INFO = UnitNodeInfo(
     name="Iterator",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Value list", PortType.VALUE_LIST), PortDef("Shape", PortType.ELEMENT)],
-    out_port_defs=[PortDef("Iterator", PortType.ELEMENT)],
+    in_port_defs=[PortDef("Value list", PT_ValueList), PortDef("Shape", PT_Element)],
+    out_port_defs=[PortDef("Iterator", PT_ElementList)],
     prop_type_list=PropTypeList(
         [
             PropType("prop_to_change", "string", default_value="",

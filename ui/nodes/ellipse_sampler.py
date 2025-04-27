@@ -5,14 +5,14 @@ from ui.nodes.nodes import UnitNodeInfo, PropTypeList, PropType, UnitNode
 from ui.nodes.shape import EllipseNode
 from ui.nodes.shape_datatypes import Ellipse, Element
 from ui.nodes.utils import process_rgb
-from ui.port_defs import PortDef, PortType
+from ui.port_defs import PortDef, PortType, PT_Ellipse, PT_NumberList, PT_PointList
 
 ELLIPSE_SAMPLER_NODE_INFO = UnitNodeInfo(
     name="Ellipse Sampler",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("Ellipse", PortType.ELEMENT)],
-    out_port_defs=[PortDef("Samples", PortType.VALUE_LIST)],
+    in_port_defs=[PortDef("Ellipse", PT_Ellipse)],
+    out_port_defs=[PortDef("Samples", PT_PointList)],
     prop_type_list=PropTypeList(
         [
             PropType("start_angle", "float", default_value=0,

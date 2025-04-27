@@ -5,14 +5,14 @@ from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.utils import cubic_f
 from ui.nodes.warp_utils import sample_fun
-from ui.port_defs import PortDef, PortType
+from ui.port_defs import PortDef, PortType, PT_Function
 
 CUBIC_FUN_NODE_INFO = UnitNodeInfo(
     name="Cubic Function",
     resizable=True,
     selectable=False,
     in_port_defs=[],
-    out_port_defs=[PortDef("Function", PortType.FUNCTION)],
+    out_port_defs=[PortDef("Function", PT_Function)],
     prop_type_list=PropTypeList(
         [
             PropType("a_coeff", "float", default_value=3.22,
@@ -47,7 +47,7 @@ CUSTOM_FUN_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=False,
     in_port_defs=[],
-    out_port_defs=[PortDef("Function", PortType.FUNCTION)],
+    out_port_defs=[PortDef("Function", PT_Function)],
     prop_type_list=PropTypeList(
         [
             PropType("fun_def", "string", default_value="x",
@@ -77,7 +77,7 @@ PIECEWISE_FUN_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=False,
     in_port_defs=[],
-    out_port_defs=[PortDef("Function", PortType.FUNCTION)],
+    out_port_defs=[PortDef("Function", PT_Function)],
     prop_type_list=PropTypeList(
         [
             PropType("points", "table", default_value=[(0, 0), (0.5, 0.5), (1, 1)],

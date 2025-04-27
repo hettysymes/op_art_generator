@@ -1,14 +1,14 @@
 from ui.nodes.drawers.grid_drawer import GridDrawing
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.warp_utils import PosWarp, RelWarp
-from ui.port_defs import PortDef, PortType
+from ui.port_defs import PortDef, PortType, PT_Warp, PT_Grid
 
 GRID_NODE_INFO = UnitNodeInfo(
     name="Grid",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("X Warp", PortType.WARP), PortDef("Y Warp", PortType.WARP)],
-    out_port_defs=[PortDef("Grid", PortType.GRID)],
+    in_port_defs=[PortDef("X Warp", PT_Warp), PortDef("Y Warp", PT_Warp)],
+    out_port_defs=[PortDef("Grid", PT_Grid)],
     prop_type_list=PropTypeList(
         [
             PropType("width", "int", default_value=5,

@@ -23,11 +23,11 @@ from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.nodes.shape import ElemRef
+from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.nodes import CombinationNode, UnitNode
-from ui.port_defs import is_port_type_compatible, PortType
 from ui.selectable_renderer import SelectableSvgElement
 
 
@@ -593,13 +593,13 @@ class PortItem(QGraphicsPathItem):
         path = QPainterPath()
         half_size = self.size / 2
         port_type = self.backend.port_def.port_type
-        if port_type == PortType.ELEMENT:
+        if issubclass(port_type, PT_Element):
             # Circle for number type
             path.addEllipse(-half_size, -half_size, self.size, self.size)
-        elif port_type == PortType.GRID:
+        elif issubclass(port_type, PT_Grid):
             # Rounded rectangle for string type
             path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
-        elif port_type == PortType.FUNCTION:
+        elif issubclass(port_type, PT_Function):
             # Diamond for boolean type
             points = [
                 QPointF(0, -half_size),  # Top
@@ -612,11 +612,11 @@ class PortItem(QGraphicsPathItem):
                 path.lineTo(points[i])
             path.closeSubpath()
 
-        elif port_type == PortType.WARP:
+        elif issubclass(port_type, PT_Warp):
             # Square for array type
             path.addRect(-half_size, -half_size, self.size, self.size)
 
-        elif port_type == PortType.VISUALISABLE:
+        elif issubclass(port_type, PT_ValueList):
             # Hexagon for object type
             points = []
             for i in range(6):
@@ -1232,8 +1232,7 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.backend.edge_ids) > 0
-                if not connection_exists and is_port_type_compatible(source_port.backend.port_def.port_type,
-                                                    dest_port.backend.port_def.port_type) and (dest_port.backend.port_def.input_multiple or not target_has_connection):
+                if not connection_exists and issubclass(source_port.backend.port_def.port_type, dest_port.backend.port_def.port_type) and (dest_port.backend.port_def.input_multiple or not target_has_connection):
                     edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.backend.uid, dest_port.backend.uid))
                     self.scene.add(edge)
                     self.addItem(edge)

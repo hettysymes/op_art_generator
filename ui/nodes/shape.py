@@ -9,14 +9,14 @@ from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, Un
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape
 from ui.nodes.utils import process_rgb, rev_process_rgb
-from ui.port_defs import PortDef, PortType
+from ui.port_defs import PortDef, PortType, PT_Element, PT_Polyline, PT_Gradient, PT_Ellipse
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
     name="Sine Wave",
     resizable=True,
     selectable=True,
     in_port_defs=[],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    out_port_defs=[PortDef("Drawing", PT_Polyline)],
     prop_type_list=PropTypeList(
         [
             PropType("amplitude", "float", default_value=0.5,
@@ -59,8 +59,8 @@ POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PortType.GRADIENT), PortDef("Import Points", PortType.ELEMENT, input_multiple=True)],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    in_port_defs=[PortDef("Gradient", PT_Gradient), PortDef("Import Points", PT_Polyline, input_multiple=True)],
+    out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
             PropType("points", "point_table", default_value=[(0, 0), (0, 1), (1, 1)],
@@ -95,8 +95,8 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    in_port_defs=[PortDef("Gradient", PT_Gradient)],
+    out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
@@ -127,8 +127,8 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    in_port_defs=[PortDef("Gradient", PT_Gradient)],
+    out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
             PropType("rx", "float", default_value=0.5,
@@ -169,8 +169,8 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
     name="Circle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PortType.GRADIENT)],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    in_port_defs=[PortDef("Gradient", PT_Gradient)],
+    out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
             PropType("r", "float", default_value=0.5,
@@ -210,7 +210,7 @@ ELEMENT_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=False,
     in_port_defs=[],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([]),
     description="Immutable drawing extracted from a previously rendered node."
 )

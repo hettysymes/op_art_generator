@@ -1,14 +1,14 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList
 from ui.nodes.warp_utils import PosWarp, RelWarp
-from ui.port_defs import PortDef, PortType
+from ui.port_defs import PortDef, PortType, PT_Function, PT_Warp
 
 POS_WARP_NODE_INFO = UnitNodeInfo(
     name="Position Warp",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("Function", PortType.FUNCTION)],
-    out_port_defs=[PortDef("Warp", PortType.WARP)],
+    in_port_defs=[PortDef("Function", PT_Function)],
+    out_port_defs=[PortDef("Warp", PT_Warp)],
     prop_type_list=PropTypeList([]),
     description="Given a function, convert it to a warp by normalising f(x) to be between 0 & 1 for x ∈ [0,1]. The input function must pass through the origin."
 )
@@ -31,8 +31,8 @@ REL_WARP_NODE_INFO = UnitNodeInfo(
     name="Relative Warp",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("Function", PortType.FUNCTION)],
-    out_port_defs=[PortDef("Warp", PortType.WARP)],
+    in_port_defs=[PortDef("Function", PT_Function)],
+    out_port_defs=[PortDef("Warp", PT_Warp)],
     prop_type_list=PropTypeList([]),
     description="Given a function, use it to accumulate positions based on evenly spaced indices between 0 & 1, giving a new list of samples which are normalised between 0 & 1. The input function must pass through the origin."
 )

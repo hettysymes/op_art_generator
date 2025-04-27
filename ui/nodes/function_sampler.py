@@ -1,14 +1,14 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.warp_utils import sample_fun
-from ui.port_defs import PortDef, PortType
+from ui.port_defs import PortDef, PortType, PT_Function, PT_NumberList
 
 FUN_SAMPLER_NODE = UnitNodeInfo(
     name="Function Sampler",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("Function", PortType.FUNCTION)],
-    out_port_defs=[PortDef("Samples", PortType.VALUE_LIST)],
+    in_port_defs=[PortDef("Function", PT_Function)],
+    out_port_defs=[PortDef("Samples", PT_NumberList)],
     prop_type_list=PropTypeList(
         [
             PropType("num_samples", "int", default_value=5,

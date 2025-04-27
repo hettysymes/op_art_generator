@@ -3,14 +3,14 @@ from ui.nodes.grid import GridNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Element
-from ui.port_defs import PortDef, PortType
+from ui.port_defs import PortDef, PortType, PT_ColourList
 
 COLOUR_LIST_NODE_INFO = UnitNodeInfo(
     name="Colour List",
     resizable=True,
     selectable=True,
     in_port_defs=[],
-    out_port_defs=[PortDef("Colours", PortType.VALUE_LIST)],
+    out_port_defs=[PortDef("Colours", PT_ColourList)],
     prop_type_list=PropTypeList(
         [
             PropType("colours", "colour_table", default_value=[(0, 0, 0, 255), (255, 0, 0, 255), (0, 255, 0, 255)],

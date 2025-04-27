@@ -3,16 +3,16 @@ from ui.nodes.elem_ref import ElemRef
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Element
-from ui.port_defs import PortType, PortDef
+from ui.port_defs import PortType, PortDef, PT_Element
 
 OVERLAY_NODE_INFO = UnitNodeInfo(
     name="Overlay",
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Input Drawings", PortType.ELEMENT, input_multiple=True)
+        PortDef("Input Drawings", PT_Element, input_multiple=True)
     ],
-    out_port_defs=[PortDef("Drawing", PortType.ELEMENT)],
+    out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
         PropType("elem_order", "elem_table", default_value=[],
                              description="", display_name="drawing order")
