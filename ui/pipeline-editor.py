@@ -729,8 +729,8 @@ class NodePropertiesDialog(QDialog):
                                                                                             prop.default_value))
 
                     # Create the row with label and help icon
-                    label_container, widget = self.create_property_row(prop, widget)
-                    props_layout.addRow(label_container, widget)
+                    label_container, widget_container = self.create_property_row(prop, widget)
+                    props_layout.addRow(label_container, widget_container)
                     self.property_widgets[prop.key_name] = widget
 
             main_layout.addWidget(props_group)
