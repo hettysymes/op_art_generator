@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
-                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup, QGraphicsTextItem)
+                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup, QGraphicsTextItem, QLabel)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument
 
@@ -697,7 +697,6 @@ class EdgeItem(QGraphicsLineItem):
             dest_pos = self.dest_port.get_center_scene_pos()
             self.setLine(QLineF(source_pos, dest_pos))
 
-
 class NodePropertiesDialog(QDialog):
     """Dialog for editing node properties"""
 
@@ -723,17 +722,16 @@ class NodePropertiesDialog(QDialog):
             props_layout = QFormLayout()
             props_group.setLayout(props_layout)
 
+            # Now modify your existing code to use this function
             for prop in node_item.node.prop_type_list():
                 if prop.prop_type != "hidden":
                     widget = self.create_property_widget(prop, node_item.node.prop_vals.get(prop.key_name,
                                                                                             prop.default_value))
-                    add_text = ":" if prop.auto_format else ""
-                    props_layout.addRow(prop.display_name + add_text, widget)
-                    self.property_widgets[prop.key_name] = widget
 
-                    # Add tooltip if description is available
-                    if prop.description:
-                        widget.setToolTip(prop.description)
+                    # Create the row with label and help icon
+                    label_container, widget = self.create_property_row(prop, widget)
+                    props_layout.addRow(label_container, widget)
+                    self.property_widgets[prop.key_name] = widget
 
             main_layout.addWidget(props_group)
 
@@ -744,6 +742,57 @@ class NodePropertiesDialog(QDialog):
 
         main_layout.addLayout(form_layout)
         main_layout.addWidget(button_box)
+
+    def create_property_row(self, prop, widget):
+        """Create a row with property label and a help icon to the right of the widget"""
+
+        # Create a container widget for the label
+        label_container = QWidget()
+        label_layout = QHBoxLayout(label_container)
+        label_layout.setContentsMargins(0, 0, 0, 0)
+        label_layout.setSpacing(4)  # Small spacing between elements
+
+        # Create the label first (now without the help icon)
+        add_text = ":" if prop.auto_format else ""
+        label = QLabel(prop.display_name + add_text)
+        label_layout.addWidget(label)
+
+        # Add stretch to fill remaining space
+        label_layout.addStretch()
+
+        # Create a container for the widget and help icon
+        widget_container = QWidget()
+        widget_layout = QHBoxLayout(widget_container)
+        widget_layout.setContentsMargins(0, 0, 0, 0)
+        widget_layout.setSpacing(4)  # Small spacing between widget and icon
+
+        # Add the widget first
+        widget_layout.addWidget(widget)
+
+        # Add the help icon after the widget (on the right)
+        # Create the help icon first (on the left)
+        help_icon = QLabel("?")
+        help_icon.setFixedSize(16, 16)
+        help_icon.setAlignment(Qt.AlignCenter)
+        help_icon.setStyleSheet("""
+                QLabel {
+                    background-color: #e0e0e0;
+                    color: #666666;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 10px;
+                }
+                QLabel:hover {
+                    background-color: #cccccc;
+                }
+            """)
+
+        # Set tooltip on the help icon if description is available
+        if prop.description:
+            help_icon.setToolTip(prop.description)
+            widget_layout.addWidget(help_icon)
+
+        return label_container, widget_container
 
     def create_property_widget(self, prop, current_value):
         """Create an appropriate widget for the property type"""
