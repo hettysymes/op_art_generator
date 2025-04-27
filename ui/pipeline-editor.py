@@ -168,22 +168,38 @@ class NodeItem(QGraphicsRectItem):
     def _showHelpTooltip(self):
         # Create a tooltip if it doesn't exist
         if not self._help_tooltip:
-            # Format the help text with paragraph breaks
-            # Replace newlines with HTML paragraph breaks
-            formatted_text = self._help_text.replace('\n', '<br>')
+            # Split text into title and content parts
+            parts = self._help_text.split('\n', 1)
+            title = parts[0]
+            body = parts[1] if len(parts) > 1 else ""
 
-            # Create the tooltip HTML with a speech bubble arrow using CSS
+            # Format the body text with paragraph breaks
+            formatted_body = body.replace('\n', '<br>')
+
+            # Create the tooltip HTML with a speech bubble arrow, title, and padding
+            # Using a light red background color for the entire tooltip
             tooltip_html = f"""
             <div style='
-                background-color: #666666; 
-                color: white; 
-                padding: 8px; 
-                border-radius: 4px; 
+                background-color: #ffcccc; 
+                color: #333333; 
+                padding: 12px; 
+                border-radius: 8px; 
                 width: 200px; 
                 position: relative;
                 word-wrap: break-word;
+                border: 1px solid #ffaaaa;  /* Slightly darker border */
             '>
-                {formatted_text}
+                <div style='
+                    font-weight: bold;
+                    text-align: center;
+                    margin-bottom: 8px;
+                    border-bottom: 1px solid rgba(0,0,0,0.2);
+                    padding-bottom: 6px;
+                    background-color: #ffcccc;  /* Explicitly set background color */
+                '>{title}</div>
+
+                <div style='background-color: #ffcccc;'>{formatted_body}</div>
+
                 <div style='
                     position: absolute;
                     bottom: -8px;
@@ -193,15 +209,17 @@ class NodeItem(QGraphicsRectItem):
                     height: 0;
                     border-left: 8px solid transparent;
                     border-right: 8px solid transparent;
-                    border-top: 8px solid #666666;
+                    border-top: 8px solid #ffcccc;
                 '></div>
             </div>
             """
 
             self._help_tooltip = QGraphicsTextItem(self)
+            # Make sure we render the background color and don't inherit transparency
+            self._help_tooltip.setDefaultTextColor(QColor("#333333"))
             self._help_tooltip.setHtml(tooltip_html)
             self._help_tooltip.setZValue(100)  # Make sure it's on top
-            self._help_tooltip.setTextWidth(220)  # Slightly wider than content to account for padding
+            self._help_tooltip.setTextWidth(224)  # Account for padding (200px + 24px padding)
 
         # Position the tooltip above the help icon
         tooltip_rect = self._help_tooltip.boundingRect()
