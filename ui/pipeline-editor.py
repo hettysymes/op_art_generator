@@ -176,46 +176,43 @@ class NodeItem(QGraphicsRectItem):
             # Format the body text with paragraph breaks
             formatted_body = body.replace('\n', '<br>')
 
-            # Create the tooltip HTML with a speech bubble arrow, title, and padding
-            # Using a light red background color for the entire tooltip
+            # Create the tooltip HTML
             tooltip_html = f"""
             <div style='
                 background-color: #ffcccc; 
                 color: #333333; 
                 padding: 12px; 
-                border-radius: 8px; 
+                border-radius: 12px; 
                 width: 200px; 
                 position: relative;
                 word-wrap: break-word;
-                border: 1px solid #ffaaaa;  /* Slightly darker border */
+                border: 1px solid #d0d0d0;  /* Slightly darker border */
             '>
                 <div style='
                     font-weight: bold;
                     text-align: center;
-                    margin-bottom: 8px;
                     border-bottom: 1px solid rgba(0,0,0,0.2);
                     padding-bottom: 6px;
                     background-color: #ffcccc;  /* Explicitly set background color */
                 '>{title}</div>
-
-                <div style='background-color: #ffcccc;'>{formatted_body}</div>
-
+            
+                <div style='background-color: #ffcccc; padding-top: 6px;'>{formatted_body}</div> <!-- Added padding-top here -->
+                
                 <div style='
                     position: absolute;
-                    bottom: -8px;
+                    bottom: -10px;
                     left: 50%;
-                    margin-left: -8px;
+                    margin-left: -10px;
                     width: 0;
                     height: 0;
-                    border-left: 8px solid transparent;
-                    border-right: 8px solid transparent;
-                    border-top: 8px solid #ffcccc;
+                    border-left: 10px solid transparent;
+                    border-right: 10px solid transparent;
+                    border-top: 10px solid #ffcccc;
                 '></div>
             </div>
             """
 
             self._help_tooltip = QGraphicsTextItem(self)
-            # Make sure we render the background color and don't inherit transparency
             self._help_tooltip.setDefaultTextColor(QColor("#333333"))
             self._help_tooltip.setHtml(tooltip_html)
             self._help_tooltip.setZValue(100)  # Make sure it's on top
