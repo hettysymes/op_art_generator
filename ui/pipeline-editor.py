@@ -181,7 +181,7 @@ class NodeItem(QGraphicsRectItem):
             <div style='
                 background-color: #ffcccc; 
                 color: #333333; 
-                padding: 12px; 
+                padding: 12px;  /* Extra padding around the entire tooltip */
                 border-radius: 12px; 
                 width: 200px; 
                 position: relative;
@@ -191,13 +191,13 @@ class NodeItem(QGraphicsRectItem):
                 <div style='
                     font-weight: bold;
                     text-align: center;
-                    border-bottom: 1px solid rgba(0,0,0,0.2);
                     padding-bottom: 6px;
                     background-color: #ffcccc;  /* Explicitly set background color */
+                    border-bottom: 1px solid rgba(0,0,0,0.2);
                 '>{title}</div>
             
-                <div style='background-color: #ffcccc; padding-top: 6px;'>{formatted_body}</div> <!-- Added padding-top here -->
-                
+                <div style='background-color: #ffcccc; padding-top: 6px;'>{formatted_body}</div>
+            
                 <div style='
                     position: absolute;
                     bottom: -10px;
@@ -207,9 +207,10 @@ class NodeItem(QGraphicsRectItem):
                     height: 0;
                     border-left: 10px solid transparent;
                     border-right: 10px solid transparent;
-                    border-top: 10px solid #ffcccc;
+                    border-top: 10px solid #ffcccc;  /* Match the tooltip color */
                 '></div>
             </div>
+
             """
 
             self._help_tooltip = QGraphicsTextItem(self)
@@ -224,7 +225,7 @@ class NodeItem(QGraphicsRectItem):
         # Center above the icon with some spacing
         tooltip_pos = QPointF(
             self._help_icon_rect.center().x() - tooltip_rect.width() / 2,
-            self._help_icon_rect.top() - tooltip_rect.height() - 5  # Space for the arrow
+            self._help_icon_rect.top() - tooltip_rect.height()
         )
         self._help_tooltip.setPos(tooltip_pos)
         self._help_tooltip.show()
