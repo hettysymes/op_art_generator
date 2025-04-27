@@ -136,7 +136,7 @@ class NodeItem(QGraphicsRectItem):
         self.setAcceptHoverEvents(True)
 
         # Set the help text for this node
-        self._help_text = f"Help for {self.node.name()}: {self.node.description()}"
+        self._help_text = f"Help for {self.node.name()}:\n{self.node.description()}"
 
         self.resize_handle = None
 
@@ -168,15 +168,48 @@ class NodeItem(QGraphicsRectItem):
     def _showHelpTooltip(self):
         # Create a tooltip if it doesn't exist
         if not self._help_tooltip:
-            self._help_tooltip = QGraphicsTextItem(self)
-            self._help_tooltip.setHtml(
-                f"<div style='background-color: #ffffcc; padding: 5px; border: 1px solid #e0e0e0; border-radius: 3px; max-width: 250px;'>{self._help_text}</div>")
-            self._help_tooltip.setZValue(100)  # Make sure it's on top
+            # Format the help text with paragraph breaks
+            # Replace newlines with HTML paragraph breaks
+            formatted_text = self._help_text.replace('\n', '<br>')
 
-        # Position the tooltip near the help icon
+            # Create the tooltip HTML with a speech bubble arrow using CSS
+            tooltip_html = f"""
+            <div style='
+                background-color: #666666; 
+                color: white; 
+                padding: 8px; 
+                border-radius: 4px; 
+                width: 200px; 
+                position: relative;
+                word-wrap: break-word;
+            '>
+                {formatted_text}
+                <div style='
+                    position: absolute;
+                    bottom: -8px;
+                    left: 50%;
+                    margin-left: -8px;
+                    width: 0;
+                    height: 0;
+                    border-left: 8px solid transparent;
+                    border-right: 8px solid transparent;
+                    border-top: 8px solid #666666;
+                '></div>
+            </div>
+            """
+
+            self._help_tooltip = QGraphicsTextItem(self)
+            self._help_tooltip.setHtml(tooltip_html)
+            self._help_tooltip.setZValue(100)  # Make sure it's on top
+            self._help_tooltip.setTextWidth(220)  # Slightly wider than content to account for padding
+
+        # Position the tooltip above the help icon
+        tooltip_rect = self._help_tooltip.boundingRect()
+
+        # Center above the icon with some spacing
         tooltip_pos = QPointF(
-            self._help_icon_rect.right() - self._help_tooltip.boundingRect().width(),
-            self._help_icon_rect.bottom() + 5
+            self._help_icon_rect.center().x() - tooltip_rect.width() / 2,
+            self._help_icon_rect.top() - tooltip_rect.height() - 5  # Space for the arrow
         )
         self._help_tooltip.setPos(tooltip_pos)
         self._help_tooltip.show()
