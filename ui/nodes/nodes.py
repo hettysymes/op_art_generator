@@ -39,13 +39,14 @@ class PropType:
 
 class UnitNodeInfo:
 
-    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list):
+    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description=""):
         self.name = name
         self.resizable = resizable
         self.selectable = selectable
         self.in_port_defs = in_port_defs
         self.out_port_defs = out_port_defs
         self.prop_type_list = prop_type_list
+        self.description = description
 
 
 class Node(ABC):
@@ -81,6 +82,9 @@ class Node(ABC):
 
     def prop_type_list(self):
         return self.node_info().prop_type_list
+
+    def description(self):
+        return self.node_info().description
 
     @abstractmethod
     def node_info(self):

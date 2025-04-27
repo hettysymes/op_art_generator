@@ -67,7 +67,8 @@ POLYGON_NODE_INFO = UnitNodeInfo(
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description="")
         ]
-    )
+    ),
+    description="Create a polygon shape by defining the connecting points and deciding the fill colour. X and Y coordinates are defined between 0 and 1."
 )
 
 class PolygonNode(UnitNode):

@@ -8,7 +8,7 @@ import sys
 import tempfile
 import uuid
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel, QTimer
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QDoubleValidator, QDropEvent
 from PyQt5.QtGui import QPainterPath
@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
-                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup)
+                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup, QGraphicsTextItem)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument
 
@@ -128,11 +128,58 @@ class NodeItem(QGraphicsRectItem):
         self.setPen(QPen(Qt.black, 2))
         self.node = self.backend.node
 
+        self._help_icon_rect = QRectF()
+        self._help_hover_timer = QTimer()
+        self._help_hover_timer.setSingleShot(True)
+        self._help_hover_timer.timeout.connect(self._showHelpTooltip)
+        self._help_tooltip = None
+        self.setAcceptHoverEvents(True)
+
+        # Set the help text for this node
+        self._help_text = f"Help for {self.node.name()}: {self.node.description()}"
+
         self.resize_handle = None
 
         if self.node.resizable():
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
+
+    def hoverMoveEvent(self, event):
+        if self._help_icon_rect.contains(event.pos()):
+            if not self._help_hover_timer.isActive():
+                # Start the timer when hovering over the help icon
+                self._help_hover_timer.start(500)  # 500ms delay before showing tooltip
+        else:
+            # Stop the timer if the mouse moves away from the help icon
+            self._help_hover_timer.stop()
+            if self._help_tooltip and self._help_tooltip.isVisible():
+                self._help_tooltip.hide()
+
+        super().hoverMoveEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        # Stop the timer when the mouse leaves the item
+        self._help_hover_timer.stop()
+        if self._help_tooltip and self._help_tooltip.isVisible():
+            self._help_tooltip.hide()
+
+        super().hoverLeaveEvent(event)
+
+    def _showHelpTooltip(self):
+        # Create a tooltip if it doesn't exist
+        if not self._help_tooltip:
+            self._help_tooltip = QGraphicsTextItem(self)
+            self._help_tooltip.setHtml(
+                f"<div style='background-color: #ffffcc; padding: 5px; border: 1px solid #e0e0e0; border-radius: 3px; max-width: 250px;'>{self._help_text}</div>")
+            self._help_tooltip.setZValue(100)  # Make sure it's on top
+
+        # Position the tooltip near the help icon
+        tooltip_pos = QPointF(
+            self._help_icon_rect.right() - self._help_tooltip.boundingRect().width(),
+            self._help_icon_rect.bottom() + 5
+        )
+        self._help_tooltip.setPos(tooltip_pos)
+        self._help_tooltip.show()
 
     def resize(self, width, height):
         """Resize the node to the specified dimensions"""
@@ -332,6 +379,29 @@ class NodeItem(QGraphicsRectItem):
         painter.setPen(QColor("black"))
         title_rect = self.rect().adjusted(0, 10, 0, 0)  # Shift the top edge down
         painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.node.name())
+
+        # Draw the help icon (question mark) in the top-right corner
+        help_icon_size = 16
+        margin = 5
+        help_rect = QRectF(
+            self.rect().right() - help_icon_size - margin,
+            self.rect().top() + margin,
+            help_icon_size,
+            help_icon_size
+        )
+
+        # Draw the circle background
+        painter.setPen(QPen(QColor(100, 100, 100), 1))
+        painter.setBrush(QColor(240, 240, 240))
+        painter.drawEllipse(help_rect)
+
+        # Draw the question mark
+        painter.setFont(QFont("Arial", 10, QFont.Bold))
+        painter.setPen(QColor(80, 80, 80))
+        painter.drawText(help_rect, Qt.AlignCenter, "?")
+
+        # Store the help icon rect for hit testing in hover events
+        self._help_icon_rect = help_rect
 
         # Draw port labels if there are multiple
         painter.setFont(NodeItem.LABEL_FONT)
