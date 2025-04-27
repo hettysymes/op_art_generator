@@ -16,12 +16,12 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
-        PropType("num_samples", "int", default_value=72,
-                 description="", min_value=1, display_name="number of samples"),
+        PropType("num_polygons", "int", default_value=36,
+                 description="Number of zig-zags.", min_value=1, display_name="Zig-zag number"),
         PropType("angle_diff", "float", default_value=20,
-                         description="", min_value=-360, max_value=360, display_name="angle difference"),
+                         description="Angle determining the sharpness and direction of the zig-zags. Angles with a higher magnitude give sharper zig-zags. Negative angles give zig-zags in the reverse direction to positive angles.", min_value=-360, max_value=360, display_name="Zig-zag angle (°)"),
         PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                 description=""),
+                 description="Zig-zag colour.", display_name="Colour"),
         PropType("ellipses", "hidden", default_value=[],
                              description="")
     ]),
@@ -36,6 +36,7 @@ class BlazeMakerNode(UnitNode):
         handle_multi_inputs(self.input_nodes, self.prop_vals['ellipses'])
         # Return element
         if self.input_nodes[0].compute():
+            num_samples = self.prop_vals['num_polygons']*2
             ret_elem = Element()
             ellipse_elems = [elem_ref.compute() for elem_ref in self.prop_vals['ellipses']]
             # Sort ellipses in order of ascending radius
@@ -46,9 +47,9 @@ class BlazeMakerNode(UnitNode):
             for elem in ellipse_elems:
                 start_angle += angle_diff
                 angle_diff *= -1
-                samples_list.append(EllipseSamplerNode.helper(elem, start_angle, self.prop_vals['num_samples']))
+                samples_list.append(EllipseSamplerNode.helper(elem, start_angle, num_samples))
             # Obtain lines
-            lines = [[] for _ in range(self.prop_vals['num_samples'])]
+            lines = [[] for _ in range(num_samples)]
             for samples in samples_list:
                 for i, sample in enumerate(samples):
                     lines[i].append(sample)

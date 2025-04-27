@@ -8,16 +8,18 @@ import sys
 import tempfile
 import uuid
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel, QTimer
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel, QTimer, QPoint, QRect, \
+    QEvent
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QDoubleValidator, QDropEvent
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QDoubleValidator, QDropEvent, QIcon, QTextDocument
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
-                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup, QGraphicsTextItem, QLabel)
+                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup, QGraphicsTextItem, QLabel,
+                             QToolTip)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument
 
@@ -697,6 +699,38 @@ class EdgeItem(QGraphicsLineItem):
             dest_pos = self.dest_port.get_center_scene_pos()
             self.setLine(QLineF(source_pos, dest_pos))
 
+
+class HelpIconLabel(QPushButton):
+    def __init__(self, description, max_width=300, parent=None):
+        super().__init__(parent)
+
+        # Set up the help icon with "?" text
+        self.setText("?")
+        self.setFixedSize(16, 16)
+
+        # Style the button to look like a help icon
+        self.setStyleSheet("""
+            QPushButton {
+                background-color: #b0b0b0;
+                color: white;
+                font-weight: bold;
+                border-radius: 8px;
+                border: none;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #8a8a8a;
+            }
+        """)
+
+        # Apply word-wrapped tooltip using HTML
+        width_px = str(max_width) + "px"
+        wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{description}</div>"
+        self.setToolTip(wrapped_text)
+
+        # Remove focus outline
+        self.setFocusPolicy(Qt.NoFocus)
+
 class NodePropertiesDialog(QDialog):
     """Dialog for editing node properties"""
 
@@ -752,12 +786,10 @@ class NodePropertiesDialog(QDialog):
         label_layout.setContentsMargins(0, 0, 0, 0)
         label_layout.setSpacing(4)  # Small spacing between elements
 
-        # Create the label first (now without the help icon)
+        # Create the label
         add_text = ":" if prop.auto_format else ""
         label = QLabel(prop.display_name + add_text)
         label_layout.addWidget(label)
-
-        # Add stretch to fill remaining space
         label_layout.addStretch()
 
         # Create a container for the widget and help icon
@@ -770,26 +802,8 @@ class NodePropertiesDialog(QDialog):
         widget_layout.addWidget(widget)
 
         # Add the help icon after the widget (on the right)
-        # Create the help icon first (on the left)
-        help_icon = QLabel("?")
-        help_icon.setFixedSize(16, 16)
-        help_icon.setAlignment(Qt.AlignCenter)
-        help_icon.setStyleSheet("""
-                QLabel {
-                    background-color: #e0e0e0;
-                    color: #666666;
-                    border-radius: 8px;
-                    font-weight: bold;
-                    font-size: 10px;
-                }
-                QLabel:hover {
-                    background-color: #cccccc;
-                }
-            """)
-
-        # Set tooltip on the help icon if description is available
         if prop.description:
-            help_icon.setToolTip(prop.description)
+            help_icon = HelpIconLabel(prop.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
 
         return label_container, widget_container
