@@ -31,7 +31,7 @@ class OverlayNode(UnitNode):
             shapes_list += elem_ref.compute().shapes
         return Element(shapes_list)
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
         if element:
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (element, None)).save()
+            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()

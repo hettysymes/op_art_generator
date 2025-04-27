@@ -44,7 +44,7 @@ class ShapeRepeaterNode(UnitNode):
         element = self.input_nodes[1].compute()
         return ShapeRepeaterNode.helper(grid_out, element)
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
         if element:
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (element, None)).save()
+            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()

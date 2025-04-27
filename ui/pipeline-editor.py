@@ -5,6 +5,7 @@ import os
 import pickle
 import shutil
 import sys
+import tempfile
 import uuid
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel
@@ -154,7 +155,7 @@ class NodeItem(QGraphicsRectItem):
 
     def get_svg_path(self):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
-        return self.update_node().get_svg_path(self.backend.svg_height, wh_ratio)
+        return self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
@@ -1038,7 +1039,7 @@ def save_as_svg(clicked_item: NodeItem):
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
-    def __init__(self, parent=None):
+    def __init__(self, temp_dir, parent=None):
         super().__init__(parent)
         self.setSceneRect(0, 0, 2000, 2000)
 
@@ -1050,6 +1051,7 @@ class PipelineScene(QGraphicsScene):
         self.dest_port = None
 
         self.scene = Scene()
+        self.temp_dir = temp_dir
 
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
@@ -1392,13 +1394,13 @@ class PipelineView(QGraphicsView):
 class PipelineEditor(QMainWindow):
     """Main application window"""
 
-    def __init__(self):
+    def __init__(self, temp_dir):
         super().__init__()
         self.setWindowTitle("Pipeline Editor")
         self.setGeometry(100, 100, 1000, 800)
 
         # Create the scene and view
-        self.scene = PipelineScene()
+        self.scene = PipelineScene(temp_dir)
         self.view = PipelineView(self.scene)
         self.setCentralWidget(self.view)
 
@@ -1467,13 +1469,8 @@ class PipelineEditor(QMainWindow):
     def clear_scene(self):
         self.scene.clear_scene()
 
-    def closeEvent(self, event):
-        # Cleanup tmp folder storing svg images
-        shutil.rmtree('tmp', ignore_errors=True)
-        event.accept()
-
-
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    editor = PipelineEditor()
-    sys.exit(app.exec_())
+    with tempfile.TemporaryDirectory() as temp_dir:
+        app = QApplication(sys.argv)
+        editor = PipelineEditor(temp_dir=temp_dir)
+        sys.exit(app.exec_())

@@ -26,7 +26,7 @@ class ColourListNode(UnitNode):
     def compute(self):
         return self.prop_vals['colours']
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         colours = self.compute()
         if colours:
             # Draw in vertical grid
@@ -42,4 +42,4 @@ class ColourListNode(UnitNode):
                     ret_element.add(RectangleNode(None, [UnitNode(None, None, None)], {'fill': colours[col_index]}).compute()[0].scale(x2 - x1,
                                                                                                                y2 - y1).translate(x1, y1))
                     col_index += 1
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (ret_element, None)).save()
+            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_element, None)).save()

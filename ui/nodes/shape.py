@@ -51,8 +51,8 @@ class SineWaveNode(UnitNode):
                                  self.prop_vals['stroke_width'], self.prop_vals['orientation'],
                                  self.prop_vals['num_points'])])
 
-    def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
@@ -85,8 +85,8 @@ class PolygonNode(UnitNode):
         # Return element
         return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
 
-    def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
 
 RECTANGLE_NODE_INFO = UnitNodeInfo(
@@ -116,8 +116,8 @@ class RectangleNode(UnitNode):
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
 
-    def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
 
 ELLIPSE_NODE_INFO = UnitNodeInfo(
@@ -158,8 +158,8 @@ class EllipseNode(UnitNode):
         return Element(
             [Ellipse((self.prop_vals['cx'], self.prop_vals['cy']), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
 
-    def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
 CIRCLE_NODE_INFO = UnitNodeInfo(
     name="Circle",
@@ -197,8 +197,8 @@ class CircleNode(UnitNode):
         return Element(
             [Ellipse((self.prop_vals['cx'], self.prop_vals['cy']), (self.prop_vals['r'], self.prop_vals['r']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
 
-    def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
 ELEMENT_NODE_INFO = UnitNodeInfo(
     name="Drawing",
@@ -215,8 +215,8 @@ class ElementNode(UnitNode):
     def compute(self):
         return Element([self.prop_vals['shape']])
 
-    def visualise(self, height, wh_ratio):
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (self.compute(), None)).save()
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
 def get_node_from_shape(shape: Shape):
     return ElementNode(

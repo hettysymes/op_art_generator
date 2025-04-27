@@ -26,9 +26,9 @@ class CanvasNode(UnitNode):
     def compute(self):
         return self.input_nodes[0].compute()
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
         if not element:
             element = Element()
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio,
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio,
                              (element, self.prop_vals['bg_col'])).save()

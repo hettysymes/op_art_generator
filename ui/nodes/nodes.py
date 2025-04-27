@@ -1,4 +1,5 @@
 import copy
+import os
 from abc import ABC, abstractmethod
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
@@ -54,11 +55,14 @@ class Node(ABC):
         self.input_nodes = input_nodes
         self.prop_vals = prop_vals if prop_vals else self.node_info().prop_type_list.get_default_values()
 
-    def get_svg_path(self, height, wh_ratio):
-        vis = self.visualise(height, wh_ratio)
+    def _return_path(self, temp_dir):
+        return os.path.join(temp_dir, str(self.node_id))
+
+    def get_svg_path(self, temp_dir, height, wh_ratio):
+        vis = self.visualise(temp_dir, height, wh_ratio)
         if vis: return vis
         # No visualisation, return blank canvas
-        return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (Element(), None)).save()
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Element(), None)).save()
 
     def name(self):
         return self.node_info().name
@@ -92,7 +96,7 @@ class Node(ABC):
         pass
 
     @abstractmethod
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         pass
 
 
@@ -120,7 +124,7 @@ class UnitNode(Node):
     def compute(self):
         return
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         return
 
 
@@ -158,5 +162,5 @@ class CombinationNode(Node):
     def compute(self):
         return self.node_instance().compute()
 
-    def visualise(self, height, wh_ratio):
-        return self.node_instance().visualise(height, wh_ratio)
+    def visualise(self, temp_dir, height, wh_ratio):
+        return self.node_instance().visualise(temp_dir, height, wh_ratio)

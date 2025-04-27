@@ -58,7 +58,7 @@ class BlazeMakerNode(UnitNode):
                 ret_elem.add(Polygon(points, fill, fill_opacity))
             return ret_elem
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
         if element:
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (element, None)).save()
+            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()

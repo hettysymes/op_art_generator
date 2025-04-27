@@ -50,10 +50,10 @@ class EllipseSamplerNode(UnitNode):
         element = self.input_nodes[0].compute()
         return EllipseSamplerNode.helper(element, self.prop_vals['start_angle'], self.prop_vals['num_samples'])
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         points = self.compute()
         if points:
             ret_element = Element()
             for p in points:
                 ret_element.add(Ellipse(p, (0.01, 0.01), 'black', 255, 'black', 0))
-            return ElementDrawer(f"tmp/{str(self.node_id)}", height, wh_ratio, (ret_element, None)).save()
+            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_element, None)).save()

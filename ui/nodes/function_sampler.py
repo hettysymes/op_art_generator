@@ -26,7 +26,7 @@ class FunSamplerNode(UnitNode):
         if function:
             return sample_fun(function, self.prop_vals['num_samples'])
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         samples = self.compute()
         if samples is not None:
-            return create_graph_svg(height, wh_ratio, samples, f"tmp/{str(self.node_id)}", scatter=True)
+            return create_graph_svg(height, wh_ratio, samples, self._return_path(temp_dir), scatter=True)

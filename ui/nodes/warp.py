@@ -20,10 +20,10 @@ class PosWarpNode(UnitNode):
         f = self.input_nodes[0].compute()
         if f: return PosWarp(f)
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         warp = self.compute()
         if warp:
-            return create_graph_svg(height, wh_ratio, warp.sample(1000), f"tmp/{str(self.node_id)}")
+            return create_graph_svg(height, wh_ratio, warp.sample(1000), self._return_path(temp_dir))
 
 
 REL_WARP_NODE_INFO = UnitNodeInfo(
@@ -43,10 +43,10 @@ class RelWarpNode(UnitNode):
         f = self.input_nodes[0].compute()
         if f: return RelWarp(f)
 
-    def visualise(self, height, wh_ratio):
+    def visualise(self, temp_dir, height, wh_ratio):
         warp = self.compute()
         if warp:
-            return create_graph_svg(height, wh_ratio, warp.sample(1000), f"tmp/{str(self.node_id)}")
+            return create_graph_svg(height, wh_ratio, warp.sample(1000), self._return_path(temp_dir))
 
 
 class WarpNode(CombinationNode):

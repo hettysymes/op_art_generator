@@ -45,5 +45,5 @@ class GridNode(UnitNode):
         y_warp = self.input_nodes[1].compute()
         return GridNode.helper(x_warp, y_warp, self.prop_vals['width'], self.prop_vals['height'])
 
-    def visualise(self, height, wh_ratio):
-        return GridDrawing(f"tmp/{str(self.node_id)}", height, wh_ratio, self.compute()).save()
+    def visualise(self, temp_dir, height, wh_ratio):
+        return GridDrawing(self._return_path(temp_dir), height, wh_ratio, self.compute()).save()
