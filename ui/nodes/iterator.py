@@ -14,7 +14,7 @@ ITERATOR_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Iterator", PT_ElementList)],
     prop_type_list=PropTypeList(
         [
-            PropType("prop_to_change", "string", default_value="",
+            PropType("prop_to_change", "prop_enum", default_value="",
                      description="Property of the input shape of which to modify using the value list.", display_name="Property to change")
         ]
     ),
@@ -31,7 +31,7 @@ class IteratorNode(UnitNode):
         element = shape_node.compute()
         if (samples is not None) and element:
             prop_key = self.prop_vals['prop_to_change']
-            if prop_key in shape_node.prop_vals:
+            if prop_key and (prop_key in shape_node.prop_vals):
                 ret = []
                 for sample in samples:
                     node_copy = copy.deepcopy(shape_node)

@@ -254,7 +254,6 @@ class NodeItem(QGraphicsRectItem):
     def get_svg_path(self):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
         svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
-        if exception: print(exception) # TODO: handle exception
         return svg_path
 
     def update_vis_image(self):
@@ -762,7 +761,7 @@ class NodePropertiesDialog(QDialog):
             for prop in node_item.node.prop_type_list():
                 if prop.prop_type != "hidden":
                     widget = self.create_property_widget(prop, node_item.node.prop_vals.get(prop.key_name,
-                                                                                            prop.default_value))
+                                                                                            prop.default_value), node_item)
 
                     # Create the row with label and help icon
                     label_container, widget_container = self.create_property_row(prop, widget)
@@ -810,7 +809,7 @@ class NodePropertiesDialog(QDialog):
 
         return label_container, widget_container
 
-    def create_property_widget(self, prop, current_value):
+    def create_property_widget(self, prop, current_value, node_item):
         """Create an appropriate widget for the property type"""
         if prop.prop_type == "int":
             widget = QSpinBox()
@@ -831,11 +830,18 @@ class NodePropertiesDialog(QDialog):
             widget = QCheckBox()
             widget.setChecked(current_value or False)
 
-        elif prop.prop_type == "enum" and prop.options:
+        elif prop.prop_type == "prop_enum":
             widget = QComboBox()
-            widget.addItems(prop.options)
+            input_node_props = node_item.node.input_nodes[1].prop_type_list()
+            # Populate the widget
+            widget.addItem("[none]", userData=None)
+            for inp_prop in input_node_props:
+                widget.addItem(inp_prop.display_name, userData=inp_prop.key_name)
+            # Set the current value if available
             if current_value is not None:
-                index = prop.options.index(current_value) if current_value in prop.options else 0
+                # Find the index where the key_name matches current_value
+                index = next((i for i in range(widget.count())
+                              if widget.itemData(i) == current_value), 0)
                 widget.setCurrentIndex(index)
 
         elif prop.prop_type == "point_table":
@@ -1190,7 +1196,7 @@ class NodePropertiesDialog(QDialog):
             elif isinstance(widget, QCheckBox):
                 value = widget.isChecked()
             elif isinstance(widget, QComboBox):
-                value = widget.currentText()
+                value =  widget.itemData(widget.currentIndex())
             elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
                 value = widget.get_value()
             else:  # QLineEdit
