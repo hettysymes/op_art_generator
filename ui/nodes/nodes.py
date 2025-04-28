@@ -3,6 +3,7 @@ import os
 from abc import ABC, abstractmethod
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.drawers.error_drawer import ErrorDrawer
 from ui.nodes.shape_datatypes import Element
 
 
@@ -60,10 +61,19 @@ class Node(ABC):
         return os.path.join(temp_dir, str(self.node_id))
 
     def get_svg_path(self, temp_dir, height, wh_ratio):
-        vis = self.visualise(temp_dir, height, wh_ratio)
-        if vis: return vis
-        # No visualisation, return blank canvas
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Element(), None)).save()
+        exception = None
+        vis = None
+        # Catch exception if raised
+        try:
+            vis = self.visualise(temp_dir, height, wh_ratio)
+        except Exception as e:
+            exception = e
+            vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio).save()
+        # Return visualisation with exception
+        if not vis:
+            # No visualisation, return blank canvas
+            vis = ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Element(), None)).save()
+        return vis, exception
 
     def name(self):
         return self.node_info().name

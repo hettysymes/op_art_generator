@@ -253,7 +253,9 @@ class NodeItem(QGraphicsRectItem):
 
     def get_svg_path(self):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
-        return self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
+        svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
+        if exception: print(exception) # TODO: handle exception
+        return svg_path
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
