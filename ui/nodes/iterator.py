@@ -44,7 +44,11 @@ class IteratorNode(UnitNode):
                     if normalize_type(sample) != normalize_type(shape_node.prop_vals[prop_key]):
                         raise NodeInputException("Type of value list samples are not compatible with the selected property.", self.node_id)
                     node_copy.prop_vals[prop_key] = sample
-                    ret.append(node_copy.compute())
+                    try:
+                        compute_res = node_copy.compute()
+                    except NodeInputException as e:
+                        raise NodeInputException(e.message, self.node_id)
+                    ret.append(compute_res)
                 return ret
 
     def visualise(self, temp_dir, height, wh_ratio):

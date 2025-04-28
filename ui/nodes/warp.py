@@ -24,7 +24,7 @@ class PosWarpNode(UnitNode):
             try:
                 warp = PosWarp(f)
             except ValueError as e:
-                raise NodeInputException(e, self.node_id)
+                raise NodeInputException(str(e), self.node_id)
             return warp
 
     def visualise(self, temp_dir, height, wh_ratio):
@@ -53,7 +53,7 @@ class RelWarpNode(UnitNode):
             try:
                 warp = RelWarp(f)
             except ValueError as e:
-                raise NodeInputException(e, self.node_id)
+                raise NodeInputException(str(e), self.node_id)
             return warp
 
     def visualise(self, temp_dir, height, wh_ratio):

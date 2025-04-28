@@ -5,6 +5,7 @@ from numpy.ma.core import indices
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.multi_input_handler import handle_multi_inputs
+from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape
@@ -47,10 +48,14 @@ class SineWaveNode(UnitNode):
     UNIT_NODE_INFO = SINE_WAVE_NODE_INFO
 
     def compute(self):
-        return Element([SineWave(self.prop_vals['amplitude'], self.prop_vals['wavelength'], self.prop_vals['centre_y'],
-                                 self.prop_vals['phase'], self.prop_vals['x_min'], self.prop_vals['x_max'],
-                                 self.prop_vals['stroke_width'], self.prop_vals['orientation'],
-                                 self.prop_vals['num_points'])])
+        try:
+            sine_wave = SineWave(self.prop_vals['amplitude'], self.prop_vals['wavelength'], self.prop_vals['centre_y'],
+                                     self.prop_vals['phase'], self.prop_vals['x_min'], self.prop_vals['x_max'],
+                                     self.prop_vals['stroke_width'], self.prop_vals['orientation'],
+                                     self.prop_vals['num_points'])
+        except ValueError as e:
+            raise NodeInputException(str(e), self.node_id)
+        return Element([sine_wave])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()

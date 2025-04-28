@@ -2,9 +2,9 @@ import numpy as np
 
 def validate(f):
     if f(0) != 0:
-        raise ValueError("Input function must pass through (0,0).")
+        raise ValueError("Function must pass through (0,0).")
     elif f(1) == 0:
-        raise ValueError("Input function cannot pass through (1,0).")
+        raise ValueError("Function cannot pass through (1,0).")
 
 def normalise(l: np.ndarray):
     return l / l[-1]

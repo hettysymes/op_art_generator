@@ -210,6 +210,14 @@ class Ellipse(Shape):
 class SineWave(PolyLine):
 
     def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, orientation, num_points):
+        if wavelength <= 0:
+            raise ValueError("Wavelength must be greater than 0.")
+        if x_min > x_max:
+            raise ValueError("Wave start position must be smaller than wave stop position.")
+        if stroke_width < 0:
+            raise ValueError("Line width must be at least 0.")
+        if num_points < 1:
+            raise ValueError("Number of points must be at least 1.")
         points = []
 
         # Generate 100 evenly spaced x-values between x_min and x_max
