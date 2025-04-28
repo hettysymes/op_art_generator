@@ -15,7 +15,7 @@ OVERLAY_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
         PropType("elem_order", "elem_table", default_value=[],
-                             description="", display_name="drawing order")
+                             description="Order of drawings in which to overlay them. Drawings at the top of the list are drawn first (i.e. at the bottom of the final overlayed image).", display_name="Drawing order")
     ]),
     description="Overlay 2+ drawings and define their order."
 )

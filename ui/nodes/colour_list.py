@@ -14,7 +14,7 @@ COLOUR_LIST_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("colours", "colour_table", default_value=[(0, 0, 0, 255), (255, 0, 0, 255), (0, 255, 0, 255)],
-                     description=""),
+                     description="Colours to populate the colour list.", display_name="Colours"),
         ]
     ),
     description="Define a list of colours. This can be provided as input to an Iterator or a Colour Filler."

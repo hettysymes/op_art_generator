@@ -16,9 +16,9 @@ GRADIENT_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Gradient", PT_Gradient)],
     prop_type_list=PropTypeList([
         PropType("start_col", "colour", default_value=(255, 255, 255, 0),
-                 description="", display_name="start colour"),
+                 description="Starting colour of the gradient.", display_name="Start colour"),
         PropType("stop_col", "colour", default_value=(255, 255, 255, 255),
-                 description="", display_name="stop colour")
+                 description="Stop colour of the gradient.", display_name="Stop colour")
     ]),
     description="Define a linear gradient. This can be passed to a shape node as its fill."
 )

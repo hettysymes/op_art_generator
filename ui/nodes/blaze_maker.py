@@ -17,11 +17,11 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
         PropType("num_polygons", "int", default_value=36,
-                 description="Number of zig-zags.", min_value=1, display_name="Zig-zag number"),
+                 description="Number of zig-zags, at most 1.", min_value=1, display_name="Zig-zag number"),
         PropType("angle_diff", "float", default_value=20,
-                         description="Angle determining the sharpness and direction of the zig-zags. Angles with a higher magnitude give sharper zig-zags. Negative angles give zig-zags in the reverse direction to positive angles.", min_value=-360, max_value=360, display_name="Zig-zag angle (°)"),
+                         description="Angle determining the sharpness and direction of the zig-zags, set between -360° and +360°. Angles with a higher magnitude give sharper zig-zags. Negative angles give zig-zags in the reverse direction to positive angles.", min_value=-360, max_value=360, display_name="Zig-zag angle (°)"),
         PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                 description="Zig-zag colour.", display_name="Colour"),
+                 description="Zig-zag colour.", display_name="Zig-zag colour"),
         PropType("ellipses", "hidden", default_value=[],
                              description="")
     ]),

@@ -20,23 +20,23 @@ SINE_WAVE_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("amplitude", "float", default_value=0.5,
-                     description=""),
+                     description="Amplitude of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Amplitude"),
             PropType("wavelength", "float", default_value=1.0,
-                     description=""),
+                     description="Wavelength of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Wavelength"),
             PropType("centre_y", "float", default_value=0.5,
-                     description=""),
+                     description="Equilibrium position of the sine wave. With 0° rotation, this is the y-coordinate of the equilibrium position. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Equilibrium position"),
             PropType("phase", "float", default_value=0.0,
-                     description="", min_value=-360, max_value=360),
+                     description="Phase of the sine wave, set between -180° and +180°.", display_name="Phase (°)", min_value=-180, max_value=180),
             PropType("x_min", "float", default_value=0.0,
-                     description=""),
+                     description="Start position of the sine wave. With 0° rotation, this is the x-coordinate of the start of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Wave start"),
             PropType("x_max", "float", default_value=1.0,
-                     description=""),
+                     description="Stop position of the sine wave. With 0° rotation, this is the x-coordinate of the end of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Wave stop"),
             PropType("stroke_width", "float", default_value=1.0,
-                     description="", min_value=0.0),
+                     description="Thickness of the line drawing the sine wave.", display_name="Line thickness", min_value=0.0),
             PropType("orientation", "float", default_value=0.0,
-                     description="", min_value=-360.0, max_value=360.0),
+                     description="Clockwise rotation applied to the (horizontal) sine wave, set between -180° and +180°.", display_name="Rotation (°)", min_value=-180.0, max_value=180.0),
             PropType("num_points", "int", default_value=100,
-                     description="", min_value=2, max_value=500, display_name="line resolution")
+                     description="Number of points used to draw the line, set between 2 and 500. The more points used, the more accurate the line is to a sine wave.", min_value=2, max_value=500, display_name="Line resolution")
         ]
     ),
     description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
@@ -64,9 +64,9 @@ POLYGON_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("points", "point_table", default_value=[(0, 0), (0, 1), (1, 1)],
-                     description=""),
+                     description="Points defining the path of the polygon edge (in order).", display_name="Points"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="")
+                     description="Polygon fill colour.", display_name="Colour")
         ]
     ),
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
@@ -100,7 +100,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="")
+                     description="Rectangle fill colour.", display_name="Colour")
         ]
     ),
     description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape."
@@ -131,18 +131,18 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
-            PropType("rx", "float", default_value=0.5,
-                     description=""),
-            PropType("ry", "float", default_value=0.5,
-                     description=""),
+            PropType("rx", "float", default_value=0.5, min_value=0.0,
+                     description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Horizontal radius (rx)"),
+            PropType("ry", "float", default_value=0.5, min_value=0.0,
+                     description="Vertical semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Vertical radius (ry)"),
             PropType("cx", "float", default_value=0.5,
-                                 description=""),
+                                 description="x-coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre x-coordinate (cx)"),
             PropType("cy", "float", default_value=0.5,
-                                 description=""),
+                                 description="y-coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre y-coordinate (cy)"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description=""),
+                     description="Ellipse fill colour.", display_name="Colour"),
             PropType("stroke_width", "float", default_value=1.0,
-                                 description="", min_value=0.0)
+                                 description="Thickness of the line drawing the ellipse border.", display_name="Border thickness", min_value=0.0)
         ]
     ),
     description="Create an ellipse shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
@@ -173,16 +173,16 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
-            PropType("r", "float", default_value=0.5,
-                     description=""),
+            PropType("r", "float", default_value=0.5, min_value=0.0,
+                     description="Radius of the circle. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Radius"),
             PropType("cx", "float", default_value=0.5,
-                                 description=""),
+                                 description="x-coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre x-coordinate (cx)"),
             PropType("cy", "float", default_value=0.5,
-                                 description=""),
+                                 description="y-coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre y-coordinate (cy)"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description=""),
+                     description="Circle fill colour.", display_name="Colour"),
             PropType("stroke_width", "float", default_value=1.0,
-                                 description="", min_value=0.0)
+                                 description="Thickness of the line drawing the circle border.", display_name="Border thickness", min_value=0.0)
         ]
     ),
     description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."

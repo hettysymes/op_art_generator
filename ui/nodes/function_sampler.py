@@ -12,7 +12,7 @@ FUN_SAMPLER_NODE = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("num_samples", "int", default_value=5,
-                     description="", min_value=1, display_name="number of samples")
+                     description="Number of samples to obtain from the function f(x), i.e. x values (between 0 & 1) to input.", min_value=1, display_name="Sample number")
         ]
     ),
     description="Sample a function f(x) at equal intervals in the range x ∈ [0, 1]."

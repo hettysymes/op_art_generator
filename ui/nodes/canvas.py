@@ -11,11 +11,11 @@ CANVAS_NODE_INFO = UnitNodeInfo(
     out_port_defs=[],
     prop_type_list=PropTypeList([
         PropType("width", "int", default_value=150, max_value=500, min_value=1,
-                 description=""),
+                 description="Width of canvas in pixels, set between 1 and 500.", display_name="Width (pixels)"),
         PropType("height", "int", default_value=150, max_value=500, min_value=1,
-                 description=""),
+                 description="Height of canvas in pixels, set between 1 and 500.", display_name="Height (pixels)"),
         PropType("bg_col", "colour", default_value=(255, 255, 255, 255),
-                 description="", display_name="background colour")
+                 description="Background colour of canvas.", display_name="Background colour")
     ]),
     description="Place a drawing on a canvas, where the height and width can be set accurately, as well as the background colour."
 )

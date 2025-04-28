@@ -11,10 +11,10 @@ GRID_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Grid", PT_Grid)],
     prop_type_list=PropTypeList(
         [
-            PropType("width", "int", default_value=5,
-                     description="Number of squares in width of grid"),
-            PropType("height", "int", default_value=5,
-                     description="Number of squares in height of grid")
+            PropType("width", "int", default_value=5, min_value=1,
+                     description="Number of cells in the width of the grid, at most 1.", display_name="Width"),
+            PropType("height", "int", default_value=5, min_value=1,
+                     description="Number of cells in the height of the grid, at most 1.", display_name="Height")
         ]
     ),
     description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively."

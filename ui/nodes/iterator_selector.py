@@ -15,7 +15,7 @@ ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("select_idx", "int", default_value=0, min_value=0,
-                     description="", display_name="select index")
+                     description="Index of the element in the iterator output you'd like to select.", display_name="Select index")
         ]
     ),
     description="Select one of the outputs of an Iterator node by inputting its index."
