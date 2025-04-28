@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.drawers.error_drawer import ErrorDrawer
+from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.shape_datatypes import Element
 
 
@@ -62,13 +63,19 @@ class Node(ABC):
 
     def get_svg_path(self, temp_dir, height, wh_ratio):
         exception = None
-        vis = None
         # Catch exception if raised
         try:
             vis = self.visualise(temp_dir, height, wh_ratio)
+        except NodeInputException as e:
+            exception = e
+            if e.node_id == self.node_id:
+                msg = str(e.message)
+            else:
+                msg = f"Error further up pipeline (id #{e.node_id.hex[:3]})."
+            vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, [e.title, msg]).save()
         except Exception as e:
             exception = e
-            vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio).save()
+            vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, ["Unknown Exception", str(e)]).save()
         # Return visualisation with exception
         if not vis:
             # No visualisation, return blank canvas

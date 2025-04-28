@@ -1,4 +1,5 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
+from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList
 from ui.nodes.warp_utils import PosWarp, RelWarp
 from ui.port_defs import PortDef, PortType, PT_Function, PT_Warp
@@ -19,7 +20,12 @@ class PosWarpNode(UnitNode):
 
     def compute(self):
         f = self.input_nodes[0].compute()
-        if f: return PosWarp(f)
+        if f:
+            try:
+                warp = PosWarp(f)
+            except ValueError as e:
+                raise NodeInputException(e, self.node_id)
+            return warp
 
     def visualise(self, temp_dir, height, wh_ratio):
         warp = self.compute()
@@ -43,7 +49,12 @@ class RelWarpNode(UnitNode):
 
     def compute(self):
         f = self.input_nodes[0].compute()
-        if f: return RelWarp(f)
+        if f:
+            try:
+                warp = RelWarp(f)
+            except ValueError as e:
+                raise NodeInputException(e, self.node_id)
+            return warp
 
     def visualise(self, temp_dir, height, wh_ratio):
         warp = self.compute()
