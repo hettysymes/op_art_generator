@@ -41,8 +41,16 @@ class IteratorNode(UnitNode):
                 ret = []
                 for sample in samples:
                     node_copy = copy.deepcopy(shape_node)
-                    if normalize_type(sample) != normalize_type(shape_node.prop_vals[prop_key]):
+                    sample_type = normalize_type(sample)
+                    if sample_type != normalize_type(shape_node.prop_vals[prop_key]):
                         raise NodeInputException("Type of value list samples are not compatible with the selected property.", self.node_id)
+                    # Check the sample is within the min and max range for floats and ints
+                    if sample_type in (int, float):
+                        matching_prop = next((p for p in shape_node.prop_type_list() if p.key_name == prop_key), None)
+                        if ((matching_prop.min_value is not None) and sample < matching_prop.min_value) or ((matching_prop.max_value is not None) and sample > matching_prop.max_value):
+                            raise NodeInputException(
+                                "Value list includes samples not in allowed in the property range.",
+                                self.node_id)
                     node_copy.prop_vals[prop_key] = sample
                     try:
                         compute_res = node_copy.compute()

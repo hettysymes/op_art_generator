@@ -22,7 +22,7 @@ SINE_WAVE_NODE_INFO = UnitNodeInfo(
         [
             PropType("amplitude", "float", default_value=0.5,
                      description="Amplitude of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Amplitude"),
-            PropType("wavelength", "float", default_value=1.0,
+            PropType("wavelength", "float", default_value=1.0, min_value=0.01,
                      description="Wavelength of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Wavelength"),
             PropType("centre_y", "float", default_value=0.5,
                      description="Equilibrium position of the sine wave. With 0° rotation, this is the y-coordinate of the equilibrium position. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Equilibrium position"),
