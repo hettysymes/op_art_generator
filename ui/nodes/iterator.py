@@ -2,6 +2,7 @@ import copy
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.grid import GridNode
+from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
 from ui.nodes.shape_datatypes import Element
 from ui.port_defs import PortDef, PortType, PT_ValueList, PT_Element, PT_ElementList
@@ -21,6 +22,11 @@ ITERATOR_NODE_INFO = UnitNodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values."
 )
 
+def normalize_type(t):
+    import numpy as np
+    if isinstance(t, np.generic):
+        t = t.item()
+    return type(t)
 
 class IteratorNode(UnitNode):
     UNIT_NODE_INFO = ITERATOR_NODE_INFO
@@ -35,6 +41,8 @@ class IteratorNode(UnitNode):
                 ret = []
                 for sample in samples:
                     node_copy = copy.deepcopy(shape_node)
+                    if normalize_type(sample) != normalize_type(shape_node.prop_vals[prop_key]):
+                        raise NodeInputException("Type of value list samples are not compatible with the selected property.", self.node_id)
                     node_copy.prop_vals[prop_key] = sample
                     ret.append(node_copy.compute())
                 return ret

@@ -1,5 +1,6 @@
 import copy
 import os
+import traceback
 from abc import ABC, abstractmethod
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
@@ -75,6 +76,7 @@ class Node(ABC):
         except Exception as e:
             exception = e
             vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, ["Unknown Exception", str(e)]).save()
+            traceback.print_exc()
         # Return visualisation with exception
         if not vis:
             # No visualisation, return blank canvas
