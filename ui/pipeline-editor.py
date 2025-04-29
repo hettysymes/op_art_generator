@@ -875,12 +875,16 @@ class HelpIconLabel(QPushButton):
         self.setFocusPolicy(Qt.NoFocus)
 
 class ModifyPropertyPortButton(QPushButton):
-    def __init__(self, on_click_callback, text, parent=None):
+    def __init__(self, on_click_callback, adding, max_width=300, parent=None):
         super().__init__(parent)
 
-        # Set up the help icon with "?" text
-        self.setText(text)
+        self.adding = adding
+        self.text_pair = ('-', '+')
+        self.description_pair = ("Remove the input port for this property.",
+                                 "Add an input port to control this property.")
+        self.setText(self.text_pair[int(self.adding)])
         self.setFixedSize(16, 16)
+        self.max_width = max_width
 
         # Style the button to look like a help icon
         self.setStyleSheet("""
@@ -897,11 +901,31 @@ class ModifyPropertyPortButton(QPushButton):
             }
         """)
 
+        # Apply word-wrapped tooltip using HTML
+        width_px = str(max_width) + "px"
+        wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{self.description_pair[int(self.adding)]}</div>"
+        self.setToolTip(wrapped_text)
+
         # Remove focus outline
         self.setFocusPolicy(Qt.NoFocus)
 
         # Connect the click signal to the callback
-        self.clicked.connect(on_click_callback)
+        self.user_callback = on_click_callback
+        self.clicked.connect(self.handle_click)
+
+    def handle_click(self):
+        # Toggle the state
+        self.adding = not self.adding
+        self.setText(self.text_pair[int(self.adding)])
+
+        # Apply word-wrapped tooltip using HTML
+        width_px = str(self.max_width) + "px"
+        wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{self.description_pair[int(self.adding)]}</div>"
+        self.setToolTip(wrapped_text)
+
+        # Execute user callback
+        if self.user_callback:
+            self.user_callback(not self.adding)
 
 class NodePropertiesDialog(QDialog):
     """Dialog for editing node properties"""
@@ -973,14 +997,14 @@ class NodePropertiesDialog(QDialog):
         # Add the widget first
         widget_layout.addWidget(widget)
 
-        def add_property_port():
-            for port_def in node_item.node.prop_port_defs():
-                if port_def.key_name == prop.key_name:
-                    node_item.add_port(port_def)
-                    break
-
-        def remove_property_port():
-            node_item.remove_port_by_name('fill')
+        def change_property_port(adding):
+            if adding:
+                for port_def in node_item.node.prop_port_defs():
+                    if port_def.key_name == prop.key_name:
+                        node_item.add_port(port_def)
+                        break
+            else:
+                node_item.remove_port_by_name(prop.key_name)
 
         # Add the help icon after the widget (on the right)
         if prop.description:
@@ -989,11 +1013,11 @@ class NodePropertiesDialog(QDialog):
         if prop.port_modifiable:
             if prop.key_name in node_item.node.input_nodes:
                 # Exists port to modify this property, add minus button
-                minus_btn = ModifyPropertyPortButton(remove_property_port, '-')  # Set maximum width for tooltip
+                minus_btn = ModifyPropertyPortButton(change_property_port, adding=False)  # Set maximum width for tooltip
                 widget_layout.addWidget(minus_btn)
             else:
                 # Does not exist port to modify this property, add plus button
-                plus_btn = ModifyPropertyPortButton(add_property_port, '+')  # Set maximum width for tooltip
+                plus_btn = ModifyPropertyPortButton(change_property_port, adding=True)  # Set maximum width for tooltip
                 widget_layout.addWidget(plus_btn)
 
         return label_container, widget_container
