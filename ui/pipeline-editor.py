@@ -1652,6 +1652,12 @@ class PipelineEditor(QMainWindow):
         clear_action.triggered.connect(self.clear_scene)
         scene_menu.addAction(clear_action)
 
+        # Add Select all action
+        select_all = QAction("Select All", self)
+        select_all.setShortcut("Ctrl+A")
+        select_all.triggered.connect(self.select_all)
+        scene_menu.addAction(select_all)
+
     def save_scene(self):
         file_path, _ = QFileDialog.getSaveFileName(
             self,
@@ -1680,6 +1686,11 @@ class PipelineEditor(QMainWindow):
 
     def clear_scene(self):
         self.scene.clear_scene()
+
+    def select_all(self):
+        for item in self.scene.items():
+            if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
+                item.setSelected(True)
 
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as temp_dir:
