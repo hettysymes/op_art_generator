@@ -1,6 +1,3 @@
-from turtledemo.clock import display_date_time
-
-
 class PortType:
     pass
 

@@ -228,7 +228,7 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
     name="Circle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name="gradient")],
+    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
