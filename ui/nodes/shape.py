@@ -60,6 +60,33 @@ class SineWaveNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
+CUSTOM_LINE_NODE_INFO = UnitNodeInfo(
+    name="Custom Line",
+    resizable=True,
+    selectable=True,
+    in_port_defs=[],
+    out_port_defs=[PortDef("Drawing", PT_Polyline)],
+    prop_type_list=PropTypeList(
+        [
+            PropType("points", "point_table", default_value=[(1, 0), (0, 1)],
+                     description="Points defining the path of the line (in order).", display_name="Points"),
+            PropType("stroke_width", "float", default_value=1.0,
+                                 description="Thickness of the line drawing.", display_name="Line thickness", min_value=0.0)
+        ]
+    ),
+    description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
+)
+
+
+class CustomLineNode(UnitNode):
+    UNIT_NODE_INFO = CUSTOM_LINE_NODE_INFO
+
+    def compute(self):
+        return Element([Polyline(self.prop_vals['points'], 'black', self.prop_vals['stroke_width'])])
+
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
@@ -264,4 +291,4 @@ def get_node_from_shape(shape: Shape):
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, CustomLineNode]
