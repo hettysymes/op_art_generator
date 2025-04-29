@@ -16,8 +16,10 @@ class PT_Grid(PortType):
     pass
 
 # Elements
+class PT_Repeatable(PortType):
+    pass
 
-class PT_Element(PortType):
+class PT_Element(PT_Repeatable):
     pass
 
 class PT_Shape(PT_Element):
@@ -45,7 +47,7 @@ class PT_PointList(PT_ValueList):
 
 # Element List
 
-class PT_ElementList(PortType):
+class PT_ElementList(PT_Repeatable):
     pass
 
 # Gradient
