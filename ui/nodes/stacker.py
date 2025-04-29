@@ -14,7 +14,7 @@ STACKER_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Input Drawings", PT_Repeatable, input_multiple=True)
+        PortDef("Input Drawings", PT_Repeatable, input_multiple=True, key_name='repeatables')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
@@ -36,7 +36,7 @@ class StackerNode(UnitNode):
     UNIT_NODE_INFO = STACKER_NODE_INFO
 
     def compute(self):
-        handle_multi_inputs(self.input_nodes, self.prop_vals['elem_order'])
+        handle_multi_inputs(self.get_input_node('repeatables'), self.prop_vals['elem_order'])
         scaled_elements = []
         for elem_ref in self.prop_vals['elem_order']:
             elements = elem_ref.compute()

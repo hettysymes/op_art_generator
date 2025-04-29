@@ -7,7 +7,7 @@ FUN_SAMPLER_NODE = UnitNodeInfo(
     name="Function Sampler",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("Function", PT_Function)],
+    in_port_defs=[PortDef("Function", PT_Function, key_name='function')],
     out_port_defs=[PortDef("Samples", PT_NumberList)],
     prop_type_list=PropTypeList(
         [
@@ -23,7 +23,7 @@ class FunSamplerNode(UnitNode):
     UNIT_NODE_INFO = FUN_SAMPLER_NODE
 
     def compute(self):
-        function = self.input_nodes[0].compute()
+        function = self.get_input_node('function').compute()
         if function:
             return sample_fun(function, self.prop_vals['num_samples'])
 

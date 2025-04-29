@@ -120,7 +120,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient), PortDef("Import Points", PT_Polyline, input_multiple=True)],
+    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient'), PortDef("Import Points", PT_Polyline, input_multiple=True, key_name='import_points')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
@@ -137,14 +137,14 @@ class PolygonNode(UnitNode):
     UNIT_NODE_INFO = POLYGON_NODE_INFO
 
     def compute(self):
-        gradient = self.input_nodes[0].compute()
+        gradient = self.get_input_node('gradient').compute()
         if gradient:
             fill = gradient
             fill_opacity = 255
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         # Process input polylines
-        handle_multi_inputs(self.input_nodes[1:], self.prop_vals['points'])
+        handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         # Return element
         return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
 
@@ -156,7 +156,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient)],
+    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
@@ -172,7 +172,7 @@ class RectangleNode(UnitNode):
     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
 
     def compute(self):
-        gradient = self.input_nodes[0].compute()
+        gradient = self.get_input_node('gradient').compute()
         if gradient:
             fill = gradient
             fill_opacity = 255
@@ -188,7 +188,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient)],
+    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
@@ -212,7 +212,7 @@ class EllipseNode(UnitNode):
     UNIT_NODE_INFO = ELLIPSE_NODE_INFO
 
     def compute(self):
-        gradient = self.input_nodes[0].compute()
+        gradient = self.get_input_node('gradient').compute()
         if gradient:
             fill = gradient
             fill_opacity = 255

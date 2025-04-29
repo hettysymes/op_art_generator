@@ -25,7 +25,7 @@ class CanvasNode(UnitNode):
     UNIT_NODE_INFO = CANVAS_NODE_INFO
 
     def compute(self):
-        return self.input_nodes[0].compute()
+        return self.get_input_node('element').compute()
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()

@@ -10,7 +10,7 @@ OVERLAY_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Input Drawings", PT_Element, input_multiple=True)
+        PortDef("Input Drawings", PT_Element, input_multiple=True, key_name='elements')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
@@ -25,7 +25,7 @@ class OverlayNode(UnitNode):
     UNIT_NODE_INFO = OVERLAY_NODE_INFO
 
     def compute(self):
-        handle_multi_inputs(self.input_nodes, self.prop_vals['elem_order'])
+        handle_multi_inputs(self.get_input_node('elements'), self.prop_vals['elem_order'])
         # Return element
         shapes_list = []
         for elem_ref in self.prop_vals['elem_order']:

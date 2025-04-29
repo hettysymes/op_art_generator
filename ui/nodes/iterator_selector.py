@@ -27,7 +27,7 @@ class IteratorSelectorNode(UnitNode):
     UNIT_NODE_INFO = ITERATOR_SELECTOR_NODE_INFO
 
     def compute(self):
-        elements = self.input_nodes[0].compute()
+        elements = self.get_input_node('iterator').compute()
         if elements and (self.prop_vals['select_idx'] is not None):
             if self.prop_vals['select_idx'] >= len(elements):
                 raise NodeInputException("Select index is greater than number of iterator outputs.", self.node_id)
