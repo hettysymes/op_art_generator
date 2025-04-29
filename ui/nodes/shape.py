@@ -167,10 +167,8 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
                      description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Horizontal radius (rx)"),
             PropType("ry", "float", default_value=0.5, min_value=0.0,
                      description="Vertical semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Vertical radius (ry)"),
-            PropType("cx", "float", default_value=0.5,
-                                 description="x-coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre x-coordinate (cx)"),
-            PropType("cy", "float", default_value=0.5,
-                                 description="y-coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre y-coordinate (cy)"),
+            PropType("centre", "coordinate", default_value=(0.5, 0.5),
+                                 description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre coordinate"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description="Ellipse fill colour.", display_name="Colour"),
             PropType("stroke_width", "float", default_value=1.0,
@@ -192,7 +190,7 @@ class EllipseNode(UnitNode):
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element(
-            [Ellipse((self.prop_vals['cx'], self.prop_vals['cy']), (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
+            [Ellipse(self.prop_vals['centre'], (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
