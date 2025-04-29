@@ -8,9 +8,9 @@ from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.elem_ref import ElemRef
-from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape
+from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape, Polyline
 from ui.nodes.utils import process_rgb, rev_process_rgb
-from ui.port_defs import PortDef, PortType, PT_Element, PT_Polyline, PT_Gradient, PT_Ellipse
+from ui.port_defs import PortDef, PortType, PT_Element, PT_Polyline, PT_Gradient, PT_Ellipse, PT_Shape
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
     name="Sine Wave",
@@ -210,18 +210,18 @@ class CircleNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
-ELEMENT_NODE_INFO = UnitNodeInfo(
-    name="Drawing",
+ELEMENT_SHAPE_NODE_INFO = UnitNodeInfo(
+    name="Shape Drawing",
     resizable=True,
     selectable=False,
     in_port_defs=[],
-    out_port_defs=[PortDef("Drawing", PT_Element)],
+    out_port_defs=[PortDef("Shape", PT_Shape)],
     prop_type_list=PropTypeList([]),
     description="Immutable drawing extracted from a previously rendered node."
 )
 
-class ElementNode(UnitNode):
-    UNIT_NODE_INFO = ELEMENT_NODE_INFO
+class ElementShapeNode(UnitNode):
+    UNIT_NODE_INFO = ELEMENT_SHAPE_NODE_INFO
 
     def compute(self):
         return Element([self.prop_vals['shape']])
@@ -229,12 +229,38 @@ class ElementNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
+ELEMENT_LINE_NODE_INFO = UnitNodeInfo(
+    name="Line Drawing",
+    resizable=True,
+    selectable=False,
+    in_port_defs=[],
+    out_port_defs=[PortDef("Line", PT_Polyline)],
+    prop_type_list=PropTypeList([]),
+    description="Immutable drawing extracted from a previously rendered node."
+)
+
+class ElementLineNode(UnitNode):
+    UNIT_NODE_INFO = ELEMENT_LINE_NODE_INFO
+
+    def compute(self):
+        return Element([self.prop_vals['line']])
+
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+
 def get_node_from_shape(shape: Shape):
-    return ElementNode(
-        uuid.uuid4(),
-        [],
-        {'shape': shape.remove_final_scale()}
-    )
+    if isinstance(shape, Polyline):
+        return ElementLineNode(
+            uuid.uuid4(),
+            [],
+            {'line': shape.remove_final_scale()}
+        )
+    else:
+        return ElementShapeNode(
+            uuid.uuid4(),
+            [],
+            {'shape': shape.remove_final_scale()}
+        )
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"

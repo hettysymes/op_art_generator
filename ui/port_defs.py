@@ -20,10 +20,13 @@ class PT_Grid(PortType):
 class PT_Element(PortType):
     pass
 
-class PT_Polyline(PT_Element):
+class PT_Shape(PT_Element):
     pass
 
-class PT_Ellipse(PT_Element):
+class PT_Ellipse(PT_Shape):
+    pass
+
+class PT_Polyline(PT_Element):
     pass
 
 # Value Lists
