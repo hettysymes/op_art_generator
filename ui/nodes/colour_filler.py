@@ -12,8 +12,8 @@ COLOUR_FILLER_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Colours", PT_ColourList),
-        PortDef("Drawing", PT_Element)
+        PortDef("Colours", PT_ColourList, key_name='colour_list'),
+        PortDef("Drawing", PT_Element, key_name='element')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([]),

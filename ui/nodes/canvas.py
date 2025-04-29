@@ -7,7 +7,7 @@ CANVAS_NODE_INFO = UnitNodeInfo(
     name="Canvas",
     resizable=False,
     selectable=False,
-    in_port_defs=[PortDef("Drawing", PT_Element)],
+    in_port_defs=[PortDef("Drawing", PT_Element, key_name='element')],
     out_port_defs=[],
     prop_type_list=PropTypeList([
         PropType("width", "int", default_value=150, max_value=500, min_value=1,

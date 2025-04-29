@@ -12,7 +12,7 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Input Ellipses", PT_Ellipse, input_multiple=True)
+        PortDef("Input Ellipses", PT_Ellipse, input_multiple=True, key_name='ellipses')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([

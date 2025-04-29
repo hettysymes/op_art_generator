@@ -250,8 +250,9 @@ class CircleNode(UnitNode):
     UNIT_NODE_INFO = CIRCLE_NODE_INFO
 
     def compute(self):
-        if 'gradient' in self.input_nodes:
-            fill = self.input_nodes['gradient'].compute()
+        gradient = self.get_input_node('gradient').compute()
+        if gradient:
+            fill = gradient
             fill_opacity = 255
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])

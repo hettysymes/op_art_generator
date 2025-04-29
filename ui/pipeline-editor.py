@@ -1299,9 +1299,9 @@ class PipelineScene(QGraphicsScene):
         """Add a new node of the given type at the specified position"""
         uid = uuid.uuid4()
         if index is None:
-            node = node_class(uid, None, None)
+            node = node_class(node_id=uid)
         else:
-            node = node_class(uid, None, None, index)
+            node = node_class(node_id=uid, selection_index=index)
         return self.add_new_node(pos, node)
 
     def add_new_node(self, pos, node):

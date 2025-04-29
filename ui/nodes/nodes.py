@@ -105,6 +105,21 @@ class Node(ABC):
     def description(self):
         return self.node_info().description
 
+    def _is_multiple_input(self, key_name):
+        for port_def in self.in_port_defs():
+            if port_def.key_name == key_name:
+                return port_def.input_multiple
+        assert False
+
+    def get_input_node(self, key_name):
+        if self._is_multiple_input(key_name):
+            return self.input_nodes.get(key_name, [])
+        else:
+            inp_nodes = self.input_nodes.get(key_name)
+            if inp_nodes:
+                return inp_nodes[0]
+            return UnitNode()
+
     @abstractmethod
     def node_info(self):
         pass
@@ -134,7 +149,7 @@ class UnitNode(Node):
         description=""
     )
 
-    def __init__(self, node_id, input_nodes, prop_vals):
+    def __init__(self, node_id=None, input_nodes=None, prop_vals=None):
         super().__init__(node_id, input_nodes, prop_vals)
 
     @classmethod
@@ -156,7 +171,7 @@ class CombinationNode(Node):
     NAME = "Combination Node"
     SELECTIONS = []
 
-    def __init__(self, node_id, input_nodes, prop_vals, selection_index):
+    def __init__(self, node_id=None, input_nodes=None, prop_vals=None, selection_index=None):
         self.selection_index = selection_index
         super().__init__(node_id, input_nodes, prop_vals)
 

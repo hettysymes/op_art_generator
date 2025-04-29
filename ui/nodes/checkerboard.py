@@ -9,9 +9,9 @@ CHECKERBOARD_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Grid", PT_Grid),
-        PortDef("Drawing 1", PT_Element),
-        PortDef("Drawing 2", PT_Element)
+        PortDef("Grid", PT_Grid, key_name='grid'),
+        PortDef("Drawing 1", PT_Element, key_name='elem1'),
+        PortDef("Drawing 2", PT_Element, key_name='elem2')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([]),
