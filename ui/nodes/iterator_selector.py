@@ -11,7 +11,7 @@ ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(
     name="Iterator Selector",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("Iterator", PT_ElementList)],
+    in_port_defs=[PortDef("Iterator", PT_ElementList, key_name='iterator')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [

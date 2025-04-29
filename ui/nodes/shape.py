@@ -228,7 +228,7 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
     name="Circle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient)],
+    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name="gradient")],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
@@ -250,9 +250,8 @@ class CircleNode(UnitNode):
     UNIT_NODE_INFO = CIRCLE_NODE_INFO
 
     def compute(self):
-        gradient = self.input_nodes[0].compute()
-        if gradient:
-            fill = gradient
+        if 'gradient' in self.input_nodes:
+            fill = self.input_nodes['gradient'].compute()
             fill_opacity = 255
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])

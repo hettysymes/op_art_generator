@@ -1,3 +1,6 @@
+from turtledemo.clock import display_date_time
+
+
 class PortType:
     pass
 
@@ -58,7 +61,8 @@ class PT_Gradient(PortType):
 
 class PortDef:
 
-    def __init__(self, name, port_type, input_multiple=False):
+    def __init__(self, name, port_type, input_multiple=False, key_name=None):
         self.name = name
         self.port_type = port_type
         self.input_multiple = input_multiple
+        self.key_name = key_name if key_name else self.name
