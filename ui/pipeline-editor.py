@@ -488,18 +488,20 @@ class NodeItem(QGraphicsRectItem):
         # Find the port to remove by name
         port_to_remove = None
 
+        print("Remove port! -2")
         for item in self.scene().items():
-            if isinstance(item, PortItem) and item == self.uid:
+            if isinstance(item, PortItem) and item.parentItem().uid == self.uid:
                 # Check if port definition has the specified name
-                if 'key_name' in item.backend.port_def and item.backend.port_def['key_name'] == key_name:
-                    # If is_input is specified, make sure it matches
-                    if is_input is None or item.backend.is_input == is_input:
-                        port_to_remove = item
-                        break
+                if item.backend.port_def.key_name == key_name:
+                    port_to_remove = item
+                    break
 
+        print("Remove port! -1")
         # If no port found to remove
         if port_to_remove is None:
             return False
+
+        print("Remove port!")
 
         # First, remove any connections to/from this port
         edges_to_remove = []
@@ -518,7 +520,7 @@ class NodeItem(QGraphicsRectItem):
                 self.backend.output_port_ids.remove(port_to_remove.uid)
 
         # Remove port from scene
-        self.scene().scene.remove(port_to_remove)
+        self.scene().scene.remove(port_to_remove.uid)
 
         # Reposition remaining ports to maintain even spacing
         self._reposition_ports(port_to_remove.backend.is_input)
@@ -985,7 +987,7 @@ class NodePropertiesDialog(QDialog):
             ))
 
         def remove_property_port():
-            node_item.remove_port_by_name('test_keyname')
+            node_item.remove_port_by_name('fill')
 
         # Add the help icon after the widget (on the right)
         if prop.description:
