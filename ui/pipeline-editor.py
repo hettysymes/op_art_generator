@@ -844,6 +844,21 @@ class NodePropertiesDialog(QDialog):
                               if widget.itemData(i) == current_value), 0)
                 widget.setCurrentIndex(index)
 
+        elif prop.prop_type == "selector_enum":
+            widget = QComboBox()
+            input_prop_compute = node_item.node.input_nodes[0].compute()
+            # Populate the widget
+            widget.addItem("[none]", userData=None)
+            if input_prop_compute:
+                for i in range(len(input_prop_compute)):
+                    widget.addItem(str(i+1), userData=i)
+            # Set the current value if available
+            if current_value is not None:
+                # Find the index where the key_name matches current_value
+                index = next((i for i in range(widget.count())
+                              if widget.itemData(i) == current_value), 0)
+                widget.setCurrentIndex(index)
+
         elif prop.prop_type == "point_table":
             def add_point_item(point, row=None, table=None):
                 item = QTableWidgetItem()

@@ -2,6 +2,7 @@ import copy
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.grid import GridNode
+from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
 from ui.nodes.shape_datatypes import Element
 from ui.port_defs import PortDef, PortType, PT_Element, PT_ElementList
@@ -14,7 +15,7 @@ ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
-            PropType("select_idx", "int", default_value=0, min_value=0,
+            PropType("select_idx", "selector_enum",
                      description="Index of the element in the iterator output you'd like to select.", display_name="Select index")
         ]
     ),
@@ -27,7 +28,9 @@ class IteratorSelectorNode(UnitNode):
 
     def compute(self):
         elements = self.input_nodes[0].compute()
-        if elements and self.prop_vals['select_idx'] < len(elements):
+        if elements and (self.prop_vals['select_idx'] is not None):
+            if self.prop_vals['select_idx'] >= len(elements):
+                raise NodeInputException("Select index is greater than number of iterator outputs.", self.node_id)
             return elements[self.prop_vals['select_idx']]
 
     def visualise(self, temp_dir, height, wh_ratio):
