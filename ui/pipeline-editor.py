@@ -3,6 +3,7 @@ import copy
 import math
 import os
 import pickle
+import random
 import shutil
 import sys
 import tempfile
@@ -24,6 +25,7 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
+from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape import ElemRef
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList, PortDef, PT_Fill
 from ui.reorderable_table_widget import ReorderableTableWidget
@@ -1690,6 +1692,12 @@ class PipelineScene(QGraphicsScene):
                 menu.addMenu(submenu)
 
             menu.addAction(properties_action)
+
+            if isinstance(clicked_item.node, RandomColourSelectorNode):
+                randomise_action = QAction("Randomise", menu)
+                randomise_action.triggered.connect(lambda: self.randomise(clicked_item))
+                menu.addAction(randomise_action)
+
             menu.addAction(duplicate_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
@@ -1793,6 +1801,11 @@ class PipelineScene(QGraphicsScene):
         new_node = copy.deepcopy(node_item.backend.node)
         new_node.node_id = uuid.uuid4()
         self.add_new_node(node_item.pos() + QPointF(10, 10), new_node)
+
+    def randomise(self, clicked_item: RandomColourSelectorNode):
+        clicked_item.node.prop_vals['_actual_seed'] = random.random()
+        clicked_item.update_visualisations()
+
 
 class PipelineView(QGraphicsView):
     """View to interact with the pipeline scene"""
