@@ -859,7 +859,7 @@ class NodePropertiesDialog(QDialog):
 
         elif prop.prop_type == "prop_enum":
             widget = QComboBox()
-            input_node_props = node_item.node.input_nodes['element'].prop_type_list()
+            input_node_props = node_item.node.get_input_node('element').prop_type_list()
             # Populate the widget
             widget.addItem("[none]", userData=None)
             for inp_prop in input_node_props:
@@ -873,7 +873,7 @@ class NodePropertiesDialog(QDialog):
 
         elif prop.prop_type == "selector_enum":
             widget = QComboBox()
-            input_prop_compute = node_item.node.input_nodes['iterator'].compute()
+            input_prop_compute = node_item.node.get_input_node('iterator').compute()
             # Populate the widget
             widget.addItem("[none]", userData=None)
             if input_prop_compute:
