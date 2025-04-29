@@ -27,7 +27,7 @@ class CheckerboardNode(UnitNode):
         element1 = self.get_input_node('elem1').compute()
         element2 = self.get_input_node('elem2').compute()
         if grid_out and (element1 or element2):
-            default_elem = RectangleNode(None, [UnitNode(None,None,None)], {'fill': (255, 255, 255, 0)}).compute()
+            default_elem = RectangleNode(None, {}, {'fill': (255, 255, 255, 0)}).compute()
             if not element1:
                 element1 = default_elem
             if not element2:

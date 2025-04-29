@@ -237,7 +237,7 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
             PropType("centre", "coordinate", default_value=(0.5, 0.5),
                                  description="Coordinate of the circle centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre coordinate"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="Circle fill colour.", display_name="Colour"),
+                     description="Circle fill colour.", display_name="Colour", port_modifiable=True),
             PropType("stroke_width", "float", default_value=1.0,
                                  description="Thickness of the line drawing the circle border.", display_name="Border thickness", min_value=0.0)
         ]

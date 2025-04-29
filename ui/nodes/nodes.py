@@ -28,7 +28,7 @@ class PropType:
     """Defines a property for a node"""
 
     def __init__(self, key_name, prop_type, default_value=None, min_value=None, max_value=None,
-                 description="", display_name=None, auto_format=True, options=None):
+                 description="", display_name=None, auto_format=True, options=None, port_modifiable=False):
         self.key_name = key_name
         self.display_name = display_name if display_name else key_name
         self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
@@ -38,6 +38,7 @@ class PropType:
         self.description = description
         self.auto_format = auto_format
         self.options = options # options for (constant) enum type
+        self.port_modifiable = port_modifiable
 
 
 class UnitNodeInfo:

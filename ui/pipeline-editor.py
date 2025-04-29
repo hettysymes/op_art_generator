@@ -25,7 +25,7 @@ from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.nodes.shape import ElemRef
-from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
+from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList, PortDef
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.nodes.all_nodes import node_classes
@@ -409,6 +409,100 @@ class NodeItem(QGraphicsRectItem):
 
         self.update_label_containers()
 
+    def add_port(self, port_def, is_input=True):
+        """
+        Add a new port to the node.
+
+        Args:
+            is_input (bool): True for input port, False for output port
+            port_def (dict): Port definition (if None, a default will be used)
+
+        Returns:
+            PortItem: The newly created port item
+        """
+
+        # Generate a unique ID for the new port
+        state_id = uuid.uuid4()
+
+        if is_input:
+            # Calculate position for the new input port
+            input_count = len(self.backend.input_port_ids) + 1
+            y_offset = input_count * self.rect().height() / (input_count + 1)
+
+            # Create the new input port
+            input_port = PortItem(PortState(state_id,
+                                            -10, y_offset,
+                                            self.uid,
+                                            True,
+                                            [], port_def), self)
+
+            # Add to the backend tracking
+            self.backend.input_port_ids.append(state_id)
+
+            # Add to scene
+            self.scene().scene.add(input_port)
+
+            # Reposition existing input ports to distribute evenly
+            self._reposition_ports(True)
+
+            return input_port
+        else:
+            # Calculate position for the new output port
+            output_count = len(self.backend.output_port_ids) + 1
+            y_offset = output_count * self.rect().height() / (output_count + 1)
+
+            # Create the new output port
+            output_port = PortItem(PortState(state_id,
+                                             self.rect().width() + 10, y_offset,
+                                             self.uid,
+                                             False,
+                                             [], port_def), self)
+
+            # Add to the backend tracking
+            self.backend.output_port_ids.append(state_id)
+
+            # Add to scene
+            self.scene().scene.add(output_port)
+
+            # Reposition existing output ports to distribute evenly
+            self._reposition_ports(False)
+
+            return output_port
+
+    def _reposition_ports(self, is_input=True):
+        """
+        Reposition all ports of a given type to be evenly distributed.
+
+        Args:
+            is_input (bool): True for input ports, False for output ports
+        """
+        # Get all relevant port items
+        port_items = []
+        for item in self.scene().items():
+            if isinstance(item, PortItem) and item.uid == self.uid:
+                if item.backend.is_input == is_input:
+                    port_items.append(item)
+
+        # Calculate new positions
+        port_count = len(port_items)
+        for i, port in enumerate(port_items):
+            y_offset = (i + 1) * self.rect().height() / (port_count + 1)
+            if is_input:
+                port.state.x = -10
+            else:
+                port.state.x = self.rect().width() + 10
+            port.state.y = y_offset
+            port.setPos(port.state.x, port.state.y)
+
+        # Update connections if needed
+        for port in port_items:
+            for edge_id in port.backend.edge_ids:
+                edge: EdgeItem = self.scene.get(edge_id)
+                edge.update_position()
+
+        # Update the label containers to reflect new ports
+        self.update_label_containers()
+
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
 
@@ -723,6 +817,35 @@ class HelpIconLabel(QPushButton):
         # Remove focus outline
         self.setFocusPolicy(Qt.NoFocus)
 
+class AddPropertyPortButton(QPushButton):
+    def __init__(self, on_click_callback, parent=None):
+        super().__init__(parent)
+
+        # Set up the help icon with "?" text
+        self.setText("+")
+        self.setFixedSize(16, 16)
+
+        # Style the button to look like a help icon
+        self.setStyleSheet("""
+            QPushButton {
+                background-color: #b0b0b0;
+                color: white;
+                font-weight: bold;
+                border-radius: 8px;
+                border: none;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #8a8a8a;
+            }
+        """)
+
+        # Remove focus outline
+        self.setFocusPolicy(Qt.NoFocus)
+
+        # Connect the click signal to the callback
+        self.clicked.connect(on_click_callback)
+
 class NodePropertiesDialog(QDialog):
     """Dialog for editing node properties"""
 
@@ -755,7 +878,7 @@ class NodePropertiesDialog(QDialog):
                                                                                             prop.default_value), node_item)
 
                     # Create the row with label and help icon
-                    label_container, widget_container = self.create_property_row(prop, widget)
+                    label_container, widget_container = self.create_property_row(prop, widget, node_item)
                     props_layout.addRow(label_container, widget_container)
                     self.property_widgets[prop.key_name] = widget
 
@@ -769,7 +892,7 @@ class NodePropertiesDialog(QDialog):
         main_layout.addLayout(form_layout)
         main_layout.addWidget(button_box)
 
-    def create_property_row(self, prop, widget):
+    def create_property_row(self, prop, widget, node_item: NodeItem):
         """Create a row with property label and a help icon to the right of the widget"""
 
         # Create a container widget for the label
@@ -793,12 +916,29 @@ class NodePropertiesDialog(QDialog):
         # Add the widget first
         widget_layout.addWidget(widget)
 
+        def add_property_port():
+            node_item.add_port(PortDef(
+                'test_name',
+                PT_Element,
+                False,
+                'test_keyname'
+            ))
+
         # Add the help icon after the widget (on the right)
         if prop.description:
             help_icon = HelpIconLabel(prop.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
+        if prop.port_modifiable:
+            if node_item.node.input_nodes.get(prop.key_name):
+                # Exists port to modify this property, add minus button
+                pass
+            else:
+                # Does not exist port to modify this property, add plus button
+                plus_btn = AddPropertyPortButton(add_property_port)  # Set maximum width for tooltip
+                widget_layout.addWidget(plus_btn)
 
         return label_container, widget_container
+
 
     def create_property_widget(self, prop, current_value, node_item):
         """Create an appropriate widget for the property type"""
