@@ -859,6 +859,14 @@ class NodePropertiesDialog(QDialog):
                               if widget.itemData(i) == current_value), 0)
                 widget.setCurrentIndex(index)
 
+        elif prop.prop_type == "enum" and prop.options:
+            widget = QComboBox()
+            for option in prop.options:
+                widget.addItem(option, userData=option)
+            if current_value is not None:
+                index = prop.options.index(current_value) if current_value in prop.options else 0
+                widget.setCurrentIndex(index)
+
         elif prop.prop_type == "point_table":
             def add_point_item(point, row=None, table=None):
                 item = QTableWidgetItem()

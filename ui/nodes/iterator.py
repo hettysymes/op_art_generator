@@ -16,7 +16,10 @@ ITERATOR_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("prop_to_change", "prop_enum", default_value="",
-                     description="Property of the input shape of which to modify using the value list.", display_name="Property to change")
+                     description="Property of the input shape of which to modify using the value list.", display_name="Property to change"),
+            PropType("vis_layout", "enum", default_value="Vertical", options=["Vertical", "Horizontal"],
+                     description="Iterations can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
+                     display_name="Visualisation layout")
         ]
     ),
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values."
@@ -62,8 +65,12 @@ class IteratorNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         elements = self.compute()
         if elements:
-            # Draw in vertical grid
-            v_line_xs, h_line_ys = GridNode.helper(None, None, 1, len(elements))
+            if self.prop_vals['vis_layout'] == "Vertical":
+                # Draw in vertical grid
+                v_line_xs, h_line_ys = GridNode.helper(None, None, 1, len(elements))
+            else:
+                # Draw in Horizontal grid
+                v_line_xs, h_line_ys = GridNode.helper(None, None, len(elements), 1)
             ret_element = Element()
             elem_index = 0
             for i in range(1, len(v_line_xs)):
