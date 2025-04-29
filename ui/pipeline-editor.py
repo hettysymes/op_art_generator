@@ -25,7 +25,7 @@ from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.nodes.shape import ElemRef
-from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList, PortDef
+from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList, PortDef, PT_Fill
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.nodes.all_nodes import node_classes
@@ -981,8 +981,8 @@ class NodePropertiesDialog(QDialog):
 
         def add_property_port():
             node_item.add_port(PortDef(
-                'test_name',
-                PT_Element,
+                'fill',
+                PT_Fill,
                 False,
                 'fill'
             ))

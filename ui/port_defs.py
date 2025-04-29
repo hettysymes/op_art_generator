@@ -50,11 +50,15 @@ class PT_PointList(PT_ValueList):
 class PT_ElementList(PT_Repeatable):
     pass
 
-# Gradient
-
-class PT_Gradient(PortType):
+# Fill
+class PT_Fill(PortType):
     pass
 
+class PT_Gradient(PT_Fill):
+    pass
+
+class PT_Colour(PT_Fill):
+    pass
 
 class PortDef:
 

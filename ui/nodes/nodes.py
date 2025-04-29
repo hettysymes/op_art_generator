@@ -126,6 +126,17 @@ class Node(ABC):
                 return res[0] if (res is not None) else default
             return default
 
+    def get_prop_val(self, key_name):
+        default = self.prop_vals[key_name]
+        if key_name in self.input_nodes:
+            res = self.input_nodes[key_name]
+            if res is not None:
+                res_compute = res[0].compute()
+                if res_compute is not None:
+                    return res_compute
+        return default
+
+
     @abstractmethod
     def node_info(self):
         pass

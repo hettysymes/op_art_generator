@@ -4,6 +4,7 @@ from cairosvg.shapes import polyline
 from numpy.ma.core import indices
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
@@ -120,7 +121,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient'), PortDef("Import Points", PT_Polyline, input_multiple=True, key_name='import_points')],
+    in_port_defs=[PortDef("Import Points", PT_Polyline, input_multiple=True, key_name='import_points')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
@@ -137,12 +138,12 @@ class PolygonNode(UnitNode):
     UNIT_NODE_INFO = POLYGON_NODE_INFO
 
     def compute(self):
-        gradient = self.get_input_node('gradient').compute()
-        if gradient:
-            fill = gradient
+        colour = self.get_prop_val('fill')
+        if isinstance(colour, Gradient):
+            fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         # Return element
@@ -156,7 +157,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
+    in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
@@ -171,14 +172,18 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
 class RectangleNode(UnitNode):
     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
 
+    @staticmethod
+    def helper(fill, fill_opacity):
+        return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
+
     def compute(self):
-        gradient = self.get_input_node('gradient').compute()
-        if gradient:
-            fill = gradient
+        colour = self.get_prop_val('fill')
+        if isinstance(colour, Gradient):
+            fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
-        return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
+        return RectangleNode.helper(fill, fill_opacity)
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -188,7 +193,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
+    in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
@@ -212,12 +217,12 @@ class EllipseNode(UnitNode):
     UNIT_NODE_INFO = ELLIPSE_NODE_INFO
 
     def compute(self):
-        gradient = self.get_input_node('gradient').compute()
-        if gradient:
-            fill = gradient
+        colour = self.get_prop_val('fill')
+        if isinstance(colour, Gradient):
+            fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
         return Element(
             [Ellipse(self.prop_vals['centre'], (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
 
@@ -228,7 +233,7 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
     name="Circle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
+    in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
@@ -250,12 +255,12 @@ class CircleNode(UnitNode):
     UNIT_NODE_INFO = CIRCLE_NODE_INFO
 
     def compute(self):
-        gradient = self.get_input_node('gradient').compute()
-        if gradient:
-            fill = gradient
+        colour = self.get_prop_val('fill')
+        if isinstance(colour, Gradient):
+            fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
         return Element(
             [Ellipse(self.prop_vals['centre'], (self.prop_vals['r'], self.prop_vals['r']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
 
