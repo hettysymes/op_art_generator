@@ -134,7 +134,7 @@ class Shape(ABC):
         return base_shape
 
 
-class PolyLine(Shape):
+class Polyline(Shape):
 
     def __init__(self, points, stroke, stroke_width):
         super().__init__()
@@ -207,7 +207,7 @@ class Ellipse(Shape):
                            id=self.shape_id)
 
 
-class SineWave(PolyLine):
+class SineWave(Polyline):
 
     def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, orientation, num_points):
         if x_min > x_max:
