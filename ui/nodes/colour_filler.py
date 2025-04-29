@@ -12,8 +12,8 @@ COLOUR_FILLER_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Colours", PT_ColourList),
-        PortDef("Drawing", PT_Element)
+        PortDef("Colours", PT_ColourList, key_name='colour_list'),
+        PortDef("Drawing", PT_Element, key_name='element')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([]),
@@ -25,8 +25,8 @@ class ColourFillerNode(UnitNode):
     UNIT_NODE_INFO = COLOUR_FILLER_NODE_INFO
 
     def compute(self):
-        colours = self.input_nodes[0].compute()
-        element = self.input_nodes[1].compute()
+        colours = self.get_input_node('colour_list').compute()
+        element = self.get_input_node('element').compute()
         if (colours is not None) and element:
             if not colours:
                 raise NodeInputException("Input colour list must contain at least one colour.", self.node_id)

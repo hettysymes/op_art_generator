@@ -7,7 +7,7 @@ GRID_NODE_INFO = UnitNodeInfo(
     name="Grid",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("X Warp", PT_Warp), PortDef("Y Warp", PT_Warp)],
+    in_port_defs=[PortDef("X Warp", PT_Warp, key_name='x_warp'), PortDef("Y Warp", PT_Warp, key_name='y_warp')],
     out_port_defs=[PortDef("Grid", PT_Grid)],
     prop_type_list=PropTypeList(
         [
@@ -42,8 +42,8 @@ class GridNode(UnitNode):
 
     def compute(self):
         # Get warp functions
-        x_warp = self.input_nodes[0].compute()
-        y_warp = self.input_nodes[1].compute()
+        x_warp = self.get_input_node('x_warp').compute()
+        y_warp = self.get_input_node('y_warp').compute()
         return GridNode.helper(x_warp, y_warp, self.prop_vals['width'], self.prop_vals['height'])
 
     def visualise(self, temp_dir, height, wh_ratio):

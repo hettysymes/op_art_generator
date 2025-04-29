@@ -350,15 +350,16 @@ class NodeItem(QGraphicsRectItem):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)
 
     def get_input_node_items(self):
-        input_nodes = []
+        input_nodes = {}
         for input_port_id in self.backend.input_port_ids:
             input_port: PortItem = self.scene().scene.get(input_port_id)
+            port_name = input_port.backend.port_def.key_name
             if len(input_port.backend.edge_ids) > 0:
+                res = []
                 for edge_id in input_port.backend.edge_ids:
                     edge: EdgeItem = self.scene().scene.get(edge_id)
-                    input_nodes.append(edge.source_port.parentItem())
-            else:
-                input_nodes.append(None)
+                    res.append(edge.source_port.parentItem().node)
+                input_nodes[port_name] = res
         return input_nodes
 
     def get_output_node_items(self):
@@ -376,17 +377,7 @@ class NodeItem(QGraphicsRectItem):
             output_node.update_visualisations()
 
     def update_node(self):
-        input_node_items = self.get_input_node_items()
-        if len(input_node_items) == 0:
-            self.node.input_nodes = []
-        else:
-            extracted_nodes = []
-            for node_item in input_node_items:
-                if node_item:
-                    extracted_nodes.append(node_item.node)
-                else:
-                    extracted_nodes.append(UnitNode(None, None, None))
-            self.node.input_nodes = extracted_nodes
+        self.node.input_nodes = self.get_input_node_items()
         return self.node
 
     def create_ports(self):
@@ -868,7 +859,7 @@ class NodePropertiesDialog(QDialog):
 
         elif prop.prop_type == "prop_enum":
             widget = QComboBox()
-            input_node_props = node_item.node.input_nodes[1].prop_type_list()
+            input_node_props = node_item.node.get_input_node('element').prop_type_list()
             # Populate the widget
             widget.addItem("[none]", userData=None)
             for inp_prop in input_node_props:
@@ -882,7 +873,7 @@ class NodePropertiesDialog(QDialog):
 
         elif prop.prop_type == "selector_enum":
             widget = QComboBox()
-            input_prop_compute = node_item.node.input_nodes[0].compute()
+            input_prop_compute = node_item.node.get_input_node('iterator').compute()
             # Populate the widget
             widget.addItem("[none]", userData=None)
             if input_prop_compute:
@@ -1308,9 +1299,9 @@ class PipelineScene(QGraphicsScene):
         """Add a new node of the given type at the specified position"""
         uid = uuid.uuid4()
         if index is None:
-            node = node_class(uid, None, None)
+            node = node_class(node_id=uid)
         else:
-            node = node_class(uid, None, None, index)
+            node = node_class(node_id=uid, selection_index=index)
         return self.add_new_node(pos, node)
 
     def add_new_node(self, pos, node):

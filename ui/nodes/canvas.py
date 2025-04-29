@@ -7,7 +7,7 @@ CANVAS_NODE_INFO = UnitNodeInfo(
     name="Canvas",
     resizable=False,
     selectable=False,
-    in_port_defs=[PortDef("Drawing", PT_Element)],
+    in_port_defs=[PortDef("Drawing", PT_Element, key_name='element')],
     out_port_defs=[],
     prop_type_list=PropTypeList([
         PropType("width", "int", default_value=150, max_value=500, min_value=1,
@@ -25,7 +25,7 @@ class CanvasNode(UnitNode):
     UNIT_NODE_INFO = CANVAS_NODE_INFO
 
     def compute(self):
-        return self.input_nodes[0].compute()
+        return self.get_input_node('element').compute()
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()

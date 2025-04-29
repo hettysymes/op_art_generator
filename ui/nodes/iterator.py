@@ -11,7 +11,7 @@ ITERATOR_NODE_INFO = UnitNodeInfo(
     name="Iterator",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Value list", PT_ValueList), PortDef("Shape", PT_Element)],
+    in_port_defs=[PortDef("Value list", PT_ValueList, key_name='value_list'), PortDef("Shape", PT_Element, key_name='element')],
     out_port_defs=[PortDef("Iterator", PT_ElementList)],
     prop_type_list=PropTypeList(
         [
@@ -35,8 +35,8 @@ class IteratorNode(UnitNode):
     UNIT_NODE_INFO = ITERATOR_NODE_INFO
 
     def compute(self):
-        samples = self.input_nodes[0].compute()
-        shape_node: Node = self.input_nodes[1]
+        samples = self.get_input_node('value_list').compute()
+        shape_node: Node = self.get_input_node('element')
         element = shape_node.compute()
         if (samples is not None) and element:
             prop_key = self.prop_vals['prop_to_change']

@@ -11,7 +11,7 @@ ELLIPSE_SAMPLER_NODE_INFO = UnitNodeInfo(
     name="Ellipse Sampler",
     resizable=True,
     selectable=False,
-    in_port_defs=[PortDef("Ellipse", PT_Ellipse)],
+    in_port_defs=[PortDef("Ellipse", PT_Ellipse, key_name='ellipse')],
     out_port_defs=[PortDef("Samples", PT_PointList)],
     prop_type_list=PropTypeList(
         [
@@ -48,7 +48,7 @@ class EllipseSamplerNode(UnitNode):
             return samples
 
     def compute(self):
-        element = self.input_nodes[0].compute()
+        element = self.get_input_node('ellipse').compute()
         return EllipseSamplerNode.helper(element, self.prop_vals['start_angle'], self.prop_vals['num_samples'])
 
     def visualise(self, temp_dir, height, wh_ratio):

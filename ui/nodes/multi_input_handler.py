@@ -2,9 +2,7 @@ from ui.nodes.elem_ref import ElemRef
 
 
 def handle_multi_inputs(elem_nodes, prop_vals_list):
-    elem_node_ids = []
-    if elem_nodes[0].compute():
-        elem_node_ids = [en.node_id for en in elem_nodes]
+    elem_node_ids = [en.node_id for en in elem_nodes]
     indices_to_remove = []
     for i, elem_ref in enumerate(prop_vals_list):
         if isinstance(elem_ref, ElemRef):

@@ -12,7 +12,7 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Input Ellipses", PT_Ellipse, input_multiple=True)
+        PortDef("Input Ellipses", PT_Ellipse, input_multiple=True, key_name='ellipses')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
@@ -33,9 +33,10 @@ class BlazeMakerNode(UnitNode):
     UNIT_NODE_INFO = BLAZE_MAKER_NODE_INFO
 
     def compute(self):
-        handle_multi_inputs(self.input_nodes, self.prop_vals['ellipses'])
+        input_nodes = self.get_input_node('ellipses')
+        handle_multi_inputs(input_nodes, self.prop_vals['ellipses'])
         # Return element
-        if self.input_nodes[0].compute():
+        if input_nodes:
             num_samples = self.prop_vals['num_polygons']*2
             ret_elem = Element()
             ellipse_elems = [elem_ref.compute() for elem_ref in self.prop_vals['ellipses']]

@@ -9,9 +9,9 @@ CHECKERBOARD_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Grid", PT_Grid),
-        PortDef("Drawing 1", PT_Element),
-        PortDef("Drawing 2", PT_Element)
+        PortDef("Grid", PT_Grid, key_name='grid'),
+        PortDef("Drawing 1", PT_Element, key_name='elem1'),
+        PortDef("Drawing 2", PT_Element, key_name='elem2')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([]),
@@ -23,9 +23,9 @@ class CheckerboardNode(UnitNode):
     UNIT_NODE_INFO = CHECKERBOARD_NODE_INFO
 
     def compute(self):
-        grid_out = self.input_nodes[0].compute()
-        element1 = self.input_nodes[1].compute()
-        element2 = self.input_nodes[2].compute()
+        grid_out = self.get_input_node('grid').compute()
+        element1 = self.get_input_node('elem1').compute()
+        element2 = self.get_input_node('elem2').compute()
         if grid_out and (element1 or element2):
             default_elem = RectangleNode(None, [UnitNode(None,None,None)], {'fill': (255, 255, 255, 0)}).compute()
             if not element1:
