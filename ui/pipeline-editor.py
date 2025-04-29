@@ -354,12 +354,16 @@ class NodeItem(QGraphicsRectItem):
         for input_port_id in self.backend.input_port_ids:
             input_port: PortItem = self.scene().scene.get(input_port_id)
             port_name = input_port.backend.port_def.key_name
+            print(input_port_id, port_name)
+            print()
             if len(input_port.backend.edge_ids) > 0:
                 res = []
                 for edge_id in input_port.backend.edge_ids:
                     edge: EdgeItem = self.scene().scene.get(edge_id)
                     res.append(edge.source_port.parentItem().node)
                 input_nodes[port_name] = res
+            else:
+                input_nodes[port_name] = None
         return input_nodes
 
     def get_output_node_items(self):
@@ -430,7 +434,7 @@ class NodeItem(QGraphicsRectItem):
             y_offset = input_count * self.rect().height() / (input_count + 1)
 
             # Create the new input port
-            input_port = PortItem(PortState(state_id,
+            res_port = PortItem(PortState(state_id,
                                             -10, y_offset,
                                             self.uid,
                                             True,
@@ -440,19 +444,18 @@ class NodeItem(QGraphicsRectItem):
             self.backend.input_port_ids.append(state_id)
 
             # Add to scene
-            self.scene().scene.add(input_port)
+            self.scene().scene.add(res_port)
 
             # Reposition existing input ports to distribute evenly
             self._reposition_ports(True)
 
-            return input_port
         else:
             # Calculate position for the new output port
             output_count = len(self.backend.output_port_ids) + 1
             y_offset = output_count * self.rect().height() / (output_count + 1)
 
             # Create the new output port
-            output_port = PortItem(PortState(state_id,
+            res_port = PortItem(PortState(state_id,
                                              self.rect().width() + 10, y_offset,
                                              self.uid,
                                              False,
@@ -462,12 +465,69 @@ class NodeItem(QGraphicsRectItem):
             self.backend.output_port_ids.append(state_id)
 
             # Add to scene
-            self.scene().scene.add(output_port)
+            self.scene().scene.add(res_port)
 
             # Reposition existing output ports to distribute evenly
             self._reposition_ports(False)
 
-            return output_port
+        self.update_node()
+
+
+    def remove_port_by_name(self, key_name, is_input=None):
+        """
+        Remove a port from the node by its key name.
+
+        Args:
+            key_name (str): The name of the port to remove
+            is_input (bool, optional): Whether to only look for input or output ports.
+                                      If None, will search both types.
+
+        Returns:
+            bool: True if the port was successfully removed, False otherwise
+        """
+        # Find the port to remove by name
+        port_to_remove = None
+
+        for item in self.scene().items():
+            if isinstance(item, PortItem) and item == self.uid:
+                # Check if port definition has the specified name
+                if 'key_name' in item.backend.port_def and item.backend.port_def['key_name'] == key_name:
+                    # If is_input is specified, make sure it matches
+                    if is_input is None or item.backend.is_input == is_input:
+                        port_to_remove = item
+                        break
+
+        # If no port found to remove
+        if port_to_remove is None:
+            return False
+
+        # First, remove any connections to/from this port
+        edges_to_remove = []
+        for edge_id in port_to_remove.backend.edge_ids:
+            edge: EdgeItem = self.scene.get(edge_id)
+            edges_to_remove.append(edge)
+        for edge in edges_to_remove:
+            self.scene().delete_edge(edge)
+
+        # Remove port from backend tracking
+        if port_to_remove.backend.is_input:
+            if port_to_remove.uid in self.backend.input_port_ids:
+                self.backend.input_port_ids.remove(port_to_remove.uid)
+        else:
+            if port_to_remove.uid in self.backend.output_port_ids:
+                self.backend.output_port_ids.remove(port_to_remove.uid)
+
+        # Remove port from scene
+        self.scene().scene.remove(port_to_remove)
+
+        # Reposition remaining ports to maintain even spacing
+        self._reposition_ports(port_to_remove.backend.is_input)
+
+        # Update label containers
+        self.update_label_containers()
+        self.update_node()
+
+        return True
 
     def _reposition_ports(self, is_input=True):
         """
@@ -817,12 +877,12 @@ class HelpIconLabel(QPushButton):
         # Remove focus outline
         self.setFocusPolicy(Qt.NoFocus)
 
-class AddPropertyPortButton(QPushButton):
-    def __init__(self, on_click_callback, parent=None):
+class ModifyPropertyPortButton(QPushButton):
+    def __init__(self, on_click_callback, text, parent=None):
         super().__init__(parent)
 
         # Set up the help icon with "?" text
-        self.setText("+")
+        self.setText(text)
         self.setFixedSize(16, 16)
 
         # Style the button to look like a help icon
@@ -921,20 +981,30 @@ class NodePropertiesDialog(QDialog):
                 'test_name',
                 PT_Element,
                 False,
-                'test_keyname'
+                'fill'
             ))
+
+        def remove_property_port():
+            node_item.remove_port_by_name('test_keyname')
 
         # Add the help icon after the widget (on the right)
         if prop.description:
             help_icon = HelpIconLabel(prop.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
         if prop.port_modifiable:
-            if node_item.node.input_nodes.get(prop.key_name):
+            print("Getting input node items")
+            print(node_item.get_input_node_items())
+            print(node_item.node.input_nodes)
+            print(prop.key_name)
+            if prop.key_name in node_item.node.input_nodes:
+                print("Adding minus")
                 # Exists port to modify this property, add minus button
-                pass
+                minus_btn = ModifyPropertyPortButton(remove_property_port, '-')  # Set maximum width for tooltip
+                widget_layout.addWidget(minus_btn)
             else:
+                print("Adding plus")
                 # Does not exist port to modify this property, add plus button
-                plus_btn = AddPropertyPortButton(add_property_port)  # Set maximum width for tooltip
+                plus_btn = ModifyPropertyPortButton(add_property_port, '+')  # Set maximum width for tooltip
                 widget_layout.addWidget(plus_btn)
 
         return label_container, widget_container

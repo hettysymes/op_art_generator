@@ -114,12 +114,17 @@ class Node(ABC):
 
     def get_input_node(self, key_name):
         if self._is_multiple_input(key_name):
-            return self.input_nodes.get(key_name, [])
+            default = []
+            if key_name in self.input_nodes:
+                res = self.input_nodes[key_name]
+                return res if (res is not None) else default
+            return default
         else:
-            inp_nodes = self.input_nodes.get(key_name)
-            if inp_nodes:
-                return inp_nodes[0]
-            return UnitNode()
+            default = UnitNode()
+            if key_name in self.input_nodes:
+                res = self.input_nodes[key_name]
+                return res[0] if (res is not None) else default
+            return default
 
     @abstractmethod
     def node_info(self):
