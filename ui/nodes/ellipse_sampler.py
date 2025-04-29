@@ -16,7 +16,7 @@ ELLIPSE_SAMPLER_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("start_angle", "float", default_value=0,
-                     description="Central angle of the first sample (point along the edge of the ellipse) with the ellipse's right-most point, set between -180° and +180°. The angle is measured clockwise. At 0° the first sample is at its right-most point. At 90° the first sample is at the bottom-most point.", display_name="Angle of first sample (°)", min_value=-180, max_value=180),
+                     description="Central angle (in degrees) of the first sample (point along the edge of the ellipse) with the ellipse's right-most point. The angle is measured clockwise. At 0° the first sample is at its right-most point. At 90° the first sample is at the bottom-most point.", display_name="Angle of first sample (°)"),
             PropType("num_samples", "int", default_value=5,
                      description="Number of samples (points along the edge of the ellipse), at most 1.", min_value=1, display_name="Sample number")
         ]

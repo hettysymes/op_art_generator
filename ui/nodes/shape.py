@@ -27,7 +27,7 @@ SINE_WAVE_NODE_INFO = UnitNodeInfo(
             PropType("centre_y", "float", default_value=0.5,
                      description="Equilibrium position of the sine wave. With 0° rotation, this is the y-coordinate of the equilibrium position. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Equilibrium position"),
             PropType("phase", "float", default_value=0.0,
-                     description="Phase of the sine wave, set between -180° and +180°.", display_name="Phase (°)", min_value=-180, max_value=180),
+                     description="Phase of the sine wave in degrees.", display_name="Phase (°)"),
             PropType("x_min", "float", default_value=0.0,
                      description="Start position of the sine wave. With 0° rotation, this is the x-coordinate of the start of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Wave start"),
             PropType("x_max", "float", default_value=1.0,
