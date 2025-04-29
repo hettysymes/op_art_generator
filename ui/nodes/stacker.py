@@ -38,18 +38,18 @@ class StackerNode(UnitNode):
     def compute(self):
         handle_multi_inputs(self.get_input_node('repeatables'), self.prop_vals['elem_order'])
         scaled_elements = []
-        for elem_ref in self.prop_vals['elem_order']:
+        for elem_ref in self.get_prop_val('elem_order'):
             elements = elem_ref.compute()
             if isinstance(elements, Element):
                 elements = [elements]
-            scale_factor = 1/self.prop_vals['wh_diff']
+            scale_factor = 1/self.get_prop_val('wh_diff')
             for element in elements:
-                if self.prop_vals['stack_layout'] == "Vertical":
+                if self.get_prop_val('stack_layout') == "Vertical":
                     scaled_elements.append(element.scale(1, scale_factor))
                 else:
                     scaled_elements.append(element.scale(scale_factor, 1))
         if scaled_elements:
-            if self.prop_vals['stack_layout'] == "Vertical":
+            if self.get_prop_val('stack_layout') == "Vertical":
                 grid = GridNode.helper(None, None, 1, len(scaled_elements))
             else:
                 grid = GridNode.helper(None, None, len(scaled_elements), 1)

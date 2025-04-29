@@ -39,13 +39,13 @@ class IteratorNode(UnitNode):
         shape_node: Node = self.get_input_node('element')
         element = shape_node.compute()
         if (samples is not None) and element:
-            prop_key = self.prop_vals['prop_to_change']
+            prop_key = self.get_prop_val('prop_to_change')
             if prop_key and (prop_key in shape_node.prop_vals):
                 ret = []
                 for sample in samples:
                     node_copy = copy.deepcopy(shape_node)
                     sample_type = normalize_type(sample)
-                    if sample_type != normalize_type(shape_node.prop_vals[prop_key]):
+                    if sample_type != normalize_type(shape_node.get_prop_val(prop_key)):
                         raise NodeInputException("Type of value list samples are not compatible with the selected property.", self.node_id)
                     # Check the sample is within the min and max range for floats and ints
                     if sample_type in (int, float):
@@ -65,7 +65,7 @@ class IteratorNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         elements = self.compute()
         if elements:
-            if self.prop_vals['vis_layout'] == "Vertical":
+            if self.get_prop_val('vis_layout') == "Vertical":
                 # Draw in vertical grid
                 v_line_xs, h_line_ys = GridNode.helper(None, None, 1, len(elements))
             else:

@@ -20,6 +20,13 @@ class PropTypeList:
             prop_vals[prop_type.key_name] = copy.deepcopy(prop_type.default_value)
         return prop_vals
 
+    def get_port_modifiable_keynames(self):
+        key_names = []
+        for prop_type in self.prop_types:
+            if prop_type.port_modifiable:
+                key_names.append(prop_type.key_name)
+        return key_names
+
     def __iter__(self):
         return iter(self.prop_types)
 
@@ -116,6 +123,9 @@ class Node(ABC):
                 return port_def.input_multiple
         assert False
 
+    def _is_port_modifiable(self, key_name):
+        return key_name in self.prop_type_list().get_port_modifiable_keynames()
+
     def get_input_node(self, key_name):
         if self._is_multiple_input(key_name):
             default = []
@@ -132,7 +142,7 @@ class Node(ABC):
 
     def get_prop_val(self, key_name):
         default = self.prop_vals[key_name]
-        if key_name in self.input_nodes:
+        if self._is_port_modifiable(key_name) and key_name in self.input_nodes:
             res = self.input_nodes[key_name]
             if res is not None:
                 res_compute = res[0].compute()

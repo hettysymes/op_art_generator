@@ -37,13 +37,13 @@ class BlazeMakerNode(UnitNode):
         handle_multi_inputs(input_nodes, self.prop_vals['ellipses'])
         # Return element
         if input_nodes:
-            num_samples = self.prop_vals['num_polygons']*2
+            num_samples = self.get_prop_val('num_polygons')*2
             ret_elem = Element()
-            ellipse_elems = [elem_ref.compute() for elem_ref in self.prop_vals['ellipses']]
+            ellipse_elems = [elem_ref.compute() for elem_ref in self.get_prop_val('ellipses')]
             # Sort ellipses in order of ascending radius
             ellipse_elems.sort(key=lambda elem: elem[0].r[0]**2 + elem[0].r[1]**2)
             start_angle = 0
-            angle_diff = self.prop_vals['angle_diff']
+            angle_diff = self.get_prop_val('angle_diff')
             samples_list = []
             for elem in ellipse_elems:
                 start_angle += angle_diff
@@ -55,7 +55,7 @@ class BlazeMakerNode(UnitNode):
                 for i, sample in enumerate(samples):
                     lines[i].append(sample)
             # Draw polygons
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
             for i in range(0, len(lines), 2):
                 points = lines[i - 1] + list(reversed(lines[i]))
                 ret_elem.add(Polygon(points, fill, fill_opacity))

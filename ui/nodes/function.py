@@ -33,8 +33,8 @@ class CubicFunNode(UnitNode):
     UNIT_NODE_INFO = CUBIC_FUN_NODE_INFO
 
     def compute(self):
-        return cubic_f(self.prop_vals['a_coeff'], self.prop_vals['b_coeff'], self.prop_vals['c_coeff'],
-                       self.prop_vals['d_coeff'])
+        return cubic_f(self.get_prop_val('a_coeff'), self.get_prop_val('b_coeff'), self.get_prop_val('c_coeff'),
+                       self.get_prop_val('d_coeff'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         function = self.compute()
@@ -63,7 +63,7 @@ class CustomFunNode(UnitNode):
 
     def compute(self):
         x = sp.symbols('x')
-        parsed_expr = sp.sympify(self.prop_vals['fun_def'])
+        parsed_expr = sp.sympify(self.get_prop_val('fun_def'))
         return sp.lambdify(x, parsed_expr)
 
     def visualise(self, temp_dir, height, wh_ratio):
@@ -92,7 +92,7 @@ class PiecewiseFunNode(UnitNode):
     UNIT_NODE_INFO = PIECEWISE_FUN_NODE_INFO
 
     def compute(self):
-        xs, ys = zip(*self.prop_vals['points'])
+        xs, ys = zip(*self.get_prop_val('points'))
         return lambda i: np.interp(i, xs, ys)
 
     def visualise(self, temp_dir, height, wh_ratio):

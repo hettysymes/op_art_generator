@@ -25,7 +25,7 @@ class ColourListNode(UnitNode):
     UNIT_NODE_INFO = COLOUR_LIST_NODE_INFO
 
     def compute(self):
-        return self.prop_vals['colours']
+        return self.get_prop_val('colours')
 
     def visualise(self, temp_dir, height, wh_ratio):
         colours = self.compute()
