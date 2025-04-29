@@ -43,7 +43,7 @@ class PropType:
 
 class UnitNodeInfo:
 
-    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description):
+    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description, prop_port_defs=None):
         self.name = name
         self.resizable = resizable
         self.selectable = selectable
@@ -51,6 +51,7 @@ class UnitNodeInfo:
         self.out_port_defs = out_port_defs
         self.prop_type_list = prop_type_list
         self.description = description
+        self.prop_port_defs = prop_port_defs if (prop_port_defs is not None) else []
 
 
 class Node(ABC):
@@ -105,6 +106,9 @@ class Node(ABC):
 
     def description(self):
         return self.node_info().description
+
+    def prop_port_defs(self):
+        return self.node_info().prop_port_defs
 
     def _is_multiple_input(self, key_name):
         for port_def in self.in_port_defs():

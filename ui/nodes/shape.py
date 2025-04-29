@@ -11,7 +11,7 @@ from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, Un
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape, Polyline
 from ui.nodes.utils import process_rgb, rev_process_rgb
-from ui.port_defs import PortDef, PortType, PT_Element, PT_Polyline, PT_Gradient, PT_Ellipse, PT_Shape
+from ui.port_defs import PortDef, PortType, PT_Element, PT_Polyline, PT_Gradient, PT_Ellipse, PT_Shape, PT_Fill
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
     name="Sine Wave",
@@ -122,6 +122,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[PortDef("Import Points", PT_Polyline, input_multiple=True, key_name='import_points')],
+    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
@@ -158,6 +159,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[],
+    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
@@ -194,6 +196,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[],
+    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
@@ -234,6 +237,7 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
     resizable=True,
     selectable=True,
     in_port_defs=[],
+    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [

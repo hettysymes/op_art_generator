@@ -354,8 +354,6 @@ class NodeItem(QGraphicsRectItem):
         for input_port_id in self.backend.input_port_ids:
             input_port: PortItem = self.scene().scene.get(input_port_id)
             port_name = input_port.backend.port_def.key_name
-            print(input_port_id, port_name)
-            print()
             if len(input_port.backend.edge_ids) > 0:
                 res = []
                 for edge_id in input_port.backend.edge_ids:
@@ -488,7 +486,6 @@ class NodeItem(QGraphicsRectItem):
         # Find the port to remove by name
         port_to_remove = None
 
-        print("Remove port! -2")
         for item in self.scene().items():
             if isinstance(item, PortItem) and item.parentItem().uid == self.uid:
                 # Check if port definition has the specified name
@@ -496,17 +493,14 @@ class NodeItem(QGraphicsRectItem):
                     port_to_remove = item
                     break
 
-        print("Remove port! -1")
         # If no port found to remove
         if port_to_remove is None:
             return False
 
-        print("Remove port!")
-
         # First, remove any connections to/from this port
         edges_to_remove = []
         for edge_id in port_to_remove.backend.edge_ids:
-            edge: EdgeItem = self.scene.get(edge_id)
+            edge: EdgeItem = self.scene().scene.get(edge_id)
             edges_to_remove.append(edge)
         for edge in edges_to_remove:
             self.scene().delete_edge(edge)
@@ -980,12 +974,10 @@ class NodePropertiesDialog(QDialog):
         widget_layout.addWidget(widget)
 
         def add_property_port():
-            node_item.add_port(PortDef(
-                'fill',
-                PT_Fill,
-                False,
-                'fill'
-            ))
+            for port_def in node_item.node.prop_port_defs():
+                if port_def.key_name == prop.key_name:
+                    node_item.add_port(port_def)
+                    break
 
         def remove_property_port():
             node_item.remove_port_by_name('fill')
@@ -995,17 +987,11 @@ class NodePropertiesDialog(QDialog):
             help_icon = HelpIconLabel(prop.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
         if prop.port_modifiable:
-            print("Getting input node items")
-            print(node_item.get_input_node_items())
-            print(node_item.node.input_nodes)
-            print(prop.key_name)
             if prop.key_name in node_item.node.input_nodes:
-                print("Adding minus")
                 # Exists port to modify this property, add minus button
                 minus_btn = ModifyPropertyPortButton(remove_property_port, '-')  # Set maximum width for tooltip
                 widget_layout.addWidget(minus_btn)
             else:
-                print("Adding plus")
                 # Does not exist port to modify this property, add plus button
                 plus_btn = ModifyPropertyPortButton(add_property_port, '+')  # Set maximum width for tooltip
                 widget_layout.addWidget(plus_btn)
