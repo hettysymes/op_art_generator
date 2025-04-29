@@ -7,14 +7,14 @@ from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Element, Polyline, Polygon
 from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.nodes.utils import process_rgb
-from ui.port_defs import PortType, PortDef, PT_Ellipse, PT_Element
+from ui.port_defs import PortType, PortDef, PT_Ellipse, PT_Element, PT_Repeatable
 
 STACKER_NODE_INFO = UnitNodeInfo(
     name="Stacker",
     resizable=True,
     selectable=True,
     in_port_defs=[
-        PortDef("Input Drawings", PT_Element, input_multiple=True)
+        PortDef("Input Drawings", PT_Repeatable, input_multiple=True)
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
@@ -37,22 +37,25 @@ class StackerNode(UnitNode):
 
     def compute(self):
         handle_multi_inputs(self.input_nodes, self.prop_vals['elem_order'])
-        elements = []
+        scaled_elements = []
         for elem_ref in self.prop_vals['elem_order']:
-            element = elem_ref.compute()
+            elements = elem_ref.compute()
+            if isinstance(elements, Element):
+                elements = [elements]
             scale_factor = 1/self.prop_vals['wh_diff']
+            for element in elements:
+                if self.prop_vals['stack_layout'] == "Vertical":
+                    scaled_elements.append(element.scale(1, scale_factor))
+                else:
+                    scaled_elements.append(element.scale(scale_factor, 1))
+        if scaled_elements:
             if self.prop_vals['stack_layout'] == "Vertical":
-                elements.append(element.scale(1, scale_factor))
+                grid = GridNode.helper(None, None, 1, len(scaled_elements))
             else:
-                elements.append(element.scale(scale_factor, 1))
-        if elements:
-            if self.prop_vals['stack_layout'] == "Vertical":
-                grid = GridNode.helper(None, None, 1, len(elements))
-            else:
-                grid = GridNode.helper(None, None, len(elements), 1)
+                grid = GridNode.helper(None, None, len(scaled_elements), 1)
             return ShapeRepeaterNode.helper(
                 grid,
-                elements
+                scaled_elements
             )
 
 
