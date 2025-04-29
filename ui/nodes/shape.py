@@ -128,7 +128,7 @@ POLYGON_NODE_INFO = UnitNodeInfo(
             PropType("points", "point_table", default_value=[(0, 0), (0, 1), (1, 1)],
                      description="Points defining the path of the polygon edge (in order).", display_name="Points"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="Polygon fill colour.", display_name="Colour")
+                     description="Polygon fill colour.", display_name="Colour", port_modifiable=True)
         ]
     ),
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
@@ -162,7 +162,7 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="Rectangle fill colour.", display_name="Colour")
+                     description="Rectangle fill colour.", display_name="Colour", port_modifiable=True)
         ]
     ),
     description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape."
@@ -204,7 +204,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
             PropType("centre", "coordinate", default_value=(0.5, 0.5),
                                  description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre coordinate"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="Ellipse fill colour.", display_name="Colour"),
+                     description="Ellipse fill colour.", display_name="Colour", port_modifiable=True),
             PropType("stroke_width", "float", default_value=1.0,
                                  description="Thickness of the line drawing the ellipse border.", display_name="Border thickness", min_value=0.0)
         ]
