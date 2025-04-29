@@ -25,7 +25,7 @@ STACKER_NODE_INFO = UnitNodeInfo(
                              description="Stacking of drawings can be done either top-to-bottom (vertical) or left-to-right (horizontal)",
                              display_name="Stack layout"),
         PropType("wh_diff", "float", default_value=0.3, min_value=0.1,
-                            description="Distance to place between stacked drawings (height or width for vertical or horizontal stacking respectively).",
+                            description="Distance to place between stacked drawings, proportional to the height or width of one drawing (height for vertical stacking, width for horizontal stacking). E.g. if set to 0.5, the second drawing will be stacked halfway along the first drawing.",
                             display_name="Height/width distance")
     ]),
     description="Stack multiple drawings together, either vertically or horizontally."
@@ -41,10 +41,17 @@ class StackerNode(UnitNode):
         for elem_ref in self.prop_vals['elem_order']:
             element = elem_ref.compute()
             scale_factor = 1/self.prop_vals['wh_diff']
-            elements.append(element.scale(1, scale_factor))
+            if self.prop_vals['stack_layout'] == "Vertical":
+                elements.append(element.scale(1, scale_factor))
+            else:
+                elements.append(element.scale(scale_factor, 1))
         if elements:
+            if self.prop_vals['stack_layout'] == "Vertical":
+                grid = GridNode.helper(None, None, 1, len(elements))
+            else:
+                grid = GridNode.helper(None, None, len(elements), 1)
             return ShapeRepeaterNode.helper(
-                GridNode.helper(None, None, 1, len(elements)),
+                grid,
                 elements
             )
 
