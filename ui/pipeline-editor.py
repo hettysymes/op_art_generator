@@ -521,6 +521,7 @@ class NodeItem(QGraphicsRectItem):
 
         # Remove port from scene
         self.scene().scene.remove(port_to_remove.uid)
+        self.scene().removeItem(port_to_remove)
 
         # Reposition remaining ports to maintain even spacing
         self._reposition_ports(port_to_remove.backend.is_input)
