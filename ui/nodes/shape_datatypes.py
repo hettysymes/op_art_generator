@@ -21,6 +21,16 @@ class Element:
         assert isinstance(shape, Shape)
         self.shapes.append(shape)
 
+    def scale(self, sx, sy):
+        for i in range(len(self.shapes)):
+            self.shapes[i] = self.shapes[i].scale(sx, sy)
+        return self
+
+    def translate(self, tx, ty):
+        for i in range(len(self.shapes)):
+            self.shapes[i] = self.shapes[i].translate(tx, ty)
+        return self
+
     def __iter__(self):
         return iter(self.shapes)
 

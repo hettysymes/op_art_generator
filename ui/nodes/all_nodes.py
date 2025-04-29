@@ -13,8 +13,9 @@ from ui.nodes.iterator_selector import IteratorSelectorNode
 from ui.nodes.overlay import OverlayNode
 from ui.nodes.shape import ShapeNode, PolygonNode
 from ui.nodes.shape_repeater import ShapeRepeaterNode
+from ui.nodes.stacker import StackerNode
 from ui.nodes.warp import WarpNode
 
 node_classes = [GridNode, ShapeNode, ShapeRepeaterNode, CheckerboardNode, WarpNode,
                 FunctionNode, CanvasNode, IteratorNode, ColourListNode, FunSamplerNode, ColourFillerNode, OverlayNode,
-                GradientNode, IteratorSelectorNode, EllipseSamplerNode, BlazeMakerNode]
+                GradientNode, IteratorSelectorNode, EllipseSamplerNode, BlazeMakerNode, StackerNode]

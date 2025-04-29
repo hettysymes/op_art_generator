@@ -1,9 +1,11 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.ellipse_sampler import EllipseSamplerNode
+from ui.nodes.grid import GridNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Element, Polyline, Polygon
+from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortType, PortDef, PT_Ellipse, PT_Element
 
@@ -34,11 +36,17 @@ class StackerNode(UnitNode):
     UNIT_NODE_INFO = STACKER_NODE_INFO
 
     def compute(self):
-        handle_multi_inputs(self.input_nodes, self.prop_vals['ellipses'])
-        # Return element
+        handle_multi_inputs(self.input_nodes, self.prop_vals['elem_order'])
         elements = []
         for elem_ref in self.prop_vals['elem_order']:
-            elements.append(elem_ref.compute())
+            element = elem_ref.compute()
+            scale_factor = 1/self.prop_vals['wh_diff']
+            elements.append(element.scale(1, scale_factor))
+        if elements:
+            return ShapeRepeaterNode.helper(
+                GridNode.helper(None, None, 1, len(elements)),
+                elements
+            )
 
 
     def visualise(self, temp_dir, height, wh_ratio):
