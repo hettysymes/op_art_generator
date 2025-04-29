@@ -20,6 +20,13 @@ class PropTypeList:
             prop_vals[prop_type.key_name] = copy.deepcopy(prop_type.default_value)
         return prop_vals
 
+    def get_port_modifiable_keynames(self):
+        key_names = []
+        for prop_type in self.prop_types:
+            if prop_type.port_modifiable:
+                key_names.append(prop_type.key_name)
+        return key_names
+
     def __iter__(self):
         return iter(self.prop_types)
 
@@ -43,7 +50,7 @@ class PropType:
 
 class UnitNodeInfo:
 
-    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description):
+    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description, prop_port_defs=None):
         self.name = name
         self.resizable = resizable
         self.selectable = selectable
@@ -51,6 +58,7 @@ class UnitNodeInfo:
         self.out_port_defs = out_port_defs
         self.prop_type_list = prop_type_list
         self.description = description
+        self.prop_port_defs = prop_port_defs if (prop_port_defs is not None) else []
 
 
 class Node(ABC):
@@ -106,20 +114,42 @@ class Node(ABC):
     def description(self):
         return self.node_info().description
 
+    def prop_port_defs(self):
+        return self.node_info().prop_port_defs
+
     def _is_multiple_input(self, key_name):
         for port_def in self.in_port_defs():
             if port_def.key_name == key_name:
                 return port_def.input_multiple
         assert False
 
+    def _is_port_modifiable(self, key_name):
+        return key_name in self.prop_type_list().get_port_modifiable_keynames()
+
     def get_input_node(self, key_name):
         if self._is_multiple_input(key_name):
-            return self.input_nodes.get(key_name, [])
+            default = []
+            if key_name in self.input_nodes:
+                res = self.input_nodes[key_name]
+                return res if (res is not None) else default
+            return default
         else:
-            inp_nodes = self.input_nodes.get(key_name)
-            if inp_nodes:
-                return inp_nodes[0]
-            return UnitNode()
+            default = UnitNode()
+            if key_name in self.input_nodes:
+                res = self.input_nodes[key_name]
+                return res[0] if (res is not None) else default
+            return default
+
+    def get_prop_val(self, key_name):
+        default = self.prop_vals[key_name]
+        if self._is_port_modifiable(key_name) and key_name in self.input_nodes:
+            res = self.input_nodes[key_name]
+            if res is not None:
+                res_compute = res[0].compute()
+                if res_compute is not None:
+                    return res_compute
+        return default
+
 
     @abstractmethod
     def node_info(self):

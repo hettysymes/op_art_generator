@@ -32,4 +32,4 @@ class CanvasNode(UnitNode):
         if not element:
             element = Element()
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio,
-                             (element, self.prop_vals['bg_col'])).save()
+                             (element, self.get_prop_val('bg_col'))).save()

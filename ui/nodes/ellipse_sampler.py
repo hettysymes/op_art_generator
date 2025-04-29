@@ -49,7 +49,7 @@ class EllipseSamplerNode(UnitNode):
 
     def compute(self):
         element = self.get_input_node('ellipse').compute()
-        return EllipseSamplerNode.helper(element, self.prop_vals['start_angle'], self.prop_vals['num_samples'])
+        return EllipseSamplerNode.helper(element, self.get_prop_val('start_angle'), self.get_prop_val('num_samples'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         points = self.compute()

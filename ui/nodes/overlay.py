@@ -28,7 +28,7 @@ class OverlayNode(UnitNode):
         handle_multi_inputs(self.get_input_node('elements'), self.prop_vals['elem_order'])
         # Return element
         shapes_list = []
-        for elem_ref in self.prop_vals['elem_order']:
+        for elem_ref in self.get_prop_val('elem_order'):
             shapes_list += elem_ref.compute().shapes
         return Element(shapes_list)
 

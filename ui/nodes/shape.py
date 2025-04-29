@@ -4,13 +4,14 @@ from cairosvg.shapes import polyline
 from numpy.ma.core import indices
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.shape_datatypes import Element, Polygon, Ellipse, SineWave, Shape, Polyline
 from ui.nodes.utils import process_rgb, rev_process_rgb
-from ui.port_defs import PortDef, PortType, PT_Element, PT_Polyline, PT_Gradient, PT_Ellipse, PT_Shape
+from ui.port_defs import PortDef, PortType, PT_Element, PT_Polyline, PT_Gradient, PT_Ellipse, PT_Shape, PT_Fill
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
     name="Sine Wave",
@@ -49,10 +50,10 @@ class SineWaveNode(UnitNode):
 
     def compute(self):
         try:
-            sine_wave = SineWave(self.prop_vals['amplitude'], self.prop_vals['wavelength'], self.prop_vals['centre_y'],
-                                     self.prop_vals['phase'], self.prop_vals['x_min'], self.prop_vals['x_max'],
-                                     self.prop_vals['stroke_width'], self.prop_vals['orientation'],
-                                     self.prop_vals['num_points'])
+            sine_wave = SineWave(self.get_prop_val('amplitude'), self.get_prop_val('wavelength'), self.get_prop_val('centre_y'),
+                                     self.get_prop_val('phase'), self.get_prop_val('x_min'), self.get_prop_val('x_max'),
+                                     self.get_prop_val('stroke_width'), self.get_prop_val('orientation'),
+                                     self.get_prop_val('num_points'))
         except ValueError as e:
             raise NodeInputException(str(e), self.node_id)
         return Element([sine_wave])
@@ -82,7 +83,7 @@ class CustomLineNode(UnitNode):
     UNIT_NODE_INFO = CUSTOM_LINE_NODE_INFO
 
     def compute(self):
-        return Element([Polyline(self.prop_vals['points'], 'black', self.prop_vals['stroke_width'])])
+        return Element([Polyline(self.get_prop_val('points'), 'black', self.get_prop_val('stroke_width'))])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -111,7 +112,7 @@ class StraightLineNode(UnitNode):
     UNIT_NODE_INFO = STRAIGHT_LINE_NODE_INFO
 
     def compute(self):
-        return Element([Polyline([self.prop_vals['start_coord'], self.prop_vals['stop_coord']], 'black', self.prop_vals['stroke_width'])])
+        return Element([Polyline([self.get_prop_val('start_coord'), self.get_prop_val('stop_coord')], 'black', self.get_prop_val('stroke_width'))])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -120,14 +121,15 @@ POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient'), PortDef("Import Points", PT_Polyline, input_multiple=True, key_name='import_points')],
+    in_port_defs=[PortDef("Import Points", PT_Polyline, input_multiple=True, key_name='import_points')],
+    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
             PropType("points", "point_table", default_value=[(0, 0), (0, 1), (1, 1)],
                      description="Points defining the path of the polygon edge (in order).", display_name="Points"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="Polygon fill colour.", display_name="Colour")
+                     description="Polygon fill colour.", display_name="Colour", port_modifiable=True)
         ]
     ),
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
@@ -137,16 +139,16 @@ class PolygonNode(UnitNode):
     UNIT_NODE_INFO = POLYGON_NODE_INFO
 
     def compute(self):
-        gradient = self.get_input_node('gradient').compute()
-        if gradient:
-            fill = gradient
+        colour = self.get_prop_val('fill')
+        if isinstance(colour, Gradient):
+            fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         # Return element
-        return Element([Polygon(self.prop_vals['points'], fill, fill_opacity)])
+        return Element([Polygon(self.get_prop_val('points'), fill, fill_opacity)])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -156,12 +158,13 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
+    in_port_defs=[],
+    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
         [
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="Rectangle fill colour.", display_name="Colour")
+                     description="Rectangle fill colour.", display_name="Colour", port_modifiable=True)
         ]
     ),
     description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape."
@@ -171,14 +174,18 @@ RECTANGLE_NODE_INFO = UnitNodeInfo(
 class RectangleNode(UnitNode):
     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
 
+    @staticmethod
+    def helper(fill, fill_opacity):
+        return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
+
     def compute(self):
-        gradient = self.get_input_node('gradient').compute()
-        if gradient:
-            fill = gradient
+        colour = self.get_prop_val('fill')
+        if isinstance(colour, Gradient):
+            fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
-        return Element([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
+        return RectangleNode.helper(fill, fill_opacity)
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -188,7 +195,8 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
+    in_port_defs=[],
+    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
@@ -199,7 +207,7 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
             PropType("centre", "coordinate", default_value=(0.5, 0.5),
                                  description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre coordinate"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="Ellipse fill colour.", display_name="Colour"),
+                     description="Ellipse fill colour.", display_name="Colour", port_modifiable=True),
             PropType("stroke_width", "float", default_value=1.0,
                                  description="Thickness of the line drawing the ellipse border.", display_name="Border thickness", min_value=0.0)
         ]
@@ -212,14 +220,14 @@ class EllipseNode(UnitNode):
     UNIT_NODE_INFO = ELLIPSE_NODE_INFO
 
     def compute(self):
-        gradient = self.get_input_node('gradient').compute()
-        if gradient:
-            fill = gradient
+        colour = self.get_prop_val('fill')
+        if isinstance(colour, Gradient):
+            fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
         return Element(
-            [Ellipse(self.prop_vals['centre'], (self.prop_vals['rx'], self.prop_vals['ry']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
+            [Ellipse(self.get_prop_val('centre'), (self.get_prop_val('rx'), self.get_prop_val('ry')), fill, fill_opacity, 'black', self.get_prop_val('stroke_width'))])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -228,7 +236,8 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
     name="Circle",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Gradient", PT_Gradient, key_name='gradient')],
+    in_port_defs=[],
+    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
         [
@@ -250,14 +259,14 @@ class CircleNode(UnitNode):
     UNIT_NODE_INFO = CIRCLE_NODE_INFO
 
     def compute(self):
-        gradient = self.get_input_node('gradient').compute()
-        if gradient:
-            fill = gradient
+        colour = self.get_prop_val('fill')
+        if isinstance(colour, Gradient):
+            fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.prop_vals['fill'])
+            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
         return Element(
-            [Ellipse(self.prop_vals['centre'], (self.prop_vals['r'], self.prop_vals['r']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
+            [Ellipse(self.get_prop_val('centre'), (self.get_prop_val('r'), self.get_prop_val('r')), fill, fill_opacity, 'black', self.get_prop_val('stroke_width'))])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -276,7 +285,7 @@ class ElementShapeNode(UnitNode):
     UNIT_NODE_INFO = ELEMENT_SHAPE_NODE_INFO
 
     def compute(self):
-        return Element([self.prop_vals['shape']])
+        return Element([self.get_prop_val('shape')])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -295,7 +304,7 @@ class ElementLineNode(UnitNode):
     UNIT_NODE_INFO = ELEMENT_LINE_NODE_INFO
 
     def compute(self):
-        return Element([self.prop_vals['line']])
+        return Element([self.get_prop_val('line')])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()

@@ -25,7 +25,7 @@ class FunSamplerNode(UnitNode):
     def compute(self):
         function = self.get_input_node('function').compute()
         if function:
-            return sample_fun(function, self.prop_vals['num_samples'])
+            return sample_fun(function, self.get_prop_val('num_samples'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         samples = self.compute()
