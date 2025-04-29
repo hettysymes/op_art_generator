@@ -830,6 +830,42 @@ class NodePropertiesDialog(QDialog):
             widget = QCheckBox()
             widget.setChecked(current_value or False)
 
+        elif prop.prop_type == "coordinate":
+            # Create the widget
+            widget = QWidget()
+
+            # Create a form layout for the overall container
+            form_layout = QFormLayout(widget)
+
+            # Create a horizontal layout for the spinboxes
+            spinbox_container = QWidget()
+            spinbox_layout = QHBoxLayout(spinbox_container)
+            spinbox_layout.setContentsMargins(0, 0, 0, 0)  # Remove internal margins
+
+            # Create the spinboxes
+            x_spinbox = QDoubleSpinBox()
+            y_spinbox = QDoubleSpinBox()
+
+            # Set initial values
+            x, y = (current_value or (0.5, 0.5))
+            x_spinbox.setValue(x)
+            y_spinbox.setValue(y)
+
+            # Add spinboxes to the horizontal layout with labels
+            spinbox_layout.addWidget(QLabel("("))
+            spinbox_layout.addWidget(x_spinbox)
+            spinbox_layout.addWidget(QLabel(","))
+            spinbox_layout.addWidget(y_spinbox)
+            spinbox_layout.addWidget(QLabel(")"))
+
+            # Add the container to the form layout as a single row
+            form_layout.addRow(spinbox_container)
+
+            def get_coord_value():
+                return x_spinbox.value(), y_spinbox.value()
+
+            widget.get_value = get_coord_value
+
         elif prop.prop_type == "prop_enum":
             widget = QComboBox()
             input_node_props = node_item.node.input_nodes[1].prop_type_list()
@@ -927,12 +963,10 @@ class NodePropertiesDialog(QDialog):
                 form_layout = QFormLayout()
 
                 x_input = QDoubleSpinBox()
-                x_input.setRange(0, 1)  # Adjust the range as needed
                 x_input.setDecimals(2)
                 x_input.setValue(initial_x)
 
                 y_input = QDoubleSpinBox()
-                y_input.setRange(0, 1)
                 y_input.setDecimals(2)
                 y_input.setValue(initial_y)
 

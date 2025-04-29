@@ -207,10 +207,8 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
         [
             PropType("r", "float", default_value=0.5, min_value=0.0,
                      description="Radius of the circle. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Radius"),
-            PropType("cx", "float", default_value=0.5,
-                                 description="x-coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre x-coordinate (cx)"),
-            PropType("cy", "float", default_value=0.5,
-                                 description="y-coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre y-coordinate (cy)"),
+            PropType("centre", "coordinate", default_value=(0.5, 0.5),
+                                 description="Coordinate of the circle centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Centre coordinate"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
                      description="Circle fill colour.", display_name="Colour"),
             PropType("stroke_width", "float", default_value=1.0,
@@ -232,7 +230,7 @@ class CircleNode(UnitNode):
         else:
             fill, fill_opacity = process_rgb(self.prop_vals['fill'])
         return Element(
-            [Ellipse((self.prop_vals['cx'], self.prop_vals['cy']), (self.prop_vals['r'], self.prop_vals['r']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
+            [Ellipse(self.prop_vals['centre'], (self.prop_vals['r'], self.prop_vals['r']), fill, fill_opacity, 'black', self.prop_vals['stroke_width'])])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
