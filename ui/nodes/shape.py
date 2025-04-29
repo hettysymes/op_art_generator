@@ -87,6 +87,35 @@ class CustomLineNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
+STRAIGHT_LINE_NODE_INFO = UnitNodeInfo(
+    name="Straight Line",
+    resizable=True,
+    selectable=True,
+    in_port_defs=[],
+    out_port_defs=[PortDef("Drawing", PT_Polyline)],
+    prop_type_list=PropTypeList(
+        [
+            PropType("start_coord", "coordinate", default_value=(1, 0),
+                     description="Coordinate of the start of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Start coordinate"),
+            PropType("stop_coord", "coordinate", default_value=(0, 1),
+                     description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.", display_name="Stop coordinate"),
+            PropType("stroke_width", "float", default_value=1.0,
+                                 description="Thickness of the straight line.", display_name="Line thickness", min_value=0.0)
+        ]
+    ),
+    description="Create a straight line by defining the start and stop points. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
+)
+
+
+class StraightLineNode(UnitNode):
+    UNIT_NODE_INFO = STRAIGHT_LINE_NODE_INFO
+
+    def compute(self):
+        return Element([Polyline([self.prop_vals['start_coord'], self.prop_vals['stop_coord']], 'black', self.prop_vals['stroke_width'])])
+
+    def visualise(self, temp_dir, height, wh_ratio):
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
     resizable=True,
@@ -287,4 +316,4 @@ def get_node_from_shape(shape: Shape):
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, CustomLineNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, CustomLineNode, StraightLineNode]
