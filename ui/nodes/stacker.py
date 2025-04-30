@@ -56,7 +56,11 @@ class StackerNode(UnitNode):
             grid,
             scaled_elements
         )
-        return repeated_elem.scale(1, n/(n-1+(1/wh_diff)))
+        final_scale_factor = n/(n-1+(1/wh_diff))
+        if vertical_layout:
+            return repeated_elem.scale(1, final_scale_factor)
+        else:
+            return repeated_elem.scale(final_scale_factor, 1)
 
 
     def compute(self):
