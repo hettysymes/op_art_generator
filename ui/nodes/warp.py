@@ -2,7 +2,7 @@ from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList
 from ui.nodes.warp_utils import PosWarp, RelWarp
-from ui.port_defs import PortDef, PortType, PT_Function, PT_Warp
+from ui.port_defs import PortDef, PT_Function, PT_Warp
 
 POS_WARP_NODE_INFO = UnitNodeInfo(
     name="Position Warp",

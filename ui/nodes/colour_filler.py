@@ -5,7 +5,7 @@ from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape_datatypes import Group, Polyline, Polygon, Element
 from ui.nodes.utils import process_rgb
-from ui.port_defs import PortDef, PortType, PT_ColourList, PT_Element
+from ui.port_defs import PortDef, PT_ColourList, PT_Element
 
 COLOUR_FILLER_NODE_INFO = UnitNodeInfo(
     name="Colour Filler",
@@ -30,7 +30,7 @@ class ColourFillerNode(UnitNode):
         colour_it = itertools.cycle(colours)
         transformed_shapes = element.transformed_shapes()
         for i in range(1, len(transformed_shapes)):
-            shape1, transform_list1 = transformed_shapes[i-1]
+            shape1, transform_list1 = transformed_shapes[i - 1]
             shape2, transform_list2 = transformed_shapes[i]
             points = shape1.get_points(transform_list1) + list(reversed(shape2.get_points(transform_list2)))
             fill, fill_opacity = process_rgb(next(colour_it))

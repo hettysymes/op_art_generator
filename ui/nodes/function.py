@@ -5,7 +5,7 @@ from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.utils import cubic_f
 from ui.nodes.warp_utils import sample_fun
-from ui.port_defs import PortDef, PortType, PT_Function
+from ui.port_defs import PortDef, PT_Function
 
 CUBIC_FUN_NODE_INFO = UnitNodeInfo(
     name="Cubic Function",
@@ -16,11 +16,14 @@ CUBIC_FUN_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("a_coeff", "float", default_value=3.22,
-                     description="x³ coefficient (i.e. a in the expression ax³ + bx² + cx + d).", display_name="x³ coefficient"),
+                     description="x³ coefficient (i.e. a in the expression ax³ + bx² + cx + d).",
+                     display_name="x³ coefficient"),
             PropType("b_coeff", "float", default_value=-5.41,
-                     description="x² coefficient (i.e. b in the expression ax³ + bx² + cx + d).", display_name="x² coefficient"),
+                     description="x² coefficient (i.e. b in the expression ax³ + bx² + cx + d).",
+                     display_name="x² coefficient"),
             PropType("c_coeff", "float", default_value=3.20,
-                     description="x coefficient ( i.e. c in the expression ax³ + bx² + cx + d).", display_name="x coefficient"),
+                     description="x coefficient ( i.e. c in the expression ax³ + bx² + cx + d).",
+                     display_name="x coefficient"),
             PropType("d_coeff", "float", default_value=0,
                      description="Constant (i.e. d in the expression ax³ + bx² + cx + d).", display_name="Constant")
         ]
@@ -49,7 +52,8 @@ CUSTOM_FUN_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("fun_def", "string", default_value="x",
-                     description="Custom function f(x) defined in terms of x.", display_name="f(x) =", auto_format=False)
+                     description="Custom function f(x) defined in terms of x.", display_name="f(x) =",
+                     auto_format=False)
         ]
     ),
     description="Define a custom function by entering an equation in terms of x."
@@ -77,7 +81,8 @@ PIECEWISE_FUN_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("points", "point_table", default_value=[(0, 0), (0.5, 0.5), (1, 1)],
-                     description="Points defining where the piecewise linear function passes through.", display_name="Points")
+                     description="Points defining where the piecewise linear function passes through.",
+                     display_name="Points")
         ]
     ),
     description="Define a piecewise linear function by entering points the function passes through."

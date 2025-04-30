@@ -44,13 +44,14 @@ class PropType:
         self.max_value = max_value
         self.description = description
         self.auto_format = auto_format
-        self.options = options # options for (constant) enum type
+        self.options = options  # options for (constant) enum type
         self.port_modifiable = port_modifiable
 
 
 class UnitNodeInfo:
 
-    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description, prop_port_defs=None):
+    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description,
+                 prop_port_defs=None):
         self.name = name
         self.resizable = resizable
         self.selectable = selectable
@@ -149,7 +150,6 @@ class Node(ABC):
                 if res_compute is not None:
                     return res_compute
         return default
-
 
     @abstractmethod
     def node_info(self):

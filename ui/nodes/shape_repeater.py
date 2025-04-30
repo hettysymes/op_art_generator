@@ -3,8 +3,7 @@ import itertools
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape_datatypes import Group, Element
-from ui.nodes.transforms import Scale, Translate
-from ui.port_defs import PortDef, PortType, PT_Grid, PT_Element, PT_Repeatable
+from ui.port_defs import PortDef, PT_Grid, PT_Element, PT_Repeatable
 
 SHAPE_REPEATER_NODE_INFO = UnitNodeInfo(
     name="Shape Repeater",

@@ -1,5 +1,4 @@
 from ui.nodes.drawers.Drawing import Drawing
-from ui.nodes.shape_datatypes import Group
 
 
 class ErrorDrawer(Drawing):

@@ -1,12 +1,9 @@
-import uuid
-
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
 # from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
-from ui.nodes.utils import process_rgb
-from ui.port_defs import PortType, PortDef, PT_Gradient
+from ui.port_defs import PortDef, PT_Gradient
 
 GRADIENT_NODE_INFO = UnitNodeInfo(
     name="Gradient",
@@ -33,4 +30,3 @@ class GradientNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         element = RectangleNode(prop_vals={'fill': self.compute()}).compute()
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
-

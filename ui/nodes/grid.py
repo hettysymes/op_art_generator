@@ -1,7 +1,7 @@
 from ui.nodes.drawers.grid_drawer import GridDrawing
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.warp_utils import PosWarp, RelWarp
-from ui.port_defs import PortDef, PortType, PT_Warp, PT_Grid
+from ui.port_defs import PortDef, PT_Warp, PT_Grid
 
 GRID_NODE_INFO = UnitNodeInfo(
     name="Grid",

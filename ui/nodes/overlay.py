@@ -1,9 +1,8 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.elem_ref import ElemRef
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Group
-from ui.port_defs import PortType, PortDef, PT_Element
+from ui.port_defs import PortDef, PT_Element
 
 OVERLAY_NODE_INFO = UnitNodeInfo(
     name="Overlay",
@@ -15,7 +14,8 @@ OVERLAY_NODE_INFO = UnitNodeInfo(
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList([
         PropType("elem_order", "elem_table", default_value=[],
-                             description="Order of drawings in which to overlay them. Drawings at the top of the list are drawn first (i.e. at the bottom of the final overlayed image).", display_name="Drawing order")
+                 description="Order of drawings in which to overlay them. Drawings at the top of the list are drawn first (i.e. at the bottom of the final overlayed image).",
+                 display_name="Drawing order")
     ]),
     description="Overlay 2+ drawings and define their order."
 )

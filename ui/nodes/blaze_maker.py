@@ -1,11 +1,10 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.elem_ref import ElemRef
 from ui.nodes.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape_datatypes import Group, Polyline, Polygon
+from ui.nodes.shape_datatypes import Group, Polygon
 from ui.nodes.utils import process_rgb
-from ui.port_defs import PortType, PortDef, PT_Ellipse, PT_Element
+from ui.port_defs import PortDef, PT_Ellipse, PT_Element
 
 BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     name="Blaze Maker",
@@ -19,11 +18,12 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
         PropType("num_polygons", "int", default_value=36,
                  description="Number of zig-zags, at most 1.", min_value=1, display_name="Zig-zag number"),
         PropType("angle_diff", "float", default_value=20,
-                         description="Angle (in degrees) determining the sharpness and direction of the zig-zags. Angles with a higher magnitude give sharper zig-zags. Negative angles give zig-zags in the reverse direction to positive angles.", display_name="Zig-zag angle (°)"),
+                 description="Angle (in degrees) determining the sharpness and direction of the zig-zags. Angles with a higher magnitude give sharper zig-zags. Negative angles give zig-zags in the reverse direction to positive angles.",
+                 display_name="Zig-zag angle (°)"),
         PropType("fill", "colour", default_value=(0, 0, 0, 255),
                  description="Zig-zag colour.", display_name="Zig-zag colour"),
         PropType("ellipses", "hidden", default_value=[],
-                             description="")
+                 description="")
     ]),
     description="Input 2+ circle/ellipse shapes to create an image similar to those in the Blaze series by Bridget Riley."
 )
@@ -57,12 +57,12 @@ class BlazeMakerNode(UnitNode):
             ret_group.add(Polygon(points, fill, fill_opacity))
         return ret_group
 
-
     def compute(self):
         input_nodes = self.get_input_node('ellipses')
         handle_multi_inputs(input_nodes, self.prop_vals['ellipses'])
         if input_nodes:
-            return BlazeMakerNode.helper(self.get_prop_val('num_polygons'), self.get_prop_val('ellipses'), self.get_prop_val('angle_diff'), self.get_prop_val('fill'))
+            return BlazeMakerNode.helper(self.get_prop_val('num_polygons'), self.get_prop_val('ellipses'),
+                                         self.get_prop_val('angle_diff'), self.get_prop_val('fill'))
         return None
 
     def visualise(self, temp_dir, height, wh_ratio):

@@ -1,14 +1,11 @@
-import copy
 import random
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.grid import GridNode
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
+from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Group
 from ui.nodes.utils import process_rgb
-from ui.port_defs import PortDef, PortType, PT_Element, PT_ElementList, PT_ColourList, PT_Colour
+from ui.port_defs import PortDef, PT_ColourList, PT_Colour
 
 RANDOM_COLOUR_SELECTOR_NODE_INFO = UnitNodeInfo(
     name="Random Colour Selector",
@@ -19,7 +16,8 @@ RANDOM_COLOUR_SELECTOR_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("use_seed", "bool",
-                     description="If checked, use the provided seed for random selection. Random selections done with the same seed will always be the same.", display_name="Use random seed?", auto_format=False),
+                     description="If checked, use the provided seed for random selection. Random selections done with the same seed will always be the same.",
+                     display_name="Use random seed?", auto_format=False),
             PropType("user_seed", "int", default_value=42,
                      description="If random seed is used, use this as the random seed.", display_name="Random seed"),
             PropType("_actual_seed", "hidden")

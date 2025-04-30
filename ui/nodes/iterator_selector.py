@@ -1,11 +1,7 @@
-import copy
-
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.grid import GridNode
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
-from ui.nodes.shape_datatypes import Group
-from ui.port_defs import PortDef, PortType, PT_Element, PT_ElementList
+from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui.port_defs import PortDef, PT_Element, PT_ElementList
 
 ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(
     name="Iterator Selector",
@@ -16,7 +12,8 @@ ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("select_idx", "selector_enum",
-                     description="Index of the element in the iterator output you'd like to select.", display_name="Select index")
+                     description="Index of the element in the iterator output you'd like to select.",
+                     display_name="Select index")
         ]
     ),
     description="Select one of the outputs of an Iterator node by inputting its index."

@@ -12,6 +12,7 @@ class Transform(ABC):
     def __repr__(self):
         pass
 
+
 class Translate(Transform):
     def __init__(self, tx, ty):
         self.tx = tx
@@ -23,6 +24,7 @@ class Translate(Transform):
     def __repr__(self):
         return f"translate({self.tx},{self.ty})"
 
+
 class Scale(Transform):
     def __init__(self, sx, sy):
         self.sx = sx
@@ -33,6 +35,7 @@ class Scale(Transform):
 
     def __repr__(self):
         return f"scale({self.sx},{self.sy})"
+
 
 class Rotate(Transform):
     def __init__(self, angle, centre):

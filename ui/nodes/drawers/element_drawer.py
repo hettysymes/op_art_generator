@@ -1,5 +1,5 @@
 from ui.nodes.drawers.Drawing import Drawing
-from ui.nodes.shape_datatypes import Group, Element
+from ui.nodes.shape_datatypes import Element
 
 
 class ElementDrawer(Drawing):

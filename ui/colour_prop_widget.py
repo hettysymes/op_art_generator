@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QColorDialog, QSpinBox
-from PyQt5.QtGui import QColor, QPainter
 from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QPainter
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QColorDialog
 
 
 class ColorPreviewWidget(QWidget):
@@ -49,7 +49,7 @@ class ColorPropertyWidget(QWidget):
         layout.setStretch(0, 1)
 
     def showColorDialog(self):
-        color = QColorDialog.getColor(self.color, self, "Select Color",  options=QColorDialog.ShowAlphaChannel)
+        color = QColorDialog.getColor(self.color, self, "Select Color", options=QColorDialog.ShowAlphaChannel)
         if color.isValid():
             self.setColor(color)
             self.colorChanged.emit(self.color)

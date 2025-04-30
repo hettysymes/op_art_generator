@@ -1,16 +1,19 @@
-import numpy as np
 import re
+
+import numpy as np
+
 
 def process_rgb(rgb_val):
     r, g, b, a = rgb_val
     return f'rgb({r},{g},{b})', a / 255
+
 
 def rev_process_rgb(fill, fill_opacity):
     match = re.match(r"rgb\((\d+),(\d+),(\d+)\)", fill)
     assert match
     r, g, b = map(int, match.groups())
     a = int(fill_opacity * 255)
-    return (r,g,b,a)
+    return (r, g, b, a)
 
 
 def cubic_f(a, b, c, d=0):

@@ -1,7 +1,6 @@
 import ast
 import copy
 import math
-import os
 import pickle
 import random
 import shutil
@@ -9,29 +8,27 @@ import sys
 import tempfile
 import uuid
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel, QTimer, QPoint, QRect, \
-    QEvent
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QDoubleValidator, QDropEvent, QIcon, QTextDocument
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
-                             QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
-                             QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
-                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup, QGraphicsTextItem, QLabel,
-                             QToolTip)
+                             QDialogButtonBox, QGroupBox, QTableWidgetItem, QWidget,
+                             QHBoxLayout, QFileDialog, QStyledItemDelegate, QColorDialog,
+                             QGraphicsTextItem, QLabel)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
+from ui.nodes.all_nodes import node_classes
+from ui.nodes.nodes import CombinationNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape import ElemRef
-from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList, PortDef, PT_Fill
+from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
-from ui.nodes.all_nodes import node_classes
-from ui.nodes.nodes import CombinationNode, UnitNode
 from ui.selectable_renderer import SelectableSvgElement
 
 
@@ -435,10 +432,10 @@ class NodeItem(QGraphicsRectItem):
 
             # Create the new input port
             res_port = PortItem(PortState(state_id,
-                                            -10, y_offset,
-                                            self.uid,
-                                            True,
-                                            [], port_def), self)
+                                          -10, y_offset,
+                                          self.uid,
+                                          True,
+                                          [], port_def), self)
 
             # Add to the backend tracking
             self.backend.input_port_ids.append(state_id)
@@ -456,10 +453,10 @@ class NodeItem(QGraphicsRectItem):
 
             # Create the new output port
             res_port = PortItem(PortState(state_id,
-                                             self.rect().width() + 10, y_offset,
-                                             self.uid,
-                                             False,
-                                             [], port_def), self)
+                                          self.rect().width() + 10, y_offset,
+                                          self.uid,
+                                          False,
+                                          [], port_def), self)
 
             # Add to the backend tracking
             self.backend.output_port_ids.append(state_id)
@@ -471,7 +468,6 @@ class NodeItem(QGraphicsRectItem):
             self._reposition_ports(False)
 
         self.update_node()
-
 
     def remove_port_by_name(self, key_name, is_input=None):
         """
@@ -876,6 +872,7 @@ class HelpIconLabel(QPushButton):
         # Remove focus outline
         self.setFocusPolicy(Qt.NoFocus)
 
+
 class ModifyPropertyPortButton(QPushButton):
     def __init__(self, on_click_callback, adding, max_width=300, parent=None):
         super().__init__(parent)
@@ -929,6 +926,7 @@ class ModifyPropertyPortButton(QPushButton):
         if self.user_callback:
             self.user_callback(not self.adding)
 
+
 class NodePropertiesDialog(QDialog):
     """Dialog for editing node properties"""
 
@@ -958,7 +956,8 @@ class NodePropertiesDialog(QDialog):
             for prop in node_item.node.prop_type_list():
                 if prop.prop_type != "hidden":
                     widget = self.create_property_widget(prop, node_item.node.prop_vals.get(prop.key_name,
-                                                                                            prop.default_value), node_item)
+                                                                                            prop.default_value),
+                                                         node_item)
 
                     # Create the row with label and help icon
                     label_container, widget_container = self.create_property_row(prop, widget, node_item)
@@ -1015,7 +1014,8 @@ class NodePropertiesDialog(QDialog):
         if prop.port_modifiable:
             if prop.key_name in node_item.node.input_nodes:
                 # Exists port to modify this property, add minus button
-                minus_btn = ModifyPropertyPortButton(change_property_port, adding=False)  # Set maximum width for tooltip
+                minus_btn = ModifyPropertyPortButton(change_property_port,
+                                                     adding=False)  # Set maximum width for tooltip
                 widget_layout.addWidget(minus_btn)
             else:
                 # Does not exist port to modify this property, add plus button
@@ -1023,7 +1023,6 @@ class NodePropertiesDialog(QDialog):
                 widget_layout.addWidget(plus_btn)
 
         return label_container, widget_container
-
 
     def create_property_widget(self, prop, current_value, node_item):
         """Create an appropriate widget for the property type"""
@@ -1103,7 +1102,7 @@ class NodePropertiesDialog(QDialog):
             widget.addItem("[none]", userData=None)
             if input_prop_compute:
                 for i in range(len(input_prop_compute)):
-                    widget.addItem(str(i+1), userData=i)
+                    widget.addItem(str(i + 1), userData=i)
             # Set the current value if available
             if current_value is not None:
                 # Find the index where the key_name matches current_value
@@ -1487,8 +1486,8 @@ class NodePropertiesDialog(QDialog):
             widget = container
 
         elif prop.prop_type == "colour":
-            r,g,b,a = current_value
-            widget = ColorPropertyWidget(QColor(r,g,b,a) or QColor(0,0,0,255))
+            r, g, b, a = current_value
+            widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
         else:  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
 
@@ -1504,7 +1503,7 @@ class NodePropertiesDialog(QDialog):
             elif isinstance(widget, QCheckBox):
                 value = widget.isChecked()
             elif isinstance(widget, QComboBox):
-                value =  widget.itemData(widget.currentIndex())
+                value = widget.itemData(widget.currentIndex())
             elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
                 value = widget.get_value()
             else:  # QLineEdit
@@ -1611,7 +1610,9 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.backend.edge_ids) > 0
-                if not connection_exists and issubclass(source_port.backend.port_def.port_type, dest_port.backend.port_def.port_type) and (dest_port.backend.port_def.input_multiple or not target_has_connection):
+                if not connection_exists and issubclass(source_port.backend.port_def.port_type,
+                                                        dest_port.backend.port_def.port_type) and (
+                        dest_port.backend.port_def.input_multiple or not target_has_connection):
                     edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.backend.uid, dest_port.backend.uid))
                     self.scene.add(edge)
                     self.addItem(edge)
@@ -1987,6 +1988,7 @@ class PipelineEditor(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
                 item.setSelected(True)
+
 
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as temp_dir:

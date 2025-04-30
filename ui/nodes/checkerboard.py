@@ -2,8 +2,7 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Group
-from ui.nodes.transforms import Translate, Scale
-from ui.port_defs import PortType, PortDef, PT_Grid, PT_Element
+from ui.port_defs import PortDef, PT_Grid, PT_Element
 
 CHECKERBOARD_NODE_INFO = UnitNodeInfo(
     name="Checkerboard",

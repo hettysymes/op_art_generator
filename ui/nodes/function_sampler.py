@@ -1,7 +1,7 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.warp_utils import sample_fun
-from ui.port_defs import PortDef, PortType, PT_Function, PT_NumberList
+from ui.port_defs import PortDef, PT_Function, PT_NumberList
 
 FUN_SAMPLER_NODE = UnitNodeInfo(
     name="Function Sampler",
@@ -12,7 +12,8 @@ FUN_SAMPLER_NODE = UnitNodeInfo(
     prop_type_list=PropTypeList(
         [
             PropType("num_samples", "int", default_value=5,
-                     description="Number of samples to obtain from the function f(x), i.e. x values (between 0 & 1) to input.", min_value=1, display_name="Sample number")
+                     description="Number of samples to obtain from the function f(x), i.e. x values (between 0 & 1) to input.",
+                     min_value=1, display_name="Sample number")
         ]
     ),
     description="Sample a function f(x) at equal intervals in the range x ∈ [0, 1]."

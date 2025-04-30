@@ -3,8 +3,8 @@ import math
 import uuid
 from abc import ABC, abstractmethod
 
-from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.elem_ref import ElemRef
+from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 
 
@@ -29,6 +29,7 @@ class Element(ABC):
     @abstractmethod
     def transformed_shapes(self):
         pass
+
 
 class Group(Element):
 
@@ -80,6 +81,7 @@ class Group(Element):
                 transformed_shapes.append((shape, new_transform_list))
         return transformed_shapes
 
+
 class Shape(Element, ABC):
 
     def __init__(self):
@@ -102,6 +104,7 @@ class Shape(Element, ABC):
 
     def transformed_shapes(self):
         return [(self, TransformList())]
+
 
 class Polyline(Shape):
 
@@ -151,6 +154,7 @@ class Polygon(Shape):
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
                            id=self.shape_id)
+
 
 class Ellipse(Shape):
 

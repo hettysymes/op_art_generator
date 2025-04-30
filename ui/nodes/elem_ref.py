@@ -28,4 +28,3 @@ class ElemRef:
         if self.reversed:
             return list(reversed(points))
         return points
-

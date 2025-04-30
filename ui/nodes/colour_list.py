@@ -2,9 +2,8 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Group
 from ui.nodes.shape_repeater import ShapeRepeaterNode
-from ui.port_defs import PortDef, PortType, PT_ColourList
+from ui.port_defs import PortDef, PT_ColourList
 
 COLOUR_LIST_NODE_INFO = UnitNodeInfo(
     name="Colour List",

@@ -4,20 +4,21 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
-from ui.nodes.shape_datatypes import Group
 from ui.nodes.shape_repeater import ShapeRepeaterNode
-from ui.port_defs import PortDef, PortType, PT_ValueList, PT_Element, PT_ElementList
+from ui.port_defs import PortDef, PT_ValueList, PT_Element, PT_ElementList
 
 ITERATOR_NODE_INFO = UnitNodeInfo(
     name="Iterator",
     resizable=True,
     selectable=True,
-    in_port_defs=[PortDef("Value list", PT_ValueList, key_name='value_list'), PortDef("Shape", PT_Element, key_name='element')],
+    in_port_defs=[PortDef("Value list", PT_ValueList, key_name='value_list'),
+                  PortDef("Shape", PT_Element, key_name='element')],
     out_port_defs=[PortDef("Iterator", PT_ElementList)],
     prop_type_list=PropTypeList(
         [
             PropType("prop_to_change", "prop_enum", default_value="",
-                     description="Property of the input shape of which to modify using the value list.", display_name="Property to change"),
+                     description="Property of the input shape of which to modify using the value list.",
+                     display_name="Property to change"),
             PropType("vis_layout", "enum", default_value="Vertical", options=["Vertical", "Horizontal"],
                      description="Iterations can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
                      display_name="Visualisation layout")
@@ -26,11 +27,13 @@ ITERATOR_NODE_INFO = UnitNodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values."
 )
 
+
 def normalize_type(t):
     import numpy as np
     if isinstance(t, np.generic):
         t = t.item()
     return type(t)
+
 
 class IteratorNode(UnitNode):
     UNIT_NODE_INFO = ITERATOR_NODE_INFO
@@ -47,11 +50,13 @@ class IteratorNode(UnitNode):
                     node_copy = copy.deepcopy(shape_node)
                     sample_type = normalize_type(sample)
                     if sample_type != normalize_type(shape_node.get_prop_val(prop_key)):
-                        raise NodeInputException("Type of value list samples are not compatible with the selected property.", self.node_id)
+                        raise NodeInputException(
+                            "Type of value list samples are not compatible with the selected property.", self.node_id)
                     # Check the sample is within the min and max range for floats and ints
                     if sample_type in (int, float):
                         matching_prop = next((p for p in shape_node.prop_type_list() if p.key_name == prop_key), None)
-                        if ((matching_prop.min_value is not None) and sample < matching_prop.min_value) or ((matching_prop.max_value is not None) and sample > matching_prop.max_value):
+                        if ((matching_prop.min_value is not None) and sample < matching_prop.min_value) or (
+                                (matching_prop.max_value is not None) and sample > matching_prop.max_value):
                             raise NodeInputException(
                                 "Value list includes samples not in allowed in the property range.",
                                 self.node_id)

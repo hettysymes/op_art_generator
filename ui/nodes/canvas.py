@@ -1,7 +1,7 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Group
-from ui.port_defs import PortDef, PortType, PT_Element
+from ui.port_defs import PortDef, PT_Element
 
 CANVAS_NODE_INFO = UnitNodeInfo(
     name="Canvas",
