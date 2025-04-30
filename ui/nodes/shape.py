@@ -161,7 +161,7 @@ class PolygonNode(UnitNode):
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         # Return element
-        return Polygon(self.get_prop_val('points'), fill, fill_opacity, 'red', self.get_prop_val('stroke_width'))
+        return Polygon(self.get_prop_val('points'), fill, fill_opacity, 'none', self.get_prop_val('stroke_width'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -244,7 +244,7 @@ class EllipseNode(UnitNode):
         else:
             fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
         return Ellipse(self.get_prop_val('centre'), (self.get_prop_val('rx'), self.get_prop_val('ry')), fill,
-                       fill_opacity, 'black', self.get_prop_val('stroke_width'))
+                       fill_opacity, 'none', self.get_prop_val('stroke_width'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -287,7 +287,7 @@ class CircleNode(UnitNode):
         else:
             fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
         return Ellipse(self.get_prop_val('centre'), (self.get_prop_val('r'), self.get_prop_val('r')), fill,
-                       fill_opacity, 'black', self.get_prop_val('stroke_width'))
+                       fill_opacity, 'none', self.get_prop_val('stroke_width'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()

@@ -23,9 +23,9 @@ from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.nodes.all_nodes import node_classes
+from ui.nodes.elem_ref import ElemRef
 from ui.nodes.nodes import CombinationNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
-from ui.nodes.shape import ElemRef
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
