@@ -7,7 +7,7 @@ from ui.nodes.grid import GridNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Group, Polyline, Polygon
+from ui.nodes.shape_datatypes import Group, Polyline, Polygon, Element
 from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortType, PortDef, PT_Ellipse, PT_Element, PT_Repeatable
@@ -38,31 +38,39 @@ STACKER_NODE_INFO = UnitNodeInfo(
 class StackerNode(UnitNode):
     UNIT_NODE_INFO = STACKER_NODE_INFO
 
+    @staticmethod
+    def helper(elements, wh_diff, vertical_layout):
+        scale_factor = 1 / wh_diff
+        scaled_elements = []
+        for element in elements:
+            if vertical_layout:
+                scaled_elements.append(element.scale(1, scale_factor))
+            else:
+                scaled_elements.append(element.scale(scale_factor, 1))
+        if vertical_layout:
+            grid = GridNode.helper(None, None, 1, len(scaled_elements))
+        else:
+            grid = GridNode.helper(None, None, len(scaled_elements), 1)
+        return ShapeRepeaterNode.helper(
+            grid,
+            scaled_elements
+        )
+
+
     def compute(self):
         handle_multi_inputs(self.get_input_node('repeatables'), self.prop_vals['elem_order'])
-        scaled_elements = []
-        scale_factor = 1 / self.get_prop_val('wh_diff')
+        elements = []
         for elem_ref in self.get_prop_val('elem_order'):
-            elements = elem_ref.compute()
-            if isinstance(elements, Group):
-                elements = [elements]
-            for element in elements:
-                if self.get_prop_val('stack_layout') == "Vertical":
-                    scaled_elements.append(element.scale(1, scale_factor))
-                else:
-                    scaled_elements.append(element.scale(scale_factor, 1))
-        if scaled_elements:
-            if self.get_prop_val('stack_layout') == "Vertical":
-                grid = GridNode.helper(None, None, 1, len(scaled_elements))
-            else:
-                grid = GridNode.helper(None, None, len(scaled_elements), 1)
-            return ShapeRepeaterNode.helper(
-                grid,
-                scaled_elements
-            )
-
+            ret_elements = elem_ref.compute()
+            if isinstance(ret_elements, Element):
+                ret_elements = [ret_elements]
+            elements += ret_elements
+        if elements:
+            return StackerNode.helper(elements, self.get_prop_val('wh_diff'), self.get_prop_val('stack_layout') == 'Vertical')
+        return None
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
         if element:
             return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
+        return None

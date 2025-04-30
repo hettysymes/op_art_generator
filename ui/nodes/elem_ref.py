@@ -20,7 +20,8 @@ class ElemRef:
         return self.node.compute()
 
     def get_base_points(self):
-        return self.compute()[0].get_points()
+        shape, transform_list = self.compute().transformed_shapes()[0]
+        return shape.get_points(transform_list)
 
     def get_points(self):
         points = self.get_base_points()

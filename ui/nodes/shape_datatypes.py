@@ -194,4 +194,3 @@ class SineWave(Polyline):
             points.append((x, y))
 
         super().__init__(points, 'black', stroke_width)
-        # self.transformations.append(Rotate(orientation, (0.5, 0.5)))
