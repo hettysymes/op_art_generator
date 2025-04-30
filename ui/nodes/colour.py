@@ -3,7 +3,7 @@ from ui.nodes.elem_ref import ElemRef
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortType, PortDef, PT_Element, PT_Colour
 

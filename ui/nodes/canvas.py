@@ -1,6 +1,6 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PortDef, PortType, PT_Element
 
 CANVAS_NODE_INFO = UnitNodeInfo(
@@ -30,6 +30,6 @@ class CanvasNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
         if not element:
-            element = Element()
+            element = Group()
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio,
                              (element, self.get_prop_val('bg_col'))).save()

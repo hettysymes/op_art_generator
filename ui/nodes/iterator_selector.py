@@ -4,7 +4,7 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PortDef, PortType, PT_Element, PT_ElementList
 
 ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(

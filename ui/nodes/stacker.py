@@ -7,7 +7,7 @@ from ui.nodes.grid import GridNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Element, Polyline, Polygon
+from ui.nodes.shape_datatypes import Group, Polyline, Polygon
 from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortType, PortDef, PT_Ellipse, PT_Element, PT_Repeatable
@@ -44,7 +44,7 @@ class StackerNode(UnitNode):
         scale_factor = 1 / self.get_prop_val('wh_diff')
         for elem_ref in self.get_prop_val('elem_order'):
             elements = elem_ref.compute()
-            if isinstance(elements, Element):
+            if isinstance(elements, Group):
                 elements = [elements]
             for element in elements:
                 if self.get_prop_val('stack_layout') == "Vertical":

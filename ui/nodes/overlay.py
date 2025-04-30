@@ -2,7 +2,7 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PortType, PortDef, PT_Element
 
 OVERLAY_NODE_INFO = UnitNodeInfo(
@@ -30,7 +30,7 @@ class OverlayNode(UnitNode):
         shapes_list = []
         for elem_ref in self.get_prop_val('elem_order'):
             shapes_list += elem_ref.compute().shapes
-        return Element(shapes_list)
+        return Group(shapes_list)
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()

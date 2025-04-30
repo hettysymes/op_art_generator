@@ -3,7 +3,7 @@ import math
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNodeInfo, PropTypeList, PropType, UnitNode
 from ui.nodes.shape import EllipseNode
-from ui.nodes.shape_datatypes import Ellipse, Element
+from ui.nodes.shape_datatypes import Ellipse, Group
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortDef, PortType, PT_Ellipse, PT_NumberList, PT_PointList
 
@@ -54,7 +54,7 @@ class EllipseSamplerNode(UnitNode):
     def visualise(self, temp_dir, height, wh_ratio):
         points = self.compute()
         if points:
-            ret_element = Element()
+            ret_element = Group()
             for p in points:
                 ret_element.add(Ellipse(p, (0.01, 0.01), 'black', 255, 'black', 0))
             return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_element, None)).save()

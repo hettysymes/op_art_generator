@@ -3,7 +3,7 @@ from ui.nodes.elem_ref import ElemRef
 from ui.nodes.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape_datatypes import Element, Polyline, Polygon
+from ui.nodes.shape_datatypes import Group, Polyline, Polygon
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortType, PortDef, PT_Ellipse, PT_Element
 
@@ -38,7 +38,7 @@ class BlazeMakerNode(UnitNode):
         # Return element
         if input_nodes:
             num_samples = self.get_prop_val('num_polygons')*2
-            ret_elem = Element()
+            ret_elem = Group()
             ellipse_elems = [elem_ref.compute() for elem_ref in self.get_prop_val('ellipses')]
             # Sort ellipses in order of ascending radius
             ellipse_elems.sort(key=lambda elem: elem[0].r[0]**2 + elem[0].r[1]**2)

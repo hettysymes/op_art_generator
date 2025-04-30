@@ -1,7 +1,7 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PortType, PortDef, PT_Grid, PT_Element
 
 CHECKERBOARD_NODE_INFO = UnitNodeInfo(
@@ -33,7 +33,7 @@ class CheckerboardNode(UnitNode):
             if not element2:
                 element2 = default_elem
             v_line_xs, h_line_ys = grid_out
-            ret_element = Element()
+            ret_element = Group()
             element1_starts = True
             for i in range(1, len(v_line_xs)):
                 element1_turn = element1_starts

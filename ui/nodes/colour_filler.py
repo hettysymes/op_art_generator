@@ -3,7 +3,7 @@ import itertools
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
-from ui.nodes.shape_datatypes import Element, Polyline, Polygon
+from ui.nodes.shape_datatypes import Group, Polyline, Polygon
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortDef, PortType, PT_ColourList, PT_Element
 
@@ -30,7 +30,7 @@ class ColourFillerNode(UnitNode):
         if (colours is not None) and element:
             if not colours:
                 raise NodeInputException("Input colour list must contain at least one colour.", self.node_id)
-            ret_elem = Element()
+            ret_elem = Group()
             colour_it = itertools.cycle(colours)
             # Check all elements are polylines
             for shape in element:

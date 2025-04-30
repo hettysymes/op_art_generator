@@ -2,7 +2,7 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PortDef, PortType, PT_ColourList
 
 COLOUR_LIST_NODE_INFO = UnitNodeInfo(
@@ -32,7 +32,7 @@ class ColourListNode(UnitNode):
         if colours:
             # Draw in vertical grid
             v_line_xs, h_line_ys = GridNode.helper(None, None, 1, len(colours))
-            ret_element = Element()
+            ret_element = Group()
             col_index = 0
             for i in range(1, len(v_line_xs)):
                 for j in range(1, len(h_line_ys)):

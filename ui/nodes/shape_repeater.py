@@ -2,7 +2,7 @@ import itertools
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PortDef, PortType, PT_Grid, PT_Element, PT_Repeatable
 
 SHAPE_REPEATER_NODE_INFO = UnitNodeInfo(
@@ -26,8 +26,8 @@ class ShapeRepeaterNode(UnitNode):
     def helper(grid_out, elements):
         if grid_out and elements:
             v_line_xs, h_line_ys = grid_out
-            ret_element = Element()
-            if isinstance(elements, Element):
+            ret_element = Group()
+            if isinstance(elements, Group):
                 elements = [elements]
             element_it = itertools.cycle(elements)
             for i in range(1, len(v_line_xs)):

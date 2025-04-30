@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.drawers.error_drawer import ErrorDrawer
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 
 
 class PropTypeList:
@@ -90,7 +90,7 @@ class Node(ABC):
         # Return visualisation with exception
         if not vis:
             # No visualisation, return blank canvas
-            vis = ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Element(), None)).save()
+            vis = ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Group(), None)).save()
         return vis, exception
 
     def name(self):

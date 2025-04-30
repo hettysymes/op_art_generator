@@ -4,7 +4,7 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PortDef, PortType, PT_ValueList, PT_Element, PT_ElementList
 
 ITERATOR_NODE_INFO = UnitNodeInfo(
@@ -71,7 +71,7 @@ class IteratorNode(UnitNode):
             else:
                 # Draw in Horizontal grid
                 v_line_xs, h_line_ys = GridNode.helper(None, None, len(elements), 1)
-            ret_element = Element()
+            ret_element = Group()
             elem_index = 0
             for i in range(1, len(v_line_xs)):
                 for j in range(1, len(h_line_ys)):

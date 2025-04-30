@@ -6,7 +6,7 @@ from ui.nodes.grid import GridNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
 from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortDef, PortType, PT_Element, PT_ElementList, PT_ColourList, PT_Colour
 
