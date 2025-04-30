@@ -32,34 +32,38 @@ BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
 class BlazeMakerNode(UnitNode):
     UNIT_NODE_INFO = BLAZE_MAKER_NODE_INFO
 
+    @staticmethod
+    def helper(num_polygons, ellipse_elem_refs, angle_diff, colour):
+        num_samples = num_polygons * 2
+        ret_group = Group()
+        ellipses = [elem_ref.compute() for elem_ref in ellipse_elem_refs]
+        # Sort ellipses in order of ascending radius
+        ellipses.sort(key=lambda ellipse: ellipse.r[0] ** 2 + ellipse.r[1] ** 2)
+        start_angle = 0
+        samples_list = []
+        for ellipse in ellipses:
+            start_angle += angle_diff
+            angle_diff *= -1
+            samples_list.append(EllipseSamplerNode.helper(ellipse, start_angle, num_samples))
+        # Obtain lines
+        lines = [[] for _ in range(num_samples)]
+        for samples in samples_list:
+            for i, sample in enumerate(samples):
+                lines[i].append(sample)
+        # Draw polygons
+        fill, fill_opacity = process_rgb(colour)
+        for i in range(0, len(lines), 2):
+            points = lines[i - 1] + list(reversed(lines[i]))
+            ret_group.add(Polygon(points, fill, fill_opacity))
+        return ret_group
+
+
     def compute(self):
         input_nodes = self.get_input_node('ellipses')
         handle_multi_inputs(input_nodes, self.prop_vals['ellipses'])
-        # Return element
         if input_nodes:
-            num_samples = self.get_prop_val('num_polygons')*2
-            ret_elem = Group()
-            ellipse_elems = [elem_ref.compute() for elem_ref in self.get_prop_val('ellipses')]
-            # Sort ellipses in order of ascending radius
-            ellipse_elems.sort(key=lambda elem: elem[0].r[0]**2 + elem[0].r[1]**2)
-            start_angle = 0
-            angle_diff = self.get_prop_val('angle_diff')
-            samples_list = []
-            for elem in ellipse_elems:
-                start_angle += angle_diff
-                angle_diff *= -1
-                samples_list.append(EllipseSamplerNode.helper(elem, start_angle, num_samples))
-            # Obtain lines
-            lines = [[] for _ in range(num_samples)]
-            for samples in samples_list:
-                for i, sample in enumerate(samples):
-                    lines[i].append(sample)
-            # Draw polygons
-            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
-            for i in range(0, len(lines), 2):
-                points = lines[i - 1] + list(reversed(lines[i]))
-                ret_elem.add(Polygon(points, fill, fill_opacity))
-            return ret_elem
+            return BlazeMakerNode.helper(self.get_prop_val('num_polygons'), self.get_prop_val('ellipses'), self.get_prop_val('angle_diff'), self.get_prop_val('fill'))
+        return None
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()

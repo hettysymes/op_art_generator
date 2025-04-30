@@ -35,26 +35,27 @@ class EllipseSamplerNode(UnitNode):
         return x, y
 
     @staticmethod
-    def helper(element, start_angle, num_samples):
-        if element:
-            ellipse = element[0]
-            assert isinstance(ellipse, Ellipse)
-            samples = []
-            angle = math.radians(start_angle)
-            step = 2 * math.pi / num_samples
-            for _ in range(num_samples):
-                samples.append(EllipseSamplerNode.angle_to_point(angle, ellipse))
-                angle += step
-            return samples
+    def helper(ellipse, start_angle, num_samples):
+        assert isinstance(ellipse, Ellipse)
+        samples = []
+        angle = math.radians(start_angle)
+        step = 2 * math.pi / num_samples
+        for _ in range(num_samples):
+            samples.append(EllipseSamplerNode.angle_to_point(angle, ellipse))
+            angle += step
+        return samples
 
     def compute(self):
-        element = self.get_input_node('ellipse').compute()
-        return EllipseSamplerNode.helper(element, self.get_prop_val('start_angle'), self.get_prop_val('num_samples'))
+        ellipse = self.get_input_node('ellipse').compute()
+        if ellipse:
+            return EllipseSamplerNode.helper(ellipse, self.get_prop_val('start_angle'), self.get_prop_val('num_samples'))
+        return None
 
     def visualise(self, temp_dir, height, wh_ratio):
         points = self.compute()
         if points:
-            ret_element = Group()
+            ret_group = Group()
             for p in points:
-                ret_element.add(Ellipse(p, (0.01, 0.01), 'black', 255, 'black', 0))
-            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_element, None)).save()
+                ret_group.add(Ellipse(p, (0.01, 0.01), 'black', 255, 'black', 0))
+            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_group, None)).save()
+        return None
