@@ -1305,6 +1305,35 @@ class NodePropertiesDialog(QDialog):
             for row, elem_ref in enumerate(elem_refs):
                 add_elem_item(elem_ref, row, table)
 
+            # Set up context menu for deletion and duplicating
+            def show_context_menu(position):
+                row = table.rowAt(position.y())
+
+                if row >= 0:
+                    item = table.item(row, 0)
+                    elem_ref = item.data(Qt.UserRole)
+                    menu = QMenu()
+                    duplicate_action = menu.addAction("Duplicate")
+                    # delete_action = menu.addAction("Delete")
+
+                    action = menu.exec_(table.viewport().mapToGlobal(position))
+
+                    # if action == delete_action:
+                    #     table.removeRow(row)
+
+                    if action == duplicate_action:
+                        # Add a new row below the current one
+                        table.insertRow(row + 1)
+                        # Create a new item
+                        new_item = QTableWidgetItem(item.text())
+                        # Set the same user data (elem_ref)
+                        new_item.setData(Qt.UserRole, elem_ref)
+                        # Add the item to the table
+                        table.setItem(row + 1, 0, new_item)
+
+            table.setContextMenuPolicy(Qt.CustomContextMenu)
+            table.customContextMenuRequested.connect(show_context_menu)
+
             # Create a container for the table and button
             container = QWidget()
             layout = QVBoxLayout(container)
