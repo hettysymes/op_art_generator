@@ -22,12 +22,18 @@ FUN_SAMPLER_NODE = UnitNodeInfo(
 class FunSamplerNode(UnitNode):
     UNIT_NODE_INFO = FUN_SAMPLER_NODE
 
+    @staticmethod
+    def helper(function, num_samples):
+        return sample_fun(function, num_samples)
+
     def compute(self):
         function = self.get_input_node('function').compute()
         if function:
-            return sample_fun(function, self.get_prop_val('num_samples'))
+            return FunSamplerNode.helper(function, self.get_prop_val('num_samples'))
+        return None
 
     def visualise(self, temp_dir, height, wh_ratio):
         samples = self.compute()
         if samples is not None:
             return create_graph_svg(height, wh_ratio, samples, self._return_path(temp_dir), scatter=True)
+        return None

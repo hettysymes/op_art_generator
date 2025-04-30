@@ -31,6 +31,6 @@ class GradientNode(UnitNode):
         return Gradient(self.get_prop_val('start_col'), self.get_prop_val('stop_col'))
 
     def visualise(self, temp_dir, height, wh_ratio):
-        element = RectangleNode(None, {}, {'fill': self.compute()}).compute()
+        element = RectangleNode(prop_vals={'fill': self.compute()}).compute()
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
 

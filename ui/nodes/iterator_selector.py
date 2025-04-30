@@ -32,8 +32,10 @@ class IteratorSelectorNode(UnitNode):
             if self.get_prop_val('select_idx') >= len(elements):
                 raise NodeInputException("Select index is greater than number of iterator outputs.", self.node_id)
             return elements[self.get_prop_val('select_idx')]
+        return None
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
         if element:
             return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
+        return None

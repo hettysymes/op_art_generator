@@ -5,6 +5,7 @@ from ui.nodes.grid import GridNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
 from ui.nodes.shape_datatypes import Group
+from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.port_defs import PortDef, PortType, PT_ValueList, PT_Element, PT_ElementList
 
 ITERATOR_NODE_INFO = UnitNodeInfo(
@@ -61,24 +62,18 @@ class IteratorNode(UnitNode):
                         raise NodeInputException(e.message, self.node_id)
                     ret.append(compute_res)
                 return ret
+            return None
+        return None
 
     def visualise(self, temp_dir, height, wh_ratio):
         elements = self.compute()
         if elements:
             if self.get_prop_val('vis_layout') == "Vertical":
                 # Draw in vertical grid
-                v_line_xs, h_line_ys = GridNode.helper(None, None, 1, len(elements))
+                grid = GridNode.helper(None, None, 1, len(elements))
             else:
                 # Draw in Horizontal grid
-                v_line_xs, h_line_ys = GridNode.helper(None, None, len(elements), 1)
-            ret_element = Group()
-            elem_index = 0
-            for i in range(1, len(v_line_xs)):
-                for j in range(1, len(h_line_ys)):
-                    x1 = v_line_xs[i - 1]
-                    x2 = v_line_xs[i]
-                    y1 = h_line_ys[j - 1]
-                    y2 = h_line_ys[j]
-                    ret_element.add(elements[elem_index][0].scale(x2 - x1, y2 - y1).translate(x1, y1))
-                    elem_index += 1
-            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_element, None)).save()
+                grid = GridNode.helper(None, None, len(elements), 1)
+            draw_elem = ShapeRepeaterNode.helper(grid, elements)
+            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
+        return None

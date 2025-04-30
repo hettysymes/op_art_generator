@@ -26,13 +26,11 @@ class OverlayNode(UnitNode):
 
     def compute(self):
         handle_multi_inputs(self.get_input_node('elements'), self.prop_vals['elem_order'])
-        # Return element
-        shapes_list = []
+        ret_group = Group()
         for elem_ref in self.get_prop_val('elem_order'):
-            shapes_list += elem_ref.compute().transformed_shapes
-        return Group(shapes_list)
+            ret_group.add(elem_ref.compute())
+        return ret_group
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
-        if element:
-            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
+        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()

@@ -44,7 +44,7 @@ class RandomColourSelectorNode(UnitNode):
                     self.prop_vals['_actual_seed'] = random.random()
                 rng = random.Random(self.get_prop_val('_actual_seed'))
             return rng.choice(colours)
-
+        return None
 
     def visualise(self, temp_dir, height, wh_ratio):
         colour = self.compute()
@@ -52,3 +52,4 @@ class RandomColourSelectorNode(UnitNode):
             fill, fill_opacity = process_rgb(colour)
             return ElementDrawer(self._return_path(temp_dir), height, wh_ratio,
                                  (RectangleNode.helper(fill, fill_opacity), None)).save()
+        return None

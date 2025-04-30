@@ -37,9 +37,7 @@ class CubicFunNode(UnitNode):
                        self.get_prop_val('d_coeff'))
 
     def visualise(self, temp_dir, height, wh_ratio):
-        function = self.compute()
-        if function:
-            return create_graph_svg(height, wh_ratio, sample_fun(function, 1000), self._return_path(temp_dir))
+        return create_graph_svg(height, wh_ratio, sample_fun(self.compute(), 1000), self._return_path(temp_dir))
 
 
 CUSTOM_FUN_NODE_INFO = UnitNodeInfo(
@@ -67,9 +65,7 @@ class CustomFunNode(UnitNode):
         return sp.lambdify(x, parsed_expr)
 
     def visualise(self, temp_dir, height, wh_ratio):
-        function = self.compute()
-        if function:
-            return create_graph_svg(height, wh_ratio, sample_fun(function, 1000), self._return_path(temp_dir))
+        return create_graph_svg(height, wh_ratio, sample_fun(self.compute(), 1000), self._return_path(temp_dir))
 
 
 PIECEWISE_FUN_NODE_INFO = UnitNodeInfo(
@@ -96,9 +92,7 @@ class PiecewiseFunNode(UnitNode):
         return lambda i: np.interp(i, xs, ys)
 
     def visualise(self, temp_dir, height, wh_ratio):
-        function = self.compute()
-        if function:
-            return create_graph_svg(height, wh_ratio, sample_fun(function, 1000), self._return_path(temp_dir))
+        return create_graph_svg(height, wh_ratio, sample_fun(self.compute(), 1000), self._return_path(temp_dir))
 
 
 class FunctionNode(CombinationNode):
