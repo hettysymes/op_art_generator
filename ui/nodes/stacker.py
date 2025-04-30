@@ -40,6 +40,7 @@ class StackerNode(UnitNode):
 
     @staticmethod
     def helper(elements, wh_diff, vertical_layout):
+        n = len(elements)
         scale_factor = 1 / wh_diff
         scaled_elements = []
         for element in elements:
@@ -48,13 +49,14 @@ class StackerNode(UnitNode):
             else:
                 scaled_elements.append(element.scale(scale_factor, 1))
         if vertical_layout:
-            grid = GridNode.helper(None, None, 1, len(scaled_elements))
+            grid = GridNode.helper(None, None, 1, n)
         else:
-            grid = GridNode.helper(None, None, len(scaled_elements), 1)
-        return ShapeRepeaterNode.helper(
+            grid = GridNode.helper(None, None, n, 1)
+        repeated_elem = ShapeRepeaterNode.helper(
             grid,
             scaled_elements
         )
+        return repeated_elem.scale(1, n/(n-1+(1/wh_diff)))
 
 
     def compute(self):
