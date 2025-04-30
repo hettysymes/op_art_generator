@@ -26,6 +26,10 @@ class Element(ABC):
     def rotate(self, angle, centre):
         pass
 
+    @abstractmethod
+    def transformed_shapes(self):
+        pass
+
 class Group(Element):
 
     def __init__(self):
@@ -62,8 +66,13 @@ class Group(Element):
         new_group.transform_list.remove_final_scale()
         return new_group
 
-    def __len__(self):
-        return len(self.elements)
+    def transformed_shapes(self):
+        transformed_shapes = []
+        for element in self.elements:
+            transformed_shapes_prev = element.transformed_shapes()
+            for shape, transform_list in transformed_shapes_prev:
+                transformed_shapes.append((shape, self.transform_list.transforms + transform_list.transforms))
+        return transformed_shapes
 
 class Shape(Element, ABC):
 
@@ -85,6 +94,9 @@ class Shape(Element, ABC):
         group.add(self)
         return group
 
+    def transformed_shapes(self):
+        return [(self, TransformList())]
+
 class Polyline(Shape):
 
     def __init__(self, points, stroke, stroke_width):
@@ -101,7 +113,9 @@ class Polyline(Shape):
                             style='vector-effect: non-scaling-stroke',
                             id=self.shape_id)
 
-    def get_points(self):
+    def get_points(self, transform_list=None):
+        if transform_list:
+            return transform_list.transform_points(self.points)
         return self.points
 
 

@@ -29,7 +29,7 @@ class OverlayNode(UnitNode):
         # Return element
         shapes_list = []
         for elem_ref in self.get_prop_val('elem_order'):
-            shapes_list += elem_ref.compute().shapes
+            shapes_list += elem_ref.compute().transformed_shapes
         return Group(shapes_list)
 
     def visualise(self, temp_dir, height, wh_ratio):

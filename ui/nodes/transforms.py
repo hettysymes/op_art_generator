@@ -76,3 +76,12 @@ class TransformList:
         assert len(self.transforms) > 0
         assert isinstance(self.transforms[0], Scale)
         del self.transforms[0]
+
+    def transform_points(self, points):
+        new_points = []
+        for p in points:
+            new_point = p
+            for t in self.transforms:
+                new_point = t.apply_to_point(new_point)
+            new_points.append(new_point)
+        return new_points
