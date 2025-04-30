@@ -65,6 +65,7 @@ class TransformList:
         self.transforms = []
 
     def add(self, transform):
+        # Transformations are applied right-to-left
         assert isinstance(transform, Transform)
         self.transforms.insert(0, transform)
 
@@ -86,7 +87,7 @@ class TransformList:
         new_points = []
         for p in points:
             new_point = p
-            for t in self.transforms:
+            for t in list(reversed(self.transforms)):
                 new_point = t.apply_to_point(new_point)
             new_points.append(new_point)
         return new_points
