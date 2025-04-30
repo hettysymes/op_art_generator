@@ -14,6 +14,18 @@ class Element(ABC):
     def get(self, dwg):
         pass
 
+    @abstractmethod
+    def translate(self, tx, ty):
+        pass
+
+    @abstractmethod
+    def scale(self, sx, sy):
+        pass
+
+    @abstractmethod
+    def rotate(self, angle, centre):
+        pass
+
 class Group(Element):
 
     def __init__(self, transforms=None):
@@ -23,8 +35,12 @@ class Group(Element):
     def get(self, dwg):
         group = dwg.g(transform=repr(self.transform_list))
         for element in self.elements:
-            group.add(element)
+            group.add(element.get(dwg))
         return group
+
+    def add(self, element):
+        assert isinstance(element, Element)
+        self.elements.append(element)
 
     def translate(self, tx, ty):
         new_group = copy.deepcopy(self)
@@ -53,6 +69,21 @@ class Shape(Element, ABC):
 
     def __init__(self):
         self.shape_id = uuid.uuid4()
+
+    def translate(self, tx, ty):
+        group = Group([Translate(tx, ty)])
+        group.add(self)
+        return group
+
+    def scale(self, sx, sy):
+        group = Group([Scale(sx, sy)])
+        group.add(self)
+        return group
+
+    def rotate(self, angle, centre):
+        group = Group([Rotate(angle, centre)])
+        group.add(self)
+        return group
 
 class Polyline(Shape):
 

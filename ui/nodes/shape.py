@@ -267,8 +267,7 @@ class CircleNode(UnitNode):
             fill_opacity = 255
         else:
             fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
-        return Group(
-            [Ellipse(self.get_prop_val('centre'), (self.get_prop_val('r'), self.get_prop_val('r')), fill, fill_opacity, 'black', self.get_prop_val('stroke_width'))])
+        return Ellipse(self.get_prop_val('centre'), (self.get_prop_val('r'), self.get_prop_val('r')), fill, fill_opacity, 'black', self.get_prop_val('stroke_width'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
