@@ -66,7 +66,7 @@ class TransformList:
 
     def add(self, transform):
         assert isinstance(transform, Transform)
-        self.transforms.append(transform)
+        self.transforms.insert(0, transform)
 
     def __repr__(self):
         parts = [repr(t) for t in self.transforms]
@@ -74,5 +74,5 @@ class TransformList:
 
     def remove_final_scale(self):
         assert len(self.transforms) > 0
-        assert isinstance(self.transforms[-1], Scale)
-        del self.transforms[-1]
+        assert isinstance(self.transforms[0], Scale)
+        del self.transforms[0]

@@ -42,7 +42,7 @@ class CheckerboardNode(UnitNode):
                 y1 = h_line_ys[j - 1]
                 y2 = h_line_ys[j]
                 element = element1 if element1_turn else element2
-                cell_group = Group().translate(x1, y1).scale(x2 - x1, y2 - y1)
+                cell_group = Group().scale(x2 - x1, y2 - y1).translate(x1, y1)
                 cell_group.add(element)
                 ret_group.add(cell_group)
                 element1_turn = not element1_turn

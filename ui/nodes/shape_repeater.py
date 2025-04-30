@@ -37,7 +37,7 @@ class ShapeRepeaterNode(UnitNode):
                 x2 = v_line_xs[i]
                 y1 = h_line_ys[j - 1]
                 y2 = h_line_ys[j]
-                cell_group = Group().translate(x1, y1).scale(x2 - x1, y2 - y1)
+                cell_group = Group().scale(x2 - x1, y2 - y1).translate(x1, y1)
                 cell_group.add(next(element_it))
                 ret_group.add(cell_group)
         return ret_group
