@@ -24,8 +24,8 @@ class ShapeRepeaterNode(UnitNode):
     UNIT_NODE_INFO = SHAPE_REPEATER_NODE_INFO
 
     @staticmethod
-    def helper(grid_out, elements):
-        v_line_xs, h_line_ys = grid_out
+    def helper(grid, elements):
+        v_line_xs, h_line_ys = grid
         ret_group = Group()
         if isinstance(elements, Element):
             # Ensure elements is a list
@@ -43,10 +43,10 @@ class ShapeRepeaterNode(UnitNode):
         return ret_group
 
     def compute(self):
-        grid_out = self.get_input_node('grid').compute()
+        grid = self.get_input_node('grid').compute()
         elements = self.get_input_node('repeatable').compute()
-        if grid_out and elements:
-            return ShapeRepeaterNode.helper(grid_out, elements)
+        if grid and elements:
+            return ShapeRepeaterNode.helper(grid, elements)
         return None
 
     def visualise(self, temp_dir, height, wh_ratio):

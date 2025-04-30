@@ -3,6 +3,7 @@ from ui.nodes.grid import GridNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Group
+from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.port_defs import PortDef, PortType, PT_ColourList
 
 COLOUR_LIST_NODE_INFO = UnitNodeInfo(
@@ -31,16 +32,8 @@ class ColourListNode(UnitNode):
         colours = self.compute()
         if colours:
             # Draw in vertical grid
-            v_line_xs, h_line_ys = GridNode.helper(None, None, 1, len(colours))
-            ret_element = Group()
-            col_index = 0
-            for i in range(1, len(v_line_xs)):
-                for j in range(1, len(h_line_ys)):
-                    x1 = v_line_xs[i - 1]
-                    x2 = v_line_xs[i]
-                    y1 = h_line_ys[j - 1]
-                    y2 = h_line_ys[j]
-                    ret_element.add(RectangleNode(None, [UnitNode(None, None, None)], {'fill': colours[col_index]}).compute()[0].scale(x2 - x1,
-                                                                                                               y2 - y1).translate(x1, y1))
-                    col_index += 1
-            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_element, None)).save()
+            grid = GridNode.helper(None, None, 1, len(colours))
+            elements = [RectangleNode(prop_vals={'fill': colour}).compute() for colour in colours]
+            draw_elem = ShapeRepeaterNode.helper(grid, elements)
+            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
+        return None

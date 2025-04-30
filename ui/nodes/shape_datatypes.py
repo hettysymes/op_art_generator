@@ -37,7 +37,11 @@ class Group(Element):
         self.transform_list = TransformList()
 
     def get(self, dwg):
-        group = dwg.g(transform=repr(self.transform_list))
+        transform_str = self.transform_list.get_transform_str()
+        if transform_str:
+            group = dwg.g(transform=transform_str)
+        else:
+            group = dwg.g()
         for element in self.elements:
             group.add(element.get(dwg))
         return group
@@ -71,7 +75,9 @@ class Group(Element):
         for element in self.elements:
             transformed_shapes_prev = element.transformed_shapes()
             for shape, transform_list in transformed_shapes_prev:
-                transformed_shapes.append((shape, self.transform_list.transforms + transform_list.transforms))
+                new_transform_list = TransformList()
+                new_transform_list.transforms = self.transform_list.transforms + transform_list.transforms
+                transformed_shapes.append((shape, new_transform_list))
         return transformed_shapes
 
 class Shape(Element, ABC):

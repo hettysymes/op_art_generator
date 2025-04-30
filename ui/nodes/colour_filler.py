@@ -43,7 +43,7 @@ class ColourFillerNode(UnitNode):
         if (colours is not None) and element:
             if not colours:
                 raise NodeInputException("Input colour list must contain at least one colour.", self.node_id)
-            # Check all elements are polylines
+            # Check all shapes are polylines
             for transformed_shape in element.transformed_shapes():
                 if not isinstance(transformed_shape[0], Polyline):
                     raise NodeInputException("Input drawing must only consist of lines.", self.node_id)

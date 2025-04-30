@@ -72,6 +72,11 @@ class TransformList:
         parts = [repr(t) for t in self.transforms]
         return ' '.join(parts)
 
+    def get_transform_str(self):
+        if self.transforms:
+            return repr(self)
+        return None
+
     def remove_final_scale(self):
         assert len(self.transforms) > 0
         assert isinstance(self.transforms[0], Scale)

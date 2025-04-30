@@ -24,14 +24,14 @@ class CheckerboardNode(UnitNode):
     UNIT_NODE_INFO = CHECKERBOARD_NODE_INFO
 
     @staticmethod
-    def helper(grid_out, element1=None, element2=None):
+    def helper(grid, element1=None, element2=None):
         assert element1 or element2
         default_elem = RectangleNode(prop_vals={'fill': (255, 255, 255, 0)}).compute()
         if not element1:
             element1 = default_elem
         if not element2:
             element2 = default_elem
-        v_line_xs, h_line_ys = grid_out
+        v_line_xs, h_line_ys = grid
         ret_group = Group()
         element1_starts = True
         for i in range(1, len(v_line_xs)):
@@ -50,11 +50,11 @@ class CheckerboardNode(UnitNode):
         return ret_group
 
     def compute(self):
-        grid_out = self.get_input_node('grid').compute()
+        grid = self.get_input_node('grid').compute()
         element1 = self.get_input_node('elem1').compute()
         element2 = self.get_input_node('elem2').compute()
-        if grid_out and (element1 or element2):
-            return CheckerboardNode.helper(grid_out, element1, element2)
+        if grid and (element1 or element2):
+            return CheckerboardNode.helper(grid, element1, element2)
         return None
 
     def visualise(self, temp_dir, height, wh_ratio):
