@@ -172,11 +172,13 @@ class Polyline(Shape):
 
 class Polygon(Shape):
 
-    def __init__(self, points, fill, fill_opacity):
+    def __init__(self, points, fill, fill_opacity, stroke='none', stroke_width=1.0):
         super().__init__()
         self.points = points
         self.fill = fill
         self.fill_opacity = fill_opacity
+        self.stroke = stroke
+        self.stroke_width = stroke_width
 
     def base_shape(self, dwg):
         if isinstance(self.fill, Gradient):
@@ -190,7 +192,9 @@ class Polygon(Shape):
         return dwg.polygon(points=points,
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,
-                           stroke='none',
+                           stroke=self.stroke,
+                           stroke_width=self.stroke_width,
+                           style='vector-effect: non-scaling-stroke',
                            id=self.shape_id)
 
 class Ellipse(Shape):

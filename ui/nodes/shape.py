@@ -129,7 +129,9 @@ POLYGON_NODE_INFO = UnitNodeInfo(
             PropType("points", "point_table", default_value=[(0, 0), (0, 1), (1, 1)],
                      description="Points defining the path of the polygon edge (in order).", display_name="Points"),
             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-                     description="Polygon fill colour.", display_name="Colour", port_modifiable=True)
+                     description="Polygon fill colour.", display_name="Colour", port_modifiable=True),
+            PropType("stroke_width", "float", default_value=1.0,
+                                 description="Thickness of the line drawing the polygon border.", display_name="Border thickness", min_value=0.0)
         ]
     ),
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
@@ -148,7 +150,7 @@ class PolygonNode(UnitNode):
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         # Return element
-        return Element([Polygon(self.get_prop_val('points'), fill, fill_opacity)])
+        return Element([Polygon(self.get_prop_val('points'), fill, fill_opacity, 'red', self.get_prop_val('stroke_width'))])
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()

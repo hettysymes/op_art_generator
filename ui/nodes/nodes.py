@@ -65,7 +65,7 @@ class Node(ABC):
 
     def __init__(self, node_id, input_nodes, prop_vals):
         self.node_id = node_id
-        self.input_nodes = input_nodes
+        self.input_nodes = input_nodes if input_nodes else {}
         self.prop_vals = prop_vals if prop_vals else self.node_info().prop_type_list.get_default_values()
 
     def _return_path(self, temp_dir):

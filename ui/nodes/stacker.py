@@ -1,9 +1,12 @@
+import math
+
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.grid import GridNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Element, Polyline, Polygon
 from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.nodes.utils import process_rgb
@@ -24,7 +27,7 @@ STACKER_NODE_INFO = UnitNodeInfo(
         PropType("stack_layout", "enum", default_value="Vertical", options=["Vertical", "Horizontal"],
                              description="Stacking of drawings can be done either top-to-bottom (vertical) or left-to-right (horizontal)",
                              display_name="Stack layout"),
-        PropType("wh_diff", "float", default_value=0.3, min_value=0.1,
+        PropType("wh_diff", "float", default_value=0.4, min_value=0.1,
                             description="Distance to place between stacked drawings, proportional to the height or width of one drawing (height for vertical stacking, width for horizontal stacking). E.g. if set to 0.5, the second drawing will be stacked halfway along the first drawing.",
                             display_name="Height/width distance")
     ]),
@@ -38,11 +41,11 @@ class StackerNode(UnitNode):
     def compute(self):
         handle_multi_inputs(self.get_input_node('repeatables'), self.prop_vals['elem_order'])
         scaled_elements = []
+        scale_factor = 1 / self.get_prop_val('wh_diff')
         for elem_ref in self.get_prop_val('elem_order'):
             elements = elem_ref.compute()
             if isinstance(elements, Element):
                 elements = [elements]
-            scale_factor = 1/self.get_prop_val('wh_diff')
             for element in elements:
                 if self.get_prop_val('stack_layout') == "Vertical":
                     scaled_elements.append(element.scale(1, scale_factor))
