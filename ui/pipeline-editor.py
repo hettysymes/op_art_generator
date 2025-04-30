@@ -1271,11 +1271,14 @@ class NodePropertiesDialog(QDialog):
             widget = container
         elif prop.prop_type == "elem_table":
 
-            def add_elem_item(elem_ref, row=None, table=None):
+            def add_elem_item(elem_ref: ElemRef, row=None, table=None):
                 item = QTableWidgetItem()
                 item.setTextAlignment(Qt.AlignCenter)
                 item.setData(Qt.UserRole, elem_ref)
                 item.setText(f"{elem_ref.node_type} (id: #{elem_ref.node_id.hex[:3]})")
+                if not elem_ref.is_deletable():
+                    # Set red background for non-deletable elements
+                    item.setBackground(QColor(237, 130, 157))
                 if (row is not None) and (table is not None):
                     table.setItem(row, 0, item)
                 return item
@@ -1311,15 +1314,16 @@ class NodePropertiesDialog(QDialog):
 
                 if row >= 0:
                     item = table.item(row, 0)
-                    elem_ref = item.data(Qt.UserRole)
+                    elem_ref: ElemRef = item.data(Qt.UserRole)
                     menu = QMenu()
                     duplicate_action = menu.addAction("Duplicate")
-                    # delete_action = menu.addAction("Delete")
+                    if elem_ref.is_deletable():
+                        delete_action = menu.addAction("Delete")
 
                     action = menu.exec_(table.viewport().mapToGlobal(position))
 
-                    # if action == delete_action:
-                    #     table.removeRow(row)
+                    if elem_ref.is_deletable() and action == delete_action:
+                        table.removeRow(row)
 
                     if action == duplicate_action:
                         # Add a new row below the current one
@@ -1327,7 +1331,9 @@ class NodePropertiesDialog(QDialog):
                         # Create a new item
                         new_item = QTableWidgetItem(item.text())
                         # Set the same user data (elem_ref)
-                        new_item.setData(Qt.UserRole, elem_ref)
+                        new_elem_ref: ElemRef = copy.deepcopy(elem_ref)
+                        new_elem_ref.set_deletable(True)
+                        new_item.setData(Qt.UserRole, new_elem_ref)
                         # Add the item to the table
                         table.setItem(row + 1, 0, new_item)
 

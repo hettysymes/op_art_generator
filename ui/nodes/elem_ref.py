@@ -5,6 +5,13 @@ class ElemRef:
         self.node_type = node.node_info().name
         self.node_id = node.node_id
         self.reversed = False
+        self.deletable = False
+
+    def is_deletable(self):
+        return self.deletable
+
+    def set_deletable(self, deletable):
+        self.deletable = deletable
 
     def reverse(self):
         self.reversed = not self.reversed
