@@ -28,9 +28,9 @@ class Element(ABC):
 
 class Group(Element):
 
-    def __init__(self, transforms=None):
+    def __init__(self):
         self.elements = []
-        self.transform_list = TransformList(transforms)
+        self.transform_list = TransformList()
 
     def get(self, dwg):
         group = dwg.g(transform=repr(self.transform_list))
@@ -71,17 +71,17 @@ class Shape(Element, ABC):
         self.shape_id = uuid.uuid4()
 
     def translate(self, tx, ty):
-        group = Group([Translate(tx, ty)])
+        group = Group().translate(tx, ty)
         group.add(self)
         return group
 
     def scale(self, sx, sy):
-        group = Group([Scale(sx, sy)])
+        group = Group().scale(sx, sy)
         group.add(self)
         return group
 
     def rotate(self, angle, centre):
-        group = Group([Rotate(angle, centre)])
+        group = Group().rotate(angle, centre)
         group.add(self)
         return group
 

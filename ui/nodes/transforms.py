@@ -61,19 +61,12 @@ class Rotate(Transform):
 
 class TransformList:
 
-    def __init__(self, transforms):
-        # Transforms at the beginning of the list are applied first
-        if transforms:
-            assert isinstance(transforms, list)
-            assert all(isinstance(t, Transform) for t in transforms)
-            self.transforms = transforms
-        else:
-            self.transforms = []
+    def __init__(self):
+        self.transforms = []
 
     def add(self, transform):
-        # Adds transform to the beginning of the list
         assert isinstance(transform, Transform)
-        self.transforms.insert(0, transform)
+        self.transforms.append(transform)
 
     def __repr__(self):
         parts = [repr(t) for t in self.transforms]
@@ -81,5 +74,5 @@ class TransformList:
 
     def remove_final_scale(self):
         assert len(self.transforms) > 0
-        assert isinstance(self.transforms[0], Scale)
-        del self.transforms[0]
+        assert isinstance(self.transforms[-1], Scale)
+        del self.transforms[-1]

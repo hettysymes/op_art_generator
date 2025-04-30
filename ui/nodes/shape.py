@@ -52,11 +52,10 @@ class SineWaveNode(UnitNode):
         try:
             sine_wave = SineWave(self.get_prop_val('amplitude'), self.get_prop_val('wavelength'), self.get_prop_val('centre_y'),
                                      self.get_prop_val('phase'), self.get_prop_val('x_min'), self.get_prop_val('x_max'),
-                                     self.get_prop_val('stroke_width'), self.get_prop_val('orientation'),
-                                     self.get_prop_val('num_points'))
+                                     self.get_prop_val('stroke_width'), self.get_prop_val('num_points')).rotate(self.get_prop_val('orientation'), (0.5, 0.5))
         except ValueError as e:
             raise NodeInputException(str(e), self.node_id)
-        return Group([sine_wave])
+        return sine_wave
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -83,7 +82,7 @@ class CustomLineNode(UnitNode):
     UNIT_NODE_INFO = CUSTOM_LINE_NODE_INFO
 
     def compute(self):
-        return Group([Polyline(self.get_prop_val('points'), 'black', self.get_prop_val('stroke_width'))])
+        return Polyline(self.get_prop_val('points'), 'black', self.get_prop_val('stroke_width'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -112,7 +111,7 @@ class StraightLineNode(UnitNode):
     UNIT_NODE_INFO = STRAIGHT_LINE_NODE_INFO
 
     def compute(self):
-        return Group([Polyline([self.get_prop_val('start_coord'), self.get_prop_val('stop_coord')], 'black', self.get_prop_val('stroke_width'))])
+        return Polyline([self.get_prop_val('start_coord'), self.get_prop_val('stop_coord')], 'black', self.get_prop_val('stroke_width'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -150,7 +149,7 @@ class PolygonNode(UnitNode):
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         # Return element
-        return Group([Polygon(self.get_prop_val('points'), fill, fill_opacity, 'red', self.get_prop_val('stroke_width'))])
+        return Polygon(self.get_prop_val('points'), fill, fill_opacity, 'red', self.get_prop_val('stroke_width'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -178,7 +177,7 @@ class RectangleNode(UnitNode):
 
     @staticmethod
     def helper(fill, fill_opacity):
-        return Group([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)])
+        return Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)
 
     def compute(self):
         colour = self.get_prop_val('fill')
@@ -228,8 +227,7 @@ class EllipseNode(UnitNode):
             fill_opacity = 255
         else:
             fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
-        return Group(
-            [Ellipse(self.get_prop_val('centre'), (self.get_prop_val('rx'), self.get_prop_val('ry')), fill, fill_opacity, 'black', self.get_prop_val('stroke_width'))])
+        return Ellipse(self.get_prop_val('centre'), (self.get_prop_val('rx'), self.get_prop_val('ry')), fill, fill_opacity, 'black', self.get_prop_val('stroke_width'))
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -286,7 +284,7 @@ class ElementShapeNode(UnitNode):
     UNIT_NODE_INFO = ELEMENT_SHAPE_NODE_INFO
 
     def compute(self):
-        return Group([self.get_prop_val('shape')])
+        return self.get_prop_val('shape')
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
@@ -305,24 +303,25 @@ class ElementLineNode(UnitNode):
     UNIT_NODE_INFO = ELEMENT_LINE_NODE_INFO
 
     def compute(self):
-        return Group([self.get_prop_val('line')])
+        return self.get_prop_val('line')
 
     def visualise(self, temp_dir, height, wh_ratio):
         return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
 def get_node_from_shape(shape: Shape):
-    if isinstance(shape, Polyline):
-        return ElementLineNode(
-            uuid.uuid4(),
-            [],
-            {'line': shape.remove_final_scale()}
-        )
-    else:
-        return ElementShapeNode(
-            uuid.uuid4(),
-            [],
-            {'shape': shape.remove_final_scale()}
-        )
+    pass #TODO
+    # if isinstance(shape, Polyline):
+    #     return ElementLineNode(
+    #         uuid.uuid4(),
+    #         [],
+    #         {'line': shape.remove_final_scale()}
+    #     )
+    # else:
+    #     return ElementShapeNode(
+    #         uuid.uuid4(),
+    #         [],
+    #         {'shape': shape.remove_final_scale()}
+    #     )
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"

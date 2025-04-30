@@ -2,6 +2,7 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Group
+from ui.nodes.transforms import Translate, Scale
 from ui.port_defs import PortType, PortDef, PT_Grid, PT_Element
 
 CHECKERBOARD_NODE_INFO = UnitNodeInfo(
@@ -22,34 +23,42 @@ CHECKERBOARD_NODE_INFO = UnitNodeInfo(
 class CheckerboardNode(UnitNode):
     UNIT_NODE_INFO = CHECKERBOARD_NODE_INFO
 
+    @staticmethod
+    def helper(grid_out, element1=None, element2=None):
+        assert element1 or element2
+        default_elem = RectangleNode(prop_vals={'fill': (255, 255, 255, 0)}).compute()
+        if not element1:
+            element1 = default_elem
+        if not element2:
+            element2 = default_elem
+        v_line_xs, h_line_ys = grid_out
+        ret_group = Group()
+        element1_starts = True
+        for i in range(1, len(v_line_xs)):
+            element1_turn = element1_starts
+            for j in range(1, len(h_line_ys)):
+                x1 = v_line_xs[i - 1]
+                x2 = v_line_xs[i]
+                y1 = h_line_ys[j - 1]
+                y2 = h_line_ys[j]
+                element = element1 if element1_turn else element2
+                cell_group = Group().translate(x1, y1).scale(x2 - x1, y2 - y1)
+                cell_group.add(element)
+                ret_group.add(cell_group)
+                element1_turn = not element1_turn
+            element1_starts = not element1_starts
+        return ret_group
+
     def compute(self):
         grid_out = self.get_input_node('grid').compute()
         element1 = self.get_input_node('elem1').compute()
         element2 = self.get_input_node('elem2').compute()
         if grid_out and (element1 or element2):
-            default_elem = RectangleNode(prop_vals={'fill': (255, 255, 255, 0)}).compute()
-            if not element1:
-                element1 = default_elem
-            if not element2:
-                element2 = default_elem
-            v_line_xs, h_line_ys = grid_out
-            ret_element = Group()
-            element1_starts = True
-            for i in range(1, len(v_line_xs)):
-                element1_turn = element1_starts
-                for j in range(1, len(h_line_ys)):
-                    x1 = v_line_xs[i - 1]
-                    x2 = v_line_xs[i]
-                    y1 = h_line_ys[j - 1]
-                    y2 = h_line_ys[j]
-                    element = element1 if element1_turn else element2
-                    for shape in element:
-                        ret_element.add(shape.scale(x2 - x1, y2 - y1).translate(x1, y1))
-                    element1_turn = not element1_turn
-                element1_starts = not element1_starts
-            return ret_element
+            return CheckerboardNode.helper(grid_out, element1, element2)
+        return None
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
         if element:
             return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
+        return None
