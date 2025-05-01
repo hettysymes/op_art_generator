@@ -67,6 +67,11 @@ class TransformList:
     def __init__(self):
         self.transforms = []
 
+    def __iter__(self):
+        # Return transformations in application order
+        for transform in reversed(self.transforms):
+            yield transform
+
     def add(self, transform):
         # Transformations are applied right-to-left
         assert isinstance(transform, Transform)
@@ -90,7 +95,7 @@ class TransformList:
         new_points = []
         for p in points:
             new_point = p
-            for t in list(reversed(self.transforms)):
+            for t in self:
                 new_point = t.apply_to_point(new_point)
             new_points.append(new_point)
         return new_points
