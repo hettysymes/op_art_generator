@@ -243,18 +243,21 @@ ELLIPSE_NODE_INFO = UnitNodeInfo(
 class EllipseNode(UnitNode):
     UNIT_NODE_INFO = ELLIPSE_NODE_INFO
 
-    def compute(self):
-        colour = self.get_prop_val('fill')
+    @staticmethod
+    def helper(colour, centre, radius, stroke='none', stroke_width=1):
         if isinstance(colour, Gradient):
             fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
-        return Ellipse(self.get_prop_val('centre'), (self.get_prop_val('rx'), self.get_prop_val('ry')), fill,
-                       fill_opacity, 'none', self.get_prop_val('stroke_width'))
+            fill, fill_opacity = process_rgb(colour)
+        return Ellipse(centre, radius, fill,
+                       fill_opacity, stroke, stroke_width)
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+    def compute(self):
+        group = Group(debug_info="Ellipse")
+        group.add(EllipseNode.helper(self.get_prop_val('fill'), self.get_prop_val('centre'), (self.get_prop_val('rx'), self.get_prop_val('ry')),
+                                     'none', self.get_prop_val('stroke_width')))
+        return group
 
 
 CIRCLE_NODE_INFO = UnitNodeInfo(

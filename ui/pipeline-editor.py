@@ -305,8 +305,6 @@ class NodeItem(QGraphicsRectItem):
 
             # Create SVG renderer
             svg_renderer = QSvgRenderer(svg_filepath)
-            # Get SVG dimensions - will be used for viewport clipping
-            #svg_size = svg_renderer.defaultSize()
 
             viewport_svg = QGraphicsSvgItem(svg_filepath)
             viewport_svg.setParentItem(self)
@@ -314,10 +312,10 @@ class NodeItem(QGraphicsRectItem):
             viewport_svg.setZValue(1)  # Set below selectable items
             self.svg_items.append(viewport_svg)
 
-            # Set clip path based on SVG's viewBox
-            # clip_path = QPainterPath()
-            # clip_path.addRect(QRectF(0, 0, svg_size.width(), svg_size.height()))
-            # viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
+            # Set clip path to clip out outside of SVG
+            clip_path = QPainterPath()
+            clip_path.addRect(QRectF(0, 0, self.backend.svg_width, self.backend.svg_width))
+            viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
 
             # Load the SVG file as XML
             dom_document = QDomDocument()
