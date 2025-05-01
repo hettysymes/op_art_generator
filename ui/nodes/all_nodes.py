@@ -4,6 +4,7 @@ from ui.nodes.checkerboard import CheckerboardNode
 from ui.nodes.colour import ColourNode
 from ui.nodes.colour_filler import ColourFillerNode
 from ui.nodes.colour_list import ColourListNode
+from ui.nodes.drawing_group import DrawingGroupNode
 from ui.nodes.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.function import FunctionNode
 from ui.nodes.function_sampler import FunSamplerNode
@@ -21,4 +22,4 @@ from ui.nodes.warp import WarpNode
 node_classes = [GridNode, ShapeNode, ShapeRepeaterNode, CheckerboardNode, WarpNode,
                 FunctionNode, CanvasNode, IteratorNode, ColourListNode, FunSamplerNode, ColourFillerNode, OverlayNode,
                 GradientNode, IteratorSelectorNode, EllipseSamplerNode, BlazeMakerNode, StackerNode, ColourNode,
-                RandomColourSelectorNode]
+                RandomColourSelectorNode, DrawingGroupNode]
