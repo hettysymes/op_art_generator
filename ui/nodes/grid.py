@@ -50,6 +50,8 @@ class GridNode(UnitNode):
 
     def visualise(self):
         v_line_xs, h_line_ys = self.compute()
+        print("Xs and Ys")
+        print(v_line_xs, h_line_ys)
         group = Group(debug_info="Grid")
         for x in v_line_xs:
             # Draw horizontal lines

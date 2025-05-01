@@ -64,7 +64,7 @@ class Rotate(Transform):
 
 class TransformList:
 
-    def __init__(self, transforms):
+    def __init__(self, transforms=None):
         if transforms:
             self.transforms = list(reversed(transforms))
         else:

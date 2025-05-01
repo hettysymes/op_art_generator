@@ -50,19 +50,21 @@ SINE_WAVE_NODE_INFO = UnitNodeInfo(
 class SineWaveNode(UnitNode):
     UNIT_NODE_INFO = SINE_WAVE_NODE_INFO
 
+    @staticmethod
+    def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, num_points=100, orientation=0):
+        return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points).rotate(orientation, (0.5, 0.5))
+
     def compute(self):
+        group = Group(debug_info="Sine wave")
         try:
-            sine_wave = SineWave(self.get_prop_val('amplitude'), self.get_prop_val('wavelength'),
+            sine_wave = SineWaveNode.helper(self.get_prop_val('amplitude'), self.get_prop_val('wavelength'),
                                  self.get_prop_val('centre_y'),
                                  self.get_prop_val('phase'), self.get_prop_val('x_min'), self.get_prop_val('x_max'),
-                                 self.get_prop_val('stroke_width'), self.get_prop_val('num_points')).rotate(
-                self.get_prop_val('orientation'), (0.5, 0.5))
+                                 self.get_prop_val('stroke_width'), self.get_prop_val('num_points'), self.get_prop_val('orientation'))
         except ValueError as e:
             raise NodeInputException(str(e), self.node_id)
-        return sine_wave
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+        group.add(sine_wave)
+        return group
 
 
 CUSTOM_LINE_NODE_INFO = UnitNodeInfo(
@@ -86,11 +88,14 @@ CUSTOM_LINE_NODE_INFO = UnitNodeInfo(
 class CustomLineNode(UnitNode):
     UNIT_NODE_INFO = CUSTOM_LINE_NODE_INFO
 
-    def compute(self):
-        return Polyline(self.get_prop_val('points'), 'black', self.get_prop_val('stroke_width'))
+    @staticmethod
+    def helper(points, stroke='black', stroke_width=1):
+        return Polyline(points, stroke, stroke_width)
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+    def compute(self):
+        group = Group(debug_info="Straight line")
+        group.add(CustomLineNode.helper(self.get_prop_val('points'), 'black', self.get_prop_val('stroke_width')))
+        return group
 
 
 STRAIGHT_LINE_NODE_INFO = UnitNodeInfo(

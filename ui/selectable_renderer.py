@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPen, QTransform
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
 
+from ui.id_generator import shorten_uid
 from ui.nodes.shape import get_node_from_shape
 
 
@@ -11,6 +12,7 @@ class SelectableSvgElement(QGraphicsItem):
     def __init__(self, element_id, renderer):
         super().__init__()
         self.element_id = element_id
+        print(f"element id #{shorten_uid(self.element_id)}")
         self.renderer = renderer
 
         # Set flags for interaction - selectable but NOT movable

@@ -281,7 +281,7 @@ class NodeItem(QGraphicsRectItem):
 
         # Get item to draw
         vis = self.visualise()
-        svg_filepath = os.path.join(self.scene().temp_dir, self.uid)
+        svg_filepath = os.path.join(self.scene().temp_dir, f"{self.uid}.svg")
         # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
@@ -354,7 +354,7 @@ class NodeItem(QGraphicsRectItem):
                     self.svg_items.append(selectable_item)
                 child = child.nextSibling()
 
-            print(f"Selectable items: {[s.element_id for s in self.svg_items]}")
+            print(f"Selectable items len: {len(self.svg_items)}")
 
     def add_new_node(self, node):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)
