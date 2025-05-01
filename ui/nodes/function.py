@@ -92,9 +92,13 @@ PIECEWISE_FUN_NODE_INFO = UnitNodeInfo(
 class PiecewiseFunNode(UnitNode):
     UNIT_NODE_INFO = PIECEWISE_FUN_NODE_INFO
 
+    @staticmethod
+    def helper(xs, ys):
+        return lambda i: np.interp(i, xs, ys)
+
     def compute(self):
         xs, ys = zip(*self.get_prop_val('points'))
-        return lambda i: np.interp(i, xs, ys)
+        return PiecewiseFunNode.helper(xs, ys)
 
     def visualise(self, temp_dir, height, wh_ratio):
         return create_graph_svg(height, wh_ratio, sample_fun(self.compute(), 1000), self._return_path(temp_dir))
