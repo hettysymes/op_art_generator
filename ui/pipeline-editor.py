@@ -241,13 +241,17 @@ class NodeItem(QGraphicsRectItem):
         self.setRect(0, 0, width, height)
         if self.resize_handle:
             self.resize_handle.update_position()
+
+        # Update backend state
+        self.backend.svg_width, self.backend.svg_height = self.svg_size_from_node_size(width, height)
+
+        # Update vis image
         self.update_vis_image()
 
         # Update port positions to match the new dimensions
         self.update_port_edge_positions()
 
-        # Update backend state
-        self.backend.svg_width, self.backend.svg_height = self.svg_size_from_node_size(width, height)
+
 
     def node_size_from_svg_size(self, svg_w, svg_h):
         return svg_w + self.left_max_width + self.right_max_width + 2 * NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
@@ -302,7 +306,7 @@ class NodeItem(QGraphicsRectItem):
             # Create SVG renderer
             svg_renderer = QSvgRenderer(svg_filepath)
             # Get SVG dimensions - will be used for viewport clipping
-            svg_size = svg_renderer.defaultSize()
+            #svg_size = svg_renderer.defaultSize()
 
             viewport_svg = QGraphicsSvgItem(svg_filepath)
             viewport_svg.setParentItem(self)
@@ -311,9 +315,9 @@ class NodeItem(QGraphicsRectItem):
             self.svg_items.append(viewport_svg)
 
             # Set clip path based on SVG's viewBox
-            clip_path = QPainterPath()
-            clip_path.addRect(QRectF(0, 0, svg_size.width(), svg_size.height()))
-            viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
+            # clip_path = QPainterPath()
+            # clip_path.addRect(QRectF(0, 0, svg_size.width(), svg_size.height()))
+            # viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
 
             # Load the SVG file as XML
             dom_document = QDomDocument()
@@ -347,14 +351,14 @@ class NodeItem(QGraphicsRectItem):
                     child_element = child.toElement()
                     child_elem_id = child_element.attribute('id')
                     assert child_elem_id
-                    selectable_item = SelectableSvgElement(child_elem_id, svg_renderer)
+                    selectable_item = SelectableSvgElement(child_elem_id, svg_renderer, self)
                     selectable_item.setParentItem(viewport_svg)
                     selectable_item.setPos(0, 0)
                     selectable_item.setZValue(3)
                     self.svg_items.append(selectable_item)
                 child = child.nextSibling()
 
-            print(f"Selectable items len: {len(self.svg_items)}")
+            #print(f"Selectable items len: {len(self.svg_items)}")
 
     def add_new_node(self, node):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)

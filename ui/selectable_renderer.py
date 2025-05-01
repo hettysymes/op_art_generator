@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QColor, QPen, QTransform
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
 
@@ -9,11 +9,11 @@ from ui.nodes.shape import get_node_from_shape
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""
 
-    def __init__(self, element_id, renderer):
+    def __init__(self, element_id, renderer, parent_node_item):
         super().__init__()
         self.element_id = element_id
-        print(f"element id #{shorten_uid(self.element_id)}")
         self.renderer = renderer
+        self.parent_node_item = parent_node_item
 
         # Set flags for interaction - selectable but NOT movable
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -23,12 +23,14 @@ class SelectableSvgElement(QGraphicsItem):
 
     def boundingRect(self):
         """Return the bounding rectangle of the element."""
-        return self.renderer.boundsOnElement(self.element_id)
+        rect = self.renderer.boundsOnElement(self.element_id)
+        width, height = self.parent_node_item.backend.svg_width, self.parent_node_item.backend.svg_height
+        return QRectF(rect.x() * width, rect.y() * height,
+                      max(rect.width() * width, 1), max(rect.height() * height, 1)) # Minimum width/height of 1
 
     def paint(self, painter, option, widget=None):
         """Paint the element in its original position."""
-        # Render only this element using the renderer
-        self.renderer.render(painter, self.element_id, self.boundingRect())
+        # Skip rendering the SVG element itself
 
         # Draw selection visual if selected
         if self.isSelected():
