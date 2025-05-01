@@ -10,7 +10,7 @@ import uuid
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -312,7 +312,7 @@ class NodeItem(QGraphicsRectItem):
                 content = file.read()
                 dom_document.setContent(content)
 
-            def process_element(element, parent_item):
+            def process_element(element, transform, parent_item):
 
                 child = element.firstChild()
                 while not child.isNull():
@@ -323,7 +323,7 @@ class NodeItem(QGraphicsRectItem):
                         if element_id:
                             element = drawn_group.get_element_from_id(element_id)
                             if element:
-                                selectable_item = SelectableSvgElement(element, drawn_group, svg_renderer, self)
+                                selectable_item = SelectableSvgElement(element, transform, svg_renderer, self)
                                 selectable_item.setParentItem(parent_item)
                                 selectable_item.setPos(0, 0)
                                 selectable_item.setZValue(3)
@@ -351,8 +351,10 @@ class NodeItem(QGraphicsRectItem):
             group_element = find_element_by_id(root, drawn_group.uid)
 
             if not group_element.isNull():
-                print(drawn_group.uid)
-                process_element(group_element, viewport_svg)
+                transform = QTransform()
+                scale = drawn_group.transform_list.transforms[0]
+                transform.scale(scale.sx, scale.sy)
+                process_element(group_element, transform, viewport_svg)
             else:
                 assert False
 
