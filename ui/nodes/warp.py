@@ -3,6 +3,7 @@ from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList
 from ui.nodes.warp_utils import PosWarp, RelWarp
 from ui.port_defs import PortDef, PT_Function, PT_Warp
+from ui.vis_types import MatplotlibFig
 
 POS_WARP_NODE_INFO = UnitNodeInfo(
     name="Position Warp",
@@ -32,10 +33,10 @@ class PosWarpNode(UnitNode):
             return warp
         return None
 
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         warp = self.compute()
         if warp:
-            return create_graph_svg(height, wh_ratio, warp.sample(1000), self._return_path(temp_dir))
+            return MatplotlibFig(create_graph_svg(warp.sample(1000)))
         return None
 
 
@@ -67,10 +68,10 @@ class RelWarpNode(UnitNode):
             return warp
         return None
 
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         warp = self.compute()
         if warp:
-            return create_graph_svg(height, wh_ratio, warp.sample(1000), self._return_path(temp_dir))
+            return MatplotlibFig(create_graph_svg(warp.sample(1000)))
         return None
 
 

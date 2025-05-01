@@ -7,7 +7,7 @@ from ui.id_generator import shorten_uid
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.drawers.error_drawer import ErrorDrawer
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.shape_datatypes import Group
+from ui.nodes.shape_datatypes import Group, Element
 
 
 class PropTypeList:
@@ -73,27 +73,28 @@ class Node(ABC):
     def _return_path(self, temp_dir):
         return os.path.join(temp_dir, self.node_id)
 
-    def get_svg_path(self, temp_dir, height, wh_ratio):
+    def safe_visualise(self):
         exception = None
         # Catch exception if raised
-        try:
-            vis = self.visualise(temp_dir, height, wh_ratio)
-        except NodeInputException as e:
-            exception = e
-            if e.node_id == self.node_id:
-                msg = str(e.message)
-            else:
-                msg = f"Error further up pipeline (id #{shorten_uid(e.node_id)})."
-            vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, [e.title, msg]).save()
-        except Exception as e:
-            exception = e
-            vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, ["Unknown Exception", str(e)]).save()
-            traceback.print_exc()
-        # Return visualisation with exception
-        if not vis:
-            # No visualisation, return blank canvas
-            vis = ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Group(), None)).save()
-        return vis, exception
+        # try:
+        #     vis = self.visualise()
+        # except NodeInputException as e:
+        #     exception = e
+        #     if e.node_id == self.node_id:
+        #         msg = str(e.message)
+        #     else:
+        #         msg = f"Error further up pipeline (id #{shorten_uid(e.node_id)})."
+        #     vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, [e.title, msg]).save()
+        # except Exception as e:
+        #     exception = e
+        #     vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, ["Unknown Exception", str(e)]).save()
+        #     traceback.print_exc()
+        # # Return visualisation with exception
+        # if not vis:
+        #     # No visualisation, return blank canvas
+        #     vis = ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Group(), None)).save()
+        # return vis, exception
+        return self.visualise()
 
     def name(self):
         return self.node_info().name
@@ -166,7 +167,7 @@ class Node(ABC):
         pass
 
     @abstractmethod
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         pass
 
 
@@ -195,8 +196,8 @@ class UnitNode(Node):
     def compute(self):
         return
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return
+    def visualise(self):
+        return self.compute()
 
 
 class CombinationNode(Node):
@@ -233,5 +234,5 @@ class CombinationNode(Node):
     def compute(self):
         return self.node_instance().compute()
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return self.node_instance().visualise(temp_dir, height, wh_ratio)
+    def visualise(self):
+        return self.node_instance().visualise()

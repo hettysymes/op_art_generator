@@ -6,6 +6,7 @@ from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList
 from ui.nodes.utils import cubic_f
 from ui.nodes.warp_utils import sample_fun
 from ui.port_defs import PortDef, PT_Function
+from ui.vis_types import MatplotlibFig
 
 CUBIC_FUN_NODE_INFO = UnitNodeInfo(
     name="Cubic Function",
@@ -39,8 +40,8 @@ class CubicFunNode(UnitNode):
         return cubic_f(self.get_prop_val('a_coeff'), self.get_prop_val('b_coeff'), self.get_prop_val('c_coeff'),
                        self.get_prop_val('d_coeff'))
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return create_graph_svg(height, wh_ratio, sample_fun(self.compute(), 1000), self._return_path(temp_dir))
+    def visualise(self):
+        return MatplotlibFig(create_graph_svg(sample_fun(self.compute(), 1000)))
 
 
 CUSTOM_FUN_NODE_INFO = UnitNodeInfo(
@@ -68,8 +69,8 @@ class CustomFunNode(UnitNode):
         parsed_expr = sp.sympify(self.get_prop_val('fun_def'))
         return sp.lambdify(x, parsed_expr)
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return create_graph_svg(height, wh_ratio, sample_fun(self.compute(), 1000), self._return_path(temp_dir))
+    def visualise(self):
+        return MatplotlibFig(create_graph_svg(sample_fun(self.compute(), 1000)))
 
 
 PIECEWISE_FUN_NODE_INFO = UnitNodeInfo(
@@ -100,8 +101,8 @@ class PiecewiseFunNode(UnitNode):
         xs, ys = zip(*self.get_prop_val('points'))
         return PiecewiseFunNode.helper(xs, ys)
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return create_graph_svg(height, wh_ratio, sample_fun(self.compute(), 1000), self._return_path(temp_dir))
+    def visualise(self):
+        return MatplotlibFig(create_graph_svg(sample_fun(self.compute(), 1000)))
 
 
 class FunctionNode(CombinationNode):

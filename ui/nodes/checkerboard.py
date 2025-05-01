@@ -2,6 +2,7 @@ from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Group
+from ui.nodes.transforms import Scale, Translate
 from ui.port_defs import PortDef, PT_Grid, PT_Element
 
 CHECKERBOARD_NODE_INFO = UnitNodeInfo(
@@ -31,7 +32,7 @@ class CheckerboardNode(UnitNode):
         if not element2:
             element2 = default_elem
         v_line_xs, h_line_ys = grid
-        ret_group = Group()
+        ret_group = Group(debug_info="Checkerboard")
         element1_starts = True
         for i in range(1, len(v_line_xs)):
             element1_turn = element1_starts
@@ -41,7 +42,7 @@ class CheckerboardNode(UnitNode):
                 y1 = h_line_ys[j - 1]
                 y2 = h_line_ys[j]
                 element = element1 if element1_turn else element2
-                cell_group = Group().scale(x2 - x1, y2 - y1).translate(x1, y1)
+                cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({j},{i})")
                 cell_group.add(element)
                 ret_group.add(cell_group)
                 element1_turn = not element1_turn

@@ -1,6 +1,7 @@
 import ast
 import copy
 import math
+import os
 import pickle
 import random
 import shutil
@@ -31,6 +32,7 @@ from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.selectable_renderer import SelectableSvgElement
+from ui.vis_types import MatplotlibFig
 
 
 class ConnectionSignals(QObject):
@@ -251,27 +253,49 @@ class NodeItem(QGraphicsRectItem):
     def svg_size_from_node_size(self, rect_w, rect_h):
         return rect_w - self.left_max_width - self.right_max_width - 2 * NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
+    def visualise(self):
+        return self.update_node().safe_visualise()
+
     def get_svg_path(self):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
-        svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
-        return svg_path
+        # svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
+        compute = self.update_node().safe_visualise(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
+        #return svg_path
+        return
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
-        svg_path, drawn_group = self.get_svg_path()
-
         # Remove existing SVG items if necessary
-        if self.svg_items:
-            for item in self.svg_items:
-                scene = self.scene()
-                if scene and item in scene.items():
-                    scene.removeItem(item)
-        self.svg_items = []
+        # if self.svg_items:
+        #     for item in self.svg_items:
+        #         scene = self.scene()
+        #         if scene and item in scene.items():
+        #             scene.removeItem(item)
+        # self.svg_items = []
 
         if self.svg_item:
-            scene = self.scene()
-            if scene and self.svg_item in scene.items():
-                scene.removeItem(self.svg_item)
+            if self.svg_item in self.scene().items():
+                self.scene().removeItem(self.svg_item)
+
+        vis = self.visualise()
+        svg_filepath = os.path.join(self.scene().temp_dir, self.uid)
+        #svg_path, drawn_group = self.get_svg_path()
+        if isinstance(vis, MatplotlibFig):
+            vis.save_to_svg(svg_filepath, self.backend.svg_width, self.backend.svg_height)
+
+            # Base position for all SVG elements
+            svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
+            svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
+
+            self.svg_item = QGraphicsSvgItem(svg_filepath)
+
+            # Apply position
+            self.svg_item.setParentItem(self)
+            self.svg_item.setPos(svg_pos_x, svg_pos_y)
+            self.svg_item.setZValue(2)
+        return
+
+
 
         # Create SVG renderer
         svg_renderer = QSvgRenderer(svg_path)
