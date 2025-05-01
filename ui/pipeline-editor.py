@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QHBoxLayout, QFileDialog, QStyledItemDelegate, QColorDialog,
                              QGraphicsTextItem, QLabel)
 from PyQt5.QtWidgets import QGraphicsPathItem
-from PyQt5.QtXml import QDomDocument
+from PyQt5.QtXml import QDomDocument, QDomElement
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import gen_uid, shorten_uid
@@ -312,7 +312,7 @@ class NodeItem(QGraphicsRectItem):
                 content = file.read()
                 dom_document.setContent(content)
 
-            def process_element(element, drawn_elem, parent_item):
+            def process_element(element, parent_item):
 
                 child = element.firstChild()
                 while not child.isNull():
@@ -322,9 +322,8 @@ class NodeItem(QGraphicsRectItem):
 
                         if element_id:
                             element = drawn_group.get_element_from_id(element_id)
-                            print(f"Element {element_id}: {element}")
                             if element:
-                                selectable_item = SelectableSvgElement(element, svg_renderer, self)
+                                selectable_item = SelectableSvgElement(element, drawn_group, svg_renderer, self)
                                 selectable_item.setParentItem(parent_item)
                                 selectable_item.setPos(0, 0)
                                 selectable_item.setZValue(3)
@@ -332,20 +331,28 @@ class NodeItem(QGraphicsRectItem):
 
                     child = child.nextSibling()
 
+            def find_element_by_id(node, target_id):
+                if node.isElement():
+                    element = node.toElement()
+                    if element.attribute('id') == target_id:
+                        return element
+
+                # Check children recursively
+                child = node.firstChild()
+                while not child.isNull():
+                    result = find_element_by_id(child, target_id)
+                    if result and not result.isNull():
+                        return result
+                    child = child.nextSibling()
+
+                return QDomElement()  # Return null element if not found
+
             root = dom_document.documentElement()
-            child = root.firstChild()
-            group_element = None
-            while not child.isNull():
-                if child.isElement():
-                    element_node = child.toElement()
-                    if element_node.tagName() == "g":
-                        group_element = element_node
-                        break  # Found the first top-level group
-                child = child.nextSibling()
-            if group_element is not None:
-                print("Group ID: ", group_element.attribute('id'))
-                # Process only the children of this group
-                process_element(group_element, drawn_group, viewport_svg)
+            group_element = find_element_by_id(root, drawn_group.uid)
+
+            if not group_element.isNull():
+                print(drawn_group.uid)
+                process_element(group_element, viewport_svg)
             else:
                 assert False
 

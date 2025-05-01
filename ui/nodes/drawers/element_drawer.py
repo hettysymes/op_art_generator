@@ -12,5 +12,11 @@ class ElementDrawer(Drawing):
     def draw(self):
         if self.bg_col is not None:
             self.add_bg(self.bg_col)
-        scaled_elem: Element = self.element.scale(self.width, self.height)
-        self.dwg_add(scaled_elem.get(self.dwg))
+        print(f"INPUT:")
+        print(self.element)
+        print()
+        self.scaled_elem: Element = self.element.scale(self.width, self.height)
+        print(f"DRAWING:")
+        print(self.scaled_elem)
+        print()
+        self.dwg_add(self.scaled_elem.get(self.dwg))

@@ -3,7 +3,7 @@ import math
 import uuid
 from abc import ABC, abstractmethod
 
-from ui.id_generator import gen_uid
+from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
@@ -63,27 +63,24 @@ class Group(Element):
         self.elements.append(element)
 
     def translate(self, tx, ty):
-        new_group = copy.deepcopy(self)
-        new_group.uid = gen_uid()
+        new_group = Group()
         new_group.transform_list.add(Translate(tx, ty))
+        if self.elements:
+            new_group.add(self)
         return new_group
 
     def scale(self, sx, sy):
-        new_group = copy.deepcopy(self)
-        new_group.uid = gen_uid()
+        new_group = Group()
         new_group.transform_list.add(Scale(sx, sy))
+        if self.elements:
+            new_group.add(self)
         return new_group
 
     def rotate(self, angle, centre):
-        new_group = copy.deepcopy(self)
-        new_group.uid = gen_uid()
+        new_group = Group()
         new_group.transform_list.add(Rotate(angle, centre))
-        return new_group
-
-    def remove_final_scale(self):
-        new_group = copy.deepcopy(self)
-        new_group.uid = gen_uid()
-        new_group.transform_list.remove_final_scale()
+        if self.elements:
+            new_group.add(self)
         return new_group
 
     def shape_transformations(self):
@@ -95,6 +92,16 @@ class Group(Element):
                 new_transform_list.transforms = self.transform_list.transforms + transform_list.transforms
                 transformed_shapes.append((shape, new_transform_list))
         return transformed_shapes
+
+    def __repr__(self):
+        result = f"Group (#{shorten_uid(self.uid)}) [{repr(self.transform_list)}] {{\n"
+        for elem in self.elements:
+            # Get multiline representation and indent each line
+            lines = repr(elem).splitlines()
+            indented = '\n'.join(f"\t{line}" for line in lines)
+            result += f"{indented}\n"
+        result += "}"
+        return result
 
 
 class Shape(Element, ABC):
@@ -116,6 +123,9 @@ class Shape(Element, ABC):
 
     def shape_transformations(self):
         return [(self, TransformList())]
+
+    def __repr__(self):
+        return f"Shape (#{shorten_uid(self.uid)}) {self.__class__.__name__.upper()}"
 
 
 class Polyline(Shape):
