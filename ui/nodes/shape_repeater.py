@@ -3,6 +3,7 @@ import itertools
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
 from ui.nodes.shape_datatypes import Group, Element
+from ui.nodes.transforms import Scale, Translate
 from ui.port_defs import PortDef, PT_Grid, PT_Element, PT_Repeatable
 
 SHAPE_REPEATER_NODE_INFO = UnitNodeInfo(
@@ -25,7 +26,7 @@ class ShapeRepeaterNode(UnitNode):
     @staticmethod
     def helper(grid, elements):
         v_line_xs, h_line_ys = grid
-        ret_group = Group()
+        ret_group = Group(debug_info="Shape Repeater")
         if isinstance(elements, Element):
             # Ensure elements is a list
             elements = [elements]
@@ -36,7 +37,7 @@ class ShapeRepeaterNode(UnitNode):
                 x2 = v_line_xs[i]
                 y1 = h_line_ys[j - 1]
                 y2 = h_line_ys[j]
-                cell_group = Group().scale(x2 - x1, y2 - y1).translate(x1, y1)
+                cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({j},{i})")
                 cell_group.add(next(element_it))
                 ret_group.add(cell_group)
         return ret_group

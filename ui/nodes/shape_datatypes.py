@@ -37,10 +37,11 @@ class Element(ABC):
 
 class Group(Element):
 
-    def __init__(self):
+    def __init__(self, transforms=None, debug_info=None):
         super().__init__()
         self.elements = []
-        self.transform_list = TransformList()
+        self.transform_list = TransformList(transforms)
+        self.debug_info = debug_info
 
     def get(self, dwg):
         transform_str = self.transform_list.get_transform_str()
@@ -94,7 +95,8 @@ class Group(Element):
         return transformed_shapes
 
     def __repr__(self):
-        result = f"Group (#{shorten_uid(self.uid)}) [{repr(self.transform_list)}] {{\n"
+        debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""
+        result = f"Group (#{shorten_uid(self.uid)}) [{repr(self.transform_list)}] {debug_str} {{\n"
         for elem in self.elements:
             # Get multiline representation and indent each line
             lines = repr(elem).splitlines()
