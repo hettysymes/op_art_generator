@@ -28,7 +28,7 @@ class ColourFillerNode(UnitNode):
     def helper(colours, element):
         ret_group = Group()
         colour_it = itertools.cycle(colours)
-        transformed_shapes = element.transformed_shapes()
+        transformed_shapes = element.shape_transformations()
         for i in range(1, len(transformed_shapes)):
             shape1, transform_list1 = transformed_shapes[i - 1]
             shape2, transform_list2 = transformed_shapes[i]
@@ -44,7 +44,7 @@ class ColourFillerNode(UnitNode):
             if not colours:
                 raise NodeInputException("Input colour list must contain at least one colour.", self.node_id)
             # Check all shapes are polylines
-            for transformed_shape in element.transformed_shapes():
+            for transformed_shape in element.shape_transformations():
                 if not isinstance(transformed_shape[0], Polyline):
                     raise NodeInputException("Input drawing must only consist of lines.", self.node_id)
             return ColourFillerNode.helper(colours, element)

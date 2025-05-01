@@ -1,10 +1,10 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.element_wrapper import WrappedElement
 from ui.nodes.grid import GridNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Element
 from ui.nodes.shape_repeater import ShapeRepeaterNode
+from ui.nodes.wrapped_element import WrappedElement
 from ui.port_defs import PortDef, PT_Element, PT_Repeatable
 
 STACKER_NODE_INFO = UnitNodeInfo(

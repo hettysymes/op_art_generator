@@ -27,7 +27,7 @@ class Element(ABC):
         pass
 
     @abstractmethod
-    def transformed_shapes(self):
+    def shape_transformations(self):
         pass
 
 
@@ -71,10 +71,10 @@ class Group(Element):
         new_group.transform_list.remove_final_scale()
         return new_group
 
-    def transformed_shapes(self):
+    def shape_transformations(self):
         transformed_shapes = []
         for element in self.elements:
-            transformed_shapes_prev = element.transformed_shapes()
+            transformed_shapes_prev = element.shape_transformations()
             for shape, transform_list in transformed_shapes_prev:
                 new_transform_list = TransformList()
                 new_transform_list.transforms = self.transform_list.transforms + transform_list.transforms
@@ -102,7 +102,7 @@ class Shape(Element, ABC):
         group.add(self)
         return group
 
-    def transformed_shapes(self):
+    def shape_transformations(self):
         return [(self, TransformList())]
 
 

@@ -21,5 +21,5 @@ class WrappedElement(Element, ABC):
     def rotate(self, angle, centre):
         return self.element().rotate(angle, centre)
 
-    def transformed_shapes(self):
-        return self.element().transformed_shapes()
+    def shape_transformations(self):
+        return self.element().shape_transformations()
