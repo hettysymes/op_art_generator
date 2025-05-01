@@ -8,11 +8,10 @@ from ui.nodes.shape import get_node_from_shape
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""
 
-    def __init__(self, element_id, renderer, selectable_shapes, parent):
+    def __init__(self, element, renderer, parent):
         super().__init__()
-        self.element_id = element_id
+        self.element = element
         self.renderer = renderer
-        self.selectable_shapes = selectable_shapes
         self.parent = parent
 
         # Set flags for interaction - selectable but NOT movable
@@ -23,12 +22,12 @@ class SelectableSvgElement(QGraphicsItem):
 
     def boundingRect(self):
         """Return the bounding rectangle of the element."""
-        return self.renderer.boundsOnElement(self.element_id)
+        return self.renderer.boundsOnElement(self.element.uid)
 
     def paint(self, painter, option, widget=None):
         """Paint the element in its original position."""
         # Render only this element using the renderer
-        self.renderer.render(painter, self.element_id, self.boundingRect())
+        self.renderer.render(painter, self.element.uid, self.boundingRect())
 
         # Draw selection visual if selected
         if self.isSelected():
@@ -74,8 +73,9 @@ class SelectableSvgElement(QGraphicsItem):
 
     def extractIntoNode(self):
         """Handle the 'Extract into node' action."""
-        for s in self.selectable_shapes:
-            if str(s.shape_id) == self.element_id:
-                node = get_node_from_shape(s)
-                if node:
-                    self.parent.add_new_node(node)
+        print("extract into node")
+        # for s in self.selectable_shapes:
+        #     if str(s.uid) == self.element_id:
+        #         node = get_node_from_shape(s)
+        #         if node:
+        #             self.parent.add_new_node(node)

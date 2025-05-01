@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument
 
 from ui.colour_prop_widget import ColorPropertyWidget
+from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.nodes import CombinationNode
@@ -257,7 +258,7 @@ class NodeItem(QGraphicsRectItem):
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
-        svg_path, selectable_shapes = self.get_svg_path()
+        svg_path, drawn_group = self.get_svg_path()
 
         # Remove existing SVG items if necessary
         if self.svg_items:
@@ -311,39 +312,42 @@ class NodeItem(QGraphicsRectItem):
                 content = file.read()
                 dom_document.setContent(content)
 
-            # Process SVG elements to make them selectable
-            def process_element(element, inp_selectable_shapes):
-                # SVG elements we're interested in making selectable
-                selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
+            def process_element(element, drawn_elem, parent_item):
 
-                # Process all child elements
                 child = element.firstChild()
                 while not child.isNull():
                     if child.isElement():
                         element_node = child.toElement()
-                        tag_name = element_node.tagName()
                         element_id = element_node.attribute('id')
 
-                        # Only process elements with IDs
                         if element_id:
-                            if tag_name in selectable_types:
-                                # Create a selectable item for this element
-                                selectable_item = SelectableSvgElement(element_id, svg_renderer, inp_selectable_shapes,
-                                                                       self)
-                                selectable_item.setParentItem(viewport_svg)  # Make it a child of the viewport
-                                selectable_item.setPos(0, 0)  # Position relative to viewport
-                                selectable_item.setZValue(3)  # Ensure it's above the viewport
+                            element = drawn_group.get_element_from_id(element_id)
+                            print(f"Element {element_id}: {element}")
+                            if element:
+                                selectable_item = SelectableSvgElement(element, svg_renderer, self)
+                                selectable_item.setParentItem(parent_item)
+                                selectable_item.setPos(0, 0)
+                                selectable_item.setZValue(3)
                                 self.svg_items.append(selectable_item)
-
-                            # For groups, process children
-                            if tag_name == 'g' or tag_name == 'svg':
-                                process_element(element_node, inp_selectable_shapes)
 
                     child = child.nextSibling()
 
-            # Start processing from root element
             root = dom_document.documentElement()
-            process_element(root, selectable_shapes)
+            child = root.firstChild()
+            group_element = None
+            while not child.isNull():
+                if child.isElement():
+                    element_node = child.toElement()
+                    if element_node.tagName() == "g":
+                        group_element = element_node
+                        break  # Found the first top-level group
+                child = child.nextSibling()
+            if group_element is not None:
+                print("Group ID: ", group_element.attribute('id'))
+                # Process only the children of this group
+                process_element(group_element, drawn_group, viewport_svg)
+            else:
+                assert False
 
     def add_new_node(self, node):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)
@@ -386,7 +390,7 @@ class NodeItem(QGraphicsRectItem):
         input_count = len(self.node.in_port_defs())
         for i, port_def in enumerate(self.node.in_port_defs()):
             y_offset = (i + 1) * self.rect().height() / (input_count + 1)
-            state_id = uuid.uuid4()
+            state_id = gen_uid()
             input_port = PortItem(PortState(state_id,
                                             -10, y_offset,
                                             self.uid,
@@ -399,7 +403,7 @@ class NodeItem(QGraphicsRectItem):
         output_count = len(self.node.out_port_defs())
         for i, port_def in enumerate(self.node.out_port_defs()):
             y_offset = (i + 1) * self.rect().height() / (output_count + 1)
-            state_id = uuid.uuid4()
+            state_id = gen_uid()
             output_port = PortItem(PortState(state_id,
                                              self.rect().width() + 10, y_offset,
                                              self.uid,
@@ -423,7 +427,7 @@ class NodeItem(QGraphicsRectItem):
         """
 
         # Generate a unique ID for the new port
-        state_id = uuid.uuid4()
+        state_id = gen_uid()
 
         if is_input:
             # Calculate position for the new input port
@@ -564,7 +568,7 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(QFont("Arial", 8))
         painter.setPen(QColor("grey"))
         id_rect = self.rect().adjusted(10, 10, 0, 0)  # Shift the top edge down
-        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{self.node.node_id.hex[:3]}")
+        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{shorten_uid(self.node.node_id)}")
 
         # Draw node title
         painter.setFont(QFont("Arial", 10))
@@ -1129,7 +1133,7 @@ class NodePropertiesDialog(QDialog):
                     stop_x, stop_y = points[-1]
                     arrow = '←' if point.reversed else '→'
                     item.setText(
-                        f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
+                        f"{point.node_type} (id: #{shorten_uid(point.node_id)})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
                     item.setBackground(QColor(237, 130, 157))
                 else:
                     x, y = point
@@ -1274,7 +1278,7 @@ class NodePropertiesDialog(QDialog):
                 item = QTableWidgetItem()
                 item.setTextAlignment(Qt.AlignCenter)
                 item.setData(Qt.UserRole, elem_ref)
-                item.setText(f"{elem_ref.node_type} (id: #{elem_ref.node_id.hex[:3]})")
+                item.setText(f"{elem_ref.node_type} (id: #{shorten_uid(elem_ref.node_id)})")
                 if not elem_ref.is_deletable():
                     # Set red background for non-deletable elements
                     item.setBackground(QColor(237, 130, 157))
@@ -1525,7 +1529,7 @@ class NodePropertiesDialog(QDialog):
 def save_as_svg(clicked_item: NodeItem):
     file_path, _ = QFileDialog.getSaveFileName(
         None, "Save SVG",
-        f"{clicked_item.node.name()}_{str(clicked_item.uid)[:6]}.svg",
+        f"{clicked_item.node.name()}_{clicked_item.uid[:6]}.svg",
         "SVG Files (*.svg)"
     )
 
@@ -1549,6 +1553,7 @@ class PipelineScene(QGraphicsScene):
 
         self.scene = Scene()
         self.temp_dir = temp_dir
+        print(temp_dir)
 
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
@@ -1556,7 +1561,7 @@ class PipelineScene(QGraphicsScene):
 
     def add_node_from_class(self, node_class, pos, index=None):
         """Add a new node of the given type at the specified position"""
-        uid = uuid.uuid4()
+        uid = gen_uid()
         if index is None:
             node = node_class(node_id=uid)
         else:
@@ -1613,7 +1618,7 @@ class PipelineScene(QGraphicsScene):
                 if not connection_exists and issubclass(source_port.backend.port_def.port_type,
                                                         dest_port.backend.port_def.port_type) and (
                         dest_port.backend.port_def.input_multiple or not target_has_connection):
-                    edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.backend.uid, dest_port.backend.uid))
+                    edge = EdgeItem(EdgeState(gen_uid(), source_port.backend.uid, dest_port.backend.uid))
                     self.scene.add(edge)
                     self.addItem(edge)
                     edge.set_ports()
@@ -1835,7 +1840,7 @@ class PipelineScene(QGraphicsScene):
 
     def duplicate_node(self, node_item: NodeItem):
         new_node = copy.deepcopy(node_item.backend.node)
-        new_node.node_id = uuid.uuid4()
+        new_node.node_id = gen_uid()
         self.add_new_node(node_item.pos() + QPointF(10, 10), new_node)
 
     def randomise(self, clicked_item: RandomColourSelectorNode):

@@ -3,6 +3,7 @@ import os
 import traceback
 from abc import ABC, abstractmethod
 
+from ui.id_generator import shorten_uid
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.drawers.error_drawer import ErrorDrawer
 from ui.nodes.node_input_exception import NodeInputException
@@ -70,7 +71,7 @@ class Node(ABC):
         self.prop_vals = prop_vals if prop_vals else self.node_info().prop_type_list.get_default_values()
 
     def _return_path(self, temp_dir):
-        return os.path.join(temp_dir, str(self.node_id))
+        return os.path.join(temp_dir, self.node_id)
 
     def get_svg_path(self, temp_dir, height, wh_ratio):
         exception = None
@@ -82,7 +83,7 @@ class Node(ABC):
             if e.node_id == self.node_id:
                 msg = str(e.message)
             else:
-                msg = f"Error further up pipeline (id #{e.node_id.hex[:3]})."
+                msg = f"Error further up pipeline (id #{shorten_uid(e.node_id)})."
             vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, [e.title, msg]).save()
         except Exception as e:
             exception = e

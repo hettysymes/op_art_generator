@@ -339,13 +339,13 @@ def get_node_from_shape(shape: Shape):
     pass  # TODO
     # if isinstance(shape, Polyline):
     #     return ElementLineNode(
-    #         uuid.uuid4(),
+    #         gen_uid(),
     #         [],
     #         {'line': shape.remove_final_scale()}
     #     )
     # else:
     #     return ElementShapeNode(
-    #         uuid.uuid4(),
+    #         gen_uid(),
     #         [],
     #         {'shape': shape.remove_final_scale()}
     #     )

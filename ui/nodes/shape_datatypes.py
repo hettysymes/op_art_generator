@@ -3,12 +3,16 @@ import math
 import uuid
 from abc import ABC, abstractmethod
 
+from ui.id_generator import gen_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 
 
 class Element(ABC):
+
+    def __init__(self):
+        self.uid = gen_uid()
 
     @abstractmethod
     def get(self, dwg):
@@ -34,18 +38,25 @@ class Element(ABC):
 class Group(Element):
 
     def __init__(self):
+        super().__init__()
         self.elements = []
         self.transform_list = TransformList()
 
     def get(self, dwg):
         transform_str = self.transform_list.get_transform_str()
         if transform_str:
-            group = dwg.g(transform=transform_str)
+            group = dwg.g(transform=transform_str, id=self.uid)
         else:
-            group = dwg.g()
+            group = dwg.g(id=self.uid)
         for element in self.elements:
             group.add(element.get(dwg))
         return group
+
+    def get_element_from_id(self, element_id):
+        for elem in self.elements:
+            if elem.uid == element_id:
+                return elem
+        return None
 
     def add(self, element):
         assert isinstance(element, Element)
@@ -53,21 +64,25 @@ class Group(Element):
 
     def translate(self, tx, ty):
         new_group = copy.deepcopy(self)
+        new_group.uid = gen_uid()
         new_group.transform_list.add(Translate(tx, ty))
         return new_group
 
     def scale(self, sx, sy):
         new_group = copy.deepcopy(self)
+        new_group.uid = gen_uid()
         new_group.transform_list.add(Scale(sx, sy))
         return new_group
 
     def rotate(self, angle, centre):
         new_group = copy.deepcopy(self)
+        new_group.uid = gen_uid()
         new_group.transform_list.add(Rotate(angle, centre))
         return new_group
 
     def remove_final_scale(self):
         new_group = copy.deepcopy(self)
+        new_group.uid = gen_uid()
         new_group.transform_list.remove_final_scale()
         return new_group
 
@@ -83,9 +98,6 @@ class Group(Element):
 
 
 class Shape(Element, ABC):
-
-    def __init__(self):
-        self.shape_id = uuid.uuid4()
 
     def translate(self, tx, ty):
         group = Group().translate(tx, ty)
@@ -120,7 +132,7 @@ class Polyline(Shape):
                             stroke_width=self.stroke_width,
                             fill='none',
                             style='vector-effect: non-scaling-stroke',
-                            id=self.shape_id)
+                            id=self.uid)
 
     def get_points(self, transform_list=None):
         if transform_list:
@@ -153,7 +165,7 @@ class Polygon(Shape):
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
-                           id=self.shape_id)
+                           id=self.uid)
 
 
 class Ellipse(Shape):
@@ -177,7 +189,7 @@ class Ellipse(Shape):
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
-                           id=self.shape_id)
+                           id=self.uid)
 
 
 class SineWave(Polyline):
