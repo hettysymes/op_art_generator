@@ -3,7 +3,7 @@ from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
-from ui.nodes.shape_datatypes import Polygon, Ellipse, SineWave, Shape, Polyline
+from ui.nodes.shape_datatypes import Polygon, Ellipse, SineWave, Shape, Polyline, Group
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortDef, PT_Element, PT_Polyline, PT_Ellipse, PT_Shape, PT_Fill
 
@@ -161,10 +161,9 @@ class PolygonNode(UnitNode):
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         # Return element
-        return Polygon(self.get_prop_val('points'), fill, fill_opacity, 'none', self.get_prop_val('stroke_width'))
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+        group = Group(debug_info="Polygon")
+        group.add(Polygon(self.get_prop_val('points'), fill, fill_opacity, 'none', self.get_prop_val('stroke_width')))
+        return group
 
 
 RECTANGLE_NODE_INFO = UnitNodeInfo(

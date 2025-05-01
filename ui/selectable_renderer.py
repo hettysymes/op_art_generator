@@ -8,12 +8,10 @@ from ui.nodes.shape import get_node_from_shape
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""
 
-    def __init__(self, element, transform, renderer, parent):
+    def __init__(self, element_id, renderer):
         super().__init__()
-        self.element = element
+        self.element_id = element_id
         self.renderer = renderer
-        self.parent = parent
-        self.transform = transform
 
         # Set flags for interaction - selectable but NOT movable
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -23,12 +21,12 @@ class SelectableSvgElement(QGraphicsItem):
 
     def boundingRect(self):
         """Return the bounding rectangle of the element."""
-        return self.transform.mapRect(self.renderer.boundsOnElement(self.element.uid))
+        return self.renderer.boundsOnElement(self.element_id)
 
     def paint(self, painter, option, widget=None):
         """Paint the element in its original position."""
         # Render only this element using the renderer
-        self.renderer.render(painter, self.element.uid, self.boundingRect())
+        self.renderer.render(painter, self.element_id, self.boundingRect())
 
         # Draw selection visual if selected
         if self.isSelected():

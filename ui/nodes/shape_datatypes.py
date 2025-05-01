@@ -11,8 +11,8 @@ from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 
 class Element(ABC):
 
-    def __init__(self):
-        self.uid = gen_uid()
+    def __init__(self, uid=None):
+        self.uid = uid if uid else gen_uid()
 
     @abstractmethod
     def get(self, dwg):
@@ -37,8 +37,8 @@ class Element(ABC):
 
 class Group(Element):
 
-    def __init__(self, transforms=None, debug_info=None):
-        super().__init__()
+    def __init__(self, transforms=None, debug_info=None, uid=None):
+        super().__init__(uid)
         self.elements = []
         self.transform_list = TransformList(transforms)
         self.debug_info = debug_info
@@ -58,6 +58,10 @@ class Group(Element):
             if elem.uid == element_id:
                 return elem
         return None
+
+    def __iter__(self):
+        for element in self.elements:
+            yield element
 
     def add(self, element):
         assert isinstance(element, Element)
