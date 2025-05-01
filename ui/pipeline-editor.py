@@ -279,13 +279,13 @@ class NodeItem(QGraphicsRectItem):
             if self.svg_item in self.scene().items():
                 self.scene().removeItem(self.svg_item)
 
+        # Get item to draw
         vis = self.visualise()
         svg_filepath = os.path.join(self.scene().temp_dir, self.uid)
         # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
 
-        #svg_path, drawn_group = self.get_svg_path()
         if isinstance(vis, MatplotlibFig):
             vis.save_to_svg(svg_filepath, self.backend.svg_width, self.backend.svg_height)
 
@@ -353,92 +353,8 @@ class NodeItem(QGraphicsRectItem):
                     selectable_item.setZValue(3)
                     self.svg_items.append(selectable_item)
                 child = child.nextSibling()
-        return
 
-        # Create SVG renderer
-        svg_renderer = QSvgRenderer(svg_path)
-
-        # Get SVG dimensions - will be used for viewport clipping
-        svg_size = svg_renderer.defaultSize()
-
-        # Base position for all SVG elements
-        svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
-        svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
-
-        # Check file extension
-        if not self.node.selectable():
-            # Handle matplotlib or non-selectable SVG - use standard QGraphicsSvgItem
-            self.svg_item = QGraphicsSvgItem(svg_path)
-
-            # Apply position
-            self.svg_item.setParentItem(self)
-            self.svg_item.setPos(svg_pos_x, svg_pos_y)
-            self.svg_item.setZValue(2)
-
-        else:
-            # Create a viewport SVG item that will act as both a container and clipper
-            viewport_svg = QGraphicsSvgItem(svg_path)
-            viewport_svg.setParentItem(self)
-            viewport_svg.setPos(svg_pos_x, svg_pos_y)
-            viewport_svg.setZValue(1)  # Set below selectable items
-            self.svg_items.append(viewport_svg)
-
-            # Set clip path based on SVG's viewBox
-            clip_path = QPainterPath()
-            clip_path.addRect(QRectF(0, 0, svg_size.width(), svg_size.height()))
-            viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
-
-            # Load the SVG file as XML
-            dom_document = QDomDocument()
-            with open(svg_path, 'r') as file:
-                content = file.read()
-                dom_document.setContent(content)
-
-            def process_element(element, transform, parent_item):
-
-                child = element.firstChild()
-                while not child.isNull():
-                    if child.isElement():
-                        element_node = child.toElement()
-                        element_id = element_node.attribute('id')
-
-                        if element_id:
-                            element = drawn_group.get_element_from_id(element_id)
-                            if element:
-                                selectable_item = SelectableSvgElement(element, transform, svg_renderer, self)
-                                selectable_item.setParentItem(parent_item)
-                                selectable_item.setPos(0, 0)
-                                selectable_item.setZValue(3)
-                                self.svg_items.append(selectable_item)
-
-                    child = child.nextSibling()
-
-            def find_element_by_id(node, target_id):
-                if node.isElement():
-                    element = node.toElement()
-                    if element.attribute('id') == target_id:
-                        return element
-
-                # Check children recursively
-                child = node.firstChild()
-                while not child.isNull():
-                    result = find_element_by_id(child, target_id)
-                    if result and not result.isNull():
-                        return result
-                    child = child.nextSibling()
-
-                return QDomElement()  # Return null element if not found
-
-            root = dom_document.documentElement()
-            group_element = find_element_by_id(root, drawn_group.uid)
-
-            if not group_element.isNull():
-                transform = QTransform()
-                scale = drawn_group.transform_list.transforms[0]
-                transform.scale(scale.sx, scale.sy)
-                process_element(group_element, transform, viewport_svg)
-            else:
-                assert False
+            print(f"Selectable items: {[s.element_id for s in self.svg_items]}")
 
     def add_new_node(self, node):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)

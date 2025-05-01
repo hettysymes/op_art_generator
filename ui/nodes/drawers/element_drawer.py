@@ -16,7 +16,8 @@ class ElementDrawer(Drawing):
         print(f"INPUT:")
         print(self.group_node_output)
         print()
-        drawn_elem = Group(uid=self.group_node_output.uid)
+        debug_info = self.group_node_output.debug_info if self.group_node_output.debug_info else ""
+        drawn_elem = Group(uid=self.group_node_output.uid, debug_info=f"{debug_info} (scaled)")
         for element in self.group_node_output:
             drawn_elem.add(element.scale(self.width, self.height))
         print(f"OUTPUT:")

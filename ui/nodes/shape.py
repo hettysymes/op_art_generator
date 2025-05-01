@@ -118,12 +118,15 @@ STRAIGHT_LINE_NODE_INFO = UnitNodeInfo(
 class StraightLineNode(UnitNode):
     UNIT_NODE_INFO = STRAIGHT_LINE_NODE_INFO
 
-    def compute(self):
-        return Polyline([self.get_prop_val('start_coord'), self.get_prop_val('stop_coord')], 'black',
-                        self.get_prop_val('stroke_width'))
+    @staticmethod
+    def helper(start_coord, stop_coord, stroke='black', stroke_width=1):
+        return Polyline([start_coord, stop_coord], stroke, stroke_width)
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+    def compute(self):
+        group = Group(debug_info="Straight line")
+        group.add(StraightLineNode.helper(self.get_prop_val('start_coord'), self.get_prop_val('stop_coord'), 'black',
+                        self.get_prop_val('stroke_width')))
+        return group
 
 
 POLYGON_NODE_INFO = UnitNodeInfo(
