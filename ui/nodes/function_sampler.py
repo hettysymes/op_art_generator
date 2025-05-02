@@ -2,6 +2,7 @@ from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.warp_utils import sample_fun
 from ui.port_defs import PortDef, PT_Function, PT_NumberList
+from ui.vis_types import MatplotlibFig
 
 FUN_SAMPLER_NODE = UnitNodeInfo(
     name="Function Sampler",
@@ -32,8 +33,8 @@ class FunSamplerNode(UnitNode):
             return FunSamplerNode.helper(function, self.get_prop_val('num_samples'))
         return None
 
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         samples = self.compute()
-        if samples is not None:
-            return create_graph_svg(height, wh_ratio, samples, self._return_path(temp_dir), scatter=True)
+        if samples:
+            return MatplotlibFig(create_graph_svg(samples, scatter=True))
         return None

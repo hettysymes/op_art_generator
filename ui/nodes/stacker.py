@@ -66,9 +66,3 @@ class StackerNode(UnitNode):
             return StackerNode.helper(elements, self.get_prop_val('wh_diff'),
                                       self.get_prop_val('stack_layout') == 'Vertical')
         return None
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        element = self.compute()
-        if element:
-            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
-        return None

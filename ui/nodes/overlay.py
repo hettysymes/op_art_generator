@@ -24,11 +24,7 @@ class OverlayNode(UnitNode):
 
     def compute(self):
         handle_multi_inputs(self.get_input_node('elements'), self.prop_vals['elem_order'])
-        ret_group = Group()
+        ret_group = Group(debug_info="Overlay")
         for elem_ref in self.get_prop_val('elem_order'):
             ret_group.add(elem_ref.compute())
         return ret_group
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        element = self.compute()
-        return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()

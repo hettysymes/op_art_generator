@@ -3,6 +3,7 @@ from ui.nodes.gradient_datatype import Gradient
 # from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PortDef, PT_Gradient
 
 GRADIENT_NODE_INFO = UnitNodeInfo(
@@ -24,6 +25,7 @@ class GradientNode(UnitNode):
     def compute(self):
         return Gradient(self.get_prop_val('start_col'), self.get_prop_val('stop_col'))
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        element = RectangleNode(prop_vals={'fill': self.compute()}).compute()
-        return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
+    def visualise(self):
+        group = Group(debug_info="Gradient")
+        group.add(RectangleNode.helper(self.compute()))
+        return group

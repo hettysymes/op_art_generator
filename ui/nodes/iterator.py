@@ -68,7 +68,7 @@ class IteratorNode(UnitNode):
             return None
         return None
 
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         elements = self.compute()
         if elements:
             if self.get_prop_val('vis_layout') == "Vertical":
@@ -77,6 +77,5 @@ class IteratorNode(UnitNode):
             else:
                 # Draw in Horizontal grid
                 grid = GridNode.helper(None, None, len(elements), 1)
-            draw_elem = ShapeRepeaterNode.helper(grid, elements)
-            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
+            return ShapeRepeaterNode.helper(grid, elements)
         return None
