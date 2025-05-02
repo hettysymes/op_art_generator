@@ -3,32 +3,25 @@ from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
 
 from ui.id_generator import gen_uid
-from ui.nodes.nodes import UnitNodeInfo, UnitNode
+from ui.nodes.nodes import UnitNodeInfo, UnitNode, ELEMENT_IMPLEMENTATIONS, register_element_type
 from ui.nodes.shape_datatypes import Element, Group
 from ui.port_defs import PortDef
 
 
 def get_node_from_element(element: Element):
-    port_type = element.get_output_type()
+    # Get the element type
+    element_type = element.get_output_type()
+    type_name = element_type.__name__
 
-    elem_node_info = UnitNodeInfo(
-        name="Shape Drawing",
-        out_port_defs=[PortDef("Drawing", port_type)],
-        description="Immutable drawing extracted from a previously rendered node."
-    )
+    # Register the type if needed
+    if type_name not in ELEMENT_IMPLEMENTATIONS:
+        register_element_type(element_type)
 
-    class ImmutableElementNode(UnitNode):
-        UNIT_NODE_INFO = elem_node_info
+    # Get the implementation class
+    ElementClass = ELEMENT_IMPLEMENTATIONS[type_name]
 
-        def compute(self):
-            return self.get_prop_val('_element')
-
-        def visualise(self):
-            group = Group(debug_info=f"Immutable Element ({port_type.__name__})")
-            group.add(self.compute())
-            return group
-
-    return ImmutableElementNode(
+    # Create an instance
+    return ElementClass(
         gen_uid(),
         {},
         {'_element': element}

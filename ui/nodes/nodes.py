@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from ui.id_generator import shorten_uid
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.shape_datatypes import Group
+from ui.port_defs import PortDef
 from ui.vis_types import ErrorFig
 
 
@@ -188,6 +189,76 @@ class UnitNode(Node):
 
     def visualise(self):
         return self.compute()
+
+
+# Define a few fixed classes for common element types
+class ImmutableElementNode(UnitNode):
+    """Base class for immutable element nodes. Not meant to be instantiated directly."""
+    UNIT_NODE_INFO = UnitNodeInfo(
+        name="Shape Drawing",
+        description="Immutable drawing extracted from a previously rendered node."
+    )
+
+    def __init__(self, uid, props, internal_state):
+        super().__init__(uid, props, internal_state)
+
+    def compute(self):
+        return self.get_prop_val('_element')
+
+    def visualise(self):
+        element = self.compute()
+        port_type = self.get_port_type_name()
+        group = Group(debug_info=f"Immutable Element ({port_type})")
+        group.add(element)
+        return group
+
+    def get_port_type_name(self):
+        """Get the name of the port type for this node."""
+        # This will be overridden in subclasses
+        return "Unknown"
+
+
+# Define a registry for actual implementations
+# This avoids creating too many classes while still covering common cases
+ELEMENT_IMPLEMENTATIONS = {}
+
+
+# Pre-define the most common element types
+def register_element_type(element_type):
+    """Register a class for a specific element type."""
+    type_name = element_type.__name__
+
+    # Skip if already registered
+    if type_name in ELEMENT_IMPLEMENTATIONS:
+        return ELEMENT_IMPLEMENTATIONS[type_name]
+
+    # Create a class for this element type
+    class_name = f"ImmutableElementNode_{type_name}"
+
+    # Create a class directly instead of using exec
+    # This avoids variable scope issues with exec
+    class ElementNodeClass(ImmutableElementNode):
+        # Define the node info with proper port type
+        UNIT_NODE_INFO = UnitNodeInfo(
+            name="Shape Drawing",
+            out_port_defs=[PortDef("Drawing", element_type)],
+            description=f"Immutable drawing extracted from a previously rendered node."
+        )
+
+        def get_port_type_name(self):
+            return type_name
+
+    # Set the class name for better debugging
+    ElementNodeClass.__name__ = class_name
+    ElementNodeClass.__qualname__ = class_name
+
+    # Register the class in the global namespace for pickle
+    globals()[class_name] = ElementNodeClass
+
+    # Register the class
+    element_class = globals()[class_name]
+    ELEMENT_IMPLEMENTATIONS[type_name] = element_class
+    return element_class
 
 
 class CombinationNode(Node):
