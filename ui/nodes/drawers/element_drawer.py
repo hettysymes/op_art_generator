@@ -11,6 +11,7 @@ class ElementDrawer(Drawing):
         assert not self.group_node_output.transform_list.transforms
 
     def draw(self):
+        self.dwg.viewbox(0, 0, 1, 1)
         if self.bg_col is not None:
             self.add_bg(self.bg_col)
         print(f"DRAWN ELEM:")

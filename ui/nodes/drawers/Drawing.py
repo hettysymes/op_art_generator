@@ -11,7 +11,7 @@ class Drawing(ABC):
     def __init__(self, filepath, width, height):
         self.width = width
         self.height = height
-        self.dwg = svgwrite.Drawing(filepath, size=(self.width, self.height), viewBox=("0 0 1 1"))
+        self.dwg = svgwrite.Drawing(filepath, size=(self.width, self.height))
 
         # Define clipping that clips everything outside of view box
         clip = self.dwg.defs.add(self.dwg.clipPath(id="viewbox-clip"))
