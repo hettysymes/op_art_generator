@@ -2,13 +2,25 @@ from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
 
+from ui.id_generator import gen_uid
+from ui.nodes.shape import ImmutableElementNode
+from ui.nodes.shape_datatypes import Element
+
+
+def get_node_from_element(element: Element):
+    return ImmutableElementNode(
+        gen_uid(),
+        {},
+        {'_element': element}
+    )
 
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""
 
-    def __init__(self, element_id, renderer, parent_node_item):
+    def __init__(self, element_id, backend_child_elem, renderer, parent_node_item):
         super().__init__()
         self.element_id = element_id
+        self.backend_child_elem = backend_child_elem
         self.renderer = renderer
         self.parent_node_item = parent_node_item
 
@@ -73,9 +85,5 @@ class SelectableSvgElement(QGraphicsItem):
 
     def extractIntoNode(self):
         """Handle the 'Extract into node' action."""
-        print("Extract into node")
-        # for s in self.selectable_shapes:
-        #     if str(s.shape_id) == self.element_id:
-        #         node = get_node_from_shape(s)
-        #         if node:
-        #             self.parent.add_new_node(node)
+        node = get_node_from_element(self.backend_child_elem)
+        self.parent_node_item.add_new_node(node)

@@ -350,7 +350,9 @@ class NodeItem(QGraphicsRectItem):
                     child_element = child.toElement()
                     child_elem_id = child_element.attribute('id')
                     assert child_elem_id
-                    selectable_item = SelectableSvgElement(child_elem_id, svg_renderer, self)
+                    backend_child_elem = vis.get_element_from_id(child_elem_id)
+                    assert backend_child_elem is not None
+                    selectable_item = SelectableSvgElement(child_elem_id, backend_child_elem, svg_renderer, self)
                     selectable_item.setParentItem(viewport_svg)
                     selectable_item.setPos(0, 0)
                     selectable_item.setZValue(3)

@@ -303,58 +303,23 @@ class CircleNode(UnitNode):
         return group
 
 
-ELEMENT_SHAPE_NODE_INFO = UnitNodeInfo(
+IMMUTABLE_ELEMENT_NODE_INFO = UnitNodeInfo(
     name="Shape Drawing",
-    out_port_defs=[PortDef("Shape", PT_Shape)],
+    out_port_defs=[PortDef("Drawing", PT_Element)],
     description="Immutable drawing extracted from a previously rendered node."
 )
 
 
-class ElementShapeNode(UnitNode):
-    UNIT_NODE_INFO = ELEMENT_SHAPE_NODE_INFO
+class ImmutableElementNode(UnitNode):
+    UNIT_NODE_INFO = IMMUTABLE_ELEMENT_NODE_INFO
 
     def compute(self):
-        return self.get_prop_val('shape')
+        return self.get_prop_val('_element')
 
     def visualise(self):
-        group = Group(debug_info="Element Shape")
+        group = Group(debug_info="Immutable Element")
         group.add(self.compute())
         return group
-
-
-ELEMENT_LINE_NODE_INFO = UnitNodeInfo(
-    name="Line Drawing",
-    out_port_defs=[PortDef("Line", PT_Polyline)],
-    description="Immutable drawing extracted from a previously rendered node."
-)
-
-
-class ElementLineNode(UnitNode):
-    UNIT_NODE_INFO = ELEMENT_LINE_NODE_INFO
-
-    def compute(self):
-        return self.get_prop_val('line')
-
-    def visualise(self):
-        group = Group(debug_info="Element Line")
-        group.add(self.compute())
-        return group
-
-
-def get_node_from_shape(shape: Shape):
-    pass  # TODO
-    # if isinstance(shape, Polyline):
-    #     return ElementLineNode(
-    #         gen_uid(),
-    #         [],
-    #         {'line': shape.remove_final_scale()}
-    #     )
-    # else:
-    #     return ElementShapeNode(
-    #         gen_uid(),
-    #         [],
-    #         {'shape': shape.remove_final_scale()}
-    #     )
 
 
 class ShapeNode(CombinationNode):
