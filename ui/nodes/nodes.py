@@ -1,8 +1,12 @@
 import copy
 import os
+import traceback
 from abc import ABC, abstractmethod
 
+from ui.id_generator import shorten_uid
+from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.shape_datatypes import Group
+from ui.vis_types import ErrorFig
 
 
 class PropTypeList:
@@ -70,27 +74,21 @@ class Node(ABC):
         return os.path.join(temp_dir, self.node_id)
 
     def safe_visualise(self):
-        # exception = None
         # Catch exception if raised
-        # try:
-        #     vis = self.visualise()
-        # except NodeInputException as e:
-        #     exception = e
-        #     if e.node_id == self.node_id:
-        #         msg = str(e.message)
-        #     else:
-        #         msg = f"Error further up pipeline (id #{shorten_uid(e.node_id)})."
-        #     vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, [e.title, msg]).save()
-        # except Exception as e:
-        #     exception = e
-        #     vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, ["Unknown Exception", str(e)]).save()
-        #     traceback.print_exc()
-        # Return visualisation with exception
-        vis = self.visualise()
+        try:
+            vis = self.visualise()
+        except NodeInputException as e:
+            if e.node_id == self.node_id:
+                msg = str(e.message)
+            else:
+                msg = f"Error further up pipeline (id #{shorten_uid(e.node_id)})."
+            vis = ErrorFig(e.title, msg)
+        except Exception as e:
+            vis = ErrorFig("Unknown Exception", str(e))
+            traceback.print_exc()
         if not vis:
             # No visualisation, return blank canvas
             vis = Group(debug_info="Blank Canvas")
-        # return vis, exception
         return vis
 
     def name(self):

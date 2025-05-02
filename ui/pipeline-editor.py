@@ -33,7 +33,7 @@ from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.selectable_renderer import SelectableSvgElement
-from ui.vis_types import MatplotlibFig
+from ui.vis_types import MatplotlibFig, ErrorFig, Visualisable
 
 
 class ConnectionSignals(QObject):
@@ -287,7 +287,19 @@ class NodeItem(QGraphicsRectItem):
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
 
-        if self.node.selectable():
+        if isinstance(vis, ErrorFig) or not self.node.selectable():
+            if isinstance(vis, Element):
+                ElementDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
+            else:
+                assert isinstance(vis, Visualisable)
+                vis.save_to_svg(svg_filepath, self.backend.svg_width, self.backend.svg_height)
+
+            self.svg_item = QGraphicsSvgItem(svg_filepath)
+            # Apply position
+            self.svg_item.setParentItem(self)
+            self.svg_item.setPos(svg_pos_x, svg_pos_y)
+            self.svg_item.setZValue(2)
+        else:
             assert isinstance(vis, Group)
             assert not vis.transform_list.transforms
             ElementDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
@@ -344,18 +356,6 @@ class NodeItem(QGraphicsRectItem):
                     selectable_item.setZValue(3)
                     self.svg_items.append(selectable_item)
                 child = child.nextSibling()
-        else:
-            if isinstance(vis, MatplotlibFig):
-                vis.save_to_svg(svg_filepath, self.backend.svg_width, self.backend.svg_height)
-            else:
-                assert isinstance(vis, Element)
-                ElementDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
-
-            self.svg_item = QGraphicsSvgItem(svg_filepath)
-            # Apply position
-            self.svg_item.setParentItem(self)
-            self.svg_item.setPos(svg_pos_x, svg_pos_y)
-            self.svg_item.setZValue(2)
 
     def add_new_node(self, node):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)
