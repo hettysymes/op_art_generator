@@ -35,6 +35,6 @@ class FunSamplerNode(UnitNode):
 
     def visualise(self):
         samples = self.compute()
-        if samples:
+        if samples is not None:
             return MatplotlibFig(create_graph_svg(samples, scatter=True))
         return None
