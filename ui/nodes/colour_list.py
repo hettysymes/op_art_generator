@@ -24,12 +24,11 @@ class ColourListNode(UnitNode):
     def compute(self):
         return self.get_prop_val('colours')
 
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         colours = self.compute()
         if colours:
             # Draw in vertical grid
             grid = GridNode.helper(None, None, 1, len(colours))
-            elements = [RectangleNode(prop_vals={'fill': colour}).compute() for colour in colours]
-            draw_elem = ShapeRepeaterNode.helper(grid, elements)
-            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
+            elements = [RectangleNode.helper(colour) for colour in colours]
+            return ShapeRepeaterNode.helper(grid, elements)
         return None

@@ -31,7 +31,7 @@ class DrawingGroupNode(UnitNode):
         elements = [elem_ref.compute() for elem_ref in self.get_prop_val('elem_order')]
         return elements
 
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         elements = self.compute()
         if elements:
             if self.get_prop_val('vis_layout') == "Vertical":
@@ -40,6 +40,5 @@ class DrawingGroupNode(UnitNode):
             else:
                 # Draw in Horizontal grid
                 grid = GridNode.helper(None, None, len(elements), 1)
-            draw_elem = ShapeRepeaterNode.helper(grid, elements)
-            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
+            return ShapeRepeaterNode.helper(grid, elements)
         return None

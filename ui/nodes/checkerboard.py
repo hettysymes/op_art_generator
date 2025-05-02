@@ -53,9 +53,3 @@ class CheckerboardNode(UnitNode):
         if grid and (element1 or element2):
             return CheckerboardNode.helper(grid, element1, element2)
         return None
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        element = self.compute()
-        if element:
-            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
-        return None

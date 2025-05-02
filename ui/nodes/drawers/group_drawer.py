@@ -14,7 +14,7 @@ class GroupDrawer(Drawing):
         self.dwg.viewbox(0, 0, 1, 1)
         if self.bg_col is not None:
             self.add_bg(self.bg_col)
-        # print(f"DRAWN ELEM:")
-        # print(self.group_node_output)
-        # print()
+        print(f"DRAWN ELEM:")
+        print(self.group_node_output)
+        print()
         self.dwg_add(self.group_node_output.get(self.dwg))

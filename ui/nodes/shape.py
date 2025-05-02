@@ -52,7 +52,6 @@ class SineWaveNode(UnitNode):
             orientation, (0.5, 0.5))
 
     def compute(self):
-        group = Group(debug_info="Sine wave")
         try:
             sine_wave = SineWaveNode.helper(self.get_prop_val('amplitude'), self.get_prop_val('wavelength'),
                                             self.get_prop_val('centre_y'),
@@ -62,7 +61,11 @@ class SineWaveNode(UnitNode):
                                             self.get_prop_val('orientation'))
         except ValueError as e:
             raise NodeInputException(str(e), self.node_id)
-        group.add(sine_wave)
+        return sine_wave
+
+    def visualise(self):
+        group = Group(debug_info="Sine wave")
+        group.add(self.compute())
         return group
 
 
@@ -89,8 +92,11 @@ class CustomLineNode(UnitNode):
         return Polyline(points, stroke, stroke_width)
 
     def compute(self):
-        group = Group(debug_info="Straight line")
-        group.add(CustomLineNode.helper(self.get_prop_val('points'), 'black', self.get_prop_val('stroke_width')))
+        return CustomLineNode.helper(self.get_prop_val('points'), 'black', self.get_prop_val('stroke_width'))
+
+    def visualise(self):
+        group = Group(debug_info="Custom Line")
+        group.add(self.compute())
         return group
 
 
@@ -121,9 +127,12 @@ class StraightLineNode(UnitNode):
         return Polyline([start_coord, stop_coord], stroke, stroke_width)
 
     def compute(self):
-        group = Group(debug_info="Straight line")
-        group.add(StraightLineNode.helper(self.get_prop_val('start_coord'), self.get_prop_val('stop_coord'), 'black',
-                                          self.get_prop_val('stroke_width')))
+        return StraightLineNode.helper(self.get_prop_val('start_coord'), self.get_prop_val('stop_coord'), 'black',
+                                          self.get_prop_val('stroke_width'))
+
+    def visualise(self):
+        group = Group(debug_info="Straight Line")
+        group.add(self.compute())
         return group
 
 
@@ -162,10 +171,12 @@ class PolygonNode(UnitNode):
     def compute(self):
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
-        # Return element
+        return PolygonNode.helper(self.get_prop_val('fill'), self.get_prop_val('points'), 'none',
+                                     self.get_prop_val('stroke_width'))
+
+    def visualise(self):
         group = Group(debug_info="Polygon")
-        group.add(PolygonNode.helper(self.get_prop_val('fill'), self.get_prop_val('points'), 'none',
-                                     self.get_prop_val('stroke_width')))
+        group.add(self.compute())
         return group
 
 
@@ -191,8 +202,11 @@ class RectangleNode(UnitNode):
         return PolygonNode.helper(colour, [(0, 0), (0, 1), (1, 1), (1, 0)], 'none', 1)
 
     def compute(self):
+        return RectangleNode.helper(self.get_prop_val('fill'))
+
+    def visualise(self):
         group = Group(debug_info="Rectangle")
-        group.add(RectangleNode.helper(self.get_prop_val('fill')))
+        group.add(self.compute())
         return group
 
 
@@ -236,10 +250,13 @@ class EllipseNode(UnitNode):
                        fill_opacity, stroke, stroke_width)
 
     def compute(self):
-        group = Group(debug_info="Ellipse")
-        group.add(EllipseNode.helper(self.get_prop_val('fill'), self.get_prop_val('centre'),
+        return EllipseNode.helper(self.get_prop_val('fill'), self.get_prop_val('centre'),
                                      (self.get_prop_val('rx'), self.get_prop_val('ry')),
-                                     'none', self.get_prop_val('stroke_width')))
+                                     'none', self.get_prop_val('stroke_width'))
+
+    def visualise(self):
+        group = Group(debug_info="Ellipse")
+        group.add(self.compute())
         return group
 
 
@@ -274,12 +291,15 @@ class CircleNode(UnitNode):
         return EllipseNode.helper(colour, centre, (radius, radius), stroke, stroke_width)
 
     def compute(self):
-        group = Group(debug_info="Circle")
-        group.add(CircleNode.helper(self.get_prop_val('fill'),
+        return CircleNode.helper(self.get_prop_val('fill'),
                                     self.get_prop_val('centre'),
                                     self.get_prop_val('r'),
                                     'none',
-                                    self.get_prop_val('stroke_width')))
+                                    self.get_prop_val('stroke_width'))
+
+    def visualise(self):
+        group = Group(debug_info="Circle")
+        group.add(self.compute())
         return group
 
 
@@ -296,6 +316,11 @@ class ElementShapeNode(UnitNode):
     def compute(self):
         return self.get_prop_val('shape')
 
+    def visualise(self):
+        group = Group(debug_info="Element Shape")
+        group.add(self.compute())
+        return group
+
 
 ELEMENT_LINE_NODE_INFO = UnitNodeInfo(
     name="Line Drawing",
@@ -309,6 +334,11 @@ class ElementLineNode(UnitNode):
 
     def compute(self):
         return self.get_prop_val('line')
+
+    def visualise(self):
+        group = Group(debug_info="Element Line")
+        group.add(self.compute())
+        return group
 
 
 def get_node_from_shape(shape: Shape):

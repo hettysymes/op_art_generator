@@ -51,11 +51,11 @@ class EllipseSamplerNode(UnitNode):
                                              self.get_prop_val('num_samples'))
         return None
 
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         points = self.compute()
         if points:
-            ret_group = Group()
+            ret_group = Group(debug_info="Ellipse Sampler")
             for p in points:
                 ret_group.add(Ellipse(p, (0.01, 0.01), 'black', 255, 'black', 0))
-            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_group, None)).save()
+            return ret_group
         return None

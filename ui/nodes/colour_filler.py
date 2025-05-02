@@ -23,7 +23,7 @@ class ColourFillerNode(UnitNode):
 
     @staticmethod
     def helper(colours, element):
-        ret_group = Group()
+        ret_group = Group(debug_info="Colour Filler")
         colour_it = itertools.cycle(colours)
         transformed_shapes = element.shape_transformations()
         for i in range(1, len(transformed_shapes)):
@@ -45,10 +45,4 @@ class ColourFillerNode(UnitNode):
                 if not isinstance(transformed_shape[0], Polyline):
                     raise NodeInputException("Input drawing must only consist of lines.", self.node_id)
             return ColourFillerNode.helper(colours, element)
-        return None
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        element = self.compute()
-        if element:
-            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
         return None
