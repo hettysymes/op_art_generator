@@ -23,11 +23,6 @@ class CheckerboardNode(UnitNode):
     @staticmethod
     def helper(grid, element1=None, element2=None):
         assert element1 or element2
-        default_elem = RectangleNode(prop_vals={'fill': (255, 255, 255, 0)}).compute()
-        if not element1:
-            element1 = default_elem
-        if not element2:
-            element2 = default_elem
         v_line_xs, h_line_ys = grid
         ret_group = Group(debug_info="Checkerboard")
         element1_starts = True
@@ -39,9 +34,10 @@ class CheckerboardNode(UnitNode):
                 y1 = h_line_ys[j - 1]
                 y2 = h_line_ys[j]
                 element = element1 if element1_turn else element2
-                cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({j},{i})")
-                cell_group.add(element)
-                ret_group.add(cell_group)
+                if element:
+                    cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({j},{i})")
+                    cell_group.add(element)
+                    ret_group.add(cell_group)
                 element1_turn = not element1_turn
             element1_starts = not element1_starts
         return ret_group
