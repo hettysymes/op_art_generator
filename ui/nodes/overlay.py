@@ -1,4 +1,4 @@
-from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Group
@@ -31,4 +31,4 @@ class OverlayNode(UnitNode):
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = self.compute()
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
+        return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()

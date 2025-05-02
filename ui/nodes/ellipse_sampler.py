@@ -1,6 +1,6 @@
 import math
 
-from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.nodes import UnitNodeInfo, PropTypeList, PropType, UnitNode
 from ui.nodes.shape_datatypes import Ellipse, Group
 from ui.port_defs import PortDef, PT_Ellipse, PT_PointList
@@ -57,5 +57,5 @@ class EllipseSamplerNode(UnitNode):
             ret_group = Group()
             for p in points:
                 ret_group.add(Ellipse(p, (0.01, 0.01), 'black', 255, 'black', 0))
-            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_group, None)).save()
+            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (ret_group, None)).save()
         return None

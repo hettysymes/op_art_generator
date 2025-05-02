@@ -1,6 +1,6 @@
 import copy
 
-from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType, Node
@@ -78,5 +78,5 @@ class IteratorNode(UnitNode):
                 # Draw in Horizontal grid
                 grid = GridNode.helper(None, None, len(elements), 1)
             draw_elem = ShapeRepeaterNode.helper(grid, elements)
-            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
+            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
         return None

@@ -1,4 +1,4 @@
-from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
@@ -31,5 +31,5 @@ class ColourListNode(UnitNode):
             grid = GridNode.helper(None, None, 1, len(colours))
             elements = [RectangleNode(prop_vals={'fill': colour}).compute() for colour in colours]
             draw_elem = ShapeRepeaterNode.helper(grid, elements)
-            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
+            return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (draw_elem, None)).save()
         return None

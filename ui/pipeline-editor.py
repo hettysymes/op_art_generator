@@ -24,7 +24,7 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.all_nodes import node_classes
-from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.nodes import CombinationNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
@@ -288,8 +288,8 @@ class NodeItem(QGraphicsRectItem):
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
 
         if isinstance(vis, ErrorFig) or not self.node.selectable():
-            if isinstance(vis, Element):
-                ElementDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
+            if isinstance(vis, Group):
+                GroupDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
             else:
                 assert isinstance(vis, Visualisable)
                 vis.save_to_svg(svg_filepath, self.backend.svg_width, self.backend.svg_height)
@@ -302,7 +302,7 @@ class NodeItem(QGraphicsRectItem):
         else:
             assert isinstance(vis, Group)
             assert not vis.transform_list.transforms
-            ElementDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
+            GroupDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
 
             # Create SVG renderer
             svg_renderer = QSvgRenderer(svg_filepath)

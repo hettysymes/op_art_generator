@@ -1,4 +1,4 @@
-from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.gradient_datatype import Gradient
 # from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
@@ -26,4 +26,4 @@ class GradientNode(UnitNode):
 
     def visualise(self, temp_dir, height, wh_ratio):
         element = RectangleNode(prop_vals={'fill': self.compute()}).compute()
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
+        return GroupDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()
