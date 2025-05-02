@@ -24,7 +24,7 @@ def get_node_from_element(element: Element):
             return self.get_prop_val('_element')
 
         def visualise(self):
-            group = Group(debug_info=f"Immutable Element ({port_type.__name__}")
+            group = Group(debug_info=f"Immutable Element ({port_type.__name__})")
             group.add(self.compute())
             return group
 
