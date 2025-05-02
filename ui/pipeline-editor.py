@@ -1534,17 +1534,6 @@ class NodePropertiesDialog(QDialog):
         super().accept()
 
 
-def save_as_svg(clicked_item: NodeItem):
-    file_path, _ = QFileDialog.getSaveFileName(
-        None, "Save SVG",
-        f"{clicked_item.node.name()}_{clicked_item.uid[:6]}.svg",
-        "SVG Files (*.svg)"
-    )
-
-    if file_path:
-        shutil.copy(clicked_item.get_svg_path()[0], file_path)
-
-
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
@@ -1749,15 +1738,6 @@ class PipelineScene(QGraphicsScene):
 
             menu.addAction(duplicate_action)
             menu.addAction(delete_action)
-            menu.exec_(event.screenPos())
-        elif isinstance(clicked_item, QGraphicsSvgItem):
-            clicked_item = clicked_item.parentItem()  # Refer to parent node
-
-            menu = QMenu()
-            save_svg_action = QAction("Save as SVG", menu)
-            save_svg_action.triggered.connect(lambda: save_as_svg(clicked_item))
-
-            menu.addAction(save_svg_action)
             menu.exec_(event.screenPos())
         elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
             menu = QMenu()
