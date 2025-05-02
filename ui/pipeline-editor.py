@@ -4,7 +4,6 @@ import math
 import os
 import pickle
 import random
-import shutil
 import sys
 import tempfile
 
@@ -28,12 +27,12 @@ from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.nodes import CombinationNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
-from ui.nodes.shape_datatypes import Element, Group
+from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.selectable_renderer import SelectableSvgElement
-from ui.vis_types import MatplotlibFig, ErrorFig, Visualisable
+from ui.vis_types import ErrorFig, Visualisable
 
 
 class ConnectionSignals(QObject):

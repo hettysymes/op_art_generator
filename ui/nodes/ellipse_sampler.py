@@ -1,6 +1,5 @@
 import math
 
-from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.nodes import UnitNodeInfo, PropTypeList, PropType, UnitNode
 from ui.nodes.shape_datatypes import Ellipse, Group
 from ui.port_defs import PortDef, PT_Ellipse, PT_PointList

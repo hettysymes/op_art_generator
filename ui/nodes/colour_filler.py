@@ -1,6 +1,5 @@
 import itertools
 
-from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo
 from ui.nodes.shape_datatypes import Group, Polyline, Polygon, Element

@@ -1,4 +1,3 @@
-from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.port_defs import PortDef, PT_Element, PT_ElementList

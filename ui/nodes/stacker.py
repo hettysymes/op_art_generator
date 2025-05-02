@@ -1,4 +1,3 @@
-from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.grid import GridNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType

@@ -21,6 +21,7 @@ class MatplotlibFig(Visualisable):
         self.fig.set_dpi(MatplotlibFig.DPI)
         self.fig.savefig(filepath, format='svg', bbox_inches='tight')
 
+
 class ErrorFig(Visualisable):
 
     def __init__(self, title, content):

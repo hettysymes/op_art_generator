@@ -1,4 +1,3 @@
-from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.gradient_datatype import Gradient
 # from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType

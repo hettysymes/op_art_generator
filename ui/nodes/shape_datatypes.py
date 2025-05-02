@@ -5,6 +5,7 @@ from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
+from ui.port_defs import PT_Element, PT_Shape, PT_Polyline, PT_Ellipse
 
 
 class Element(ABC):
@@ -31,6 +32,10 @@ class Element(ABC):
 
     @abstractmethod
     def shape_transformations(self):
+        pass
+
+    @abstractmethod
+    def get_output_type(self):
         pass
 
 
@@ -96,6 +101,12 @@ class Group(Element):
                 transformed_shapes.append((shape, new_transform_list))
         return transformed_shapes
 
+    def get_output_type(self):
+        shapes, _ = zip(*self.shape_transformations())
+        if len(shapes) == 1:
+            return shapes[0].get_output_type()
+        return PT_Element
+
     def __repr__(self):
         debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""
         result = f"Group (#{shorten_uid(self.uid)}) [{repr(self.transform_list)}] {debug_str} {{\n"
@@ -128,6 +139,9 @@ class Shape(Element, ABC):
     def shape_transformations(self):
         return [(self, TransformList())]
 
+    def get_output_type(self):
+        return PT_Shape
+
     def __repr__(self):
         return f"Shape (#{shorten_uid(self.uid)}) {self.__class__.__name__.upper()}"
 
@@ -152,6 +166,9 @@ class Polyline(Shape):
         if transform_list:
             return transform_list.transform_points(self.points)
         return self.points
+
+    def get_output_type(self):
+        return PT_Polyline
 
 
 class Polygon(Shape):
@@ -204,6 +221,9 @@ class Ellipse(Shape):
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
                            id=self.uid)
+
+    def get_output_type(self):
+        return PT_Ellipse
 
 
 class SineWave(Polyline):

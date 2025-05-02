@@ -2,9 +2,9 @@ from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
-from ui.nodes.shape_datatypes import Polygon, Ellipse, SineWave, Shape, Polyline, Group
+from ui.nodes.shape_datatypes import Polygon, Ellipse, SineWave, Polyline, Group
 from ui.nodes.utils import process_rgb
-from ui.port_defs import PortDef, PT_Element, PT_Polyline, PT_Ellipse, PT_Shape, PT_Fill
+from ui.port_defs import PortDef, PT_Element, PT_Polyline, PT_Ellipse, PT_Fill
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
     name="Sine Wave",
@@ -128,7 +128,7 @@ class StraightLineNode(UnitNode):
 
     def compute(self):
         return StraightLineNode.helper(self.get_prop_val('start_coord'), self.get_prop_val('stop_coord'), 'black',
-                                          self.get_prop_val('stroke_width'))
+                                       self.get_prop_val('stroke_width'))
 
     def visualise(self):
         group = Group(debug_info="Straight Line")
@@ -172,7 +172,7 @@ class PolygonNode(UnitNode):
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         return PolygonNode.helper(self.get_prop_val('fill'), self.get_prop_val('points'), 'none',
-                                     self.get_prop_val('stroke_width'))
+                                  self.get_prop_val('stroke_width'))
 
     def visualise(self):
         group = Group(debug_info="Polygon")
@@ -251,8 +251,8 @@ class EllipseNode(UnitNode):
 
     def compute(self):
         return EllipseNode.helper(self.get_prop_val('fill'), self.get_prop_val('centre'),
-                                     (self.get_prop_val('rx'), self.get_prop_val('ry')),
-                                     'none', self.get_prop_val('stroke_width'))
+                                  (self.get_prop_val('rx'), self.get_prop_val('ry')),
+                                  'none', self.get_prop_val('stroke_width'))
 
     def visualise(self):
         group = Group(debug_info="Ellipse")
@@ -292,32 +292,13 @@ class CircleNode(UnitNode):
 
     def compute(self):
         return CircleNode.helper(self.get_prop_val('fill'),
-                                    self.get_prop_val('centre'),
-                                    self.get_prop_val('r'),
-                                    'none',
-                                    self.get_prop_val('stroke_width'))
+                                 self.get_prop_val('centre'),
+                                 self.get_prop_val('r'),
+                                 'none',
+                                 self.get_prop_val('stroke_width'))
 
     def visualise(self):
         group = Group(debug_info="Circle")
-        group.add(self.compute())
-        return group
-
-
-IMMUTABLE_ELEMENT_NODE_INFO = UnitNodeInfo(
-    name="Shape Drawing",
-    out_port_defs=[PortDef("Drawing", PT_Element)],
-    description="Immutable drawing extracted from a previously rendered node."
-)
-
-
-class ImmutableElementNode(UnitNode):
-    UNIT_NODE_INFO = IMMUTABLE_ELEMENT_NODE_INFO
-
-    def compute(self):
-        return self.get_prop_val('_element')
-
-    def visualise(self):
-        group = Group(debug_info="Immutable Element")
         group.add(self.compute())
         return group
 

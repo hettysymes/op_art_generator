@@ -18,7 +18,7 @@ class PosWarp:
 
     def __init__(self, pos_f):
         self.pos_f = pos_f
-        self.sample(1000) # Validation
+        self.sample(1000)  # Validation
 
     def sample(self, num_samples):
         unnorm_pos = sample_fun(self.pos_f, num_samples)
