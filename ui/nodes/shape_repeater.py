@@ -8,14 +8,11 @@ from ui.port_defs import PortDef, PT_Grid, PT_Element, PT_Repeatable
 
 SHAPE_REPEATER_NODE_INFO = UnitNodeInfo(
     name="Shape Repeater",
-    resizable=True,
-    selectable=True,
     in_port_defs=[
         PortDef("Grid", PT_Grid, key_name='grid'),
         PortDef("Drawing", PT_Repeatable, key_name='repeatable')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
-    prop_type_list=PropTypeList([]),
     description="Repeat a drawing in a grid-like structure."
 )
 

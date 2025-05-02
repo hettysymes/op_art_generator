@@ -10,9 +10,7 @@ from ui.vis_types import MatplotlibFig
 
 CUBIC_FUN_NODE_INFO = UnitNodeInfo(
     name="Cubic Function",
-    resizable=True,
     selectable=False,
-    in_port_defs=[],
     out_port_defs=[PortDef("Function", PT_Function)],
     prop_type_list=PropTypeList(
         [
@@ -46,9 +44,7 @@ class CubicFunNode(UnitNode):
 
 CUSTOM_FUN_NODE_INFO = UnitNodeInfo(
     name="Custom Function",
-    resizable=True,
     selectable=False,
-    in_port_defs=[],
     out_port_defs=[PortDef("Function", PT_Function)],
     prop_type_list=PropTypeList(
         [

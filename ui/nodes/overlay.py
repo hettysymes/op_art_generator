@@ -6,8 +6,6 @@ from ui.port_defs import PortDef, PT_Element
 
 OVERLAY_NODE_INFO = UnitNodeInfo(
     name="Overlay",
-    resizable=True,
-    selectable=True,
     in_port_defs=[
         PortDef("Input Drawings", PT_Element, input_multiple=True, key_name='elements')
     ],

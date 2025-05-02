@@ -5,7 +5,6 @@ from ui.port_defs import PortDef, PT_Function, PT_NumberList
 
 FUN_SAMPLER_NODE = UnitNodeInfo(
     name="Function Sampler",
-    resizable=True,
     selectable=False,
     in_port_defs=[PortDef("Function", PT_Function, key_name='function')],
     out_port_defs=[PortDef("Samples", PT_NumberList)],

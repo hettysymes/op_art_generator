@@ -9,9 +9,6 @@ from ui.port_defs import PortDef, PT_Element, PT_Polyline, PT_Ellipse, PT_Shape,
 
 SINE_WAVE_NODE_INFO = UnitNodeInfo(
     name="Sine Wave",
-    resizable=True,
-    selectable=True,
-    in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PT_Polyline)],
     prop_type_list=PropTypeList(
         [
@@ -69,9 +66,6 @@ class SineWaveNode(UnitNode):
 
 CUSTOM_LINE_NODE_INFO = UnitNodeInfo(
     name="Custom Line",
-    resizable=True,
-    selectable=True,
-    in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PT_Polyline)],
     prop_type_list=PropTypeList(
         [
@@ -100,9 +94,6 @@ class CustomLineNode(UnitNode):
 
 STRAIGHT_LINE_NODE_INFO = UnitNodeInfo(
     name="Straight Line",
-    resizable=True,
-    selectable=True,
-    in_port_defs=[],
     out_port_defs=[PortDef("Drawing", PT_Polyline)],
     prop_type_list=PropTypeList(
         [
@@ -136,8 +127,6 @@ class StraightLineNode(UnitNode):
 
 POLYGON_NODE_INFO = UnitNodeInfo(
     name="Polygon",
-    resizable=True,
-    selectable=True,
     in_port_defs=[PortDef("Import Points", PT_Polyline, input_multiple=True, key_name='import_points')],
     prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
@@ -176,9 +165,6 @@ class PolygonNode(UnitNode):
 
 RECTANGLE_NODE_INFO = UnitNodeInfo(
     name="Rectangle",
-    resizable=True,
-    selectable=True,
-    in_port_defs=[],
     prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Element)],
     prop_type_list=PropTypeList(
@@ -213,9 +199,6 @@ class RectangleNode(UnitNode):
 
 ELLIPSE_NODE_INFO = UnitNodeInfo(
     name="Ellipse",
-    resizable=True,
-    selectable=True,
-    in_port_defs=[],
     prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
@@ -262,9 +245,6 @@ class EllipseNode(UnitNode):
 
 CIRCLE_NODE_INFO = UnitNodeInfo(
     name="Circle",
-    resizable=True,
-    selectable=True,
-    in_port_defs=[],
     prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
     out_port_defs=[PortDef("Drawing", PT_Ellipse)],
     prop_type_list=PropTypeList(
@@ -305,11 +285,7 @@ class CircleNode(UnitNode):
 
 ELEMENT_SHAPE_NODE_INFO = UnitNodeInfo(
     name="Shape Drawing",
-    resizable=True,
-    selectable=False,
-    in_port_defs=[],
     out_port_defs=[PortDef("Shape", PT_Shape)],
-    prop_type_list=PropTypeList([]),
     description="Immutable drawing extracted from a previously rendered node."
 )
 
@@ -326,11 +302,7 @@ class ElementShapeNode(UnitNode):
 
 ELEMENT_LINE_NODE_INFO = UnitNodeInfo(
     name="Line Drawing",
-    resizable=True,
-    selectable=False,
-    in_port_defs=[],
     out_port_defs=[PortDef("Line", PT_Polyline)],
-    prop_type_list=PropTypeList([]),
     description="Immutable drawing extracted from a previously rendered node."
 )
 

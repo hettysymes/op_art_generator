@@ -9,14 +9,11 @@ from ui.port_defs import PortDef, PT_ColourList, PT_Element
 
 COLOUR_FILLER_NODE_INFO = UnitNodeInfo(
     name="Colour Filler",
-    resizable=True,
-    selectable=True,
     in_port_defs=[
         PortDef("Colours", PT_ColourList, key_name='colour_list'),
         PortDef("Drawing", PT_Element, key_name='element')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
-    prop_type_list=PropTypeList([]),
     description="Given a colour list and a drawing consisting of lines, cycle through the colours and use them to fill the gaps between the lines."
 )
 

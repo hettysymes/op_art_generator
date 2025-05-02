@@ -7,8 +7,6 @@ from ui.port_defs import PortDef, PT_Element, PT_ElementList
 
 DRAWING_GROUP_NODE_INFO = UnitNodeInfo(
     name="Drawing Group",
-    resizable=True,
-    selectable=True,
     in_port_defs=[
         PortDef("Input Drawings", PT_Element, input_multiple=True, key_name='elements')
     ],

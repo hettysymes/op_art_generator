@@ -9,8 +9,6 @@ from ui.port_defs import PortDef, PT_ValueList, PT_Element, PT_ElementList
 
 ITERATOR_NODE_INFO = UnitNodeInfo(
     name="Iterator",
-    resizable=True,
-    selectable=True,
     in_port_defs=[PortDef("Value list", PT_ValueList, key_name='value_list'),
                   PortDef("Shape", PT_Element, key_name='element')],
     out_port_defs=[PortDef("Iterator", PT_ElementList)],

@@ -7,7 +7,6 @@ from ui.port_defs import PortDef, PT_Ellipse, PT_PointList
 
 ELLIPSE_SAMPLER_NODE_INFO = UnitNodeInfo(
     name="Ellipse Sampler",
-    resizable=True,
     selectable=False,
     in_port_defs=[PortDef("Ellipse", PT_Ellipse, key_name='ellipse')],
     out_port_defs=[PortDef("Samples", PT_PointList)],

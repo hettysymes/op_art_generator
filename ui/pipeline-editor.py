@@ -290,16 +290,8 @@ class NodeItem(QGraphicsRectItem):
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
 
-        if isinstance(vis, MatplotlibFig):
-            vis.save_to_svg(svg_filepath, self.backend.svg_width, self.backend.svg_height)
-
-            self.svg_item = QGraphicsSvgItem(svg_filepath)
-
-            # Apply position
-            self.svg_item.setParentItem(self)
-            self.svg_item.setPos(svg_pos_x, svg_pos_y)
-            self.svg_item.setZValue(2)
-        elif isinstance(vis, Group):
+        if self.node.selectable():
+            assert isinstance(vis, Group)
             assert not vis.transform_list.transforms
             ElementDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
 
@@ -355,8 +347,19 @@ class NodeItem(QGraphicsRectItem):
                     selectable_item.setZValue(3)
                     self.svg_items.append(selectable_item)
                 child = child.nextSibling()
+        else:
+            if isinstance(vis, MatplotlibFig):
+                vis.save_to_svg(svg_filepath, self.backend.svg_width, self.backend.svg_height)
+            else:
+                assert isinstance(vis, Element)
+                ElementDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
 
-            #print(f"Selectable items len: {len(self.svg_items)}")
+            self.svg_item = QGraphicsSvgItem(svg_filepath)
+            # Apply position
+            self.svg_item.setParentItem(self)
+            self.svg_item.setPos(svg_pos_x, svg_pos_y)
+            self.svg_item.setZValue(2)
+
 
     def add_new_node(self, node):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)

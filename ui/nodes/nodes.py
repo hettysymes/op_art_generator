@@ -51,16 +51,16 @@ class PropType:
 
 class UnitNodeInfo:
 
-    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description,
+    def __init__(self, name, description, resizable=True, selectable=True, in_port_defs=None, out_port_defs=None, prop_type_list=None,
                  prop_port_defs=None):
         self.name = name
         self.resizable = resizable
         self.selectable = selectable
-        self.in_port_defs = in_port_defs
-        self.out_port_defs = out_port_defs
-        self.prop_type_list = prop_type_list
+        self.in_port_defs = in_port_defs if in_port_defs is not None else []
+        self.out_port_defs = out_port_defs if out_port_defs is not None else []
+        self.prop_type_list = prop_type_list if prop_type_list is not None else PropTypeList([])
         self.description = description
-        self.prop_port_defs = prop_port_defs if (prop_port_defs is not None) else []
+        self.prop_port_defs = prop_port_defs if prop_port_defs is not None else []
 
 
 class Node(ABC):
@@ -174,11 +174,6 @@ class Node(ABC):
 class UnitNode(Node):
     UNIT_NODE_INFO = UnitNodeInfo(
         name="Unit Node",
-        resizable=True,
-        selectable=False,
-        in_port_defs=[],
-        out_port_defs=[],
-        prop_type_list=PropTypeList([]),
         description=""
     )
 

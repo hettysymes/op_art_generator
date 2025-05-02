@@ -8,8 +8,6 @@ from ui.port_defs import PortDef, PT_Element, PT_Repeatable
 
 STACKER_NODE_INFO = UnitNodeInfo(
     name="Stacker",
-    resizable=True,
-    selectable=True,
     in_port_defs=[
         PortDef("Input Drawings", PT_Repeatable, input_multiple=True, key_name='repeatables')
     ],

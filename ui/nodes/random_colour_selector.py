@@ -9,7 +9,6 @@ from ui.port_defs import PortDef, PT_ColourList, PT_Colour
 
 RANDOM_COLOUR_SELECTOR_NODE_INFO = UnitNodeInfo(
     name="Random Colour Selector",
-    resizable=True,
     selectable=False,
     in_port_defs=[PortDef("Colour list", PT_ColourList, key_name='colour_list')],
     out_port_defs=[PortDef("Random colour", PT_Colour)],

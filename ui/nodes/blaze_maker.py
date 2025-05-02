@@ -8,8 +8,6 @@ from ui.port_defs import PortDef, PT_Ellipse, PT_Element
 
 BLAZE_MAKER_NODE_INFO = UnitNodeInfo(
     name="Blaze Maker",
-    resizable=True,
-    selectable=True,
     in_port_defs=[
         PortDef("Input Ellipses", PT_Ellipse, input_multiple=True, key_name='ellipses')
     ],
@@ -35,7 +33,7 @@ class BlazeMakerNode(UnitNode):
     @staticmethod
     def helper(num_polygons, ellipse_elem_refs, angle_diff, colour):
         num_samples = num_polygons * 2
-        ret_group = Group()
+        ret_group = Group(debug_info="Blaze Maker")
         ellipses = [elem_ref.compute() for elem_ref in ellipse_elem_refs]
         # Sort ellipses in order of ascending radius
         ellipses.sort(key=lambda ellipse: ellipse.r[0] ** 2 + ellipse.r[1] ** 2)
@@ -64,8 +62,3 @@ class BlazeMakerNode(UnitNode):
             return BlazeMakerNode.helper(self.get_prop_val('num_polygons'), self.get_prop_val('ellipses'),
                                          self.get_prop_val('angle_diff'), self.get_prop_val('fill'))
         return None
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        element = self.compute()
-        if element:
-            return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (element, None)).save()

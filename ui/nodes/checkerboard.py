@@ -7,15 +7,12 @@ from ui.port_defs import PortDef, PT_Grid, PT_Element
 
 CHECKERBOARD_NODE_INFO = UnitNodeInfo(
     name="Checkerboard",
-    resizable=True,
-    selectable=True,
     in_port_defs=[
         PortDef("Grid", PT_Grid, key_name='grid'),
         PortDef("Drawing 1", PT_Element, key_name='elem1'),
         PortDef("Drawing 2", PT_Element, key_name='elem2')
     ],
     out_port_defs=[PortDef("Drawing", PT_Element)],
-    prop_type_list=PropTypeList([]),
     description="Create a checkerboard pattern from a grid and two drawings. The two drawings are placed alternately in a checkerboard pattern on the grid."
 )
 

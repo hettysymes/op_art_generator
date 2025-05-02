@@ -7,11 +7,9 @@ from ui.vis_types import MatplotlibFig
 
 POS_WARP_NODE_INFO = UnitNodeInfo(
     name="Position Warp",
-    resizable=True,
     selectable=False,
     in_port_defs=[PortDef("Function", PT_Function, key_name='function')],
     out_port_defs=[PortDef("Warp", PT_Warp)],
-    prop_type_list=PropTypeList([]),
     description="Given a function, convert it to a warp by normalising f(x) to be between 0 & 1 for x ∈ [0,1]. The input function must pass through the origin."
 )
 
@@ -42,11 +40,9 @@ class PosWarpNode(UnitNode):
 
 REL_WARP_NODE_INFO = UnitNodeInfo(
     name="Relative Warp",
-    resizable=True,
     selectable=False,
     in_port_defs=[PortDef("Function", PT_Function, key_name='function')],
     out_port_defs=[PortDef("Warp", PT_Warp)],
-    prop_type_list=PropTypeList([]),
     description="Given a function, use it to accumulate positions based on evenly spaced indices between 0 & 1, giving a new list of samples which are normalised between 0 & 1. The input function must pass through the origin."
 )
 

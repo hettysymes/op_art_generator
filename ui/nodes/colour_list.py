@@ -7,9 +7,6 @@ from ui.port_defs import PortDef, PT_ColourList
 
 COLOUR_LIST_NODE_INFO = UnitNodeInfo(
     name="Colour List",
-    resizable=True,
-    selectable=True,
-    in_port_defs=[],
     out_port_defs=[PortDef("Colours", PT_ColourList)],
     prop_type_list=PropTypeList(
         [
