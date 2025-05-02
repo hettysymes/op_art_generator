@@ -7,6 +7,7 @@ class Visualisable(ABC):
     def save_to_svg(self, filepath, width, height):
         pass
 
+
 class MatplotlibFig(Visualisable):
     DPI = 100
 

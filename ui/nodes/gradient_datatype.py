@@ -1,5 +1,3 @@
-import uuid
-
 from ui.id_generator import gen_uid
 from ui.nodes.utils import process_rgb
 

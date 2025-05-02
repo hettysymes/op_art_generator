@@ -1,5 +1,5 @@
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
+from ui.nodes.nodes import UnitNode, UnitNodeInfo
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Group
 from ui.nodes.transforms import Scale, Translate

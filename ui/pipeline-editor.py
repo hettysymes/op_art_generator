@@ -7,11 +7,10 @@ import random
 import shutil
 import sys
 import tempfile
-import uuid
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -251,8 +250,6 @@ class NodeItem(QGraphicsRectItem):
         # Update port positions to match the new dimensions
         self.update_port_edge_positions()
 
-
-
     def node_size_from_svg_size(self, svg_w, svg_h):
         return svg_w + self.left_max_width + self.right_max_width + 2 * NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
 
@@ -266,7 +263,7 @@ class NodeItem(QGraphicsRectItem):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
         # svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
         compute = self.update_node().safe_visualise(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
-        #return svg_path
+        # return svg_path
         return
 
     def update_vis_image(self):
@@ -359,7 +356,6 @@ class NodeItem(QGraphicsRectItem):
             self.svg_item.setParentItem(self)
             self.svg_item.setPos(svg_pos_x, svg_pos_y)
             self.svg_item.setZValue(2)
-
 
     def add_new_node(self, node):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)

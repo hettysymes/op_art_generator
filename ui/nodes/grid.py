@@ -1,9 +1,7 @@
 from ui.nodes.canvas import CanvasNode
-from ui.nodes.drawers.grid_drawer import GridDrawing
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import StraightLineNode
 from ui.nodes.shape_datatypes import Group
-from ui.nodes.utils import process_rgb
 from ui.nodes.warp_utils import PosWarp, RelWarp
 from ui.port_defs import PortDef, PT_Warp, PT_Grid
 
@@ -58,4 +56,4 @@ class GridNode(UnitNode):
         for y in h_line_ys:
             # Draw vertical lines
             grid_group.add(StraightLineNode.helper((0, y), (1, y), stroke='black', stroke_width=2))
-        return CanvasNode.helper('white', 1, grid_group)
+        return CanvasNode.helper((255, 255, 255, 255), grid_group)

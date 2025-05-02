@@ -2,7 +2,7 @@ import itertools
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList
+from ui.nodes.nodes import UnitNode, UnitNodeInfo
 from ui.nodes.shape_datatypes import Group, Polyline, Polygon, Element
 from ui.nodes.utils import process_rgb
 from ui.port_defs import PortDef, PT_ColourList, PT_Element

@@ -1,6 +1,4 @@
-import copy
 import math
-import uuid
 from abc import ABC, abstractmethod
 
 from ui.id_generator import gen_uid, shorten_uid

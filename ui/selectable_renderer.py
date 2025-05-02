@@ -1,9 +1,6 @@
 from PyQt5.QtCore import Qt, QRectF
-from PyQt5.QtGui import QColor, QPen, QTransform
+from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
-
-from ui.id_generator import shorten_uid
-from ui.nodes.shape import get_node_from_shape
 
 
 class SelectableSvgElement(QGraphicsItem):
@@ -26,7 +23,7 @@ class SelectableSvgElement(QGraphicsItem):
         rect = self.renderer.boundsOnElement(self.element_id)
         width, height = self.parent_node_item.backend.svg_width, self.parent_node_item.backend.svg_height
         return QRectF(rect.x() * width, rect.y() * height,
-                      max(rect.width() * width, 1), max(rect.height() * height, 1)) # Minimum width/height of 1
+                      max(rect.width() * width, 1), max(rect.height() * height, 1))  # Minimum width/height of 1
 
     def paint(self, painter, option, widget=None):
         """Paint the element in its original position."""

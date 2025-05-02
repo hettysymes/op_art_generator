@@ -1,8 +1,6 @@
-from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape import RectangleNode
 from ui.nodes.shape_datatypes import Group
-from ui.nodes.utils import process_rgb
 from ui.port_defs import PortDef, PT_Element
 
 CANVAS_NODE_INFO = UnitNodeInfo(
@@ -27,9 +25,9 @@ class CanvasNode(UnitNode):
     UNIT_NODE_INFO = CANVAS_NODE_INFO
 
     @staticmethod
-    def helper(bg_fill, bg_opacity, element):
+    def helper(colour, element=None):
         group = Group(debug_info="Canvas")
-        group.add(RectangleNode.helper(bg_fill, bg_opacity))
+        group.add(RectangleNode.helper(colour))
         if element:
             group.add(element)
         return group
@@ -38,5 +36,4 @@ class CanvasNode(UnitNode):
         return self.get_input_node('element').compute()
 
     def visualise(self):
-        bg_fill, bg_opacity = process_rgb(self.get_prop_val('bg_col'))
-        return CanvasNode.helper(bg_fill, bg_opacity, self.compute())
+        return CanvasNode.helper(self.get_prop_val('bg_col'), self.compute())

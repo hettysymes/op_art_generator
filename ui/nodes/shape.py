@@ -1,4 +1,3 @@
-from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.node_input_exception import NodeInputException
@@ -49,15 +48,18 @@ class SineWaveNode(UnitNode):
 
     @staticmethod
     def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, num_points=100, orientation=0):
-        return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points).rotate(orientation, (0.5, 0.5))
+        return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points).rotate(
+            orientation, (0.5, 0.5))
 
     def compute(self):
         group = Group(debug_info="Sine wave")
         try:
             sine_wave = SineWaveNode.helper(self.get_prop_val('amplitude'), self.get_prop_val('wavelength'),
-                                 self.get_prop_val('centre_y'),
-                                 self.get_prop_val('phase'), self.get_prop_val('x_min'), self.get_prop_val('x_max'),
-                                 self.get_prop_val('stroke_width'), self.get_prop_val('num_points'), self.get_prop_val('orientation'))
+                                            self.get_prop_val('centre_y'),
+                                            self.get_prop_val('phase'), self.get_prop_val('x_min'),
+                                            self.get_prop_val('x_max'),
+                                            self.get_prop_val('stroke_width'), self.get_prop_val('num_points'),
+                                            self.get_prop_val('orientation'))
         except ValueError as e:
             raise NodeInputException(str(e), self.node_id)
         group.add(sine_wave)
@@ -121,7 +123,7 @@ class StraightLineNode(UnitNode):
     def compute(self):
         group = Group(debug_info="Straight line")
         group.add(StraightLineNode.helper(self.get_prop_val('start_coord'), self.get_prop_val('stop_coord'), 'black',
-                        self.get_prop_val('stroke_width')))
+                                          self.get_prop_val('stroke_width')))
         return group
 
 
@@ -148,18 +150,22 @@ POLYGON_NODE_INFO = UnitNodeInfo(
 class PolygonNode(UnitNode):
     UNIT_NODE_INFO = POLYGON_NODE_INFO
 
-    def compute(self):
-        colour = self.get_prop_val('fill')
+    @staticmethod
+    def helper(colour, points, stroke, stroke_width):
         if isinstance(colour, Gradient):
             fill = colour
             fill_opacity = 255
         else:
-            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
+            fill, fill_opacity = process_rgb(colour)
+        return Polygon(points, fill, fill_opacity, stroke, stroke_width)
+
+    def compute(self):
         # Process input polylines
         handle_multi_inputs(self.get_input_node('import_points'), self.prop_vals['points'])
         # Return element
         group = Group(debug_info="Polygon")
-        group.add(Polygon(self.get_prop_val('points'), fill, fill_opacity, 'none', self.get_prop_val('stroke_width')))
+        group.add(PolygonNode.helper(self.get_prop_val('fill'), self.get_prop_val('points'), 'none',
+                                     self.get_prop_val('stroke_width')))
         return group
 
 
@@ -181,20 +187,13 @@ class RectangleNode(UnitNode):
     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
 
     @staticmethod
-    def helper(fill, fill_opacity):
-        return Polygon([(0, 0), (0, 1), (1, 1), (1, 0)], fill, fill_opacity)
+    def helper(colour):
+        return PolygonNode.helper(colour, [(0, 0), (0, 1), (1, 1), (1, 0)], 'none', 1)
 
     def compute(self):
-        colour = self.get_prop_val('fill')
-        if isinstance(colour, Gradient):
-            fill = colour
-            fill_opacity = 255
-        else:
-            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
-        return RectangleNode.helper(fill, fill_opacity)
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+        group = Group(debug_info="Rectangle")
+        group.add(RectangleNode.helper(self.get_prop_val('fill')))
+        return group
 
 
 ELLIPSE_NODE_INFO = UnitNodeInfo(
@@ -238,7 +237,8 @@ class EllipseNode(UnitNode):
 
     def compute(self):
         group = Group(debug_info="Ellipse")
-        group.add(EllipseNode.helper(self.get_prop_val('fill'), self.get_prop_val('centre'), (self.get_prop_val('rx'), self.get_prop_val('ry')),
+        group.add(EllipseNode.helper(self.get_prop_val('fill'), self.get_prop_val('centre'),
+                                     (self.get_prop_val('rx'), self.get_prop_val('ry')),
                                      'none', self.get_prop_val('stroke_width')))
         return group
 
@@ -269,18 +269,18 @@ CIRCLE_NODE_INFO = UnitNodeInfo(
 class CircleNode(UnitNode):
     UNIT_NODE_INFO = CIRCLE_NODE_INFO
 
-    def compute(self):
-        colour = self.get_prop_val('fill')
-        if isinstance(colour, Gradient):
-            fill = colour
-            fill_opacity = 255
-        else:
-            fill, fill_opacity = process_rgb(self.get_prop_val('fill'))
-        return Ellipse(self.get_prop_val('centre'), (self.get_prop_val('r'), self.get_prop_val('r')), fill,
-                       fill_opacity, 'none', self.get_prop_val('stroke_width'))
+    @staticmethod
+    def helper(colour, centre, radius, stroke='none', stroke_width=1):
+        return EllipseNode.helper(colour, centre, (radius, radius), stroke, stroke_width)
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
+    def compute(self):
+        group = Group(debug_info="Circle")
+        group.add(CircleNode.helper(self.get_prop_val('fill'),
+                                    self.get_prop_val('centre'),
+                                    self.get_prop_val('r'),
+                                    'none',
+                                    self.get_prop_val('stroke_width')))
+        return group
 
 
 ELEMENT_SHAPE_NODE_INFO = UnitNodeInfo(
@@ -296,9 +296,6 @@ class ElementShapeNode(UnitNode):
     def compute(self):
         return self.get_prop_val('shape')
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
-
 
 ELEMENT_LINE_NODE_INFO = UnitNodeInfo(
     name="Line Drawing",
@@ -312,9 +309,6 @@ class ElementLineNode(UnitNode):
 
     def compute(self):
         return self.get_prop_val('line')
-
-    def visualise(self, temp_dir, height, wh_ratio):
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (self.compute(), None)).save()
 
 
 def get_node_from_shape(shape: Shape):

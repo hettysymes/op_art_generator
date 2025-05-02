@@ -1,4 +1,3 @@
-from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType

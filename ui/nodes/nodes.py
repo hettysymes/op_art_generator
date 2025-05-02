@@ -1,13 +1,8 @@
 import copy
 import os
-import traceback
 from abc import ABC, abstractmethod
 
-from ui.id_generator import shorten_uid
-from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.drawers.error_drawer import ErrorDrawer
-from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.shape_datatypes import Group, Element
+from ui.nodes.shape_datatypes import Group
 
 
 class PropTypeList:
@@ -51,7 +46,8 @@ class PropType:
 
 class UnitNodeInfo:
 
-    def __init__(self, name, description, resizable=True, selectable=True, in_port_defs=None, out_port_defs=None, prop_type_list=None,
+    def __init__(self, name, description, resizable=True, selectable=True, in_port_defs=None, out_port_defs=None,
+                 prop_type_list=None,
                  prop_port_defs=None):
         self.name = name
         self.resizable = resizable
@@ -74,7 +70,7 @@ class Node(ABC):
         return os.path.join(temp_dir, self.node_id)
 
     def safe_visualise(self):
-        exception = None
+        # exception = None
         # Catch exception if raised
         # try:
         #     vis = self.visualise()
@@ -89,12 +85,13 @@ class Node(ABC):
         #     exception = e
         #     vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, ["Unknown Exception", str(e)]).save()
         #     traceback.print_exc()
-        # # Return visualisation with exception
-        # if not vis:
-        #     # No visualisation, return blank canvas
-        #     vis = ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Group(), None)).save()
+        # Return visualisation with exception
+        vis = self.visualise()
+        if not vis:
+            # No visualisation, return blank canvas
+            vis = Group(debug_info="Blank Canvas")
         # return vis, exception
-        return self.visualise()
+        return vis
 
     def name(self):
         return self.node_info().name
