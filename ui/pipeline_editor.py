@@ -2314,20 +2314,19 @@ class PipelineEditor(QMainWindow):
                 output_port_ids.append(port_states[output_port_id].uid)
             node_state.output_port_ids = output_port_ids
 
-        for port_state in port_states.values():
-            edge_ids = []
-            for edge_id in port_state.edge_ids:
-                if edge_id in edge_states:
-                    edge_ids.append(edge_states[edge_id].uid)
-            port_state.edge_ids = edge_ids
-
-        edges_to_remove = [] # Remove edges not connected on both ends of copied nodes
+        new_edge_states = {} # Remove edges not connected on both ends of copied nodes
         for k, edge_state in edge_states.items():
             if (edge_state.src_port_id in port_states) and (edge_state.dst_port_id in port_states):
                 edge_state.src_port_id = port_states[edge_state.src_port_id].uid
                 edge_state.dst_port_id = port_states[edge_state.dst_port_id].uid
-            else:
-                edges_to_remove.append(k)
+                new_edge_states[k] = edge_state
+
+        for port_state in port_states.values():
+            edge_ids = []
+            for edge_id in port_state.edge_ids:
+                if edge_id in new_edge_states:
+                    edge_ids.append(new_edge_states[edge_id].uid)
+            port_state.edge_ids = edge_ids
 
         # Populate save states
         save_states = {}
@@ -2335,9 +2334,8 @@ class PipelineEditor(QMainWindow):
             save_states[node_state.uid] = node_state
         for port_state in port_states.values():
             save_states[port_state.uid] = port_state
-        for k, edge_state in edge_states.items():
-            if k not in edges_to_remove:
-                save_states[edge_state.uid] = edge_state
+        for edge_state in new_edge_states.values():
+            save_states[edge_state.uid] = edge_state
         # Save to clipboard
         if save_states:
             mime_data = QMimeData()
@@ -2360,8 +2358,6 @@ class PipelineEditor(QMainWindow):
                 if isinstance(state, NodeState) or isinstance(state, PortState):
                     state.x += offset.x()
                     state.y += offset.y()
-
-            print(save_states)
             # Perform paste
             self.scene.load_from_save_states(save_states)
 
