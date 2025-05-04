@@ -33,7 +33,7 @@ from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
-from ui.scene import Scene, NodeState, PortState, EdgeState
+from ui.scene import Scene, NodeState, PortState, EdgeState, AppState
 from ui.selectable_renderer import SelectableSvgElement
 from ui.vis_types import ErrorFig, Visualisable
 
@@ -1680,6 +1680,9 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
 
+    def view(self):
+        return self.views()[0]
+
     def add_node_from_class(self, node_class, pos, index=None):
         """Add a new node of the given type at the specified position"""
         uid = gen_uid()
@@ -1747,7 +1750,7 @@ class PipelineScene(QGraphicsScene):
     def mousePressEvent(self, event):
         """Handle mouse press events for the scene"""
         if event.button() == Qt.LeftButton:
-            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
             if isinstance(item, PortItem) and not item.backend.is_input:
                 # Start creating a connection if an output port is clicked
@@ -1763,7 +1766,7 @@ class PipelineScene(QGraphicsScene):
             self.update_temp_connection(event.scenePos())
 
             # Highlight input port if we're hovering over one
-            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
             if isinstance(item, PortItem) and item.backend.is_input:
                 if self.dest_port != item:
                     # Reset previous dest port highlighting
@@ -1786,7 +1789,7 @@ class PipelineScene(QGraphicsScene):
     def mouseReleaseEvent(self, event):
         """Handle mouse release events for the scene"""
         if event.button() == Qt.LeftButton and self.source_port:
-            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
             if isinstance(item, PortItem) and item.backend.is_input:
                 # Create permanent connection
                 self.connection_signals.connectionMade.emit(self.source_port, item)
@@ -1808,7 +1811,7 @@ class PipelineScene(QGraphicsScene):
 
     def contextMenuEvent(self, event):
         """Handle context menu events for the scene"""
-        clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
+        clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
         if isinstance(clicked_item, EdgeItem):
             # Context menu for connections
@@ -1877,8 +1880,11 @@ class PipelineScene(QGraphicsScene):
         save_states = {}
         for k, v in self.scene.states.items():
             save_states[k] = v.backend
+        view = self.view()
+        center = view.mapToScene(view.viewport().rect().center())
+        zoom = view.current_zoom
         with open(filepath, "wb") as f:
-            pickle.dump(save_states, f)
+            pickle.dump(AppState((center.x(), center.y()), zoom, save_states), f)
 
     def load_from_save_states(self, save_states):
         # Process the loaded states as before
@@ -1913,12 +1919,14 @@ class PipelineScene(QGraphicsScene):
         # Use the custom unpickler to load the scene
         try:
             # Import the helper function - adjust the import path as needed
-            save_states = load_scene_with_elements(filepath)
+            app_state = load_scene_with_elements(filepath)
         except ImportError:
             # Fall back to regular unpickler if the helper isn't available
             with open(filepath, "rb") as f:
-                save_states = pickle.load(f)
-        self.load_from_save_states(save_states)
+                app_state = pickle.load(f)
+        self.view().centerOn(*app_state.pos)
+        self.view().set_zoom(app_state.zoom)
+        self.load_from_save_states(app_state.save_states)
         self.undo_stack.clear()
 
     def clear_scene(self):
@@ -2047,10 +2055,13 @@ class PipelineView(QGraphicsView):
         self.current_zoom *= factor
         self.update()
 
-    def resetZoom(self):
-        self.setTransform(QTransform().scale(self.default_zoom, self.default_zoom))  # Reset to default zoom
-        self.current_zoom = self.default_zoom  # Update current zoom to default
+    def set_zoom(self, zoom):
+        self.setTransform(QTransform().scale(zoom, zoom))
+        self.current_zoom = zoom
         self.update()
+
+    def resetZoom(self):
+        self.set_zoom(self.default_zoom)
 
     def draw_grid(self):
         """Draw a grid background for the scene"""

@@ -1,5 +1,12 @@
 from ui.nodes.nodes import Node
 
+class AppState:
+
+    def __init__(self, pos, zoom, save_states):
+        self.pos = pos
+        self.zoom = zoom
+        self.save_states = save_states
+
 
 class Scene:
 
