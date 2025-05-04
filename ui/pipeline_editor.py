@@ -1,24 +1,28 @@
 import ast
 import copy
+import json
 import math
 import os
 import pickle
 import random
 import sys
 import tempfile
+import traceback
+from functools import partial
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QEvent, QMimeData
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QFocusEvent, QKeySequence
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QStyledItemDelegate, QColorDialog,
-                             QGraphicsTextItem, QLabel)
+                             QGraphicsTextItem, QLabel, QUndoStack, QUndoCommand)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
+from sympy.physics.quantum.cartesian import PositionState3D
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import gen_uid, shorten_uid
@@ -26,15 +30,14 @@ from ui.nodes.all_nodes import node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.immutable_elem_node import load_scene_with_elements
-from ui.nodes.nodes import CombinationNode
+from ui.nodes.nodes import CombinationNode, Node
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
-from ui.scene import Scene, NodeState, PortState, EdgeState
+from ui.scene import Scene, NodeState, PortState, EdgeState, AppState
 from ui.selectable_renderer import SelectableSvgElement
 from ui.vis_types import ErrorFig, Visualisable
-
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
@@ -218,7 +221,8 @@ class NodeItem(QGraphicsRectItem):
 
             """
 
-            self._help_tooltip = QGraphicsTextItem(self)
+            self._help_tooltip = QGraphicsTextItem()
+            self.scene().addItem(self._help_tooltip)
             self._help_tooltip.setDefaultTextColor(QColor("#333333"))
             self._help_tooltip.setHtml(tooltip_html)
             self._help_tooltip.setZValue(100)  # Make sure it's on top
@@ -228,11 +232,11 @@ class NodeItem(QGraphicsRectItem):
         tooltip_rect = self._help_tooltip.boundingRect()
 
         # Center above the icon with some spacing
-        tooltip_pos = QPointF(
+        tooltip_pos_local = QPointF(
             self._help_icon_rect.center().x() - tooltip_rect.width() / 2,
             self._help_icon_rect.top() - tooltip_rect.height()
         )
-        self._help_tooltip.setPos(tooltip_pos)
+        self._help_tooltip.setPos(self.mapToScene(tooltip_pos_local))
         self._help_tooltip.show()
 
     def resize(self, width, height):
@@ -883,9 +887,6 @@ class HelpIconLabel(QPushButton):
         wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{description}</div>"
         self.setToolTip(wrapped_text)
 
-        # Remove focus outline
-        self.setFocusPolicy(Qt.NoFocus)
-
 
 class ModifyPropertyPortButton(QPushButton):
     def __init__(self, on_click_callback, adding, max_width=300, parent=None):
@@ -918,9 +919,6 @@ class ModifyPropertyPortButton(QPushButton):
         width_px = str(max_width) + "px"
         wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{self.description_pair[int(self.adding)]}</div>"
         self.setToolTip(wrapped_text)
-
-        # Remove focus outline
-        self.setFocusPolicy(Qt.NoFocus)
 
         # Connect the click signal to the callback
         self.user_callback = on_click_callback
@@ -1013,13 +1011,11 @@ class NodePropertiesDialog(QDialog):
         widget_layout.addWidget(widget)
 
         def change_property_port(adding):
+            scene = self.node_item.scene()
             if adding:
-                for port_def in node_item.node.prop_port_defs():
-                    if port_def.key_name == prop.key_name:
-                        node_item.add_port(port_def)
-                        break
+                scene.undo_stack.push(AddPropertyPortCmd(scene, self.node_item, prop.key_name))
             else:
-                node_item.remove_port_by_name(prop.key_name)
+                scene.undo_stack.push(RemovePropertyPortCmd(scene, self.node_item, prop.key_name))
 
         # Add the help icon after the widget (on the right)
         if prop.description:
@@ -1509,6 +1505,7 @@ class NodePropertiesDialog(QDialog):
 
     def accept(self):
         """Apply properties and close dialog"""
+        props_changed = {}
 
         # Update custom properties
         for prop_name, widget in self.property_widgets.items():
@@ -1523,7 +1520,68 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
 
-            self.node_item.node.prop_vals[prop_name] = value
+            old_val = self.node_item.node.prop_vals[prop_name]
+            if old_val != value:
+                props_changed[prop_name] = (copy.deepcopy(old_val), value)
+
+        if props_changed:
+            scene = self.node_item.scene()
+            scene.undo_stack.push(ChangePropertiesCmd(scene, self.node_item, props_changed))
+        super().accept()
+
+class AddNewNodeCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, pos, node: Node, description="Add new node"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.pos = pos
+        self.node = node
+        self.node_item = None
+
+    def undo(self):
+        assert self.node_item
+        self.pipeline_scene.delete_node(self.node_item)
+
+    def redo(self):
+        self.node_item = NodeItem(NodeState(self.node.node_id, self.pos.x(), self.pos.y(), [], [], self.node, 150, 150))
+        self.scene.add(self.node_item)
+        self.pipeline_scene.addItem(self.node_item)
+        self.node_item.create_ports()
+        self.node_item.update_vis_image()
+
+class AddNewEdgeCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, src_port_id, dst_port_id, description="Add new edge"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.src_port_id = src_port_id
+        self.dst_port_id = dst_port_id
+        self.edge = None
+
+    def undo(self):
+        assert self.edge
+        self.pipeline_scene.delete_edge(self.edge)
+
+    def redo(self):
+        self.edge = EdgeItem(EdgeState(gen_uid(), self.src_port_id, self.dst_port_id))
+        self.scene.add(self.edge)
+        self.pipeline_scene.addItem(self.edge)
+        self.edge.set_ports()
+        self.edge.source_port.add_edge(self.edge.uid)
+        self.edge.dest_port.add_edge(self.edge.uid)
+        self.edge.dest_port.parentItem().update_visualisations()
+
+class ChangePropertiesCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, node_item: NodeItem, props_changed, description="Change properties"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.node_item = node_item
+        self.props_changed = props_changed
+
+    def update_properties(self, props):
+        for prop_name, prop in props.items():
+            self.node_item.node.prop_vals[prop_name] = prop
             if (not self.node_item.node.resizable()) and (prop_name == 'width' or prop_name == 'height'):
                 svg_width = self.node_item.node.prop_vals.get('width', self.node_item.rect().width())
                 svg_height = self.node_item.node.prop_vals.get('height', self.node_item.rect().height())
@@ -1533,15 +1591,77 @@ class NodePropertiesDialog(QDialog):
         self.node_item.update()
         self.node_item.update_visualisations()
 
-        super().accept()
+    def undo(self):
+        props = {}
+        for prop_name, value in self.props_changed.items():
+            props[prop_name] = value[0]
+        self.update_properties(props)
 
+    def redo(self):
+        props = {}
+        for prop_name, value in self.props_changed.items():
+            props[prop_name] = value[1]
+        self.update_properties(props)
+
+class AddPropertyPortCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, node_item: NodeItem, prop_key_name, description="Add property port"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.node_item = node_item
+        self.prop_key_name = prop_key_name
+
+    def undo(self):
+        self.node_item.remove_port_by_name(self.prop_key_name)
+
+    def redo(self):
+        for port_def in self.node_item.node.prop_port_defs():
+            if port_def.key_name == self.prop_key_name:
+                self.node_item.add_port(port_def)
+                break
+
+class RemovePropertyPortCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, node_item: NodeItem, prop_key_name, description="Remove property port"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.node_item = node_item
+        self.prop_key_name = prop_key_name
+
+    def undo(self):
+        for port_def in self.node_item.node.prop_port_defs():
+            if port_def.key_name == self.prop_key_name:
+                self.node_item.add_port(port_def)
+                break
+
+    def redo(self):
+        self.node_item.remove_port_by_name(self.prop_key_name)
+
+class PasteCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, save_states, description="Paste"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.save_states = save_states
+
+    def undo(self):
+        items_to_remove = {}
+        for uid, state in self.save_states.items():
+            if not isinstance(state, PortState):
+                items_to_remove[uid] = self.scene.get(uid)
+        for uid, item in items_to_remove.items():
+            self.scene.remove(uid)
+            self.pipeline_scene.removeItem(item)
+
+    def redo(self):
+        self.pipeline_scene.load_from_save_states(self.save_states)
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
     def __init__(self, temp_dir, parent=None):
         super().__init__(parent)
-        self.setSceneRect(0, 0, 2000, 2000)
+        self.setSceneRect(-100000, -100000, 200000, 200000)
 
         # Connection related variables
         self.connection_signals = ConnectionSignals()
@@ -1553,10 +1673,15 @@ class PipelineScene(QGraphicsScene):
         self.scene = Scene()
         self.temp_dir = temp_dir
         print(temp_dir)
+        self.undo_stack = QUndoStack()
+        self.filepath = None
 
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
+
+    def view(self):
+        return self.views()[0]
 
     def add_node_from_class(self, node_class, pos, index=None):
         """Add a new node of the given type at the specified position"""
@@ -1568,18 +1693,12 @@ class PipelineScene(QGraphicsScene):
         return self.add_new_node(pos, node)
 
     def add_new_node(self, pos, node):
-        new_node = NodeItem(NodeState(node.node_id, pos.x(), pos.y(), [], [], node, 150, 150))
-        self.scene.add(new_node)
-        self.addItem(new_node)
-        new_node.create_ports()
-        new_node.update_vis_image()
-        return new_node
+        self.undo_stack.push(AddNewNodeCmd(self, pos, node))
+        return self.scene.get(node.node_id)
 
     def edit_node_properties(self, node):
         """Open a dialog to edit the node's properties"""
-        dialog = NodePropertiesDialog(node)
-        if dialog.exec_() == QDialog.Accepted:
-            node.update()
+        NodePropertiesDialog(node).exec_()
 
     def start_connection(self, source_port: PortItem):
         """Start creating a connection from the given source port"""
@@ -1617,13 +1736,7 @@ class PipelineScene(QGraphicsScene):
                 if not connection_exists and issubclass(source_port.backend.port_def.port_type,
                                                         dest_port.backend.port_def.port_type) and (
                         dest_port.backend.port_def.input_multiple or not target_has_connection):
-                    edge = EdgeItem(EdgeState(gen_uid(), source_port.backend.uid, dest_port.backend.uid))
-                    self.scene.add(edge)
-                    self.addItem(edge)
-                    edge.set_ports()
-                    edge.source_port.add_edge(edge.uid)
-                    edge.dest_port.add_edge(edge.uid)
-                    edge.dest_port.parentItem().update_visualisations()
+                    self.undo_stack.push(AddNewEdgeCmd(self, source_port.backend.uid, dest_port.backend.uid))
 
         # Clean up temporary line
         if self.temp_line:
@@ -1637,7 +1750,7 @@ class PipelineScene(QGraphicsScene):
     def mousePressEvent(self, event):
         """Handle mouse press events for the scene"""
         if event.button() == Qt.LeftButton:
-            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
             if isinstance(item, PortItem) and not item.backend.is_input:
                 # Start creating a connection if an output port is clicked
@@ -1653,7 +1766,7 @@ class PipelineScene(QGraphicsScene):
             self.update_temp_connection(event.scenePos())
 
             # Highlight input port if we're hovering over one
-            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
             if isinstance(item, PortItem) and item.backend.is_input:
                 if self.dest_port != item:
                     # Reset previous dest port highlighting
@@ -1676,7 +1789,7 @@ class PipelineScene(QGraphicsScene):
     def mouseReleaseEvent(self, event):
         """Handle mouse release events for the scene"""
         if event.button() == Qt.LeftButton and self.source_port:
-            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
             if isinstance(item, PortItem) and item.backend.is_input:
                 # Create permanent connection
                 self.connection_signals.connectionMade.emit(self.source_port, item)
@@ -1698,7 +1811,7 @@ class PipelineScene(QGraphicsScene):
 
     def contextMenuEvent(self, event):
         """Handle context menu events for the scene"""
-        clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.views()[0]))
+        clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
         if isinstance(clicked_item, EdgeItem):
             # Context menu for connections
@@ -1741,7 +1854,7 @@ class PipelineScene(QGraphicsScene):
             menu.addAction(duplicate_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
-        elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
+        else:
             menu = QMenu()
             add_node_menu = QMenu("Add Node", menu)
             menu.addMenu(add_node_menu)
@@ -1752,14 +1865,13 @@ class PipelineScene(QGraphicsScene):
                     submenu = add_node_menu.addMenu(node_class.display_name())
                     for i in range(len(node_class.selections())):
                         change_action = QAction(node_class.selections()[i].display_name(), submenu)
-                        from functools import partial
                         handler = partial(self.add_node_from_class, node_class, event.scenePos(), i)
                         change_action.triggered.connect(handler)
                         submenu.addAction(change_action)
                 else:
                     action = QAction(node_class.display_name(), add_node_menu)
-                    action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos():
-                                             self.add_node_from_class(nt, pos))
+                    handler = partial( self.add_node_from_class, node_class, event.scenePos(), None)
+                    action.triggered.connect(handler)
                     add_node_menu.addAction(action)
 
             menu.exec_(event.screenPos())
@@ -1768,24 +1880,16 @@ class PipelineScene(QGraphicsScene):
         save_states = {}
         for k, v in self.scene.states.items():
             save_states[k] = v.backend
+        view = self.view()
+        center = view.mapToScene(view.viewport().rect().center())
+        zoom = view.current_zoom
         with open(filepath, "wb") as f:
-            pickle.dump(save_states, f)
+            pickle.dump(AppState((center.x(), center.y()), zoom, save_states), f)
 
-    def load_scene(self, filepath):
-        self.clear_scene()
-
-        # Use the custom unpickler to load the scene
-        try:
-            # Import the helper function - adjust the import path as needed
-            save_states = load_scene_with_elements(filepath)
-        except ImportError:
-            # Fall back to regular unpickler if the helper isn't available
-            with open(filepath, "rb") as f:
-                save_states = pickle.load(f)
-
+    def load_from_save_states(self, save_states):
         # Process the loaded states as before
         node_ids = []
-        for _, v in save_states.items():
+        for v in save_states.values():
             if isinstance(v, NodeState):
                 node = NodeItem(v)
                 self.scene.add(node)
@@ -1794,7 +1898,7 @@ class PipelineScene(QGraphicsScene):
                     self.scene.add(PortItem(save_states[port_id], node))
                 node_ids.append(v.uid)
 
-        for _, v in save_states.items():
+        for v in save_states.values():
             if isinstance(v, EdgeState):
                 edge = EdgeItem(v)
                 self.scene.add(edge)
@@ -1806,11 +1910,25 @@ class PipelineScene(QGraphicsScene):
             node.update_vis_image()
             node.update_label_containers()
 
-    def clear_scene(self):
+    def load_scene(self, filepath):
         self.scene = Scene()
         for item in self.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
                 self.removeItem(item)
+
+        # Use the custom unpickler to load the scene
+        try:
+            # Import the helper function - adjust the import path as needed
+            app_state = load_scene_with_elements(filepath)
+        except ImportError:
+            # Fall back to regular unpickler if the helper isn't available
+            with open(filepath, "rb") as f:
+                app_state = pickle.load(f)
+        self.view().centerOn(*app_state.pos)
+        self.view().set_zoom(app_state.zoom)
+        self.load_from_save_states(app_state.save_states)
+        self.undo_stack.clear()
+        self.filepath = filepath
 
     def delete_edge(self, edge):
         """Delete the given edge"""
@@ -1832,6 +1950,12 @@ class PipelineScene(QGraphicsScene):
 
         for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
             self.scene.remove(port_id)
+
+        # Remove tooltip
+        if node._help_tooltip:
+            self.removeItem(node._help_tooltip)
+            self._help_tooltip = None
+
         self.scene.remove(node.uid)
         self.removeItem(node)
 
@@ -1848,43 +1972,122 @@ class PipelineScene(QGraphicsScene):
         clicked_item.node.prop_vals['_actual_seed'] = random.random()
         clicked_item.update_visualisations()
 
-
 class PipelineView(QGraphicsView):
     """View to interact with the pipeline scene"""
 
     def __init__(self, scene, parent=None):
         super().__init__(scene, parent)
+        self.mouse_pos = scene.sceneRect().center()
         self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.TextAntialiasing)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         self.setDragMode(QGraphicsView.RubberBandDrag)
         self.setBackgroundBrush(QBrush(QColor(240, 240, 240)))
 
-        # Enable zooming
-        self.setRenderHint(QPainter.Antialiasing)
-        self.setRenderHint(QPainter.TextAntialiasing)
+        # Zoom settings
+        self.default_zoom = 0.8
+        self.zoom_factor = 1.15
+        self.zoom_min = 0.1
+        self.zoom_max = 10.0
+        self.current_zoom = self.default_zoom
+        self.setTransform(QTransform().scale(self.current_zoom, self.current_zoom))
+
+        self.centerOn(0, 0)
 
         # Add grid lines
         self.draw_grid()
+
+    def event(self, event):
+        """Handle macOS native pinch-to-zoom gesture"""
+        if isinstance(event, QNativeGestureEvent) and event.gestureType() == Qt.ZoomNativeGesture:
+            return self.zoomNativeEvent(event)
+        return super().event(event)
+
+    def zoomNativeEvent(self, event: QNativeGestureEvent):
+        """Zoom in/out based on pinch gesture on macOS"""
+        # event.value() > 0 means pinch out (zoom in), < 0 means pinch in (zoom out)
+        sensitivity = 0.7
+        factor = 1 + event.value()*sensitivity  # Typically a small float, e.g. ±0.1
+        resulting_zoom = self.current_zoom * factor
+
+        if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
+            return True  # consume event, but no zoom
+
+        self.scale(factor, factor)
+        self.current_zoom *= factor
+        self.update()
+        return True  # event handled
+
+    def wheelEvent(self, event):
+        """Handle zoom or pan based on wheel/trackpad event"""
+        delta = event.angleDelta()
+        delta_x = delta.x()
+        delta_y = delta.y()
+        threshold = 15  # Dead zone for accidental touches
+
+        # Ctrl/Command+Scroll = Zoom
+        if event.modifiers() & Qt.ControlModifier:
+            if abs(delta_y) < threshold:
+                return  # Too small, ignore
+            zoom_in = delta_y > 0
+            factor = self.zoom_factor if zoom_in else 1 / self.zoom_factor
+            resulting_zoom = self.current_zoom * factor
+
+            if self.zoom_min <= resulting_zoom <= self.zoom_max:
+                self.scale(factor, factor)
+                self.current_zoom *= factor
+                self.update()
+            return
+
+        # Otherwise, treat as panning (touchpad 2-finger scroll)
+        # Use scroll deltas to translate the view
+        self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta_x)
+        self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta_y)
+
+    def zoom(self, factor):
+        resulting_zoom = self.current_zoom * factor
+        if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
+            return
+        self.scale(factor, factor)
+        self.current_zoom *= factor
+        self.update()
+
+    def set_zoom(self, zoom):
+        self.setTransform(QTransform().scale(zoom, zoom))
+        self.current_zoom = zoom
+        self.update()
+
+    def resetZoom(self):
+        self.set_zoom(self.default_zoom)
 
     def draw_grid(self):
         """Draw a grid background for the scene"""
         grid_size = 20
         scene_rect = self.scene().sceneRect()
 
+        left = int(scene_rect.left())
+        right = int(scene_rect.right())
+        top = int(scene_rect.top())
+        bottom = int(scene_rect.bottom())
+
+        # Align to the grid
+        left -= left % grid_size
+        top -= top % grid_size
+
         # Draw vertical lines
-        for x in range(0, int(scene_rect.width()), grid_size):
-            line = QGraphicsLineItem(x, 0, x, scene_rect.height())
+        for x in range(left, right + 1, grid_size):
+            line = QGraphicsLineItem(x, top, x, bottom)
             line.setPen(QPen(QColor(200, 200, 200), 1))
-            line.setZValue(-1000)  # Place behind all other items
+            line.setZValue(-1000)
             self.scene().addItem(line)
 
         # Draw horizontal lines
-        for y in range(0, int(scene_rect.height()), grid_size):
-            line = QGraphicsLineItem(0, y, scene_rect.width(), y)
+        for y in range(top, bottom + 1, grid_size):
+            line = QGraphicsLineItem(left, y, right, y)
             line.setPen(QPen(QColor(200, 200, 200), 1))
-            line.setZValue(-1000)  # Place behind all other items
+            line.setZValue(-1000)
             self.scene().addItem(line)
 
     def mousePressEvent(self, event):
@@ -1904,6 +2107,11 @@ class PipelineView(QGraphicsView):
             self.setDragMode(QGraphicsView.RubberBandDrag)
 
         super().mouseReleaseEvent(event)
+
+    def mouseMoveEvent(self, event):
+        # Get mouse position relative to the scene
+        self.mouse_pos = self.mapToScene(event.pos())
+        super().mouseMoveEvent(event)
 
 
 class PipelineEditor(QMainWindow):
@@ -1936,9 +2144,15 @@ class PipelineEditor(QMainWindow):
         file_menu = menu_bar.addMenu("File")
 
         # Add Save action
-        save_action = QAction("Save to file", self)
-        save_action.setShortcut("Ctrl+S")
+        save_action = QAction("Save", self)
+        save_action.setShortcut(QKeySequence.Save)
         save_action.triggered.connect(self.save_scene)
+        file_menu.addAction(save_action)
+
+        # Add Save As action
+        save_action = QAction("Save As", self)
+        save_action.setShortcut(QKeySequence.SaveAs)
+        save_action.triggered.connect(self.save_as_scene)
         file_menu.addAction(save_action)
 
         # Add Load action
@@ -1949,29 +2163,79 @@ class PipelineEditor(QMainWindow):
 
         scene_menu = menu_bar.addMenu("Scene")
 
-        # Add Clear action
-        clear_action = QAction("Clear Scene", self)
-        clear_action.setShortcut("Ctrl+C")
-        clear_action.triggered.connect(self.clear_scene)
-        scene_menu.addAction(clear_action)
+        # Add Delete action
+        delete = QAction("Delete", self)
+        delete.setShortcut(Qt.Key_Backspace)
+        delete.triggered.connect(self.delete_selected_items)
+        scene_menu.addAction(delete)
+
+        copy = QAction("Copy", self)
+        copy.setShortcut(QKeySequence.Copy)
+        copy.triggered.connect(self.copy_selected_items)
+        copy.setMenuRole(QAction.NoRole)
+        scene_menu.addAction(copy)
+
+        paste = QAction("Paste", self)
+        paste.setShortcut(QKeySequence.Paste)
+        paste.triggered.connect(self.paste_items)
+        paste.setMenuRole(QAction.NoRole)
+        scene_menu.addAction(paste)
 
         # Add Select all action
         select_all = QAction("Select All", self)
-        select_all.setShortcut("Ctrl+A")
+        select_all.setShortcut(QKeySequence.SelectAll)
         select_all.triggered.connect(self.select_all)
+        select_all.setMenuRole(QAction.NoRole)
         scene_menu.addAction(select_all)
 
-    def save_scene(self):
-        file_path, _ = QFileDialog.getSaveFileName(
+        # Add Undo action
+        undo = self.scene.undo_stack.createUndoAction(self, "Undo")
+        undo.setShortcut(QKeySequence.Undo)
+        scene_menu.addAction(undo)
+
+        # Add Redo action
+        redo = self.scene.undo_stack.createRedoAction(self, "Redo")
+        redo.setShortcut(QKeySequence.Redo)
+        scene_menu.addAction(redo)
+
+        # Add Zoom in action
+        zoom_in = QAction("Zoom In", self)
+        zoom_in.setShortcut(QKeySequence.ZoomIn)
+        zoom_in.triggered.connect(lambda: self.view.zoom(self.view.zoom_factor))
+        scene_menu.addAction(zoom_in)
+
+        # Add Zoom out action
+        zoom_out = QAction("Zoom Out", self)
+        zoom_out.setShortcut(QKeySequence.ZoomOut)
+        zoom_out.triggered.connect(lambda: self.view.zoom(1/self.view.zoom_factor))
+        scene_menu.addAction(zoom_out)
+
+        # Add Reset zoom action
+        reset_zoom = QAction("Reset Zoom", self)
+        reset_zoom.setShortcut("Ctrl+0")
+        reset_zoom.triggered.connect(self.view.resetZoom)
+        scene_menu.addAction(reset_zoom)
+
+    def save_as_scene(self):
+        filepath, _ = QFileDialog.getSaveFileName(
             self,
             "Save Pipeline Scene",
             "",
             "Pipeline Scene Files (*.pipeline);;All Files (*)"
         )
 
-        if file_path:
-            self.scene.save_scene(file_path)
-            self.statusBar().showMessage(f"Scene saved to {file_path}", 3000)
+        if filepath:
+            self.scene.save_scene(filepath)
+
+    def save_scene(self, filepath=None):
+        if filepath:
+            save_filepath = filepath
+        elif self.scene.filepath:
+            save_filepath = self.scene.filepath
+        else:
+            return self.save_as_scene()
+        self.scene.save_scene(save_filepath)
+        self.statusBar().showMessage(f"Scene saved to {save_filepath}", 3000)
 
     def load_scene(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -1987,13 +2251,131 @@ class PipelineEditor(QMainWindow):
             self.view.update()
             self.statusBar().showMessage(f"Scene loaded from {file_path}", 3000)
 
-    def clear_scene(self):
-        self.scene.clear_scene()
-
     def select_all(self):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
                 item.setSelected(True)
+
+    def delete_selected_items(self):
+        nodes = []
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                nodes.append(item)
+            elif isinstance(item, EdgeItem):
+                self.scene.delete_edge(item)
+        for node in nodes:
+            self.scene.delete_node(node)
+
+    def copy_selected_items(self):
+        nodes = []
+        edges = []
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                nodes.append(item)
+            elif isinstance(item, EdgeItem):
+                edges.append(item)
+        if not (nodes or edges):
+            return
+
+        node_states = {}
+        port_states = {}
+        for node in nodes:
+            node_state = copy.deepcopy(node.backend)
+            # Set node uid
+            node_uid = gen_uid()
+            node_state.uid = node_uid
+            node_state.node.node_id = node_uid
+            # Save to dictionary with old uid key
+            node_states[node.uid] = node_state
+
+            for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
+                port = self.scene.scene.get(port_id)
+                port_state = copy.deepcopy(port.backend)
+                # Set port uid
+                port_state.uid = gen_uid()
+                port_state.parent_node_id = node_uid
+                # Save to dictionary with old uid key
+                port_states[port.uid] = port_state
+
+        edge_states = {}
+        for edge in edges:
+            edge_state = copy.deepcopy(edge.backend)
+            # Set edge uid
+            edge_state.uid = gen_uid()
+            # Save to dictionary with old uid key
+            edge_states[edge.uid] = edge_state
+
+        # Rewire the relative connections
+        for node_state in node_states.values():
+            # Reconfigure input port ids
+            input_port_ids = []
+            for input_port_id in node_state.input_port_ids:
+                input_port_ids.append(port_states[input_port_id].uid)
+            node_state.input_port_ids = input_port_ids
+            # Reconfigure output port ids
+            output_port_ids = []
+            for output_port_id in node_state.output_port_ids:
+                output_port_ids.append(port_states[output_port_id].uid)
+            node_state.output_port_ids = output_port_ids
+
+        new_edge_states = {} # Remove edges not connected on both ends of copied nodes
+        for k, edge_state in edge_states.items():
+            if (edge_state.src_port_id in port_states) and (edge_state.dst_port_id in port_states):
+                edge_state.src_port_id = port_states[edge_state.src_port_id].uid
+                edge_state.dst_port_id = port_states[edge_state.dst_port_id].uid
+                new_edge_states[k] = edge_state
+
+        for port_state in port_states.values():
+            edge_ids = []
+            for edge_id in port_state.edge_ids:
+                if edge_id in new_edge_states:
+                    edge_ids.append(new_edge_states[edge_id].uid)
+            port_state.edge_ids = edge_ids
+
+        # Populate save states
+        save_states = {}
+        for node_state in node_states.values():
+            save_states[node_state.uid] = node_state
+        for port_state in port_states.values():
+            save_states[port_state.uid] = port_state
+        for edge_state in new_edge_states.values():
+            save_states[edge_state.uid] = edge_state
+
+        if save_states:
+            # Calculate bounding rect
+            bounding_rect = None
+            for item in self.scene.selectedItems():
+                if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
+                    if item.uid in node_states or item.uid in new_edge_states:
+                        # Make part of bounding rect
+                        if bounding_rect:
+                            bounding_rect = bounding_rect.united(item.sceneBoundingRect())
+                        else:
+                            bounding_rect = item.sceneBoundingRect()
+            assert bounding_rect
+
+            # Save to clipboard
+            mime_data = QMimeData()
+            mime_data.setData("application/pipeline_editor_items", pickle.dumps((save_states, bounding_rect.center())))
+            clipboard = QApplication.clipboard()
+            clipboard.setMimeData(mime_data)
+
+    def paste_items(self):
+        clipboard = QApplication.clipboard()
+        mime = clipboard.mimeData()
+
+        if mime.hasFormat("application/pipeline_editor_items"):
+            raw_data = mime.data("application/pipeline_editor_items")
+            # Deserialize with pickle
+            save_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
+            # Modify position
+            offset = self.view.mouse_pos - bounding_rect_centre
+            for state in save_states.values():
+                if isinstance(state, NodeState) or isinstance(state, PortState):
+                    state.x += offset.x()
+                    state.y += offset.y()
+            # Perform paste
+            self.scene.undo_stack.push(PasteCmd(self.scene, save_states))
 
 
 if __name__ == "__main__":
