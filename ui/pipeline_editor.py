@@ -1637,6 +1637,25 @@ class RemovePropertyPortCmd(QUndoCommand):
     def redo(self):
         self.node_item.remove_port_by_name(self.prop_key_name)
 
+class PasteCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, save_states, description="Paste"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.save_states = save_states
+
+    def undo(self):
+        items_to_remove = {}
+        for uid, state in self.save_states.items():
+            if not isinstance(state, PortState):
+                items_to_remove[uid] = self.scene.get(uid)
+        for uid, item in items_to_remove.items():
+            self.scene.remove(uid)
+            self.pipeline_scene.removeItem(item)
+
+    def redo(self):
+        self.pipeline_scene.load_from_save_states(self.save_states)
+
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
@@ -2349,7 +2368,7 @@ class PipelineEditor(QMainWindow):
                     state.x += offset.x()
                     state.y += offset.y()
             # Perform paste
-            self.scene.load_from_save_states(save_states)
+            self.scene.undo_stack.push(PasteCmd(self.scene, save_states))
 
 
 if __name__ == "__main__":
