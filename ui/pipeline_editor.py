@@ -1983,6 +1983,7 @@ class PipelineView(QGraphicsView):
 
     def __init__(self, scene, parent=None):
         super().__init__(scene, parent)
+        self.mouse_pos = scene.sceneRect().center()
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.TextAntialiasing)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
@@ -2112,6 +2113,11 @@ class PipelineView(QGraphicsView):
             self.setDragMode(QGraphicsView.RubberBandDrag)
 
         super().mouseReleaseEvent(event)
+
+    def mouseMoveEvent(self, event):
+        # Get mouse position relative to the scene
+        self.mouse_pos = self.mapToScene(event.pos())
+        super().mouseMoveEvent(event)
 
 
 class PipelineEditor(QMainWindow):
@@ -2352,8 +2358,7 @@ class PipelineEditor(QMainWindow):
             # Deserialize with pickle
             save_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
             # Modify position
-            view_centre = self.view.mapToScene(self.view.viewport().rect().center())
-            offset = view_centre - bounding_rect_centre
+            offset = self.view.mouse_pos - bounding_rect_centre
             for state in save_states.values():
                 if isinstance(state, NodeState) or isinstance(state, PortState):
                     state.x += offset.x()
