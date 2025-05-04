@@ -218,7 +218,8 @@ class NodeItem(QGraphicsRectItem):
 
             """
 
-            self._help_tooltip = QGraphicsTextItem(self)
+            self._help_tooltip = QGraphicsTextItem()
+            self.scene().addItem(self._help_tooltip)
             self._help_tooltip.setDefaultTextColor(QColor("#333333"))
             self._help_tooltip.setHtml(tooltip_html)
             self._help_tooltip.setZValue(100)  # Make sure it's on top
@@ -228,11 +229,11 @@ class NodeItem(QGraphicsRectItem):
         tooltip_rect = self._help_tooltip.boundingRect()
 
         # Center above the icon with some spacing
-        tooltip_pos = QPointF(
+        tooltip_pos_local = QPointF(
             self._help_icon_rect.center().x() - tooltip_rect.width() / 2,
             self._help_icon_rect.top() - tooltip_rect.height()
         )
-        self._help_tooltip.setPos(tooltip_pos)
+        self._help_tooltip.setPos(self.mapToScene(tooltip_pos_local))
         self._help_tooltip.show()
 
     def resize(self, width, height):
@@ -1832,6 +1833,13 @@ class PipelineScene(QGraphicsScene):
 
         for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
             self.scene.remove(port_id)
+
+        # Remove tooltip
+        if node._help_tooltip:
+            self.scene().removeItem(node._help_tooltip)
+            self._help_tooltip = None
+
+        self.scene().removeItem(self)
         self.scene.remove(node.uid)
         self.removeItem(node)
 
@@ -1893,7 +1901,6 @@ class PipelineView(QGraphicsView):
         self.scale(factor, factor)
         self.current_zoom *= factor
         self.update()
-        print(self.current_zoom)
         return True  # event handled
 
     def wheelEvent(self, event):
