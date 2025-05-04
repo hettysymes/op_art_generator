@@ -1637,28 +1637,6 @@ class RemovePropertyPortCmd(QUndoCommand):
     def redo(self):
         self.node_item.remove_port_by_name(self.prop_key_name)
 
-class ClearSceneCmd(QUndoCommand):
-    def __init__(self, pipeline_scene, description="Clear scene"):
-        super().__init__(description)
-        self.pipeline_scene = pipeline_scene
-        self.save_states = None
-
-    def undo(self):
-        assert self.save_states is not None
-        self.pipeline_scene.load_from_save_states(self.save_states)
-
-    def redo(self):
-        # Store save states for undo
-        self.save_states = {}
-        for k, v in self.pipeline_scene.scene.states.items():
-            self.save_states[k] = v.backend
-
-        # Perform clear
-        self.pipeline_scene.scene = Scene()
-        for item in self.pipeline_scene.items():
-            if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
-                self.pipeline_scene.removeItem(item)
-
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
@@ -1932,9 +1910,6 @@ class PipelineScene(QGraphicsScene):
         self.load_from_save_states(app_state.save_states)
         self.undo_stack.clear()
         self.filepath = filepath
-
-    def clear_scene(self):
-        self.undo_stack.push(ClearSceneCmd(self))
 
     def delete_edge(self, edge):
         """Delete the given edge"""
@@ -2256,9 +2231,6 @@ class PipelineEditor(QMainWindow):
             # Update the view to reflect the loaded scene
             self.view.update()
             self.statusBar().showMessage(f"Scene loaded from {file_path}", 3000)
-
-    def clear_scene(self):
-        self.scene.clear_scene()
 
     def select_all(self):
         for item in self.scene.items():
