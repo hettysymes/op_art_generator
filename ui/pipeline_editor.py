@@ -6,6 +6,8 @@ import pickle
 import random
 import sys
 import tempfile
+import traceback
+from functools import partial
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QEvent
 from PyQt5.QtCore import QPointF
@@ -16,7 +18,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QStyledItemDelegate, QColorDialog,
-                             QGraphicsTextItem, QLabel)
+                             QGraphicsTextItem, QLabel, QUndoStack, QUndoCommand)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 
@@ -26,7 +28,7 @@ from ui.nodes.all_nodes import node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.immutable_elem_node import load_scene_with_elements
-from ui.nodes.nodes import CombinationNode
+from ui.nodes.nodes import CombinationNode, Node
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
@@ -34,7 +36,6 @@ from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
 from ui.selectable_renderer import SelectableSvgElement
 from ui.vis_types import ErrorFig, Visualisable
-
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
@@ -1536,6 +1537,25 @@ class NodePropertiesDialog(QDialog):
 
         super().accept()
 
+class AddNewNodeCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, pos, node: Node, description="Add new node"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.pos = pos
+        self.node = node
+        self.node_item = None
+
+    def undo(self):
+        if self.node_item:
+            self.pipeline_scene.delete_node(self.node_item)
+
+    def redo(self):
+        self.node_item = NodeItem(NodeState(self.node.node_id, self.pos.x(), self.pos.y(), [], [], self.node, 150, 150))
+        self.scene.add(self.node_item)
+        self.pipeline_scene.addItem(self.node_item)
+        self.node_item.create_ports()
+        self.node_item.update_vis_image()
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -1554,6 +1574,7 @@ class PipelineScene(QGraphicsScene):
         self.scene = Scene()
         self.temp_dir = temp_dir
         print(temp_dir)
+        self.undo_stack = QUndoStack()
 
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
@@ -1569,12 +1590,8 @@ class PipelineScene(QGraphicsScene):
         return self.add_new_node(pos, node)
 
     def add_new_node(self, pos, node):
-        new_node = NodeItem(NodeState(node.node_id, pos.x(), pos.y(), [], [], node, 150, 150))
-        self.scene.add(new_node)
-        self.addItem(new_node)
-        new_node.create_ports()
-        new_node.update_vis_image()
-        return new_node
+        self.undo_stack.push(AddNewNodeCmd(self, pos, node))
+        return self.scene.get(node.node_id)
 
     def edit_node_properties(self, node):
         """Open a dialog to edit the node's properties"""
@@ -1753,14 +1770,13 @@ class PipelineScene(QGraphicsScene):
                     submenu = add_node_menu.addMenu(node_class.display_name())
                     for i in range(len(node_class.selections())):
                         change_action = QAction(node_class.selections()[i].display_name(), submenu)
-                        from functools import partial
                         handler = partial(self.add_node_from_class, node_class, event.scenePos(), i)
                         change_action.triggered.connect(handler)
                         submenu.addAction(change_action)
                 else:
                     action = QAction(node_class.display_name(), add_node_menu)
-                    action.triggered.connect(lambda checked=False, nt=node_class, pos=event.scenePos():
-                                             self.add_node_from_class(nt, pos))
+                    handler = partial( self.add_node_from_class, node_class, event.scenePos(), None)
+                    action.triggered.connect(handler)
                     add_node_menu.addAction(action)
 
             menu.exec_(event.screenPos())
@@ -2042,6 +2058,16 @@ class PipelineEditor(QMainWindow):
         select_all.setShortcut(QKeySequence.SelectAll)
         select_all.triggered.connect(self.select_all)
         scene_menu.addAction(select_all)
+
+        # Add Undo action
+        undo = self.scene.undo_stack.createUndoAction(self, "Undo")
+        undo.setShortcut(QKeySequence.Undo)
+        scene_menu.addAction(undo)
+
+        # Add Redo action
+        redo = self.scene.undo_stack.createRedoAction(self, "Redo")
+        redo.setShortcut(QKeySequence.Redo)
+        scene_menu.addAction(redo)
 
         # Add Zoom in action
         zoom_in = QAction("Zoom In", self)
