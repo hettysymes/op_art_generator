@@ -9,7 +9,7 @@ import tempfile
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -1865,8 +1865,70 @@ class PipelineView(QGraphicsView):
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.TextAntialiasing)
 
+        # Set zoom parameters
+        self.zoom_factor = 1.15
+        self.zoom_min = 0.1
+        self.zoom_max = 10.0
+        self.current_zoom = 1.0
+
         # Add grid lines
         self.draw_grid()
+
+    def wheelEvent(self, event):
+        """Handle zoom on mouse wheel event"""
+        # Get the zoom direction based on wheel delta
+        zoom_in = event.angleDelta().y() > 0
+
+        # Calculate zoom factor
+        if zoom_in:
+            factor = self.zoom_factor
+        else:
+            factor = 1 / self.zoom_factor
+
+        # Apply zoom constraints
+        resulting_zoom = self.current_zoom * factor
+        if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
+            return
+
+        # Apply zoom
+        self.scale(factor, factor)
+        self.current_zoom *= factor
+
+        # Update the scene
+        self.update()
+
+    def keyPressEvent(self, event):
+        """Handle keyboard shortcuts for zooming"""
+        # Ctrl+Plus or Ctrl+Equal for zoom in (most keyboards use the same key)
+        if (event.modifiers() & Qt.ControlModifier) and (event.key() == Qt.Key_Plus or event.key() == Qt.Key_Equal):
+            # Zoom in with Ctrl+Plus/Equal
+            self.zoom(self.zoom_factor)
+        # Ctrl+Minus for zoom out
+        elif (event.modifiers() & Qt.ControlModifier) and event.key() == Qt.Key_Minus:
+            # Zoom out with Ctrl+Minus
+            self.zoom(1/self.zoom_factor)
+        # Ctrl+0 for reset zoom
+        elif (event.modifiers() & Qt.ControlModifier) and event.key() == Qt.Key_0:
+            # Reset zoom with Ctrl+0
+            self.resetZoom()
+        else:
+            super().keyPressEvent(event)
+
+    def zoom(self, factor):
+        """Helper method to apply zoom with constraints"""
+        resulting_zoom = self.current_zoom * factor
+        if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
+            return
+
+        self.scale(factor, factor)
+        self.current_zoom *= factor
+        self.update()
+
+    def resetZoom(self):
+        """Reset to original zoom level"""
+        self.setTransform(QTransform())
+        self.current_zoom = 1.0
+        self.update()
 
     def draw_grid(self):
         """Draw a grid background for the scene"""
