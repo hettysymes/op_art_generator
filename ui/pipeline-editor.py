@@ -7,9 +7,9 @@ import random
 import sys
 import tempfile
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QEvent
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QFocusEvent
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -1884,7 +1884,8 @@ class PipelineView(QGraphicsView):
     def zoomNativeEvent(self, event: QNativeGestureEvent):
         """Zoom in/out based on pinch gesture on macOS"""
         # event.value() > 0 means pinch out (zoom in), < 0 means pinch in (zoom out)
-        factor = 1 + event.value()  # Typically a small float, e.g. ±0.1
+        sensitivity = 0.7
+        factor = 1 + event.value()*sensitivity  # Typically a small float, e.g. ±0.1
         resulting_zoom = self.current_zoom * factor
 
         if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
@@ -1897,7 +1898,13 @@ class PipelineView(QGraphicsView):
 
     def wheelEvent(self, event):
         """Handle zoom on mouse wheel event"""
-        zoom_in = event.angleDelta().y() > 0
+        delta_y = event.angleDelta().y()
+        threshold = 15  # Typical full tick is 120; 15 is a good "dead zone" for noise
+
+        if abs(delta_y) < threshold:
+            return  # Ignore small/unintentional scrolls (e.g., two-finger tap)
+
+        zoom_in = delta_y > 0
         factor = self.zoom_factor if zoom_in else 1 / self.zoom_factor
         resulting_zoom = self.current_zoom * factor
 
