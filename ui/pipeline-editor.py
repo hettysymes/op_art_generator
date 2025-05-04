@@ -1897,23 +1897,30 @@ class PipelineView(QGraphicsView):
         return True  # event handled
 
     def wheelEvent(self, event):
-        """Handle zoom on mouse wheel event"""
-        delta_y = event.angleDelta().y()
-        threshold = 15  # Typical full tick is 120; 15 is a good "dead zone" for noise
+        """Handle zoom or pan based on wheel/trackpad event"""
+        delta = event.angleDelta()
+        delta_x = delta.x()
+        delta_y = delta.y()
+        threshold = 15  # Dead zone for accidental touches
 
-        if abs(delta_y) < threshold:
-            return  # Ignore small/unintentional scrolls (e.g., two-finger tap)
+        # Ctrl/Command+Scroll = Zoom
+        if event.modifiers() & Qt.ControlModifier:
+            if abs(delta_y) < threshold:
+                return  # Too small, ignore
+            zoom_in = delta_y > 0
+            factor = self.zoom_factor if zoom_in else 1 / self.zoom_factor
+            resulting_zoom = self.current_zoom * factor
 
-        zoom_in = delta_y > 0
-        factor = self.zoom_factor if zoom_in else 1 / self.zoom_factor
-        resulting_zoom = self.current_zoom * factor
-
-        if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
+            if self.zoom_min <= resulting_zoom <= self.zoom_max:
+                self.scale(factor, factor)
+                self.current_zoom *= factor
+                self.update()
             return
 
-        self.scale(factor, factor)
-        self.current_zoom *= factor
-        self.update()
+        # Otherwise, treat as panning (touchpad 2-finger scroll)
+        # Use scroll deltas to translate the view
+        self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta_x)
+        self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta_y)
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts for zooming"""
