@@ -1829,12 +1829,6 @@ class PipelineScene(QGraphicsScene):
             properties_action = QAction("Properties...", menu)
             properties_action.triggered.connect(lambda: self.edit_node_properties(clicked_item))
 
-            duplicate_action = QAction("Duplicate Node", menu)
-            duplicate_action.triggered.connect(lambda: self.duplicate_node(clicked_item))
-
-            delete_action = QAction("Delete Node", menu)
-            delete_action.triggered.connect(lambda: self.delete_node(clicked_item))
-
             if isinstance(clicked_item, NodeItem) and isinstance(clicked_item.node, CombinationNode):
                 submenu = QMenu(f"Change {clicked_item.node.display_name()} to...")
                 for i in range(len(clicked_item.node.selections())):
@@ -1851,8 +1845,6 @@ class PipelineScene(QGraphicsScene):
                 randomise_action.triggered.connect(lambda: self.randomise(clicked_item))
                 menu.addAction(randomise_action)
 
-            menu.addAction(duplicate_action)
-            menu.addAction(delete_action)
             menu.exec_(event.screenPos())
         else:
             menu = QMenu()
@@ -1963,11 +1955,6 @@ class PipelineScene(QGraphicsScene):
     def change_node_selection(self, clicked_item: NodeItem, i):
         clicked_item.node.set_selection(i)
         clicked_item.update_visualisations()
-
-    def duplicate_node(self, node_item: NodeItem):
-        new_node = copy.deepcopy(node_item.backend.node)
-        new_node.node_id = gen_uid()
-        self.add_new_node(node_item.pos() + QPointF(10, 10), new_node)
 
     def randomise(self, clicked_item: RandomColourSelectorNode):
         clicked_item.node.prop_vals['_actual_seed'] = random.random()
