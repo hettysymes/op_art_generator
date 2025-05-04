@@ -2173,6 +2173,11 @@ class PipelineEditor(QMainWindow):
         copy.triggered.connect(self.copy_selected_items)
         scene_menu.addAction(copy)
 
+        paste = QAction("Paste", self)
+        paste.setShortcut(QKeySequence.Paste)
+        paste.triggered.connect(self.paste_items)
+        scene_menu.addAction(paste)
+
         # Add Select all action
         select_all = QAction("Select All", self)
         select_all.setShortcut(QKeySequence.SelectAll)
@@ -2258,6 +2263,17 @@ class PipelineEditor(QMainWindow):
                 nodes.append(item)
             elif isinstance(item, EdgeItem):
                 edges.append(item)
+        if not (nodes or edges):
+            return
+
+        # for item in nodes + edges:
+        #     bounding_rect = selected_items[0].sceneBoundingRect()
+        #     for item in selected_items[1:]:
+        #         bounding_rect = bounding_rect.united(item.sceneBoundingRect())
+        #
+        #     # Get the center of the bounding rectangle
+        #     center_point = bounding_rect.center()
+        #     print("Center of selection:", center_point)
 
         node_states = {}
         port_states = {}
@@ -2303,20 +2319,44 @@ class PipelineEditor(QMainWindow):
         for port_state in port_states.values():
             edge_ids = []
             for edge_id in port_state.edge_ids:
-                edge_ids.append(edge_states[edge_id].uid)
+                if edge_id in edge_states:
+                    edge_ids.append(edge_states[edge_id].uid)
             port_state.edge_ids = edge_ids
 
-        for edge_state in edge_states.values():
-            edge_state.src_port_id = port_states[edge_state.src_port_id].uid
-            edge_state.dst_port_id = port_states[edge_state.dst_port_id].uid
+        edges_to_remove = [] # Remove edges not connected on both ends of copied nodes
+        for k, edge_state in edge_states.items():
+            if (edge_state.src_port_id in port_states) and (edge_state.dst_port_id in port_states):
+                edge_state.src_port_id = port_states[edge_state.src_port_id].uid
+                edge_state.dst_port_id = port_states[edge_state.dst_port_id].uid
+            else:
+                edges_to_remove.append(k)
 
-        dict_data = {'node_states': list(node_states.values()),
-                     'port_states': list(port_states.values()),
-                     'edge_states': list(edge_states.values())}
-        mime_data = QMimeData()
-        mime_data.setData("application/pipeline_editor_items", pickle.dumps(dict_data))
+        # Populate save states
+        save_states = {}
+        for node_state in node_states.values():
+            save_states[node_state.uid] = node_state
+        for port_state in port_states.values():
+            save_states[port_state.uid] = port_state
+        for k, edge_state in edge_states.items():
+            if k not in edges_to_remove:
+                save_states[edge_state.uid] = edge_state
+        # Save to clipboard
+        if save_states:
+            mime_data = QMimeData()
+            mime_data.setData("application/pipeline_editor_items", pickle.dumps(save_states))
+            clipboard = QApplication.clipboard()
+            clipboard.setMimeData(mime_data)
+
+    def paste_items(self):
         clipboard = QApplication.clipboard()
-        clipboard.setMimeData(mime_data)
+        mime = clipboard.mimeData()
+
+        if mime.hasFormat("application/pipeline_editor_items"):
+            raw_data = mime.data("application/pipeline_editor_items")
+            # Deserialize with pickle
+            save_states = pickle.loads(bytes(raw_data))
+            # Modify position
+            self.scene.load_from_save_states(save_states)
 
 
 if __name__ == "__main__":
