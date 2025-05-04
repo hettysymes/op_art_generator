@@ -2169,11 +2169,11 @@ class PipelineEditor(QMainWindow):
 
         scene_menu = menu_bar.addMenu("Scene")
 
-        # Add Clear action
-        # clear_action = QAction("Clear Scene", self)
-        # clear_action.setShortcut("Ctrl+D")
-        # clear_action.triggered.connect(self.clear_scene)
-        # scene_menu.addAction(clear_action)
+        # Add Delete action
+        delete = QAction("Delete", self)
+        delete.setShortcut(Qt.Key_Backspace)
+        delete.triggered.connect(self.delete_selected_items)
+        scene_menu.addAction(delete)
 
         copy = QAction("Copy", self)
         copy.setShortcut(QKeySequence.Copy)
@@ -2261,6 +2261,16 @@ class PipelineEditor(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
                 item.setSelected(True)
+
+    def delete_selected_items(self):
+        nodes = []
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                nodes.append(item)
+            elif isinstance(item, EdgeItem):
+                self.scene.delete_edge(item)
+        for node in nodes:
+            self.scene.delete_node(node)
 
     def copy_selected_items(self):
         nodes = []
