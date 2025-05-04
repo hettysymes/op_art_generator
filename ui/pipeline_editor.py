@@ -885,9 +885,6 @@ class HelpIconLabel(QPushButton):
         wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{description}</div>"
         self.setToolTip(wrapped_text)
 
-        # Remove focus outline
-        self.setFocusPolicy(Qt.NoFocus)
-
 
 class ModifyPropertyPortButton(QPushButton):
     def __init__(self, on_click_callback, adding, max_width=300, parent=None):
@@ -920,9 +917,6 @@ class ModifyPropertyPortButton(QPushButton):
         width_px = str(max_width) + "px"
         wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{self.description_pair[int(self.adding)]}</div>"
         self.setToolTip(wrapped_text)
-
-        # Remove focus outline
-        self.setFocusPolicy(Qt.NoFocus)
 
         # Connect the click signal to the callback
         self.user_callback = on_click_callback
@@ -1015,13 +1009,11 @@ class NodePropertiesDialog(QDialog):
         widget_layout.addWidget(widget)
 
         def change_property_port(adding):
+            scene = self.node_item.scene()
             if adding:
-                for port_def in node_item.node.prop_port_defs():
-                    if port_def.key_name == prop.key_name:
-                        node_item.add_port(port_def)
-                        break
+                scene.undo_stack.push(AddPropertyPort(scene, self.node_item, prop.key_name))
             else:
-                node_item.remove_port_by_name(prop.key_name)
+                scene.undo_stack.push(RemovePropertyPort(scene, self.node_item, prop.key_name))
 
         # Add the help icon after the widget (on the right)
         if prop.description:
@@ -1526,10 +1518,13 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
 
-            props_changed[prop_name] = (self.node_item.node.prop_vals[prop_name], value)
+            old_val = self.node_item.node.prop_vals[prop_name]
+            if old_val != value:
+                props_changed[prop_name] = (copy.deepcopy(old_val), value)
 
-        scene = self.node_item.scene()
-        scene.undo_stack.push(ChangePropertiesCmd(scene, self.node_item, props_changed))
+        if props_changed:
+            scene = self.node_item.scene()
+            scene.undo_stack.push(ChangePropertiesCmd(scene, self.node_item, props_changed))
         super().accept()
 
 class AddNewNodeCmd(QUndoCommand):
@@ -1575,7 +1570,7 @@ class AddNewEdgeCmd(QUndoCommand):
         self.edge.dest_port.parentItem().update_visualisations()
 
 class ChangePropertiesCmd(QUndoCommand):
-    def __init__(self, pipeline_scene, node_item: NodeItem, props_changed, description="Add new edge"):
+    def __init__(self, pipeline_scene, node_item: NodeItem, props_changed, description="Change properties"):
         super().__init__(description)
         self.pipeline_scene = pipeline_scene
         self.scene: Scene = pipeline_scene.scene
@@ -1605,6 +1600,40 @@ class ChangePropertiesCmd(QUndoCommand):
         for prop_name, value in self.props_changed.items():
             props[prop_name] = value[1]
         self.update_properties(props)
+
+class AddPropertyPort(QUndoCommand):
+    def __init__(self, pipeline_scene, node_item: NodeItem, prop_key_name, description="Add property port"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.node_item = node_item
+        self.prop_key_name = prop_key_name
+
+    def undo(self):
+        self.node_item.remove_port_by_name(self.prop_key_name)
+
+    def redo(self):
+        for port_def in self.node_item.node.prop_port_defs():
+            if port_def.key_name == self.prop_key_name:
+                self.node_item.add_port(port_def)
+                break
+
+class RemovePropertyPort(QUndoCommand):
+    def __init__(self, pipeline_scene, node_item: NodeItem, prop_key_name, description="Remove property port"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.node_item = node_item
+        self.prop_key_name = prop_key_name
+
+    def undo(self):
+        for port_def in self.node_item.node.prop_port_defs():
+            if port_def.key_name == self.prop_key_name:
+                self.node_item.add_port(port_def)
+                break
+
+    def redo(self):
+        self.node_item.remove_port_by_name(self.prop_key_name)
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
