@@ -1919,6 +1919,7 @@ class PipelineScene(QGraphicsScene):
             with open(filepath, "rb") as f:
                 save_states = pickle.load(f)
         self.load_from_save_states(save_states)
+        self.undo_stack.clear()
 
     def clear_scene(self):
         self.undo_stack.push(ClearSceneCmd(self))
