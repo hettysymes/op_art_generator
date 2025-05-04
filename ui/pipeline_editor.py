@@ -1889,7 +1889,7 @@ class PipelineScene(QGraphicsScene):
     def load_from_save_states(self, save_states):
         # Process the loaded states as before
         node_ids = []
-        for _, v in save_states.items():
+        for v in save_states.values():
             if isinstance(v, NodeState):
                 node = NodeItem(v)
                 self.scene.add(node)
@@ -1898,7 +1898,7 @@ class PipelineScene(QGraphicsScene):
                     self.scene.add(PortItem(save_states[port_id], node))
                 node_ids.append(v.uid)
 
-        for _, v in save_states.items():
+        for v in save_states.values():
             if isinstance(v, EdgeState):
                 edge = EdgeItem(v)
                 self.scene.add(edge)
@@ -2269,17 +2269,11 @@ class PipelineEditor(QMainWindow):
     def copy_selected_items(self):
         nodes = []
         edges = []
-        bounding_rect = None
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
                 nodes.append(item)
             elif isinstance(item, EdgeItem):
                 edges.append(item)
-            # Calculate bounding rect
-            if bounding_rect:
-                bounding_rect = bounding_rect.united(item.sceneBoundingRect())
-            else:
-                bounding_rect = item.sceneBoundingRect()
         if not (nodes or edges):
             return
 
@@ -2346,8 +2340,21 @@ class PipelineEditor(QMainWindow):
             save_states[port_state.uid] = port_state
         for edge_state in new_edge_states.values():
             save_states[edge_state.uid] = edge_state
-        # Save to clipboard
+
         if save_states:
+            # Calculate bounding rect
+            bounding_rect = None
+            for item in self.scene.selectedItems():
+                if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
+                    if item.uid in node_states or item.uid in new_edge_states:
+                        # Make part of bounding rect
+                        if bounding_rect:
+                            bounding_rect = bounding_rect.united(item.sceneBoundingRect())
+                        else:
+                            bounding_rect = item.sceneBoundingRect()
+            assert bounding_rect
+
+            # Save to clipboard
             mime_data = QMimeData()
             mime_data.setData("application/pipeline_editor_items", pickle.dumps((save_states, bounding_rect.center())))
             clipboard = QApplication.clipboard()
