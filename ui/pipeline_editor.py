@@ -2124,6 +2124,7 @@ class PipelineEditor(QMainWindow):
         self.scene = PipelineScene(temp_dir)
         self.view = PipelineView(self.scene)
         self.setCentralWidget(self.view)
+        self.clipboard = None
 
         # Create menu bar
         self.setup_menu()
@@ -2162,10 +2163,15 @@ class PipelineEditor(QMainWindow):
         scene_menu = menu_bar.addMenu("Scene")
 
         # Add Clear action
-        clear_action = QAction("Clear Scene", self)
-        clear_action.setShortcut("Ctrl+C")
-        clear_action.triggered.connect(self.clear_scene)
-        scene_menu.addAction(clear_action)
+        # clear_action = QAction("Clear Scene", self)
+        # clear_action.setShortcut("Ctrl+D")
+        # clear_action.triggered.connect(self.clear_scene)
+        # scene_menu.addAction(clear_action)
+
+        copy = QAction("Copy", self)
+        copy.setShortcut(QKeySequence.Copy)
+        copy.triggered.connect(self.copy_selected_items)
+        scene_menu.addAction(copy)
 
         # Add Select all action
         select_all = QAction("Select All", self)
@@ -2243,6 +2249,81 @@ class PipelineEditor(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
                 item.setSelected(True)
+
+    def copy_selected_items(self):
+        nodes = []
+        edges = []
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                nodes.append(item)
+            elif isinstance(item, EdgeItem):
+                edges.append(item)
+
+        node_states = {}
+        port_states = {}
+        for node in nodes:
+            node_state = copy.deepcopy(node.backend)
+            # Set node uid
+            node_uid = gen_uid()
+            node_state.uid = node_uid
+            node_state.node.node_id = node_uid
+            # Save to dictionary with old uid key
+            node_states[node.uid] = node_state
+
+            for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
+                port = self.scene.scene.get(port_id)
+                port_state = copy.deepcopy(port.backend)
+                # Set port uid
+                port_state.uid = gen_uid()
+                port_state.parent_node_id = node_uid
+                # Save to dictionary with old uid key
+                port_states[port.uid] = port_state
+
+        edge_states = {}
+        for edge in edges:
+            edge_state = copy.deepcopy(edge.backend)
+            # Set edge uid
+            edge_state.uid = gen_uid()
+            # Save to dictionary with old uid key
+            edge_states[edge.uid] = edge_state
+
+        # Rewire the relative connections
+        for node_state in node_states.values():
+            # Reconfigure input port ids
+            input_port_ids = []
+            for input_port_id in node_state.input_port_ids:
+                input_port_ids.append(port_states[input_port_id].uid)
+            node_state.input_port_ids = input_port_ids
+            # Reconfigure output port ids
+            output_port_ids = []
+            for output_port_id in node_state.output_port_ids:
+                output_port_ids.append(port_states[output_port_id].uid)
+            node_state.output_port_ids = output_port_ids
+
+        for port_state in port_states.values():
+            edge_ids = []
+            for edge_id in port_state.edge_ids:
+                edge_ids.append(edge_states[edge_id].uid)
+            port_state.edge_ids = edge_ids
+
+        for edge_state in edge_states.values():
+            edge_state.src_port_id = port_states[edge_state.src_port_id].uid
+            edge_state.dst_port_id = port_states[edge_state.dst_port_id].uid
+
+        self.clipboard = {'node_states': node_states.values(),
+                          'port_states': port_states.values(),
+                          'edge_states': edge_states.values()}
+
+
+
+        #
+        # # Prepare a text representation of selected items
+        # items_text = "\n".join(item.text() for item in selected_items)
+        #
+        # # Copy the selected items to the clipboard
+        # clipboard = QApplication.clipboard()
+        # clipboard.setText(items_text)
+        # print(f"Copied items: {items_text}")
 
 
 if __name__ == "__main__":
