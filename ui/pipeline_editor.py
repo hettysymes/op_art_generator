@@ -1908,11 +1908,14 @@ class PipelineScene(QGraphicsScene):
             node.update_vis_image()
             node.update_label_containers()
 
-    def load_scene(self, filepath):
+    def clear_scene(self):
         self.scene = Scene()
         for item in self.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
                 self.removeItem(item)
+
+    def load_scene(self, filepath):
+        self.clear_scene()
 
         # Use the custom unpickler to load the scene
         try:
@@ -2057,7 +2060,7 @@ class PipelineView(QGraphicsView):
         self.current_zoom = zoom
         self.update()
 
-    def resetZoom(self):
+    def reset_zoom(self):
         self.set_zoom(self.default_zoom)
 
     def draw_grid(self):
@@ -2141,6 +2144,12 @@ class PipelineEditor(QMainWindow):
         # Create File menu
         file_menu = menu_bar.addMenu("File")
 
+        # Add New scene action
+        new_scene_action = QAction("New Scene", self)
+        new_scene_action.setShortcut(QKeySequence.New)
+        new_scene_action.triggered.connect(self.new_scene)
+        file_menu.addAction(new_scene_action)
+
         # Add Save action
         save_action = QAction("Save", self)
         save_action.setShortcut(QKeySequence.Save)
@@ -2211,7 +2220,7 @@ class PipelineEditor(QMainWindow):
         # Add Reset zoom action
         reset_zoom = QAction("Reset Zoom", self)
         reset_zoom.setShortcut("Ctrl+0")
-        reset_zoom.triggered.connect(self.view.resetZoom)
+        reset_zoom.triggered.connect(self.view.reset_zoom)
         scene_menu.addAction(reset_zoom)
 
         # Add Centre view action
@@ -2219,6 +2228,12 @@ class PipelineEditor(QMainWindow):
         centre.setShortcut("Ctrl+1")
         centre.triggered.connect(lambda: self.view.centerOn(0, 0))
         scene_menu.addAction(centre)
+
+    def new_scene(self):
+        self.scene.filepath = None
+        self.scene.clear_scene()
+        self.view.reset_zoom()
+        self.view.centerOn(0, 0)
 
     def save_as_scene(self):
         filepath, _ = QFileDialog.getSaveFileName(
