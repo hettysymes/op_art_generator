@@ -1011,9 +1011,9 @@ class NodePropertiesDialog(QDialog):
         def change_property_port(adding):
             scene = self.node_item.scene()
             if adding:
-                scene.undo_stack.push(AddPropertyPort(scene, self.node_item, prop.key_name))
+                scene.undo_stack.push(AddPropertyPortCmd(scene, self.node_item, prop.key_name))
             else:
-                scene.undo_stack.push(RemovePropertyPort(scene, self.node_item, prop.key_name))
+                scene.undo_stack.push(RemovePropertyPortCmd(scene, self.node_item, prop.key_name))
 
         # Add the help icon after the widget (on the right)
         if prop.description:
@@ -1601,7 +1601,7 @@ class ChangePropertiesCmd(QUndoCommand):
             props[prop_name] = value[1]
         self.update_properties(props)
 
-class AddPropertyPort(QUndoCommand):
+class AddPropertyPortCmd(QUndoCommand):
     def __init__(self, pipeline_scene, node_item: NodeItem, prop_key_name, description="Add property port"):
         super().__init__(description)
         self.pipeline_scene = pipeline_scene
@@ -1618,7 +1618,7 @@ class AddPropertyPort(QUndoCommand):
                 self.node_item.add_port(port_def)
                 break
 
-class RemovePropertyPort(QUndoCommand):
+class RemovePropertyPortCmd(QUndoCommand):
     def __init__(self, pipeline_scene, node_item: NodeItem, prop_key_name, description="Remove property port"):
         super().__init__(description)
         self.pipeline_scene = pipeline_scene
@@ -1634,6 +1634,28 @@ class RemovePropertyPort(QUndoCommand):
 
     def redo(self):
         self.node_item.remove_port_by_name(self.prop_key_name)
+
+class ClearSceneCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, description="Clear scene"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.save_states = None
+
+    def undo(self):
+        assert self.save_states is not None
+        self.pipeline_scene.load_from_save_states(self.save_states)
+
+    def redo(self):
+        # Store save states for undo
+        self.save_states = {}
+        for k, v in self.pipeline_scene.scene.states.items():
+            self.save_states[k] = v.backend
+
+        # Perform clear
+        self.pipeline_scene.scene = Scene()
+        for item in self.pipeline_scene.items():
+            if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
+                self.pipeline_scene.removeItem(item)
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -1858,18 +1880,7 @@ class PipelineScene(QGraphicsScene):
         with open(filepath, "wb") as f:
             pickle.dump(save_states, f)
 
-    def load_scene(self, filepath):
-        self.clear_scene()
-
-        # Use the custom unpickler to load the scene
-        try:
-            # Import the helper function - adjust the import path as needed
-            save_states = load_scene_with_elements(filepath)
-        except ImportError:
-            # Fall back to regular unpickler if the helper isn't available
-            with open(filepath, "rb") as f:
-                save_states = pickle.load(f)
-
+    def load_from_save_states(self, save_states):
         # Process the loaded states as before
         node_ids = []
         for _, v in save_states.items():
@@ -1893,11 +1904,24 @@ class PipelineScene(QGraphicsScene):
             node.update_vis_image()
             node.update_label_containers()
 
-    def clear_scene(self):
+    def load_scene(self, filepath):
         self.scene = Scene()
         for item in self.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
                 self.removeItem(item)
+
+        # Use the custom unpickler to load the scene
+        try:
+            # Import the helper function - adjust the import path as needed
+            save_states = load_scene_with_elements(filepath)
+        except ImportError:
+            # Fall back to regular unpickler if the helper isn't available
+            with open(filepath, "rb") as f:
+                save_states = pickle.load(f)
+        self.load_from_save_states(save_states)
+
+    def clear_scene(self):
+        self.undo_stack.push(ClearSceneCmd(self))
 
     def delete_edge(self, edge):
         """Delete the given edge"""
