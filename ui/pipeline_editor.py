@@ -810,7 +810,8 @@ class PortItem(QGraphicsPathItem):
 
     # The rest of your methods remain the same
     def add_edge(self, edge_id):
-        self.backend.edge_ids.append(edge_id)
+        if edge_id not in self.backend.edge_ids:
+            self.backend.edge_ids.append(edge_id)
 
     def remove_edge(self, edge_id):
         if edge_id in self.backend.edge_ids:
@@ -1553,7 +1554,6 @@ class AddNewEdgeCmd(QUndoCommand):
     def __init__(self, pipeline_scene, src_port_id, dst_port_id, description="Add new edge"):
         super().__init__(description)
         self.pipeline_scene = pipeline_scene
-        self.scene: Scene = pipeline_scene.scene
         self.src_port_id = src_port_id
         self.dst_port_id = dst_port_id
         self.edge = None
@@ -1563,13 +1563,7 @@ class AddNewEdgeCmd(QUndoCommand):
         self.pipeline_scene.delete_edge(self.edge)
 
     def redo(self):
-        self.edge = EdgeItem(EdgeState(gen_uid(), self.src_port_id, self.dst_port_id))
-        self.scene.add(self.edge)
-        self.pipeline_scene.addItem(self.edge)
-        self.edge.set_ports()
-        self.edge.source_port.add_edge(self.edge.uid)
-        self.edge.dest_port.add_edge(self.edge.uid)
-        self.edge.dest_port.parentItem().update_visualisations()
+        self.edge = self.pipeline_scene.add_edge(self.src_port_id, self.dst_port_id)
 
 class ChangePropertiesCmd(QUndoCommand):
     def __init__(self, pipeline_scene, node_item: NodeItem, props_changed, description="Change properties"):
@@ -1655,6 +1649,30 @@ class PasteCmd(QUndoCommand):
 
     def redo(self):
         self.pipeline_scene.load_from_save_states(self.save_states)
+
+class DeleteCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, nodes_to_delete, edges_to_delete, description="Delete edge"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.nodes_to_delete = nodes_to_delete
+        self.edges_to_delete = edges_to_delete
+        self.save_states = None
+
+    def undo(self):
+        assert self.save_states
+        self.pipeline_scene.load_from_save_states(self.save_states)
+
+    def redo(self):
+        self.save_states = {}
+        for edge in self.edges_to_delete:
+            self.save_states[edge.uid] = edge.backend
+            self.pipeline_scene.delete_edge(edge)
+        for node in self.nodes_to_delete:
+            self.save_states[node.uid] = node.backend
+            for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
+                port = self.pipeline_scene.scene.get(port_id)
+                self.save_states[port_id] = port.backend
+            self.pipeline_scene.delete_node(node)
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -1894,6 +1912,9 @@ class PipelineScene(QGraphicsScene):
                 self.scene.add(edge)
                 self.addItem(edge)
                 edge.set_ports()
+                edge.source_port.add_edge(edge.uid)
+                edge.dest_port.add_edge(edge.uid)
+                node_ids.append(edge.dest_port.parentItem().uid)
 
         for uid in node_ids:
             node = self.scene.get(uid)
@@ -1931,6 +1952,16 @@ class PipelineScene(QGraphicsScene):
         self.scene.remove(edge.uid)
         self.removeItem(edge)
         dest_node.update_visualisations()
+
+    def add_edge(self, src_port_id, dst_port_id):
+        edge = EdgeItem(EdgeState(gen_uid(), src_port_id, dst_port_id))
+        self.scene.add(edge)
+        self.addItem(edge)
+        edge.set_ports()
+        edge.source_port.add_edge(edge.uid)
+        edge.dest_port.add_edge(edge.uid)
+        edge.dest_port.parentItem().update_visualisations()
+        return edge
 
     def delete_node(self, node: NodeItem):
         """Delete the given node and all its connections"""
@@ -2263,14 +2294,15 @@ class PipelineEditor(QMainWindow):
                 item.setSelected(True)
 
     def delete_selected_items(self):
-        nodes = []
+        nodes_to_delete = []
+        edges_to_delete = []
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
-                nodes.append(item)
+                nodes_to_delete.append(item)
             elif isinstance(item, EdgeItem):
-                self.scene.delete_edge(item)
-        for node in nodes:
-            self.scene.delete_node(node)
+                edges_to_delete.append(item)
+        if nodes_to_delete or edges_to_delete:
+            self.scene.undo_stack.push(DeleteCmd(self.scene, nodes_to_delete, edges_to_delete))
 
     def copy_selected_items(self):
         nodes = []
