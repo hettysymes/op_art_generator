@@ -812,6 +812,8 @@ class PortItem(QGraphicsPathItem):
     def add_edge(self, edge_id):
         if edge_id not in self.backend.edge_ids:
             self.backend.edge_ids.append(edge_id)
+            return True
+        return False
 
     def remove_edge(self, edge_id):
         if edge_id in self.backend.edge_ids:
@@ -1901,6 +1903,7 @@ class PipelineScene(QGraphicsScene):
     def load_from_save_states(self, save_states):
         # Process the loaded states as before
         node_ids = []
+        newly_joined_node_ids = []
         for v in save_states.values():
             if isinstance(v, NodeState):
                 node = NodeItem(v)
@@ -1916,14 +1919,19 @@ class PipelineScene(QGraphicsScene):
                 self.scene.add(edge)
                 self.addItem(edge)
                 edge.set_ports()
-                edge.source_port.add_edge(edge.uid)
-                edge.dest_port.add_edge(edge.uid)
-                node_ids.append(edge.dest_port.parentItem().uid)
+                added_src = edge.source_port.add_edge(edge.uid)
+                added_dst = edge.dest_port.add_edge(edge.uid)
+                if added_src or added_dst:
+                    newly_joined_node_ids.append(edge.dest_port.parentItem().uid)
 
         for uid in node_ids:
             node = self.scene.get(uid)
             node.update_vis_image()
             node.update_label_containers()
+
+        for uid in newly_joined_node_ids:
+            node = self.scene.get(uid)
+            node.update_visualisations()
 
     def clear_scene(self):
         self.scene = Scene()
