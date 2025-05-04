@@ -25,6 +25,7 @@ from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.elem_ref import ElemRef
+from ui.nodes.immutable_elem_node import load_scene_with_elements
 from ui.nodes.nodes import CombinationNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape_datatypes import Group
@@ -1772,8 +1773,17 @@ class PipelineScene(QGraphicsScene):
 
     def load_scene(self, filepath):
         self.clear_scene()
-        with open(filepath, "rb") as f:
-            save_states = pickle.load(f)
+
+        # Use the custom unpickler to load the scene
+        try:
+            # Import the helper function - adjust the import path as needed
+            save_states = load_scene_with_elements(filepath)
+        except ImportError:
+            # Fall back to regular unpickler if the helper isn't available
+            with open(filepath, "rb") as f:
+                save_states = pickle.load(f)
+
+        # Process the loaded states as before
         node_ids = []
         for _, v in save_states.items():
             if isinstance(v, NodeState):
@@ -1783,12 +1793,14 @@ class PipelineScene(QGraphicsScene):
                 for port_id in v.input_port_ids + v.output_port_ids:
                     self.scene.add(PortItem(save_states[port_id], node))
                 node_ids.append(v.uid)
+
         for _, v in save_states.items():
             if isinstance(v, EdgeState):
                 edge = EdgeItem(v)
                 self.scene.add(edge)
                 self.addItem(edge)
                 edge.set_ports()
+
         for uid in node_ids:
             node = self.scene.get(uid)
             node.update_vis_image()

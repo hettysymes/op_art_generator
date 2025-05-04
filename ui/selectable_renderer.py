@@ -1,31 +1,7 @@
 from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
-
-from ui.id_generator import gen_uid
-from ui.nodes.nodes import UnitNodeInfo, UnitNode, ELEMENT_IMPLEMENTATIONS, register_element_type
-from ui.nodes.shape_datatypes import Element, Group
-from ui.port_defs import PortDef
-
-
-def get_node_from_element(element: Element):
-    # Get the element type
-    element_type = element.get_output_type()
-    type_name = element_type.__name__
-
-    # Register the type if needed
-    if type_name not in ELEMENT_IMPLEMENTATIONS:
-        register_element_type(element_type)
-
-    # Get the implementation class
-    ElementClass = ELEMENT_IMPLEMENTATIONS[type_name]
-
-    # Create an instance
-    return ElementClass(
-        gen_uid(),
-        {},
-        {'_element': element}
-    )
+from ui.nodes.immutable_elem_node import get_node_from_element
 
 
 class SelectableSvgElement(QGraphicsItem):
