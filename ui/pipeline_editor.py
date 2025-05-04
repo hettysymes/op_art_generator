@@ -2214,6 +2214,12 @@ class PipelineEditor(QMainWindow):
         reset_zoom.triggered.connect(self.view.resetZoom)
         scene_menu.addAction(reset_zoom)
 
+        # Add Centre view action
+        centre = QAction("Centre View", self)
+        centre.setShortcut("Ctrl+1")
+        centre.triggered.connect(lambda: self.view.centerOn(0, 0))
+        scene_menu.addAction(centre)
+
     def save_as_scene(self):
         filepath, _ = QFileDialog.getSaveFileName(
             self,
