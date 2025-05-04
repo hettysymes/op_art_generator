@@ -1,5 +1,6 @@
 import ast
 import copy
+import json
 import math
 import os
 import pickle
@@ -9,7 +10,7 @@ import tempfile
 import traceback
 from functools import partial
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QEvent
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QEvent, QMimeData
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QFocusEvent, QKeySequence
 from PyQt5.QtGui import QPainterPath
@@ -2124,7 +2125,6 @@ class PipelineEditor(QMainWindow):
         self.scene = PipelineScene(temp_dir)
         self.view = PipelineView(self.scene)
         self.setCentralWidget(self.view)
-        self.clipboard = None
 
         # Create menu bar
         self.setup_menu()
@@ -2310,20 +2310,13 @@ class PipelineEditor(QMainWindow):
             edge_state.src_port_id = port_states[edge_state.src_port_id].uid
             edge_state.dst_port_id = port_states[edge_state.dst_port_id].uid
 
-        self.clipboard = {'node_states': node_states.values(),
-                          'port_states': port_states.values(),
-                          'edge_states': edge_states.values()}
-
-
-
-        #
-        # # Prepare a text representation of selected items
-        # items_text = "\n".join(item.text() for item in selected_items)
-        #
-        # # Copy the selected items to the clipboard
-        # clipboard = QApplication.clipboard()
-        # clipboard.setText(items_text)
-        # print(f"Copied items: {items_text}")
+        dict_data = {'node_states': list(node_states.values()),
+                     'port_states': list(port_states.values()),
+                     'edge_states': list(edge_states.values())}
+        mime_data = QMimeData()
+        mime_data.setData("application/pipeline_editor_items", pickle.dumps(dict_data))
+        clipboard = QApplication.clipboard()
+        clipboard.setMimeData(mime_data)
 
 
 if __name__ == "__main__":
