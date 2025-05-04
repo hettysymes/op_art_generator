@@ -1,11 +1,12 @@
-from ui.nodes.drawers.grid_drawer import GridDrawing
+from ui.nodes.canvas import CanvasNode
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui.nodes.shape import StraightLineNode
+from ui.nodes.shape_datatypes import Group
 from ui.nodes.warp_utils import PosWarp, RelWarp
-from ui.port_defs import PortDef, PortType, PT_Warp, PT_Grid
+from ui.port_defs import PortDef, PT_Warp, PT_Grid
 
 GRID_NODE_INFO = UnitNodeInfo(
     name="Grid",
-    resizable=True,
     selectable=False,
     in_port_defs=[PortDef("X Warp", PT_Warp, key_name='x_warp'), PortDef("Y Warp", PT_Warp, key_name='y_warp')],
     out_port_defs=[PortDef("Grid", PT_Grid)],
@@ -46,5 +47,13 @@ class GridNode(UnitNode):
         y_warp = self.get_input_node('y_warp').compute()
         return GridNode.helper(x_warp, y_warp, self.get_prop_val('width'), self.get_prop_val('height'))
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return GridDrawing(self._return_path(temp_dir), height, wh_ratio, self.compute()).save()
+    def visualise(self):
+        v_line_xs, h_line_ys = self.compute()
+        grid_group = Group(debug_info="Grid")
+        for x in v_line_xs:
+            # Draw horizontal lines
+            grid_group.add(StraightLineNode.helper((x, 0), (x, 1), stroke='black', stroke_width=2))
+        for y in h_line_ys:
+            # Draw vertical lines
+            grid_group.add(StraightLineNode.helper((0, y), (1, y), stroke='black', stroke_width=2))
+        return CanvasNode.helper((255, 255, 255, 255), grid_group)

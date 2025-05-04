@@ -1,7 +1,7 @@
-from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape_datatypes import Element
-from ui.port_defs import PortDef, PortType, PT_Element
+from ui.nodes.shape import RectangleNode
+from ui.nodes.shape_datatypes import Group
+from ui.port_defs import PortDef, PT_Element
 
 CANVAS_NODE_INFO = UnitNodeInfo(
     name="Canvas",
@@ -24,12 +24,16 @@ CANVAS_NODE_INFO = UnitNodeInfo(
 class CanvasNode(UnitNode):
     UNIT_NODE_INFO = CANVAS_NODE_INFO
 
+    @staticmethod
+    def helper(colour, element=None):
+        group = Group(debug_info="Canvas")
+        group.add(RectangleNode.helper(colour))
+        if element:
+            group.add(element)
+        return group
+
     def compute(self):
         return self.get_input_node('element').compute()
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        element = self.compute()
-        if not element:
-            element = Element()
-        return ElementDrawer(self._return_path(temp_dir), height, wh_ratio,
-                             (element, self.get_prop_val('bg_col'))).save()
+    def visualise(self):
+        return CanvasNode.helper(self.get_prop_val('bg_col'), self.compute())

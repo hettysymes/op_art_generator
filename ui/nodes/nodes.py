@@ -3,10 +3,10 @@ import os
 import traceback
 from abc import ABC, abstractmethod
 
-from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.drawers.error_drawer import ErrorDrawer
+from ui.id_generator import shorten_uid
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Group
+from ui.vis_types import ErrorFig
 
 
 class PropTypeList:
@@ -44,21 +44,23 @@ class PropType:
         self.max_value = max_value
         self.description = description
         self.auto_format = auto_format
-        self.options = options # options for (constant) enum type
+        self.options = options  # options for (constant) enum type
         self.port_modifiable = port_modifiable
 
 
 class UnitNodeInfo:
 
-    def __init__(self, name, resizable, selectable, in_port_defs, out_port_defs, prop_type_list, description, prop_port_defs=None):
+    def __init__(self, name, description, resizable=True, selectable=True, in_port_defs=None, out_port_defs=None,
+                 prop_type_list=None,
+                 prop_port_defs=None):
         self.name = name
         self.resizable = resizable
         self.selectable = selectable
-        self.in_port_defs = in_port_defs
-        self.out_port_defs = out_port_defs
-        self.prop_type_list = prop_type_list
+        self.in_port_defs = in_port_defs if in_port_defs is not None else []
+        self.out_port_defs = out_port_defs if out_port_defs is not None else []
+        self.prop_type_list = prop_type_list if prop_type_list is not None else PropTypeList([])
         self.description = description
-        self.prop_port_defs = prop_port_defs if (prop_port_defs is not None) else []
+        self.prop_port_defs = prop_port_defs if prop_port_defs is not None else []
 
 
 class Node(ABC):
@@ -69,29 +71,25 @@ class Node(ABC):
         self.prop_vals = prop_vals if prop_vals else self.node_info().prop_type_list.get_default_values()
 
     def _return_path(self, temp_dir):
-        return os.path.join(temp_dir, str(self.node_id))
+        return os.path.join(temp_dir, self.node_id)
 
-    def get_svg_path(self, temp_dir, height, wh_ratio):
-        exception = None
+    def safe_visualise(self):
         # Catch exception if raised
         try:
-            vis = self.visualise(temp_dir, height, wh_ratio)
+            vis = self.visualise()
         except NodeInputException as e:
-            exception = e
             if e.node_id == self.node_id:
                 msg = str(e.message)
             else:
-                msg = f"Error further up pipeline (id #{e.node_id.hex[:3]})."
-            vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, [e.title, msg]).save()
+                msg = f"Error further up pipeline (id #{shorten_uid(e.node_id)})."
+            vis = ErrorFig(e.title, msg)
         except Exception as e:
-            exception = e
-            vis = ErrorDrawer(self._return_path(temp_dir), height, wh_ratio, ["Unknown Exception", str(e)]).save()
+            vis = ErrorFig("Unknown Exception", str(e))
             traceback.print_exc()
-        # Return visualisation with exception
         if not vis:
             # No visualisation, return blank canvas
-            vis = ElementDrawer(self._return_path(temp_dir), height, wh_ratio, (Element(), None)).save()
-        return vis, exception
+            vis = Group(debug_info="Blank Canvas")
+        return vis
 
     def name(self):
         return self.node_info().name
@@ -150,7 +148,6 @@ class Node(ABC):
                     return res_compute
         return default
 
-
     @abstractmethod
     def node_info(self):
         pass
@@ -165,18 +162,13 @@ class Node(ABC):
         pass
 
     @abstractmethod
-    def visualise(self, temp_dir, height, wh_ratio):
+    def visualise(self):
         pass
 
 
 class UnitNode(Node):
     UNIT_NODE_INFO = UnitNodeInfo(
         name="Unit Node",
-        resizable=True,
-        selectable=False,
-        in_port_defs=[],
-        out_port_defs=[],
-        prop_type_list=PropTypeList([]),
         description=""
     )
 
@@ -194,8 +186,8 @@ class UnitNode(Node):
     def compute(self):
         return
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return
+    def visualise(self):
+        return self.compute()
 
 
 class CombinationNode(Node):
@@ -232,5 +224,5 @@ class CombinationNode(Node):
     def compute(self):
         return self.node_instance().compute()
 
-    def visualise(self, temp_dir, height, wh_ratio):
-        return self.node_instance().visualise(temp_dir, height, wh_ratio)
+    def visualise(self):
+        return self.node_instance().visualise()

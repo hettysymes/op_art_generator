@@ -4,35 +4,36 @@ import math
 import os
 import pickle
 import random
-import shutil
 import sys
 import tempfile
-import uuid
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QModelIndex, QAbstractTableModel, QTimer, QPoint, QRect, \
-    QEvent
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QDoubleValidator, QDropEvent, QIcon, QTextDocument
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
-                             QDialogButtonBox, QGroupBox, QTableWidget, QTableWidgetItem, QWidget,
-                             QHBoxLayout, QFileDialog, QHeaderView, QStyledItemDelegate, QColorDialog,
-                             QAbstractItemView, QStyleOptionViewItem, QGraphicsItemGroup, QGraphicsTextItem, QLabel,
-                             QToolTip)
+                             QDialogButtonBox, QGroupBox, QTableWidgetItem, QWidget,
+                             QHBoxLayout, QFileDialog, QStyledItemDelegate, QColorDialog,
+                             QGraphicsTextItem, QLabel)
 from PyQt5.QtWidgets import QGraphicsPathItem
-from PyQt5.QtXml import QDomDocument
+from PyQt5.QtXml import QDomDocument, QDomElement
 
 from ui.colour_prop_widget import ColorPropertyWidget
+from ui.id_generator import gen_uid, shorten_uid
+from ui.nodes.all_nodes import node_classes
+from ui.nodes.drawers.group_drawer import GroupDrawer
+from ui.nodes.elem_ref import ElemRef
+from ui.nodes.immutable_elem_node import load_scene_with_elements
+from ui.nodes.nodes import CombinationNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
-from ui.nodes.shape import ElemRef
-from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList, PortDef, PT_Fill
+from ui.nodes.shape_datatypes import Group
+from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
 from ui.reorderable_table_widget import ReorderableTableWidget
 from ui.scene import Scene, NodeState, PortState, EdgeState
-from ui.nodes.all_nodes import node_classes
-from ui.nodes.nodes import CombinationNode, UnitNode
 from ui.selectable_renderer import SelectableSvgElement
+from ui.vis_types import ErrorFig, Visualisable
 
 
 class ConnectionSignals(QObject):
@@ -239,13 +240,15 @@ class NodeItem(QGraphicsRectItem):
         self.setRect(0, 0, width, height)
         if self.resize_handle:
             self.resize_handle.update_position()
+
+        # Update backend state
+        self.backend.svg_width, self.backend.svg_height = self.svg_size_from_node_size(width, height)
+
+        # Update vis image
         self.update_vis_image()
 
         # Update port positions to match the new dimensions
         self.update_port_edge_positions()
-
-        # Update backend state
-        self.backend.svg_width, self.backend.svg_height = self.svg_size_from_node_size(width, height)
 
     def node_size_from_svg_size(self, svg_w, svg_h):
         return svg_w + self.left_max_width + self.right_max_width + 2 * NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
@@ -253,15 +256,18 @@ class NodeItem(QGraphicsRectItem):
     def svg_size_from_node_size(self, rect_w, rect_h):
         return rect_w - self.left_max_width - self.right_max_width - 2 * NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
+    def visualise(self):
+        return self.update_node().safe_visualise()
+
     def get_svg_path(self):
         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
-        svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
-        return svg_path
+        # svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
+        compute = self.update_node().safe_visualise(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
+        # return svg_path
+        return
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
-        svg_path, selectable_shapes = self.get_svg_path()
-
         # Remove existing SVG items if necessary
         if self.svg_items:
             for item in self.svg_items:
@@ -271,82 +277,87 @@ class NodeItem(QGraphicsRectItem):
         self.svg_items = []
 
         if self.svg_item:
-            scene = self.scene()
-            if scene and self.svg_item in scene.items():
-                scene.removeItem(self.svg_item)
+            if self.svg_item in self.scene().items():
+                self.scene().removeItem(self.svg_item)
 
-        # Create SVG renderer
-        svg_renderer = QSvgRenderer(svg_path)
-
-        # Get SVG dimensions - will be used for viewport clipping
-        svg_size = svg_renderer.defaultSize()
-
+        # Get item to draw
+        vis = self.visualise()
+        svg_filepath = os.path.join(self.scene().temp_dir, f"{self.uid}.svg")
         # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
 
-        # Check file extension
-        if not self.node.selectable():
-            # Handle matplotlib or non-selectable SVG - use standard QGraphicsSvgItem
-            self.svg_item = QGraphicsSvgItem(svg_path)
+        if isinstance(vis, ErrorFig) or not self.node.selectable():
+            if isinstance(vis, Group):
+                GroupDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
+            else:
+                assert isinstance(vis, Visualisable)
+                vis.save_to_svg(svg_filepath, self.backend.svg_width, self.backend.svg_height)
 
+            self.svg_item = QGraphicsSvgItem(svg_filepath)
             # Apply position
             self.svg_item.setParentItem(self)
             self.svg_item.setPos(svg_pos_x, svg_pos_y)
             self.svg_item.setZValue(2)
-
         else:
-            # Create a viewport SVG item that will act as both a container and clipper
-            viewport_svg = QGraphicsSvgItem(svg_path)
+            assert isinstance(vis, Group)
+            assert not vis.transform_list.transforms
+            GroupDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
+
+            # Create SVG renderer
+            svg_renderer = QSvgRenderer(svg_filepath)
+
+            viewport_svg = QGraphicsSvgItem(svg_filepath)
             viewport_svg.setParentItem(self)
             viewport_svg.setPos(svg_pos_x, svg_pos_y)
             viewport_svg.setZValue(1)  # Set below selectable items
             self.svg_items.append(viewport_svg)
 
-            # Set clip path based on SVG's viewBox
+            # Set clip path to clip out outside of SVG
             clip_path = QPainterPath()
-            clip_path.addRect(QRectF(0, 0, svg_size.width(), svg_size.height()))
+            clip_path.addRect(QRectF(0, 0, self.backend.svg_width, self.backend.svg_width))
             viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
 
             # Load the SVG file as XML
             dom_document = QDomDocument()
-            with open(svg_path, 'r') as file:
+            with open(svg_filepath, 'r') as file:
                 content = file.read()
                 dom_document.setContent(content)
 
-            # Process SVG elements to make them selectable
-            def process_element(element, inp_selectable_shapes):
-                # SVG elements we're interested in making selectable
-                selectable_types = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
+            def find_element_by_id(node, target_id):
+                if node.isElement():
+                    element = node.toElement()
+                    if element.attribute('id') == target_id:
+                        return element
 
-                # Process all child elements
-                child = element.firstChild()
+                # Check children recursively
+                child = node.firstChild()
                 while not child.isNull():
-                    if child.isElement():
-                        element_node = child.toElement()
-                        tag_name = element_node.tagName()
-                        element_id = element_node.attribute('id')
-
-                        # Only process elements with IDs
-                        if element_id:
-                            if tag_name in selectable_types:
-                                # Create a selectable item for this element
-                                selectable_item = SelectableSvgElement(element_id, svg_renderer, inp_selectable_shapes,
-                                                                       self)
-                                selectable_item.setParentItem(viewport_svg)  # Make it a child of the viewport
-                                selectable_item.setPos(0, 0)  # Position relative to viewport
-                                selectable_item.setZValue(3)  # Ensure it's above the viewport
-                                self.svg_items.append(selectable_item)
-
-                            # For groups, process children
-                            if tag_name == 'g' or tag_name == 'svg':
-                                process_element(element_node, inp_selectable_shapes)
-
+                    result = find_element_by_id(child, target_id)
+                    if result and not result.isNull():
+                        return result
                     child = child.nextSibling()
 
-            # Start processing from root element
+                return QDomElement()  # Return null element if not found
+
             root = dom_document.documentElement()
-            process_element(root, selectable_shapes)
+            vis_element = find_element_by_id(root, vis.uid)
+            assert not vis_element.isNull()
+
+            child = vis_element.firstChild()
+            while not child.isNull():
+                if child.isElement():
+                    child_element = child.toElement()
+                    child_elem_id = child_element.attribute('id')
+                    assert child_elem_id
+                    backend_child_elem = vis.get_element_from_id(child_elem_id)
+                    assert backend_child_elem is not None
+                    selectable_item = SelectableSvgElement(child_elem_id, backend_child_elem, svg_renderer, self)
+                    selectable_item.setParentItem(viewport_svg)
+                    selectable_item.setPos(0, 0)
+                    selectable_item.setZValue(3)
+                    self.svg_items.append(selectable_item)
+                child = child.nextSibling()
 
     def add_new_node(self, node):
         return self.scene().add_new_node(self.pos() + QPointF(10, 10), node)
@@ -389,7 +400,7 @@ class NodeItem(QGraphicsRectItem):
         input_count = len(self.node.in_port_defs())
         for i, port_def in enumerate(self.node.in_port_defs()):
             y_offset = (i + 1) * self.rect().height() / (input_count + 1)
-            state_id = uuid.uuid4()
+            state_id = gen_uid()
             input_port = PortItem(PortState(state_id,
                                             -10, y_offset,
                                             self.uid,
@@ -402,7 +413,7 @@ class NodeItem(QGraphicsRectItem):
         output_count = len(self.node.out_port_defs())
         for i, port_def in enumerate(self.node.out_port_defs()):
             y_offset = (i + 1) * self.rect().height() / (output_count + 1)
-            state_id = uuid.uuid4()
+            state_id = gen_uid()
             output_port = PortItem(PortState(state_id,
                                              self.rect().width() + 10, y_offset,
                                              self.uid,
@@ -426,7 +437,7 @@ class NodeItem(QGraphicsRectItem):
         """
 
         # Generate a unique ID for the new port
-        state_id = uuid.uuid4()
+        state_id = gen_uid()
 
         if is_input:
             # Calculate position for the new input port
@@ -435,10 +446,10 @@ class NodeItem(QGraphicsRectItem):
 
             # Create the new input port
             res_port = PortItem(PortState(state_id,
-                                            -10, y_offset,
-                                            self.uid,
-                                            True,
-                                            [], port_def), self)
+                                          -10, y_offset,
+                                          self.uid,
+                                          True,
+                                          [], port_def), self)
 
             # Add to the backend tracking
             self.backend.input_port_ids.append(state_id)
@@ -456,10 +467,10 @@ class NodeItem(QGraphicsRectItem):
 
             # Create the new output port
             res_port = PortItem(PortState(state_id,
-                                             self.rect().width() + 10, y_offset,
-                                             self.uid,
-                                             False,
-                                             [], port_def), self)
+                                          self.rect().width() + 10, y_offset,
+                                          self.uid,
+                                          False,
+                                          [], port_def), self)
 
             # Add to the backend tracking
             self.backend.output_port_ids.append(state_id)
@@ -471,7 +482,6 @@ class NodeItem(QGraphicsRectItem):
             self._reposition_ports(False)
 
         self.update_node()
-
 
     def remove_port_by_name(self, key_name, is_input=None):
         """
@@ -568,7 +578,7 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(QFont("Arial", 8))
         painter.setPen(QColor("grey"))
         id_rect = self.rect().adjusted(10, 10, 0, 0)  # Shift the top edge down
-        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{self.node.node_id.hex[:3]}")
+        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{shorten_uid(self.node.node_id)}")
 
         # Draw node title
         painter.setFont(QFont("Arial", 10))
@@ -876,6 +886,7 @@ class HelpIconLabel(QPushButton):
         # Remove focus outline
         self.setFocusPolicy(Qt.NoFocus)
 
+
 class ModifyPropertyPortButton(QPushButton):
     def __init__(self, on_click_callback, adding, max_width=300, parent=None):
         super().__init__(parent)
@@ -929,6 +940,7 @@ class ModifyPropertyPortButton(QPushButton):
         if self.user_callback:
             self.user_callback(not self.adding)
 
+
 class NodePropertiesDialog(QDialog):
     """Dialog for editing node properties"""
 
@@ -958,7 +970,8 @@ class NodePropertiesDialog(QDialog):
             for prop in node_item.node.prop_type_list():
                 if prop.prop_type != "hidden":
                     widget = self.create_property_widget(prop, node_item.node.prop_vals.get(prop.key_name,
-                                                                                            prop.default_value), node_item)
+                                                                                            prop.default_value),
+                                                         node_item)
 
                     # Create the row with label and help icon
                     label_container, widget_container = self.create_property_row(prop, widget, node_item)
@@ -1015,7 +1028,8 @@ class NodePropertiesDialog(QDialog):
         if prop.port_modifiable:
             if prop.key_name in node_item.node.input_nodes:
                 # Exists port to modify this property, add minus button
-                minus_btn = ModifyPropertyPortButton(change_property_port, adding=False)  # Set maximum width for tooltip
+                minus_btn = ModifyPropertyPortButton(change_property_port,
+                                                     adding=False)  # Set maximum width for tooltip
                 widget_layout.addWidget(minus_btn)
             else:
                 # Does not exist port to modify this property, add plus button
@@ -1023,7 +1037,6 @@ class NodePropertiesDialog(QDialog):
                 widget_layout.addWidget(plus_btn)
 
         return label_container, widget_container
-
 
     def create_property_widget(self, prop, current_value, node_item):
         """Create an appropriate widget for the property type"""
@@ -1103,7 +1116,7 @@ class NodePropertiesDialog(QDialog):
             widget.addItem("[none]", userData=None)
             if input_prop_compute:
                 for i in range(len(input_prop_compute)):
-                    widget.addItem(str(i+1), userData=i)
+                    widget.addItem(str(i + 1), userData=i)
             # Set the current value if available
             if current_value is not None:
                 # Find the index where the key_name matches current_value
@@ -1130,7 +1143,7 @@ class NodePropertiesDialog(QDialog):
                     stop_x, stop_y = points[-1]
                     arrow = '←' if point.reversed else '→'
                     item.setText(
-                        f"{point.node_type} (id: #{point.node_id.hex[:3]})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
+                        f"{point.node_type} (id: #{shorten_uid(point.node_id)})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})")
                     item.setBackground(QColor(237, 130, 157))
                 else:
                     x, y = point
@@ -1275,7 +1288,7 @@ class NodePropertiesDialog(QDialog):
                 item = QTableWidgetItem()
                 item.setTextAlignment(Qt.AlignCenter)
                 item.setData(Qt.UserRole, elem_ref)
-                item.setText(f"{elem_ref.node_type} (id: #{elem_ref.node_id.hex[:3]})")
+                item.setText(f"{elem_ref.node_type} (id: #{shorten_uid(elem_ref.node_id)})")
                 if not elem_ref.is_deletable():
                     # Set red background for non-deletable elements
                     item.setBackground(QColor(237, 130, 157))
@@ -1487,8 +1500,8 @@ class NodePropertiesDialog(QDialog):
             widget = container
 
         elif prop.prop_type == "colour":
-            r,g,b,a = current_value
-            widget = ColorPropertyWidget(QColor(r,g,b,a) or QColor(0,0,0,255))
+            r, g, b, a = current_value
+            widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
         else:  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
 
@@ -1504,7 +1517,7 @@ class NodePropertiesDialog(QDialog):
             elif isinstance(widget, QCheckBox):
                 value = widget.isChecked()
             elif isinstance(widget, QComboBox):
-                value =  widget.itemData(widget.currentIndex())
+                value = widget.itemData(widget.currentIndex())
             elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
                 value = widget.get_value()
             else:  # QLineEdit
@@ -1523,17 +1536,6 @@ class NodePropertiesDialog(QDialog):
         super().accept()
 
 
-def save_as_svg(clicked_item: NodeItem):
-    file_path, _ = QFileDialog.getSaveFileName(
-        None, "Save SVG",
-        f"{clicked_item.node.name()}_{str(clicked_item.uid)[:6]}.svg",
-        "SVG Files (*.svg)"
-    )
-
-    if file_path:
-        shutil.copy(clicked_item.get_svg_path()[0], file_path)
-
-
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
@@ -1550,6 +1552,7 @@ class PipelineScene(QGraphicsScene):
 
         self.scene = Scene()
         self.temp_dir = temp_dir
+        print(temp_dir)
 
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
@@ -1557,7 +1560,7 @@ class PipelineScene(QGraphicsScene):
 
     def add_node_from_class(self, node_class, pos, index=None):
         """Add a new node of the given type at the specified position"""
-        uid = uuid.uuid4()
+        uid = gen_uid()
         if index is None:
             node = node_class(node_id=uid)
         else:
@@ -1611,8 +1614,10 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.backend.edge_ids) > 0
-                if not connection_exists and issubclass(source_port.backend.port_def.port_type, dest_port.backend.port_def.port_type) and (dest_port.backend.port_def.input_multiple or not target_has_connection):
-                    edge = EdgeItem(EdgeState(uuid.uuid4(), source_port.backend.uid, dest_port.backend.uid))
+                if not connection_exists and issubclass(source_port.backend.port_def.port_type,
+                                                        dest_port.backend.port_def.port_type) and (
+                        dest_port.backend.port_def.input_multiple or not target_has_connection):
+                    edge = EdgeItem(EdgeState(gen_uid(), source_port.backend.uid, dest_port.backend.uid))
                     self.scene.add(edge)
                     self.addItem(edge)
                     edge.set_ports()
@@ -1736,15 +1741,6 @@ class PipelineScene(QGraphicsScene):
             menu.addAction(duplicate_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
-        elif isinstance(clicked_item, QGraphicsSvgItem):
-            clicked_item = clicked_item.parentItem()  # Refer to parent node
-
-            menu = QMenu()
-            save_svg_action = QAction("Save as SVG", menu)
-            save_svg_action.triggered.connect(lambda: save_as_svg(clicked_item))
-
-            menu.addAction(save_svg_action)
-            menu.exec_(event.screenPos())
         elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
             menu = QMenu()
             add_node_menu = QMenu("Add Node", menu)
@@ -1777,8 +1773,17 @@ class PipelineScene(QGraphicsScene):
 
     def load_scene(self, filepath):
         self.clear_scene()
-        with open(filepath, "rb") as f:
-            save_states = pickle.load(f)
+
+        # Use the custom unpickler to load the scene
+        try:
+            # Import the helper function - adjust the import path as needed
+            save_states = load_scene_with_elements(filepath)
+        except ImportError:
+            # Fall back to regular unpickler if the helper isn't available
+            with open(filepath, "rb") as f:
+                save_states = pickle.load(f)
+
+        # Process the loaded states as before
         node_ids = []
         for _, v in save_states.items():
             if isinstance(v, NodeState):
@@ -1788,12 +1793,14 @@ class PipelineScene(QGraphicsScene):
                 for port_id in v.input_port_ids + v.output_port_ids:
                     self.scene.add(PortItem(save_states[port_id], node))
                 node_ids.append(v.uid)
+
         for _, v in save_states.items():
             if isinstance(v, EdgeState):
                 edge = EdgeItem(v)
                 self.scene.add(edge)
                 self.addItem(edge)
                 edge.set_ports()
+
         for uid in node_ids:
             node = self.scene.get(uid)
             node.update_vis_image()
@@ -1834,7 +1841,7 @@ class PipelineScene(QGraphicsScene):
 
     def duplicate_node(self, node_item: NodeItem):
         new_node = copy.deepcopy(node_item.backend.node)
-        new_node.node_id = uuid.uuid4()
+        new_node.node_id = gen_uid()
         self.add_new_node(node_item.pos() + QPointF(10, 10), new_node)
 
     def randomise(self, clicked_item: RandomColourSelectorNode):
@@ -1987,6 +1994,7 @@ class PipelineEditor(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
                 item.setSelected(True)
+
 
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as temp_dir:

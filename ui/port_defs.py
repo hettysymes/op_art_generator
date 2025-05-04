@@ -1,64 +1,81 @@
 class PortType:
     pass
 
+
 # Function
 
 class PT_Function(PortType):
     pass
+
 
 # Warp
 
 class PT_Warp(PortType):
     pass
 
+
 # Grid
 class PT_Grid(PortType):
     pass
+
 
 # Elements
 class PT_Repeatable(PortType):
     pass
 
+
 class PT_Element(PT_Repeatable):
     pass
+
 
 class PT_Shape(PT_Element):
     pass
 
+
 class PT_Ellipse(PT_Shape):
     pass
 
+
 class PT_Polyline(PT_Element):
     pass
+
 
 # Value Lists
 
 class PT_ValueList(PortType):
     pass
 
+
 class PT_ColourList(PT_ValueList):
     pass
+
 
 class PT_NumberList(PT_ValueList):
     pass
 
+
 class PT_PointList(PT_ValueList):
     pass
+
 
 # Element List
 
 class PT_ElementList(PT_Repeatable):
     pass
 
+
 # Fill
 class PT_Fill(PortType):
     pass
 
+
 class PT_Gradient(PT_Fill):
     pass
 
+
 class PT_Colour(PT_Fill):
     pass
+
 
 class PortDef:
 

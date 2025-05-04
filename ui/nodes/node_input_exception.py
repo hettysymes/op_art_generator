@@ -4,5 +4,5 @@ class NodeInputException(Exception):
     def __init__(self, message, node_id):
         self.node_id = node_id
         self.message = message
-        self.title = "Node Input Error!"
+        self.title = "Node Input Error"
         super().__init__(self.message)

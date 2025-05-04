@@ -1,11 +1,10 @@
 from ui.nodes.drawers.Drawing import Drawing
-from ui.nodes.shape_datatypes import Element
 
 
 class ErrorDrawer(Drawing):
 
-    def __init__(self, out_name, height, wh_ratio, inputs):
-        super().__init__(out_name, height, wh_ratio)
+    def __init__(self, filepath, width, height, inputs):
+        super().__init__(filepath, width, height)
         self.title, self.content = inputs
 
     def draw(self):

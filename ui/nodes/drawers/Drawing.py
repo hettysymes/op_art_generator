@@ -1,4 +1,3 @@
-import os
 from abc import ABC, abstractmethod
 
 import cairosvg
@@ -9,12 +8,10 @@ from ui.nodes.utils import process_rgb
 
 class Drawing(ABC):
 
-    def __init__(self, out_name, height, wh_ratio):
-        self.out_name = out_name
+    def __init__(self, filepath, width, height):
+        self.width = width
         self.height = height
-        self.width = wh_ratio * height
-        self.dwg = svgwrite.Drawing(f'{out_name}.svg', size=(self.width, self.height))
-        self.selectable_shapes = []
+        self.dwg = svgwrite.Drawing(filepath, size=(self.width, self.height))
 
         # Define clipping that clips everything outside of view box
         clip = self.dwg.defs.add(self.dwg.clipPath(id="viewbox-clip"))
@@ -41,7 +38,6 @@ class Drawing(ABC):
     def save(self):
         self.draw()
         self.dwg.save()
-        return self.dwg.filename, self.selectable_shapes
 
     @abstractmethod
     def draw(self):

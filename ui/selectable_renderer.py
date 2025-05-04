@@ -1,19 +1,18 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
-
-from ui.nodes.shape import get_node_from_shape
+from ui.nodes.immutable_elem_node import get_node_from_element
 
 
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""
 
-    def __init__(self, element_id, renderer, selectable_shapes, parent):
+    def __init__(self, element_id, backend_child_elem, renderer, parent_node_item):
         super().__init__()
         self.element_id = element_id
+        self.backend_child_elem = backend_child_elem
         self.renderer = renderer
-        self.selectable_shapes = selectable_shapes
-        self.parent = parent
+        self.parent_node_item = parent_node_item
 
         # Set flags for interaction - selectable but NOT movable
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -23,12 +22,14 @@ class SelectableSvgElement(QGraphicsItem):
 
     def boundingRect(self):
         """Return the bounding rectangle of the element."""
-        return self.renderer.boundsOnElement(self.element_id)
+        rect = self.renderer.boundsOnElement(self.element_id)
+        width, height = self.parent_node_item.backend.svg_width, self.parent_node_item.backend.svg_height
+        return QRectF(rect.x() * width, rect.y() * height,
+                      max(rect.width() * width, 1), max(rect.height() * height, 1))  # Minimum width/height of 1
 
     def paint(self, painter, option, widget=None):
         """Paint the element in its original position."""
-        # Render only this element using the renderer
-        self.renderer.render(painter, self.element_id, self.boundingRect())
+        # Skip rendering the SVG element itself
 
         # Draw selection visual if selected
         if self.isSelected():
@@ -74,8 +75,5 @@ class SelectableSvgElement(QGraphicsItem):
 
     def extractIntoNode(self):
         """Handle the 'Extract into node' action."""
-        for s in self.selectable_shapes:
-            if str(s.shape_id) == self.element_id:
-                node = get_node_from_shape(s)
-                if node:
-                    self.parent.add_new_node(node)
+        node = get_node_from_element(self.backend_child_elem)
+        self.parent_node_item.add_new_node(node)

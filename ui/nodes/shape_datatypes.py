@@ -1,147 +1,149 @@
-import copy
 import math
-import uuid
 from abc import ABC, abstractmethod
 
-from ui.nodes.gradient_datatype import Gradient
+from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.elem_ref import ElemRef
+from ui.nodes.gradient_datatype import Gradient
+from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
+from ui.port_defs import PT_Element, PT_Shape, PT_Polyline, PT_Ellipse
 
 
-class Element:
+class Element(ABC):
 
-    def __init__(self, shapes=None):
-        if shapes:
-            assert isinstance(shapes, list)
-            assert all(isinstance(s, Shape) for s in shapes)
-            self.shapes = shapes
-        else:
-            self.shapes = []
-
-    def add(self, shape):
-        assert isinstance(shape, Shape)
-        self.shapes.append(shape)
-
-    def scale(self, sx, sy):
-        for i in range(len(self.shapes)):
-            self.shapes[i] = self.shapes[i].scale(sx, sy)
-        return self
-
-    def translate(self, tx, ty):
-        for i in range(len(self.shapes)):
-            self.shapes[i] = self.shapes[i].translate(tx, ty)
-        return self
-
-    def __iter__(self):
-        return iter(self.shapes)
-
-    def __getitem__(self, index):
-        return self.shapes[index]
-
-    def __len__(self):
-        return len(self.shapes)
-
-
-class Transformation(ABC):
+    def __init__(self, debug_info=None, uid=None):
+        self.uid = uid if uid else gen_uid()
+        self.debug_info = debug_info
 
     @abstractmethod
-    def apply(self, base_shape):
+    def get(self, dwg):
         pass
 
     @abstractmethod
-    def apply_to_point(self, point):
+    def translate(self, tx, ty):
         pass
 
-
-class Translate(Transformation):
-    def __init__(self, tx, ty):
-        self.tx = tx
-        self.ty = ty
-
-    def apply(self, base_shape):
-        base_shape.translate(self.tx, self.ty)
-
-    def apply_to_point(self, point):
-        return point[0] + self.tx, point[1] + self.ty
-
-
-class Scale(Transformation):
-    def __init__(self, sx, sy):
-        self.sx = sx
-        self.sy = sy
-
-    def apply(self, base_shape):
-        base_shape.scale(self.sx, self.sy)
-
-    def apply_to_point(self, point):
-        return point[0] * self.sx, point[1] * self.sy
-
-
-class Rotate(Transformation):
-    def __init__(self, angle, centre):
-        self.angle = angle
-        self.centre = centre
-
-    def apply(self, base_shape):
-        base_shape.rotate(self.angle, self.centre)
-
-    def apply_to_point(self, point):
-        angle_radians = math.radians(self.angle)
-
-        # Translate point back to origin
-        x = point[0] - self.centre[0]
-        y = point[1] - self.centre[1]
-
-        # Rotate
-        rotated_x = x * math.cos(angle_radians) - y * math.sin(angle_radians)
-        rotated_y = x * math.sin(angle_radians) + y * math.cos(angle_radians)
-
-        # Translate point back
-        x = rotated_x + self.centre[0]
-        y = rotated_y + self.centre[1]
-        return x, y
-
-
-class Shape(ABC):
-
-    def __init__(self):
-        self.transformations = []
-        self.shape_id = uuid.uuid4()
-
-    def translate(self, tx, ty):
-        new_obj = copy.deepcopy(self)
-        new_obj.shape_id = uuid.uuid4()
-        new_obj.transformations.append(Translate(tx, ty))
-        return new_obj
-
+    @abstractmethod
     def scale(self, sx, sy):
-        new_obj = copy.deepcopy(self)
-        new_obj.shape_id = uuid.uuid4()
-        new_obj.transformations.append(Scale(sx, sy))
-        return new_obj
+        pass
 
+    @abstractmethod
     def rotate(self, angle, centre):
-        new_obj = copy.deepcopy(self)
-        new_obj.shape_id = uuid.uuid4()
-        new_obj.transformations.append(Rotate(angle, centre))
-        return new_obj
-
-    def remove_final_scale(self):
-        assert len(self.transformations) > 0
-        assert isinstance(self.transformations[-1], Scale)
-        new_obj = copy.deepcopy(self)
-        new_obj.shape_id = uuid.uuid4()
-        del new_obj.transformations[-1]
-        return new_obj
+        pass
 
     @abstractmethod
-    def base_shape(self, dwg):
+    def shape_transformations(self):
         pass
+
+    @abstractmethod
+    def get_output_type(self):
+        pass
+
+
+class Group(Element):
+
+    def __init__(self, transforms=None, debug_info=None, uid=None):
+        super().__init__(debug_info, uid)
+        self.elements = []
+        self.transform_list = TransformList(transforms)
 
     def get(self, dwg):
-        base_shape = self.base_shape(dwg)
-        for t in reversed(self.transformations):
-            t.apply(base_shape)
-        return base_shape
+        transform_str = self.transform_list.get_transform_str()
+        if transform_str:
+            group = dwg.g(transform=transform_str, id=self.uid)
+        else:
+            group = dwg.g(id=self.uid)
+        for element in self.elements:
+            group.add(element.get(dwg))
+        return group
+
+    def get_element_from_id(self, element_id):
+        for elem in self.elements:
+            if elem.uid == element_id:
+                return elem
+        return None
+
+    def __iter__(self):
+        for element in self.elements:
+            yield element
+
+    def add(self, element):
+        assert isinstance(element, Element)
+        self.elements.append(element)
+
+    def translate(self, tx, ty):
+        new_group = Group()
+        new_group.transform_list.add(Translate(tx, ty))
+        if self.elements:
+            new_group.add(self)
+        return new_group
+
+    def scale(self, sx, sy):
+        new_group = Group()
+        new_group.transform_list.add(Scale(sx, sy))
+        if self.elements:
+            new_group.add(self)
+        return new_group
+
+    def rotate(self, angle, centre):
+        new_group = Group()
+        new_group.transform_list.add(Rotate(angle, centre))
+        if self.elements:
+            new_group.add(self)
+        return new_group
+
+    def shape_transformations(self):
+        transformed_shapes = []
+        for element in self.elements:
+            transformed_shapes_prev = element.shape_transformations()
+            for shape, transform_list in transformed_shapes_prev:
+                new_transform_list = TransformList()
+                new_transform_list.transforms = self.transform_list.transforms + transform_list.transforms
+                transformed_shapes.append((shape, new_transform_list))
+        return transformed_shapes
+
+    def get_output_type(self):
+        shapes, _ = zip(*self.shape_transformations())
+        if len(shapes) == 1:
+            return shapes[0].get_output_type()
+        return PT_Element
+
+    def __repr__(self):
+        debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""
+        result = f"Group (#{shorten_uid(self.uid)}) [{repr(self.transform_list)}] {debug_str} {{\n"
+        for elem in self.elements:
+            # Get multiline representation and indent each line
+            lines = repr(elem).splitlines()
+            indented = '\n'.join(f"\t{line}" for line in lines)
+            result += f"{indented}\n"
+        result += "}"
+        return result
+
+
+class Shape(Element, ABC):
+
+    def translate(self, tx, ty):
+        group = Group().translate(tx, ty)
+        group.add(self)
+        return group
+
+    def scale(self, sx, sy):
+        group = Group().scale(sx, sy)
+        group.add(self)
+        return group
+
+    def rotate(self, angle, centre):
+        group = Group().rotate(angle, centre)
+        group.add(self)
+        return group
+
+    def shape_transformations(self):
+        return [(self, TransformList())]
+
+    def get_output_type(self):
+        return PT_Shape
+
+    def __repr__(self):
+        return f"Shape (#{shorten_uid(self.uid)}) {self.__class__.__name__.upper()}"
 
 
 class Polyline(Shape):
@@ -152,22 +154,21 @@ class Polyline(Shape):
         self.stroke = stroke
         self.stroke_width = stroke_width
 
-    def base_shape(self, dwg):
+    def get(self, dwg):
         return dwg.polyline(points=self.points,
                             stroke=self.stroke,
                             stroke_width=self.stroke_width,
                             fill='none',
                             style='vector-effect: non-scaling-stroke',
-                            id=self.shape_id)
+                            id=self.uid)
 
-    def get_points(self):
-        transformed_points = []
-        for p in self.points:
-            transformed_p = p
-            for t in self.transformations:
-                transformed_p = t.apply_to_point(transformed_p)
-            transformed_points.append(transformed_p)
-        return transformed_points
+    def get_points(self, transform_list=None):
+        if transform_list:
+            return transform_list.transform_points(self.points)
+        return self.points
+
+    def get_output_type(self):
+        return PT_Polyline
 
 
 class Polygon(Shape):
@@ -180,7 +181,7 @@ class Polygon(Shape):
         self.stroke = stroke
         self.stroke_width = stroke_width
 
-    def base_shape(self, dwg):
+    def get(self, dwg):
         if isinstance(self.fill, Gradient):
             self.fill = self.fill.get(dwg)
         points = []
@@ -195,7 +196,8 @@ class Polygon(Shape):
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
-                           id=self.shape_id)
+                           id=self.uid)
+
 
 class Ellipse(Shape):
 
@@ -208,7 +210,7 @@ class Ellipse(Shape):
         self.stroke = stroke
         self.stroke_width = stroke_width
 
-    def base_shape(self, dwg):
+    def get(self, dwg):
         if isinstance(self.fill, Gradient):
             self.fill = self.fill.get(dwg)
         return dwg.ellipse(center=self.center,
@@ -218,12 +220,15 @@ class Ellipse(Shape):
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
-                           id=self.shape_id)
+                           id=self.uid)
+
+    def get_output_type(self):
+        return PT_Ellipse
 
 
 class SineWave(Polyline):
 
-    def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, orientation, num_points):
+    def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points):
         if x_min > x_max:
             raise ValueError("Wave start position must be smaller than wave stop position.")
         points = []
@@ -239,4 +244,3 @@ class SineWave(Polyline):
             points.append((x, y))
 
         super().__init__(points, 'black', stroke_width)
-        self.transformations.append(Rotate(orientation, (0.5, 0.5)))
