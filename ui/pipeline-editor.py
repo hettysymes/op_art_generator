@@ -9,7 +9,7 @@ import tempfile
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QEvent
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QFocusEvent
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QFocusEvent, QKeySequence
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
@@ -1929,17 +1929,6 @@ class PipelineView(QGraphicsView):
         self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta_x)
         self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta_y)
 
-    def keyPressEvent(self, event):
-        """Handle keyboard shortcuts for zooming"""
-        if (event.modifiers() & Qt.ControlModifier) and (event.key() == Qt.Key_Plus or event.key() == Qt.Key_Equal):
-            self.zoom(self.zoom_factor)
-        elif (event.modifiers() & Qt.ControlModifier) and event.key() == Qt.Key_Minus:
-            self.zoom(1 / self.zoom_factor)
-        elif (event.modifiers() & Qt.ControlModifier) and event.key() == Qt.Key_0:
-            self.resetZoom()
-        else:
-            super().keyPressEvent(event)
-
     def zoom(self, factor):
         resulting_zoom = self.current_zoom * factor
         if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
@@ -2031,7 +2020,7 @@ class PipelineEditor(QMainWindow):
 
         # Add Save action
         save_action = QAction("Save to file", self)
-        save_action.setShortcut("Ctrl+S")
+        save_action.setShortcut(QKeySequence.Save)
         save_action.triggered.connect(self.save_scene)
         file_menu.addAction(save_action)
 
@@ -2051,9 +2040,27 @@ class PipelineEditor(QMainWindow):
 
         # Add Select all action
         select_all = QAction("Select All", self)
-        select_all.setShortcut("Ctrl+A")
+        select_all.setShortcut(QKeySequence.SelectAll)
         select_all.triggered.connect(self.select_all)
         scene_menu.addAction(select_all)
+
+        # Add Zoom in action
+        zoom_in = QAction("Zoom In", self)
+        zoom_in.setShortcut(QKeySequence.ZoomIn)
+        zoom_in.triggered.connect(lambda: self.view.zoom(self.view.zoom_factor))
+        scene_menu.addAction(zoom_in)
+
+        # Add Zoom out action
+        zoom_out = QAction("Zoom Out", self)
+        zoom_out.setShortcut(QKeySequence.ZoomOut)
+        zoom_out.triggered.connect(lambda: self.view.zoom(1/self.view.zoom_factor))
+        scene_menu.addAction(zoom_out)
+
+        # Add Reset zoom action
+        reset_zoom = QAction("Reset Zoom", self)
+        reset_zoom.setShortcut("Ctrl+0")
+        reset_zoom.triggered.connect(self.view.resetZoom)
+        scene_menu.addAction(reset_zoom)
 
     def save_scene(self):
         file_path, _ = QFileDialog.getSaveFileName(
