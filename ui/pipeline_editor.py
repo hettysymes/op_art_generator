@@ -1675,6 +1675,7 @@ class PipelineScene(QGraphicsScene):
         self.temp_dir = temp_dir
         print(temp_dir)
         self.undo_stack = QUndoStack()
+        self.filepath = None
 
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
@@ -1928,6 +1929,7 @@ class PipelineScene(QGraphicsScene):
         self.view().set_zoom(app_state.zoom)
         self.load_from_save_states(app_state.save_states)
         self.undo_stack.clear()
+        self.filepath = filepath
 
     def clear_scene(self):
         self.undo_stack.push(ClearSceneCmd(self))
@@ -2140,9 +2142,15 @@ class PipelineEditor(QMainWindow):
         file_menu = menu_bar.addMenu("File")
 
         # Add Save action
-        save_action = QAction("Save to file", self)
+        save_action = QAction("Save", self)
         save_action.setShortcut(QKeySequence.Save)
         save_action.triggered.connect(self.save_scene)
+        file_menu.addAction(save_action)
+
+        # Add Save As action
+        save_action = QAction("Save As", self)
+        save_action.setShortcut(QKeySequence.SaveAs)
+        save_action.triggered.connect(self.save_as_scene)
         file_menu.addAction(save_action)
 
         # Add Load action
@@ -2193,17 +2201,26 @@ class PipelineEditor(QMainWindow):
         reset_zoom.triggered.connect(self.view.resetZoom)
         scene_menu.addAction(reset_zoom)
 
-    def save_scene(self):
-        file_path, _ = QFileDialog.getSaveFileName(
+    def save_as_scene(self):
+        filepath, _ = QFileDialog.getSaveFileName(
             self,
             "Save Pipeline Scene",
             "",
             "Pipeline Scene Files (*.pipeline);;All Files (*)"
         )
 
-        if file_path:
-            self.scene.save_scene(file_path)
-            self.statusBar().showMessage(f"Scene saved to {file_path}", 3000)
+        if filepath:
+            self.scene.save_scene(filepath)
+
+    def save_scene(self, filepath=None):
+        if filepath:
+            save_filepath = filepath
+        elif self.scene.filepath:
+            save_filepath = self.scene.filepath
+        else:
+            return self.save_as_scene()
+        self.scene.save_scene(save_filepath)
+        self.statusBar().showMessage(f"Scene saved to {save_filepath}", 3000)
 
     def load_scene(self):
         file_path, _ = QFileDialog.getOpenFileName(
