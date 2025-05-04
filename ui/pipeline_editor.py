@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QGraphicsTextItem, QLabel, QUndoStack, QUndoCommand)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
+from sympy.physics.quantum.cartesian import PositionState3D
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import gen_uid, shorten_uid
@@ -2258,22 +2259,19 @@ class PipelineEditor(QMainWindow):
     def copy_selected_items(self):
         nodes = []
         edges = []
+        bounding_rect = None
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
                 nodes.append(item)
             elif isinstance(item, EdgeItem):
                 edges.append(item)
+            # Calculate bounding rect
+            if bounding_rect:
+                bounding_rect = bounding_rect.united(item.sceneBoundingRect())
+            else:
+                bounding_rect = item.sceneBoundingRect()
         if not (nodes or edges):
             return
-
-        # for item in nodes + edges:
-        #     bounding_rect = selected_items[0].sceneBoundingRect()
-        #     for item in selected_items[1:]:
-        #         bounding_rect = bounding_rect.united(item.sceneBoundingRect())
-        #
-        #     # Get the center of the bounding rectangle
-        #     center_point = bounding_rect.center()
-        #     print("Center of selection:", center_point)
 
         node_states = {}
         port_states = {}
@@ -2343,7 +2341,7 @@ class PipelineEditor(QMainWindow):
         # Save to clipboard
         if save_states:
             mime_data = QMimeData()
-            mime_data.setData("application/pipeline_editor_items", pickle.dumps(save_states))
+            mime_data.setData("application/pipeline_editor_items", pickle.dumps((save_states, bounding_rect.center())))
             clipboard = QApplication.clipboard()
             clipboard.setMimeData(mime_data)
 
@@ -2354,8 +2352,17 @@ class PipelineEditor(QMainWindow):
         if mime.hasFormat("application/pipeline_editor_items"):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
-            save_states = pickle.loads(bytes(raw_data))
+            save_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
             # Modify position
+            view_centre = self.view.mapToScene(self.view.viewport().rect().center())
+            offset = view_centre - bounding_rect_centre
+            for state in save_states.values():
+                if isinstance(state, NodeState) or isinstance(state, PortState):
+                    state.x += offset.x()
+                    state.y += offset.y()
+
+            print(save_states)
+            # Perform paste
             self.scene.load_from_save_states(save_states)
 
 
