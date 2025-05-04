@@ -1664,15 +1664,19 @@ class DeleteCmd(QUndoCommand):
 
     def redo(self):
         self.save_states = {}
-        for edge in self.edges_to_delete:
-            self.save_states[edge.uid] = edge.backend
-            self.pipeline_scene.delete_edge(edge)
         for node in self.nodes_to_delete:
             self.save_states[node.uid] = node.backend
             for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
                 port = self.pipeline_scene.scene.get(port_id)
                 self.save_states[port_id] = port.backend
+                for edge_id in port.backend.edge_ids:
+                    edge = self.pipeline_scene.scene.get(edge_id)
+                    self.save_states[edge_id] = edge.backend
             self.pipeline_scene.delete_node(node)
+        for edge in self.edges_to_delete:
+            if edge.uid not in self.save_states:
+                self.save_states[edge.uid] = edge.backend
+                self.pipeline_scene.delete_edge(edge)
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
