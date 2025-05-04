@@ -1541,7 +1541,7 @@ class PipelineScene(QGraphicsScene):
 
     def __init__(self, temp_dir, parent=None):
         super().__init__(parent)
-        self.setSceneRect(0, 0, 2000, 2000)
+        self.setSceneRect(-100000, -100000, 200000, 200000)
 
         # Connection related variables
         self.connection_signals = ConnectionSignals()
@@ -1741,7 +1741,7 @@ class PipelineScene(QGraphicsScene):
             menu.addAction(duplicate_action)
             menu.addAction(delete_action)
             menu.exec_(event.screenPos())
-        elif event.scenePos().x() >= 0 and event.scenePos().y() >= 0:
+        else:
             menu = QMenu()
             add_node_menu = QMenu("Add Node", menu)
             menu.addMenu(add_node_menu)
@@ -1848,11 +1848,6 @@ class PipelineScene(QGraphicsScene):
         clicked_item.node.prop_vals['_actual_seed'] = random.random()
         clicked_item.update_visualisations()
 
-    from PyQt5.QtWidgets import QGraphicsView
-    from PyQt5.QtGui import QPainter, QBrush, QColor, QTransform
-    from PyQt5.QtCore import Qt, QEvent
-    from PyQt5.QtGui import QNativeGestureEvent  # Needed for macOS trackpad gestures
-
 class PipelineView(QGraphicsView):
     """View to interact with the pipeline scene"""
 
@@ -1871,6 +1866,8 @@ class PipelineView(QGraphicsView):
         self.zoom_min = 0.1
         self.zoom_max = 10.0
         self.current_zoom = 1.0
+
+        self.centerOn(0, 0)
 
         # Add grid lines
         self.draw_grid()
@@ -1951,18 +1948,27 @@ class PipelineView(QGraphicsView):
         grid_size = 20
         scene_rect = self.scene().sceneRect()
 
+        left = int(scene_rect.left())
+        right = int(scene_rect.right())
+        top = int(scene_rect.top())
+        bottom = int(scene_rect.bottom())
+
+        # Align to the grid
+        left -= left % grid_size
+        top -= top % grid_size
+
         # Draw vertical lines
-        for x in range(0, int(scene_rect.width()), grid_size):
-            line = QGraphicsLineItem(x, 0, x, scene_rect.height())
+        for x in range(left, right + 1, grid_size):
+            line = QGraphicsLineItem(x, top, x, bottom)
             line.setPen(QPen(QColor(200, 200, 200), 1))
-            line.setZValue(-1000)  # Place behind all other items
+            line.setZValue(-1000)
             self.scene().addItem(line)
 
         # Draw horizontal lines
-        for y in range(0, int(scene_rect.height()), grid_size):
-            line = QGraphicsLineItem(0, y, scene_rect.width(), y)
+        for y in range(top, bottom + 1, grid_size):
+            line = QGraphicsLineItem(left, y, right, y)
             line.setPen(QPen(QColor(200, 200, 200), 1))
-            line.setZValue(-1000)  # Place behind all other items
+            line.setZValue(-1000)
             self.scene().addItem(line)
 
     def mousePressEvent(self, event):
