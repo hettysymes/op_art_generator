@@ -2178,27 +2178,32 @@ class PipelineEditor(QMainWindow):
         copy = QAction("Copy", self)
         copy.setShortcut(QKeySequence.Copy)
         copy.triggered.connect(self.copy_selected_items)
+        copy.setMenuRole(QAction.NoRole)
         scene_menu.addAction(copy)
 
         paste = QAction("Paste", self)
         paste.setShortcut(QKeySequence.Paste)
         paste.triggered.connect(self.paste_items)
+        paste.setMenuRole(QAction.NoRole)
         scene_menu.addAction(paste)
 
         # Add Select all action
         select_all = QAction("Select All", self)
         select_all.setShortcut(QKeySequence.SelectAll)
         select_all.triggered.connect(self.select_all)
+        select_all.setMenuRole(QAction.NoRole)
         scene_menu.addAction(select_all)
 
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
+        undo.setMenuRole(QAction.NoRole)
         scene_menu.addAction(undo)
 
         # Add Redo action
         redo = self.scene.undo_stack.createRedoAction(self, "Redo")
         redo.setShortcut(QKeySequence.Redo)
+        redo.setMenuRole(QAction.NoRole)
         scene_menu.addAction(redo)
 
         # Add Zoom in action
