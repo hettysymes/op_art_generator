@@ -25,5 +25,7 @@ class OverlayNode(UnitNode):
         handle_multi_inputs(self.get_input_node('elements'), self.prop_vals['elem_order'])
         ret_group = Group(debug_info="Overlay")
         for elem_ref in self.get_prop_val('elem_order'):
-            ret_group.add(elem_ref.compute())
+            elem_ref_comp = elem_ref.compute()
+            if elem_ref_comp:
+                ret_group.add(elem_ref_comp)
         return ret_group
