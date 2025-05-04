@@ -1862,10 +1862,12 @@ class PipelineView(QGraphicsView):
         self.setBackgroundBrush(QBrush(QColor(240, 240, 240)))
 
         # Zoom settings
+        self.default_zoom = 0.8
         self.zoom_factor = 1.15
         self.zoom_min = 0.1
         self.zoom_max = 10.0
-        self.current_zoom = 1.0
+        self.current_zoom = self.default_zoom
+        self.setTransform(QTransform().scale(self.current_zoom, self.current_zoom))
 
         self.centerOn(0, 0)
 
@@ -1891,6 +1893,7 @@ class PipelineView(QGraphicsView):
         self.scale(factor, factor)
         self.current_zoom *= factor
         self.update()
+        print(self.current_zoom)
         return True  # event handled
 
     def wheelEvent(self, event):
@@ -1939,8 +1942,8 @@ class PipelineView(QGraphicsView):
         self.update()
 
     def resetZoom(self):
-        self.setTransform(QTransform())
-        self.current_zoom = 1.0
+        self.setTransform(QTransform().scale(self.default_zoom, self.default_zoom))  # Reset to default zoom
+        self.current_zoom = self.default_zoom  # Update current zoom to default
         self.update()
 
     def draw_grid(self):
