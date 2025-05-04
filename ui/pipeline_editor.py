@@ -1511,6 +1511,7 @@ class NodePropertiesDialog(QDialog):
 
     def accept(self):
         """Apply properties and close dialog"""
+        props_changed = {}
 
         # Update custom properties
         for prop_name, widget in self.property_widgets.items():
@@ -1525,16 +1526,10 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
 
-            self.node_item.node.prop_vals[prop_name] = value
-            if (not self.node_item.node.resizable()) and (prop_name == 'width' or prop_name == 'height'):
-                svg_width = self.node_item.node.prop_vals.get('width', self.node_item.rect().width())
-                svg_height = self.node_item.node.prop_vals.get('height', self.node_item.rect().height())
-                self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width, svg_height))
+            props_changed[prop_name] = (self.node_item.node.prop_vals[prop_name], value)
 
-        # Update the node's appearance
-        self.node_item.update()
-        self.node_item.update_visualisations()
-
+        scene = self.node_item.scene()
+        scene.undo_stack.push(ChangePropertiesCmd(scene, self.node_item, props_changed))
         super().accept()
 
 class AddNewNodeCmd(QUndoCommand):
@@ -1579,6 +1574,38 @@ class AddNewEdgeCmd(QUndoCommand):
         self.edge.dest_port.add_edge(self.edge.uid)
         self.edge.dest_port.parentItem().update_visualisations()
 
+class ChangePropertiesCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, node_item: NodeItem, props_changed, description="Add new edge"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.node_item = node_item
+        self.props_changed = props_changed
+
+    def update_properties(self, props):
+        for prop_name, prop in props.items():
+            self.node_item.node.prop_vals[prop_name] = prop
+            if (not self.node_item.node.resizable()) and (prop_name == 'width' or prop_name == 'height'):
+                svg_width = self.node_item.node.prop_vals.get('width', self.node_item.rect().width())
+                svg_height = self.node_item.node.prop_vals.get('height', self.node_item.rect().height())
+                self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width, svg_height))
+
+        # Update the node's appearance
+        self.node_item.update()
+        self.node_item.update_visualisations()
+
+    def undo(self):
+        props = {}
+        for prop_name, value in self.props_changed.items():
+            props[prop_name] = value[0]
+        self.update_properties(props)
+
+    def redo(self):
+        props = {}
+        for prop_name, value in self.props_changed.items():
+            props[prop_name] = value[1]
+        self.update_properties(props)
+
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
@@ -1617,9 +1644,7 @@ class PipelineScene(QGraphicsScene):
 
     def edit_node_properties(self, node):
         """Open a dialog to edit the node's properties"""
-        dialog = NodePropertiesDialog(node)
-        if dialog.exec_() == QDialog.Accepted:
-            node.update()
+        NodePropertiesDialog(node).exec_()
 
     def start_connection(self, source_port: PortItem):
         """Start creating a connection from the given source port"""
