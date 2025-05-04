@@ -2197,13 +2197,11 @@ class PipelineEditor(QMainWindow):
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
-        undo.setMenuRole(QAction.NoRole)
         scene_menu.addAction(undo)
 
         # Add Redo action
         redo = self.scene.undo_stack.createRedoAction(self, "Redo")
         redo.setShortcut(QKeySequence.Redo)
-        redo.setMenuRole(QAction.NoRole)
         scene_menu.addAction(redo)
 
         # Add Zoom in action
