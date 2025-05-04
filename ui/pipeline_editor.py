@@ -1856,23 +1856,21 @@ class PipelineScene(QGraphicsScene):
             menu.exec_(event.screenPos())
         else:
             menu = QMenu()
-            add_node_menu = QMenu("Add Node", menu)
-            menu.addMenu(add_node_menu)
 
             # Add actions for each node type
             for node_class in node_classes:
                 if issubclass(node_class, CombinationNode):
-                    submenu = add_node_menu.addMenu(node_class.display_name())
+                    submenu = menu.addMenu(node_class.display_name())
                     for i in range(len(node_class.selections())):
                         change_action = QAction(node_class.selections()[i].display_name(), submenu)
                         handler = partial(self.add_node_from_class, node_class, event.scenePos(), i)
                         change_action.triggered.connect(handler)
                         submenu.addAction(change_action)
                 else:
-                    action = QAction(node_class.display_name(), add_node_menu)
+                    action = QAction(node_class.display_name(), menu)
                     handler = partial( self.add_node_from_class, node_class, event.scenePos(), None)
                     action.triggered.connect(handler)
-                    add_node_menu.addAction(action)
+                    menu.addAction(action)
 
             menu.exec_(event.screenPos())
 
