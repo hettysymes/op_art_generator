@@ -1547,8 +1547,8 @@ class AddNewNodeCmd(QUndoCommand):
         self.node_item = None
 
     def undo(self):
-        if self.node_item:
-            self.pipeline_scene.delete_node(self.node_item)
+        assert self.node_item
+        self.pipeline_scene.delete_node(self.node_item)
 
     def redo(self):
         self.node_item = NodeItem(NodeState(self.node.node_id, self.pos.x(), self.pos.y(), [], [], self.node, 150, 150))
@@ -1556,6 +1556,28 @@ class AddNewNodeCmd(QUndoCommand):
         self.pipeline_scene.addItem(self.node_item)
         self.node_item.create_ports()
         self.node_item.update_vis_image()
+
+class AddNewEdgeCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, src_port_id, dst_port_id, description="Add new edge"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.src_port_id = src_port_id
+        self.dst_port_id = dst_port_id
+        self.edge = None
+
+    def undo(self):
+        assert self.edge
+        self.pipeline_scene.delete_edge(self.edge)
+
+    def redo(self):
+        self.edge = EdgeItem(EdgeState(gen_uid(), self.src_port_id, self.dst_port_id))
+        self.scene.add(self.edge)
+        self.pipeline_scene.addItem(self.edge)
+        self.edge.set_ports()
+        self.edge.source_port.add_edge(self.edge.uid)
+        self.edge.dest_port.add_edge(self.edge.uid)
+        self.edge.dest_port.parentItem().update_visualisations()
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -1635,13 +1657,7 @@ class PipelineScene(QGraphicsScene):
                 if not connection_exists and issubclass(source_port.backend.port_def.port_type,
                                                         dest_port.backend.port_def.port_type) and (
                         dest_port.backend.port_def.input_multiple or not target_has_connection):
-                    edge = EdgeItem(EdgeState(gen_uid(), source_port.backend.uid, dest_port.backend.uid))
-                    self.scene.add(edge)
-                    self.addItem(edge)
-                    edge.set_ports()
-                    edge.source_port.add_edge(edge.uid)
-                    edge.dest_port.add_edge(edge.uid)
-                    edge.dest_port.parentItem().update_visualisations()
+                    self.undo_stack.push(AddNewEdgeCmd(self, source_port.backend.uid, dest_port.backend.uid))
 
         # Clean up temporary line
         if self.temp_line:
