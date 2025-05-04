@@ -1836,10 +1836,9 @@ class PipelineScene(QGraphicsScene):
 
         # Remove tooltip
         if node._help_tooltip:
-            self.scene().removeItem(node._help_tooltip)
+            self.removeItem(node._help_tooltip)
             self._help_tooltip = None
 
-        self.scene().removeItem(self)
         self.scene.remove(node.uid)
         self.removeItem(node)
 
