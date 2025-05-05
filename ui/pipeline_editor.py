@@ -12,14 +12,15 @@ from functools import partial
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QEvent, QMimeData
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QFocusEvent, QKeySequence
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QFocusEvent, QKeySequence, \
+    QFontMetrics
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QStyledItemDelegate, QColorDialog,
-                             QGraphicsTextItem, QLabel, QUndoStack, QUndoCommand)
+                             QGraphicsTextItem, QLabel, QUndoStack, QUndoCommand, QGraphicsProxyWidget)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 from sympy.physics.quantum.cartesian import PositionState3D
@@ -135,6 +136,26 @@ class NodeItem(QGraphicsRectItem):
         self.setBrush(QBrush(QColor(220, 230, 250)))
         self.setPen(QPen(Qt.black, 2))
         self.node = self.backend.node
+
+        self._property_button = QPushButton("P")
+        self._property_button.setFixedSize(20, 20)
+        self._property_button.setStyleSheet("""
+            QPushButton {
+                background-color: #f0f0f0;
+                border: 1px solid #646464;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #cccccc;
+            }
+        """)
+        self._property_button.clicked.connect(lambda: self.scene().edit_node_properties(self))  # Define this method
+        self._property_proxy = QGraphicsProxyWidget(self)
+        self._property_proxy.setWidget(self._property_button)
+        self._property_proxy.setZValue(101)
+        self._property_button.setToolTip("Edit node properties.")
+
 
         self._help_icon_rect = QRectF()
         self._help_hover_timer = QTimer()
@@ -585,17 +606,24 @@ class NodeItem(QGraphicsRectItem):
         painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{shorten_uid(self.node.node_id)}")
 
         # Draw node title
-        painter.setFont(QFont("Arial", 10))
+        title_font = QFont("Arial", 10)
+        painter.setFont(title_font)
         painter.setPen(QColor("black"))
-        title_rect = self.rect().adjusted(0, 10, 0, 0)  # Shift the top edge down
-        painter.drawText(title_rect, Qt.AlignTop | Qt.AlignHCenter, self.node.name())
+        metrics = QFontMetrics(title_font)
+        title_text = self.node.name()
+        text_width = metrics.horizontalAdvance(title_text)
+        text_height = metrics.height()
+        node_rect = self.rect()
+        title_x = node_rect.center().x() - text_width / 2
+        title_y = node_rect.top() + 10  # adjust vertical offset as needed
+        title_rect = QRectF(title_x, title_y, text_width, text_height)
+        painter.drawText(title_rect, Qt.AlignLeft | Qt.AlignTop, title_text)
 
         # Draw the help icon (question mark) in the top-right corner
-        help_icon_size = 16
-        margin = 5
+        help_icon_size = text_height
         help_rect = QRectF(
-            self.rect().right() - help_icon_size - margin,
-            self.rect().top() + margin,
+            title_rect.right() + help_icon_size/2,
+            title_rect.top(),
             help_icon_size,
             help_icon_size
         )
@@ -612,6 +640,11 @@ class NodeItem(QGraphicsRectItem):
 
         # Store the help icon rect for hit testing in hover events
         self._help_icon_rect = help_rect
+        property_button_pos = QPointF(
+            self.rect().right() - 25,  # Button width (20) + 5px spacing
+            self.rect().top() + 5
+        )
+        self._property_proxy.setPos(property_button_pos)
 
         # Draw port labels if there are multiple
         painter.setFont(NodeItem.LABEL_FONT)
