@@ -3,6 +3,7 @@ from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
 from ui.nodes.shape_datatypes import Element, Group
 from ui.nodes.shape_repeater import ShapeRepeaterNode
+from ui.nodes.transforms import Scale, Translate
 from ui.port_defs import PortDef, PT_Element, PT_Repeatable
 
 STACKER_NODE_INFO = UnitNodeInfo(
@@ -32,28 +33,16 @@ class StackerNode(UnitNode):
     @staticmethod
     def helper(elements, wh_diff, vertical_layout):
         n = len(elements)
-        scale_factor = 1 / wh_diff
-        scaled_elements = []
-        for element in elements:
+        size = n + wh_diff*(1-n)
+        group = Group(debug_info="stacker")
+        for i, e in enumerate(elements):
             if vertical_layout:
-                scaled_elements.append(element.scale(1, scale_factor))
+                transform = [Scale(1, 1/size), Translate(0, i*(1 - wh_diff)/size)]
             else:
-                scaled_elements.append(element.scale(scale_factor, 1))
-        if vertical_layout:
-            grid = GridNode.helper(None, None, 1, n)
-        else:
-            grid = GridNode.helper(None, None, n, 1)
-        repeated_elem = ShapeRepeaterNode.helper(
-            grid,
-            scaled_elements
-        )
-        final_scale_factor = n / (n - 1 + scale_factor)
-        group = Group(debug_info="Stacker")
-        for element in repeated_elem.elements:
-            if vertical_layout:
-                group.add(element.scale(1, final_scale_factor))
-            else:
-                group.add(element.scale(final_scale_factor, 1))
+                transform = [Scale(1/size, 1), Translate(i*(1 - wh_diff)/size, 0)]
+            elem_cell = Group(transform, debug_info=f"Stacked element {i}")
+            elem_cell.add(e)
+            group.add(elem_cell)
         return group
 
     def compute(self):
