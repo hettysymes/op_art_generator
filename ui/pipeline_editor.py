@@ -329,6 +329,7 @@ class NodeItem(QGraphicsRectItem):
             self.svg_item.setPos(svg_pos_x, svg_pos_y)
             self.svg_item.setZValue(2)
         else:
+            print(vis)
             assert isinstance(vis, Group)
             assert not vis.transform_list.transforms
             GroupDrawer(svg_filepath, self.backend.svg_width, self.backend.svg_height, (vis, None)).save()
@@ -2448,7 +2449,10 @@ class PipelineEditor(QMainWindow):
                     # Update parent node id
                     state.parent_node_id = old_to_new_id_map[state.parent_node_id]
                     # Update edge ids
-                    state.edge_ids = [old_to_new_id_map[i] for i in state.edge_ids]
+                    edge_ids = []
+                    for old_edge_id in state.edge_ids:
+                        if old_edge_id in old_to_new_id_map:
+                            edge_ids.append(old_to_new_id_map[old_edge_id])
                 elif isinstance(state, EdgeState):
                     # Update src and dst port ids
                     state.src_port_id = old_to_new_id_map[state.src_port_id]

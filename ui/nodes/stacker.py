@@ -1,7 +1,7 @@
 from ui.nodes.grid import GridNode
 from ui.nodes.multi_input_handler import handle_multi_inputs
 from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Element, Group
 from ui.nodes.shape_repeater import ShapeRepeaterNode
 from ui.port_defs import PortDef, PT_Element, PT_Repeatable
 
@@ -48,10 +48,13 @@ class StackerNode(UnitNode):
             scaled_elements
         )
         final_scale_factor = n / (n - 1 + scale_factor)
-        if vertical_layout:
-            return repeated_elem.scale(1, final_scale_factor)
-        else:
-            return repeated_elem.scale(final_scale_factor, 1)
+        group = Group(debug_info="Stacker")
+        for element in repeated_elem.elements:
+            if vertical_layout:
+                group.add(element.scale(1, final_scale_factor))
+            else:
+                group.add(element.scale(final_scale_factor, 1))
+        return group
 
     def compute(self):
         handle_multi_inputs(self.get_input_node('repeatables'), self.prop_vals['elem_order'])
