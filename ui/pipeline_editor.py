@@ -1539,18 +1539,30 @@ class AddNewNodeCmd(QUndoCommand):
         self.scene: Scene = pipeline_scene.scene
         self.pos = pos
         self.node = node
-        self.node_item = None
+        self.save_states = None
 
     def undo(self):
-        assert self.node_item
-        self.pipeline_scene.delete_node(self.node_item)
+        assert self.save_states
+        for state in self.save_states.values():
+            if isinstance(state, NodeState):
+                node_item = self.scene.get(state.uid)
+                self.pipeline_scene.delete_node(node_item)
+                return
 
     def redo(self):
-        self.node_item = NodeItem(NodeState(self.node.node_id, self.pos.x(), self.pos.y(), [], [], self.node, 150, 150))
-        self.scene.add(self.node_item)
-        self.pipeline_scene.addItem(self.node_item)
-        self.node_item.create_ports()
-        self.node_item.update_vis_image()
+        if self.save_states:
+            self.pipeline_scene.load_from_save_states(self.save_states)
+        else:
+            node_item = NodeItem(NodeState(self.node.node_id, self.pos.x(), self.pos.y(), [], [], self.node, 150, 150))
+            self.scene.add(node_item)
+            self.pipeline_scene.addItem(node_item)
+            node_item.create_ports()
+            node_item.update_vis_image()
+            # Save to save_states for further redos
+            self.save_states = {node_item.uid: node_item.backend}
+            for port_id in node_item.backend.input_port_ids + node_item.backend.output_port_ids:
+                port = self.scene.get(port_id)
+                self.save_states[port.uid] = port.backend
 
 class AddNewEdgeCmd(QUndoCommand):
     def __init__(self, pipeline_scene, src_port_id, dst_port_id, description="Add new edge"):
