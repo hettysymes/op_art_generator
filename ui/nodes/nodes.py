@@ -27,6 +27,12 @@ class PropTypeList:
                 key_names.append(prop_type.key_name)
         return key_names
 
+    def is_empty(self):
+        for prop in self.prop_types:
+            if prop.prop_type != "hidden":
+                return False
+        return True
+
     def __iter__(self):
         return iter(self.prop_types)
 

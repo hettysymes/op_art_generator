@@ -137,24 +137,28 @@ class NodeItem(QGraphicsRectItem):
         self.setPen(QPen(Qt.black, 2))
         self.node = self.backend.node
 
-        self._property_button = QPushButton("P")
-        self._property_button.setFixedSize(20, 20)
-        self._property_button.setStyleSheet("""
-            QPushButton {
-                background-color: #f0f0f0;
-                border: 1px solid #646464;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #cccccc;
-            }
-        """)
-        self._property_button.clicked.connect(lambda: self.scene().edit_node_properties(self))  # Define this method
-        self._property_proxy = QGraphicsProxyWidget(self)
-        self._property_proxy.setWidget(self._property_button)
-        self._property_proxy.setZValue(101)
-        self._property_button.setToolTip("Edit node properties")
+
+        if self.node.prop_type_list().is_empty():
+            self._property_button = None
+        else:
+            self._property_button = QPushButton("P")
+            self._property_button.setFixedSize(20, 20)
+            self._property_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #f0f0f0;
+                    border: 1px solid #646464;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #cccccc;
+                }
+            """)
+            self._property_button.clicked.connect(lambda: self.scene().edit_node_properties(self))  # Define this method
+            self._property_proxy = QGraphicsProxyWidget(self)
+            self._property_proxy.setWidget(self._property_button)
+            self._property_proxy.setZValue(101)
+            self._property_button.setToolTip("Edit node properties")
 
 
         self._help_icon_rect = QRectF()
@@ -640,11 +644,12 @@ class NodeItem(QGraphicsRectItem):
 
         # Store the help icon rect for hit testing in hover events
         self._help_icon_rect = help_rect
-        property_button_pos = QPointF(
-            self.rect().right() - 25,  # Button width (20) + 5px spacing
-            self.rect().top() + 5
-        )
-        self._property_proxy.setPos(property_button_pos)
+        if self._property_button:
+            property_button_pos = QPointF(
+                self.rect().right() - 25,  # Button width (20) + 5px spacing
+                self.rect().top() + 5
+            )
+            self._property_proxy.setPos(property_button_pos)
 
         # Draw port labels if there are multiple
         painter.setFont(NodeItem.LABEL_FONT)
