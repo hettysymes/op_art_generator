@@ -624,10 +624,10 @@ class NodeItem(QGraphicsRectItem):
         painter.drawText(title_rect, Qt.AlignLeft | Qt.AlignTop, title_text)
 
         # Draw the help icon (question mark) in the top-right corner
-        help_icon_size = text_height
+        help_icon_size = 9
         help_rect = QRectF(
-            title_rect.right() + help_icon_size/2,
-            title_rect.top(),
+            title_rect.right() + help_icon_size / 2,
+            title_rect.center().y() - help_icon_size / 2,  # center vertically
             help_icon_size,
             help_icon_size
         )
@@ -638,7 +638,7 @@ class NodeItem(QGraphicsRectItem):
         painter.drawEllipse(help_rect)
 
         # Draw the question mark
-        painter.setFont(QFont("Arial", 10, QFont.Bold))
+        painter.setFont(QFont("Arial", help_icon_size, QFont.Bold))
         painter.setPen(QColor(80, 80, 80))
         painter.drawText(help_rect, Qt.AlignCenter, "?")
 
