@@ -154,7 +154,7 @@ class NodeItem(QGraphicsRectItem):
         self._property_proxy = QGraphicsProxyWidget(self)
         self._property_proxy.setWidget(self._property_button)
         self._property_proxy.setZValue(101)
-        self._property_button.setToolTip("Edit node properties.")
+        self._property_button.setToolTip("Edit node properties")
 
 
         self._help_icon_rect = QRectF()
@@ -630,7 +630,7 @@ class NodeItem(QGraphicsRectItem):
 
         # Draw the circle background
         painter.setPen(QPen(QColor(100, 100, 100), 1))
-        painter.setBrush(QColor(240, 240, 240))
+        painter.setBrush(Qt.NoBrush)
         painter.drawEllipse(help_rect)
 
         # Draw the question mark
@@ -1895,8 +1895,6 @@ class PipelineScene(QGraphicsScene):
                 clicked_item = clicked_item.parentItem()
 
             menu = QMenu()
-            properties_action = QAction("Properties...", menu)
-            properties_action.triggered.connect(lambda: self.edit_node_properties(clicked_item))
 
             if isinstance(clicked_item, NodeItem) and isinstance(clicked_item.node, CombinationNode):
                 submenu = QMenu(f"Change {clicked_item.node.display_name()} to...")
@@ -1906,8 +1904,6 @@ class PipelineScene(QGraphicsScene):
                     change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
                     submenu.addAction(change_action)
                 menu.addMenu(submenu)
-
-            menu.addAction(properties_action)
 
             if isinstance(clicked_item.node, RandomColourSelectorNode):
                 randomise_action = QAction("Randomise", menu)
