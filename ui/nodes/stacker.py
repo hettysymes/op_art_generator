@@ -40,7 +40,7 @@ class StackerNode(UnitNode):
                 transform = [Scale(1, 1/size), Translate(0, i*(1 - wh_diff)/size)]
             else:
                 transform = [Scale(1/size, 1), Translate(i*(1 - wh_diff)/size, 0)]
-            elem_cell = Group(transform, debug_info=f"Stacked element {i}")
+            elem_cell = Group(transform, debug_info=f"Stack element {i}")
             elem_cell.add(e)
             group.add(elem_cell)
         return group
