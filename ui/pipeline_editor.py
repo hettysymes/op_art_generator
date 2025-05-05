@@ -31,7 +31,7 @@ from ui.nodes.all_nodes import node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.immutable_elem_node import load_scene_with_elements
-from ui.nodes.nodes import CombinationNode, Node
+from ui.nodes.nodes import CombinationNode, Node, UnitNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
@@ -421,7 +421,9 @@ class NodeItem(QGraphicsRectItem):
             output_node.update_visualisations()
 
     def update_node(self):
-        self.node.input_nodes = self.get_input_node_items()
+        if (not hasattr(self.backend, 'ignore_inputs')) or (not self.backend.ignore_inputs):
+            self.node.input_nodes = self.get_input_node_items()
+            self.backend.ignore_inputs = False # For future compatibility
         return self.node
 
     def create_ports(self):
@@ -758,6 +760,28 @@ class NodeItem(QGraphicsRectItem):
         width, height = self.node_size_from_svg_size(self.backend.svg_width, self.backend.svg_height)
         self.resize(width, height)
 
+    def create_separated_inputs_copy(self):
+        new_id = gen_uid()
+        new_node = copy.deepcopy(self.node)
+        new_node.node_id = new_id
+        node_item = NodeItem(NodeState(new_id, self.pos().x() + 10, self.pos().y() + 10, [], [], new_node, 150, 150, ignore_inputs=True))
+        # Create output ports (right side)
+        output_count = len(new_node.out_port_defs())
+        for i, port_def in enumerate(new_node.out_port_defs()):
+            y_offset = (i + 1) * node_item.rect().height() / (output_count + 1)
+            state_id = gen_uid()
+            output_port = PortItem(PortState(state_id,
+                                             node_item.rect().width() + 10, y_offset,
+                                             node_item.uid,
+                                             False,
+                                             [], port_def), node_item)
+            node_item.backend.output_port_ids.append(state_id)
+            self.scene().scene.add(output_port)
+        # Add node to scene
+        self.scene().scene.add(node_item)
+        self.scene().addItem(node_item)
+        node_item.update_label_containers()
+        node_item.update_vis_image()
 
 class PortItem(QGraphicsPathItem):
     """Represents connection points on nodes with shapes based on port_type"""
@@ -1900,8 +1924,11 @@ class PipelineScene(QGraphicsScene):
                 clicked_item = clicked_item.parentItem()
 
             menu = QMenu()
+            separate_from_inputs_action = QAction("Separate from inputs", menu)
+            separate_from_inputs_action.triggered.connect(lambda: self.separate_from_inputs_action(clicked_item))
+            menu.addAction(separate_from_inputs_action)
 
-            if isinstance(clicked_item, NodeItem) and isinstance(clicked_item.node, CombinationNode):
+            if isinstance(clicked_item.node, CombinationNode):
                 submenu = QMenu(f"Change {clicked_item.node.display_name()} to...")
                 for i in range(len(clicked_item.node.selections())):
                     if i == clicked_item.node.selection_index: continue
@@ -2048,6 +2075,10 @@ class PipelineScene(QGraphicsScene):
     def randomise(self, clicked_item: RandomColourSelectorNode):
         clicked_item.node.prop_vals['_actual_seed'] = random.random()
         clicked_item.update_visualisations()
+
+    def separate_from_inputs_action(self, clicked_item: NodeItem):
+        clicked_item.create_separated_inputs_copy()
+
 
 class PipelineView(QGraphicsView):
     """View to interact with the pipeline scene"""
