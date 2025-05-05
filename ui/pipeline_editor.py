@@ -2373,76 +2373,25 @@ class PipelineEditor(QMainWindow):
         if not (nodes or edges):
             return
 
+        # Populate states
         node_states = {}
         port_states = {}
         for node in nodes:
-            node_state = copy.deepcopy(node.backend)
-            # Set node uid
-            node_uid = gen_uid()
-            node_state.uid = node_uid
-            node_state.node.node_id = node_uid
-            # Save to dictionary with old uid key
-            node_states[node.uid] = node_state
-
+            node_states[node.uid] = node.backend
             for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
                 port = self.scene.scene.get(port_id)
-                port_state = copy.deepcopy(port.backend)
-                # Set port uid
-                port_state.uid = gen_uid()
-                port_state.parent_node_id = node_uid
-                # Save to dictionary with old uid key
-                port_states[port.uid] = port_state
-
+                port_states[port_id] = port.backend
         edge_states = {}
         for edge in edges:
-            edge_state = copy.deepcopy(edge.backend)
-            # Set edge uid
-            edge_state.uid = gen_uid()
-            # Save to dictionary with old uid key
-            edge_states[edge.uid] = edge_state
+            if (edge.backend.src_port_id in port_states) and (edge.backend.dst_port_id in port_states):
+                edge_states[edge.uid] = edge.backend
 
-        # Rewire the relative connections
-        for node_state in node_states.values():
-            # Reconfigure input port ids
-            input_port_ids = []
-            for input_port_id in node_state.input_port_ids:
-                input_port_ids.append(port_states[input_port_id].uid)
-            node_state.input_port_ids = input_port_ids
-            # Reconfigure output port ids
-            output_port_ids = []
-            for output_port_id in node_state.output_port_ids:
-                output_port_ids.append(port_states[output_port_id].uid)
-            node_state.output_port_ids = output_port_ids
-
-        new_edge_states = {} # Remove edges not connected on both ends of copied nodes
-        for k, edge_state in edge_states.items():
-            if (edge_state.src_port_id in port_states) and (edge_state.dst_port_id in port_states):
-                edge_state.src_port_id = port_states[edge_state.src_port_id].uid
-                edge_state.dst_port_id = port_states[edge_state.dst_port_id].uid
-                new_edge_states[k] = edge_state
-
-        for port_state in port_states.values():
-            edge_ids = []
-            for edge_id in port_state.edge_ids:
-                if edge_id in new_edge_states:
-                    edge_ids.append(new_edge_states[edge_id].uid)
-            port_state.edge_ids = edge_ids
-
-        # Populate save states
-        save_states = {}
-        for node_state in node_states.values():
-            save_states[node_state.uid] = node_state
-        for port_state in port_states.values():
-            save_states[port_state.uid] = port_state
-        for edge_state in new_edge_states.values():
-            save_states[edge_state.uid] = edge_state
-
-        if save_states:
+        if node_states:
             # Calculate bounding rect
             bounding_rect = None
             for item in self.scene.selectedItems():
                 if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
-                    if item.uid in node_states or item.uid in new_edge_states:
+                    if item.uid in node_states or item.uid in edge_states:
                         # Make part of bounding rect
                         if bounding_rect:
                             bounding_rect = bounding_rect.united(item.sceneBoundingRect())
@@ -2452,7 +2401,7 @@ class PipelineEditor(QMainWindow):
 
             # Save to clipboard
             mime_data = QMimeData()
-            mime_data.setData("application/pipeline_editor_items", pickle.dumps((save_states, bounding_rect.center())))
+            mime_data.setData("application/pipeline_editor_items", pickle.dumps((node_states, port_states, edge_states, bounding_rect.center())))
             clipboard = QApplication.clipboard()
             clipboard.setMimeData(mime_data)
 
@@ -2463,8 +2412,48 @@ class PipelineEditor(QMainWindow):
         if mime.hasFormat("application/pipeline_editor_items"):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
-            save_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
-            # Modify position
+            node_states, port_states, edge_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
+            # Update ids
+            save_states = {}
+            old_to_new_id_map = {}
+            for old_id, node_state in node_states.items():
+                new_node_state = copy.deepcopy(node_state)
+                # Set node uid
+                new_uid = gen_uid()
+                new_node_state.uid = new_uid
+                new_node_state.node.node_id = new_uid
+                old_to_new_id_map[old_id] = new_uid
+                save_states[new_uid] = new_node_state
+            for old_id, port_state in port_states.items():
+                new_port_state = copy.deepcopy(port_state)
+                # Set port uid
+                new_uid = gen_uid()
+                new_port_state.uid = new_uid
+                old_to_new_id_map[old_id] = new_uid
+                save_states[new_uid] = new_port_state
+            for old_id, edge_state in edge_states.items():
+                new_edge_state = copy.deepcopy(edge_state)
+                # Set edge uid
+                new_uid = gen_uid()
+                new_edge_state.uid = new_uid
+                old_to_new_id_map[old_id] = new_uid
+                save_states[new_uid] = new_edge_state
+            # Rewire connections
+            for state in save_states.values():
+                if isinstance(state, NodeState):
+                    # Update port ids
+                    state.input_port_ids = [old_to_new_id_map[i] for i in state.input_port_ids]
+                    state.output_port_ids = [old_to_new_id_map[i] for i in state.output_port_ids]
+                elif isinstance(state, PortState):
+                    # Update parent node id
+                    state.parent_node_id = old_to_new_id_map[state.parent_node_id]
+                    # Update edge ids
+                    state.edge_ids = [old_to_new_id_map[i] for i in state.edge_ids]
+                elif isinstance(state, EdgeState):
+                    # Update src and dst port ids
+                    state.src_port_id = old_to_new_id_map[state.src_port_id]
+                    state.dst_port_id = old_to_new_id_map[state.dst_port_id]
+            # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for state in save_states.values():
                 if isinstance(state, NodeState) or isinstance(state, PortState):
