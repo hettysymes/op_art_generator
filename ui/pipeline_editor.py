@@ -761,27 +761,7 @@ class NodeItem(QGraphicsRectItem):
         self.resize(width, height)
 
     def create_separated_inputs_copy(self):
-        new_id = gen_uid()
-        new_node = copy.deepcopy(self.node)
-        new_node.node_id = new_id
-        node_item = NodeItem(NodeState(new_id, self.pos().x() + 10, self.pos().y() + 10, [], [], new_node, 150, 150, ignore_inputs=True))
-        # Create output ports (right side)
-        output_count = len(new_node.out_port_defs())
-        for i, port_def in enumerate(new_node.out_port_defs()):
-            y_offset = (i + 1) * node_item.rect().height() / (output_count + 1)
-            state_id = gen_uid()
-            output_port = PortItem(PortState(state_id,
-                                             node_item.rect().width() + 10, y_offset,
-                                             node_item.uid,
-                                             False,
-                                             [], port_def), node_item)
-            node_item.backend.output_port_ids.append(state_id)
-            self.scene().scene.add(output_port)
-        # Add node to scene
-        self.scene().scene.add(node_item)
-        self.scene().addItem(node_item)
-        node_item.update_label_containers()
-        node_item.update_vis_image()
+        self.scene().undo_stack.push(SeparateFromInputsCmd(self.scene(), (self.pos().x(), self.pos().y()), self.node))
 
 class PortItem(QGraphicsPathItem):
     """Represents connection points on nodes with shapes based on port_type"""
@@ -1625,6 +1605,47 @@ class AddNewNodeCmd(QUndoCommand):
             for port_id in node_item.backend.input_port_ids + node_item.backend.output_port_ids:
                 port = self.scene.get(port_id)
                 self.save_states[port.uid] = port.backend
+
+class SeparateFromInputsCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, pos, node: Node, description="Separate Node From Inputs"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.pos = pos
+        self.node = node
+        self.node_item = None
+        self.output_port_ids = []
+
+    def undo(self):
+        assert self.node_item
+        self.pipeline_scene.delete_node(self.node_item)
+
+    def redo(self):
+        new_id = gen_uid()
+        new_node = copy.deepcopy(self.node)
+        new_node.node_id = new_id
+        node_item = NodeItem(
+            NodeState(new_id, self.pos[0] + 10, self.pos[1] + 10, [], [], new_node, 150, 150, ignore_inputs=True))
+        # Create output ports (right side)
+        output_count = len(new_node.out_port_defs())
+        output_ids_len = len(self.output_port_ids)
+        for i, port_def in enumerate(new_node.out_port_defs()):
+            y_offset = (i + 1) * node_item.rect().height() / (output_count + 1)
+            state_id = gen_uid() if i >= output_ids_len else self.output_port_ids[i]
+            output_port = PortItem(PortState(state_id,
+                                             node_item.rect().width() + 10, y_offset,
+                                             node_item.uid,
+                                             False,
+                                             [], port_def), node_item)
+            node_item.backend.output_port_ids.append(state_id)
+            self.scene.add(output_port)
+        # Add node to scene
+        self.scene.add(node_item)
+        self.pipeline_scene.addItem(node_item)
+        node_item.update_label_containers()
+        node_item.update_vis_image()
+        self.node_item = node_item
+        self.output_port_ids = node_item.backend.output_port_ids
 
 class AddNewEdgeCmd(QUndoCommand):
     def __init__(self, pipeline_scene, src_port_id, dst_port_id, description="Add new edge"):
