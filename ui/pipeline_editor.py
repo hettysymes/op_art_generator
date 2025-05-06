@@ -1801,7 +1801,11 @@ class AddCustomNodeCmd(QUndoCommand):
             self.pipeline_scene.removeItem(item)
 
     def redo(self):
-        self.pipeline_scene.load_from_save_states(self.save_states, set_invisible=True)
+        if not self.custom_node_states:
+            for state in self.save_states.values():
+                if isinstance(state, NodeState) or isinstance(state, EdgeState):
+                    state.invisible = True
+        self.pipeline_scene.load_from_save_states(self.save_states)
         if self.custom_node_states:
             self.pipeline_scene.load_from_save_states(self.custom_node_states)
         else:
@@ -1812,7 +1816,11 @@ class AddCustomNodeCmd(QUndoCommand):
                 out_port_defs=self.save_states[self.out_node_id].node.out_port_defs(),
                 prop_port_defs=self.save_states[self.inp_node_id].node.prop_port_defs()
             )
-            custom_node = CustomNode(node_id=gen_uid(), unit_node_info=unit_node_info, final_node=self.save_states[self.out_node_id].node)
+            involved_ids = []
+            for uid, state in self.save_states.items():
+                if isinstance(state, NodeState) or isinstance(state, EdgeState):
+                    involved_ids.append(uid)
+            custom_node = CustomNode(node_id=gen_uid(), unit_node_info=unit_node_info, final_node=self.save_states[self.out_node_id].node, involved_ids=involved_ids)
             node_item = NodeItem(NodeState(custom_node.node_id, None, None, [], [], custom_node, 150, 150))
             self.scene.add(node_item)
             self.pipeline_scene.addItem(node_item)
@@ -2053,7 +2061,7 @@ class PipelineScene(QGraphicsScene):
         with open(filepath, "wb") as f:
             pickle.dump(AppState((center.x(), center.y()), zoom, save_states), f)
 
-    def load_from_save_states(self, save_states, set_invisible=False):
+    def load_from_save_states(self, save_states):
         # Process the loaded states as before
         node_ids = []
         newly_joined_node_ids = []
@@ -2061,7 +2069,9 @@ class PipelineScene(QGraphicsScene):
             if isinstance(v, NodeState):
                 node = NodeItem(v)
                 self.scene.add(node)
-                if set_invisible: node.setVisible(False)
+                if not hasattr(node.backend, 'invisible'):
+                    node.backend.invisible = False  # For backward compatibility
+                if node.backend.invisible: node.setVisible(False)
                 self.addItem(node)
                 for port_id in v.input_port_ids + v.output_port_ids:
                     self.scene.add(PortItem(save_states[port_id], node))
@@ -2071,7 +2081,9 @@ class PipelineScene(QGraphicsScene):
             if isinstance(v, EdgeState):
                 edge = EdgeItem(v)
                 self.scene.add(edge)
-                if set_invisible: edge.setVisible(False)
+                if not hasattr(edge.backend, 'invisible'):
+                    edge.backend.invisible = False  # For backward compatibility
+                if edge.backend.invisible: edge.setVisible(False)
                 self.addItem(edge)
                 edge.set_ports()
                 added_src = edge.source_port.add_edge(edge.uid)
@@ -2533,6 +2545,13 @@ class PipelineEditor(QMainWindow):
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
                 nodes.append(item)
+                if isinstance(item.node, CustomNode):
+                    for uid in item.node.involved_ids:
+                        custom_node_item = self.scene.scene.get(uid)
+                        if isinstance(custom_node_item, NodeItem):
+                            nodes.append(custom_node_item)
+                        elif isinstance(custom_node_item, EdgeItem):
+                            edges.append(custom_node_item)
             elif isinstance(item, EdgeItem):
                 edges.append(item)
         if not (nodes or edges):
@@ -2584,6 +2603,11 @@ class PipelineEditor(QMainWindow):
                 # Update port ids
                 state.input_port_ids = [old_to_new_id_map[i] for i in state.input_port_ids]
                 state.output_port_ids = [old_to_new_id_map[i] for i in state.output_port_ids]
+                if not hasattr(state, 'nodes_to_update'):
+                    state.nodes_to_update = []  # For backward compatibility
+                state.nodes_to_update = [old_to_new_id_map[i] for i in state.nodes_to_update]
+                if isinstance(state.node, CustomNode):
+                    state.node.involved_ids = [old_to_new_id_map[i] for i in state.node.involved_ids]
             elif isinstance(state, PortState):
                 # Update parent node id
                 state.parent_node_id = old_to_new_id_map[state.parent_node_id]

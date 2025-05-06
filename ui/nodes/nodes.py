@@ -236,9 +236,10 @@ class CombinationNode(Node):
 class CustomNode(Node):
     NAME = "Custom Node"
 
-    def __init__(self, node_id=None, input_nodes=None, unit_node_info=None, final_node=None):
+    def __init__(self, node_id=None, input_nodes=None, unit_node_info=None, final_node=None, involved_ids=None):
         self.unit_node_info = unit_node_info
         self.final_node = final_node
+        self.involved_ids = involved_ids
         super().__init__(node_id, input_nodes, None)
 
     def node_info(self):
