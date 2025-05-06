@@ -413,13 +413,20 @@ class NodeItem(QGraphicsRectItem):
             output_port: PortItem = self.scene().scene.get(output_port_id)
             for edge_id in output_port.backend.edge_ids:  # Each output port can have 1+ edges
                 edge: EdgeItem = self.scene().scene.get(edge_id)
-                output_nodes.append(edge.dest_port.parentItem())
+                output_nodes.append(self.scene().scene.get(edge.dest_port.backend.parent_node_id))
         return output_nodes
 
     def update_visualisations(self):
+        print(f"UPDATING VISUALISATIONS (Node {self.uid})")
         self.update_vis_image()
         for output_node in self.get_output_node_items():
+            print(output_node.uid)
             output_node.update_visualisations()
+        if not hasattr(self.backend, 'nodes_to_update'):
+            self.backend.nodes_to_update = [] # For backward compatibility
+        for node_id in self.backend.nodes_to_update:
+            node = self.scene().scene.get(node_id)
+            node.update_vis_image()
 
     def update_node(self):
         if (not hasattr(self.backend, 'ignore_inputs')) or (not self.backend.ignore_inputs):
@@ -1785,14 +1792,13 @@ class AddCustomNodeCmd(QUndoCommand):
         self.inp_node_id = inp_node_id
         self.out_node_id = out_node_id
         self.custom_node_states = None
+        print("Creating custom node: ", inp_node_id, out_node_id)
 
     def undo(self):
         assert self.custom_node_states
-        for uid, item in self.custom_node_states.items():
+        for uid, item in self.custom_node_states.items() + self.save_states.items():
             self.scene.remove(uid)
             self.pipeline_scene.removeItem(item)
-        for uid in self.save_states:
-            self.scene.remove(uid)
 
     def redo(self):
         self.pipeline_scene.load_from_save_states(self.save_states, set_invisible=True)
@@ -1822,7 +1828,11 @@ class AddCustomNodeCmd(QUndoCommand):
                 del self.save_states[port_id]
             self.save_states[self.inp_node_id].input_port_ids = copy.deepcopy(node_item.backend.input_port_ids)
             self.save_states[self.out_node_id].output_port_ids = copy.deepcopy(node_item.backend.output_port_ids)
-
+            for port_id in self.save_states[self.inp_node_id].input_port_ids:
+                self.custom_node_states[port_id].parent_node_id = self.inp_node_id
+            for port_id in self.save_states[self.out_node_id].output_port_ids:
+                self.custom_node_states[port_id].parent_node_id = self.out_node_id
+            self.save_states[self.out_node_id].nodes_to_update = [node_item.uid]
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -2117,7 +2127,8 @@ class PipelineScene(QGraphicsScene):
         edge.set_ports()
         edge.source_port.add_edge(edge.uid)
         edge.dest_port.add_edge(edge.uid)
-        edge.dest_port.parentItem().update_visualisations()
+        node_to_update = self.scene.get(edge.dest_port.backend.parent_node_id)
+        node_to_update.update_visualisations()
         return edge
 
     def delete_node(self, node: NodeItem):

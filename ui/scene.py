@@ -26,7 +26,7 @@ class Scene:
 class NodeState:
 
     def __init__(self, uid, x, y, input_port_ids, output_port_ids, node: Node, svg_width,
-                 svg_height, ignore_inputs=False):
+                 svg_height, ignore_inputs=False, nodes_to_update=None):
         self.uid = uid
         self.x = x
         self.y = y
@@ -36,6 +36,7 @@ class NodeState:
         self.svg_width = svg_width
         self.svg_height = svg_height
         self.ignore_inputs = ignore_inputs
+        self.nodes_to_update = nodes_to_update if nodes_to_update else []
 
 
 class EdgeState:
