@@ -232,3 +232,24 @@ class CombinationNode(Node):
 
     def visualise(self):
         return self.node_instance().visualise()
+
+class CustomNode(Node):
+    NAME = "Custom Node"
+
+    def __init__(self, node_id=None, input_nodes=None, unit_node_info=None, final_node=None):
+        self.unit_node_info = unit_node_info
+        self.final_node = final_node
+        super().__init__(node_id, input_nodes, None)
+
+    def node_info(self):
+        return self.unit_node_info
+
+    @classmethod
+    def display_name(cls):
+        return cls.NAME
+
+    def compute(self):
+        return self.final_node.compute()
+
+    def visualise(self):
+        return self.final_node.visualise()

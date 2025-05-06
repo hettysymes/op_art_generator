@@ -31,7 +31,7 @@ from ui.nodes.all_nodes import node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.immutable_elem_node import load_scene_with_elements
-from ui.nodes.nodes import CombinationNode, Node, UnitNode
+from ui.nodes.nodes import CombinationNode, Node, UnitNode, UnitNodeInfo, CustomNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
@@ -127,7 +127,8 @@ class NodeItem(QGraphicsRectItem):
         super().__init__(0, 0, width, height)
         self.backend = node_state
         self.uid = node_state.uid
-        self.setPos(node_state.x, node_state.y)
+        if node_state.x and node_state.y:
+            self.setPos(node_state.x, node_state.y)
         self.setZValue(1)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
@@ -1775,6 +1776,54 @@ class DeleteCmd(QUndoCommand):
                 self.save_states[edge.uid] = edge.backend
                 self.pipeline_scene.delete_edge(edge)
 
+class AddCustomNodeCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, save_states, inp_node_id, out_node_id, description="Make Custom Node"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.save_states = save_states
+        self.inp_node_id = inp_node_id
+        self.out_node_id = out_node_id
+        self.custom_node_states = None
+
+    def undo(self):
+        assert self.custom_node_states
+        for uid, item in self.custom_node_states.items():
+            self.scene.remove(uid)
+            self.pipeline_scene.removeItem(item)
+        for uid in self.save_states:
+            self.scene.remove(uid)
+
+    def redo(self):
+        self.pipeline_scene.load_from_save_states(self.save_states, set_invisible=True)
+        if self.custom_node_states:
+            self.pipeline_scene.load_from_save_states(self.custom_node_states)
+        else:
+            unit_node_info = UnitNodeInfo(
+                name="Custom node",
+                description="Custom node.",
+                in_port_defs=self.save_states[self.inp_node_id].node.in_port_defs(),
+                out_port_defs=self.save_states[self.out_node_id].node.out_port_defs(),
+                prop_port_defs=self.save_states[self.inp_node_id].node.prop_port_defs()
+            )
+            custom_node = CustomNode(node_id=gen_uid(), unit_node_info=unit_node_info, final_node=self.save_states[self.out_node_id].node)
+            node_item = NodeItem(NodeState(custom_node.node_id, None, None, [], [], custom_node, 150, 150))
+            self.scene.add(node_item)
+            self.pipeline_scene.addItem(node_item)
+            node_item.create_ports()
+            node_item.update_vis_image()
+            # Save states for further redos
+            self.custom_node_states = {node_item.uid: node_item.backend}
+            for port_id in node_item.backend.input_port_ids + node_item.backend.output_port_ids:
+                port = self.scene.get(port_id)
+                self.custom_node_states[port.uid] = port.backend
+            # Replace input port and output port ids
+            for port_id in self.save_states[self.inp_node_id].input_port_ids + self.save_states[self.out_node_id].output_port_ids:
+                del self.save_states[port_id]
+            self.save_states[self.inp_node_id].input_port_ids = copy.deepcopy(node_item.backend.input_port_ids)
+            self.save_states[self.out_node_id].output_port_ids = copy.deepcopy(node_item.backend.output_port_ids)
+
+
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
@@ -1994,7 +2043,7 @@ class PipelineScene(QGraphicsScene):
         with open(filepath, "wb") as f:
             pickle.dump(AppState((center.x(), center.y()), zoom, save_states), f)
 
-    def load_from_save_states(self, save_states):
+    def load_from_save_states(self, save_states, set_invisible=False):
         # Process the loaded states as before
         node_ids = []
         newly_joined_node_ids = []
@@ -2002,6 +2051,7 @@ class PipelineScene(QGraphicsScene):
             if isinstance(v, NodeState):
                 node = NodeItem(v)
                 self.scene.add(node)
+                if set_invisible: node.setVisible(False)
                 self.addItem(node)
                 for port_id in v.input_port_ids + v.output_port_ids:
                     self.scene.add(PortItem(save_states[port_id], node))
@@ -2011,6 +2061,7 @@ class PipelineScene(QGraphicsScene):
             if isinstance(v, EdgeState):
                 edge = EdgeItem(v)
                 self.scene.add(edge)
+                if set_invisible: edge.setVisible(False)
                 self.addItem(edge)
                 edge.set_ports()
                 added_src = edge.source_port.add_edge(edge.uid)
@@ -2323,6 +2374,11 @@ class PipelineEditor(QMainWindow):
         select_all.setMenuRole(QAction.NoRole)
         scene_menu.addAction(select_all)
 
+        create_custom = QAction("Group Nodes to Custom", self)
+        create_custom.setShortcut("Ctrl+G")
+        create_custom.triggered.connect(self.create_custom_node)
+        scene_menu.addAction(create_custom)
+
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
@@ -2414,7 +2470,53 @@ class PipelineEditor(QMainWindow):
         if nodes_to_delete or edges_to_delete:
             self.scene.undo_stack.push(DeleteCmd(self.scene, nodes_to_delete, edges_to_delete))
 
-    def copy_selected_items(self):
+    class TwoInputDialog(QDialog):
+        def __init__(self):
+            super().__init__()
+            self.setWindowTitle("Enter Two Strings")
+
+            self.layout = QVBoxLayout()
+
+            self.label1 = QLabel("First string:")
+            self.input1 = QLineEdit()
+            self.layout.addWidget(self.label1)
+            self.layout.addWidget(self.input1)
+
+            self.label2 = QLabel("Second string:")
+            self.input2 = QLineEdit()
+            self.layout.addWidget(self.label2)
+            self.layout.addWidget(self.input2)
+
+            self.ok_button = QPushButton("OK")
+            self.ok_button.clicked.connect(self.accept)
+            self.layout.addWidget(self.ok_button)
+
+            self.setLayout(self.layout)
+
+        def get_inputs(self):
+            return self.input1.text(), self.input2.text()
+
+    def create_custom_node(self):
+        # Simple dialog for testing
+        dialog = PipelineEditor.TwoInputDialog()
+        if dialog.exec_():
+            node_states, port_states, edge_states = self.identify_selected_items()
+            save_states, old_to_new_id_map = self.deep_copy_items(node_states, port_states, edge_states)
+            inp_node_id = None
+            out_node_id = None
+            string1, string2 = dialog.get_inputs()
+            print("First:", string1)
+            print("Second:", string2)
+            for old_key, new_key in old_to_new_id_map.items():
+                short_id = shorten_uid(old_key)
+                if short_id == string1:
+                    inp_node_id = new_key
+                elif short_id == string2:
+                    out_node_id = new_key
+            assert inp_node_id and out_node_id
+            self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, save_states, inp_node_id, out_node_id))
+
+    def identify_selected_items(self):
         nodes = []
         edges = []
         for item in self.scene.selectedItems():
@@ -2437,7 +2539,57 @@ class PipelineEditor(QMainWindow):
         for edge in edges:
             if (edge.backend.src_port_id in port_states) and (edge.backend.dst_port_id in port_states):
                 edge_states[edge.uid] = edge.backend
+        return node_states, port_states, edge_states
 
+    def deep_copy_items(self, node_states, port_states, edge_states):
+        # Update ids
+        save_states = {}
+        old_to_new_id_map = {}
+        for old_id, node_state in node_states.items():
+            new_node_state = copy.deepcopy(node_state)
+            # Set node uid
+            new_uid = gen_uid()
+            new_node_state.uid = new_uid
+            new_node_state.node.node_id = new_uid
+            old_to_new_id_map[old_id] = new_uid
+            save_states[new_uid] = new_node_state
+        for old_id, port_state in port_states.items():
+            new_port_state = copy.deepcopy(port_state)
+            # Set port uid
+            new_uid = gen_uid()
+            new_port_state.uid = new_uid
+            old_to_new_id_map[old_id] = new_uid
+            save_states[new_uid] = new_port_state
+        for old_id, edge_state in edge_states.items():
+            new_edge_state = copy.deepcopy(edge_state)
+            # Set edge uid
+            new_uid = gen_uid()
+            new_edge_state.uid = new_uid
+            old_to_new_id_map[old_id] = new_uid
+            save_states[new_uid] = new_edge_state
+        # Rewire connections
+        for state in save_states.values():
+            if isinstance(state, NodeState):
+                # Update port ids
+                state.input_port_ids = [old_to_new_id_map[i] for i in state.input_port_ids]
+                state.output_port_ids = [old_to_new_id_map[i] for i in state.output_port_ids]
+            elif isinstance(state, PortState):
+                # Update parent node id
+                state.parent_node_id = old_to_new_id_map[state.parent_node_id]
+                # Update edge ids
+                edge_ids = []
+                for old_edge_id in state.edge_ids:
+                    if old_edge_id in old_to_new_id_map:
+                        edge_ids.append(old_to_new_id_map[old_edge_id])
+                state.edge_ids = edge_ids
+            elif isinstance(state, EdgeState):
+                # Update src and dst port ids
+                state.src_port_id = old_to_new_id_map[state.src_port_id]
+                state.dst_port_id = old_to_new_id_map[state.dst_port_id]
+        return save_states, old_to_new_id_map
+
+    def copy_selected_items(self):
+        node_states, port_states, edge_states = self.identify_selected_items()
         if node_states:
             # Calculate bounding rect
             bounding_rect = None
@@ -2465,50 +2617,7 @@ class PipelineEditor(QMainWindow):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
             node_states, port_states, edge_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
-            # Update ids
-            save_states = {}
-            old_to_new_id_map = {}
-            for old_id, node_state in node_states.items():
-                new_node_state = copy.deepcopy(node_state)
-                # Set node uid
-                new_uid = gen_uid()
-                new_node_state.uid = new_uid
-                new_node_state.node.node_id = new_uid
-                old_to_new_id_map[old_id] = new_uid
-                save_states[new_uid] = new_node_state
-            for old_id, port_state in port_states.items():
-                new_port_state = copy.deepcopy(port_state)
-                # Set port uid
-                new_uid = gen_uid()
-                new_port_state.uid = new_uid
-                old_to_new_id_map[old_id] = new_uid
-                save_states[new_uid] = new_port_state
-            for old_id, edge_state in edge_states.items():
-                new_edge_state = copy.deepcopy(edge_state)
-                # Set edge uid
-                new_uid = gen_uid()
-                new_edge_state.uid = new_uid
-                old_to_new_id_map[old_id] = new_uid
-                save_states[new_uid] = new_edge_state
-            # Rewire connections
-            for state in save_states.values():
-                if isinstance(state, NodeState):
-                    # Update port ids
-                    state.input_port_ids = [old_to_new_id_map[i] for i in state.input_port_ids]
-                    state.output_port_ids = [old_to_new_id_map[i] for i in state.output_port_ids]
-                elif isinstance(state, PortState):
-                    # Update parent node id
-                    state.parent_node_id = old_to_new_id_map[state.parent_node_id]
-                    # Update edge ids
-                    edge_ids = []
-                    for old_edge_id in state.edge_ids:
-                        if old_edge_id in old_to_new_id_map:
-                            edge_ids.append(old_to_new_id_map[old_edge_id])
-                    state.edge_ids = edge_ids
-                elif isinstance(state, EdgeState):
-                    # Update src and dst port ids
-                    state.src_port_id = old_to_new_id_map[state.src_port_id]
-                    state.dst_port_id = old_to_new_id_map[state.dst_port_id]
+            save_states = self.deep_copy_items(node_states, port_states, edge_states)[0]
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for state in save_states.values():
