@@ -127,7 +127,7 @@ class NodeItem(QGraphicsRectItem):
         super().__init__(0, 0, width, height)
         self.backend = node_state
         self.uid = node_state.uid
-        if node_state.x and node_state.y:
+        if (node_state.x is not None) and (node_state.y is not None):
             self.setPos(node_state.x, node_state.y)
         self.setZValue(1)
         self.setFlag(QGraphicsItem.ItemIsMovable)
@@ -784,7 +784,8 @@ class PortItem(QGraphicsPathItem):
         self.create_shape_for_port_type()
 
         # Position the port
-        self.setPos(self.backend.x, self.backend.y)
+        if (self.backend.x is not None) and (self.backend.y is not None):
+            self.setPos(self.backend.x, self.backend.y)
         self.setZValue(1)
 
         # Make port interactive
@@ -1805,6 +1806,9 @@ class AddCustomNodeCmd(QUndoCommand):
             for state in self.save_states.values():
                 if isinstance(state, NodeState) or isinstance(state, EdgeState):
                     state.invisible = True
+                if isinstance(state, NodeState) or isinstance(state, PortState):
+                    state.x = None
+                    state.y = None
         self.pipeline_scene.load_from_save_states(self.save_states)
         if self.custom_node_states:
             self.pipeline_scene.load_from_save_states(self.custom_node_states)
@@ -1821,7 +1825,8 @@ class AddCustomNodeCmd(QUndoCommand):
                 if isinstance(state, NodeState) or isinstance(state, EdgeState):
                     involved_ids.append(uid)
             custom_node = CustomNode(node_id=gen_uid(), unit_node_info=unit_node_info, final_node=self.save_states[self.out_node_id].node, involved_ids=involved_ids)
-            node_item = NodeItem(NodeState(custom_node.node_id, None, None, [], [], custom_node, 150, 150))
+            # TODO: change where the node item is created
+            node_item = NodeItem(NodeState(custom_node.node_id, 0, 0, [], [], custom_node, 150, 150))
             self.scene.add(node_item)
             self.pipeline_scene.addItem(node_item)
             node_item.create_ports()
@@ -2630,7 +2635,7 @@ class PipelineEditor(QMainWindow):
             bounding_rect = None
             for item in self.scene.selectedItems():
                 if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
-                    if item.uid in node_states or item.uid in edge_states:
+                    if (item.uid in node_states or item.uid in edge_states) and not item.backend.invisible:
                         # Make part of bounding rect
                         if bounding_rect:
                             bounding_rect = bounding_rect.united(item.sceneBoundingRect())
@@ -2657,8 +2662,15 @@ class PipelineEditor(QMainWindow):
             offset = self.view.mouse_pos - bounding_rect_centre
             for state in save_states.values():
                 if isinstance(state, NodeState) or isinstance(state, PortState):
-                    state.x += offset.x()
-                    state.y += offset.y()
+                    if (state.x is not None) and (state.y is not None):
+                        if isinstance(state, NodeState):
+                            print(f"Changing node position: {shorten_uid(state.uid)} from ({state.x}, {state.y}) to ({state.x + offset.x()}, {state.y + offset.y()})")
+                            state.x += offset.x()
+                            state.y += offset.y()
+                        # if isinstance(state, PortState):
+                        #     print(f"Changing port position: {shorten_uid(state.uid)} from ({state.x}, {state.y}) to ({state.x + offset.x()}, {state.y + offset.y()})")
+                        # state.x += offset.x()
+                        # state.y += offset.y()
             # Perform paste
             self.scene.undo_stack.push(PasteCmd(self.scene, save_states))
 
