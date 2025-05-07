@@ -432,7 +432,7 @@ class NodeItem(QGraphicsRectItem):
             first_node = self.scene().scene.get(self.node.first_id)
             first_node.node.input_nodes = self.node.input_nodes
             self.node.final_node = self.scene().scene.get(self.node.end_id).node
-            first_node.update_node()
+            first_node.update_visualisations()
             print("First node uid: ", first_node.node.node_id)
             print("Final node uid: ", self.node.final_node.node_id)
             # print(self.node.final_node.input_nodes)
