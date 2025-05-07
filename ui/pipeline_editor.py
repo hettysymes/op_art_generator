@@ -29,6 +29,7 @@ from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.all_nodes import node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
+from ui.nodes.drawing_group import DrawingGroupNode
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.immutable_elem_node import load_scene_with_elements
 from ui.nodes.nodes import CombinationNode, Node, UnitNode, UnitNodeInfo, CustomNode
@@ -2662,6 +2663,12 @@ class PipelineEditor(QMainWindow):
                     state.node.first_id = old_to_new_id_map[state.node.first_id]
                     state.node.end_id = old_to_new_id_map[state.node.end_id]
                     state.node.final_node = None
+                if isinstance(state.node, DrawingGroupNode):
+                    for elem_ref in state.node.prop_vals['elem_order']:
+                        new_id = old_to_new_id_map[elem_ref.node_id]
+                        elem_ref.node = save_states[new_id].node
+                        elem_ref.node_type = elem_ref.node.node_info().name
+                        elem_ref.node_id = new_id
             elif isinstance(state, PortState):
                 # Update parent node id
                 state.parent_node_id = old_to_new_id_map[state.parent_node_id]
