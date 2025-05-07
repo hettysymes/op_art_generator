@@ -1733,11 +1733,13 @@ class AddPropertyPortCmd(QUndoCommand):
 
     def undo(self):
         self.node_item.remove_port_by_name(self.prop_key_name)
+        self.node_item.backend.prop_ports.remove(self.prop_key_name)
 
     def redo(self):
         for port_def in self.node_item.node.prop_port_defs():
             if port_def.key_name == self.prop_key_name:
                 self.node_item.add_port(port_def)
+                self.node_item.backend.prop_ports.append(self.prop_key_name)
                 break
 
 class RemovePropertyPortCmd(QUndoCommand):
@@ -1752,10 +1754,12 @@ class RemovePropertyPortCmd(QUndoCommand):
         for port_def in self.node_item.node.prop_port_defs():
             if port_def.key_name == self.prop_key_name:
                 self.node_item.add_port(port_def)
+                self.node_item.backend.prop_ports.append(self.prop_key_name)
                 break
 
     def redo(self):
         self.node_item.remove_port_by_name(self.prop_key_name)
+        self.node_item.backend.prop_ports.remove(self.prop_key_name)
 
 class PasteCmd(QUndoCommand):
     def __init__(self, pipeline_scene, save_states, description="Paste"):
@@ -1851,6 +1855,12 @@ class AddCustomNodeCmd(QUndoCommand):
             self.pipeline_scene.addItem(node_item)
             node_item.create_ports()
             node_item.update_vis_image()
+            # Add property ports
+            port_defs = {}
+            for port_def in self.save_states[self.inp_node_id].node.prop_port_defs():
+                port_defs[port_def.key_name] = port_def
+            for prop_port in self.save_states[self.inp_node_id].prop_ports:
+                node_item.add_port(port_defs[prop_port])
             # Save states for further redos
             self.custom_node_states = {node_item.uid: node_item.backend}
             for port_id in node_item.backend.input_port_ids + node_item.backend.output_port_ids:
