@@ -420,18 +420,35 @@ class NodeItem(QGraphicsRectItem):
         print(f"UPDATING VISUALISATIONS (Node {self.uid})")
         self.update_vis_image()
         for output_node in self.get_output_node_items():
-            print(output_node.uid)
+            print(output_node, output_node.uid)
             output_node.update_visualisations()
-        if not hasattr(self.backend, 'nodes_to_update'):
-            self.backend.nodes_to_update = [] # For backward compatibility
-        for node_id in self.backend.nodes_to_update:
-            node = self.scene().scene.get(node_id)
-            node.update_vis_image()
 
     def update_node(self):
+        print(f"updating node {shorten_uid(self.uid)}")
         if (not hasattr(self.backend, 'ignore_inputs')) or (not self.backend.ignore_inputs):
             self.node.input_nodes = self.get_input_node_items()
             self.backend.ignore_inputs = False # For future compatibility
+        if isinstance(self.node, CustomNode):
+            first_node = self.scene().scene.get(self.node.first_id)
+            first_node.node.input_nodes = self.node.input_nodes
+            self.node.final_node = self.scene().scene.get(self.node.end_id).node
+            first_node.update_visualisations()
+            print("First node uid: ", first_node.node.node_id)
+            print("Final node uid: ", self.node.final_node.node_id)
+            # print(self.node.final_node.input_nodes)
+            # if 'repeatable' in self.node.final_node.input_nodes:
+            #     if self.node.final_node.input_nodes['repeatable']:
+            #         print("ACTUAL INPUT NODE INFO")
+            #         print(self.node.final_node.input_nodes['repeatable'][0].input_nodes)
+            #         print(self.node.final_node.input_nodes['repeatable'][0].node_id)
+            # print(f"first node: {self.node.first_id}")
+            # print(first_node.input_nodes)
+            # print(first_node)
+            # for involved_id in self.node.involved_ids:
+            #     node_item = self.scene().scene.get(involved_id)
+            #     if isinstance(node_item, NodeItem):
+            #         node_item.update_node()
+        print(self.node.input_nodes)
         return self.node
 
     def create_ports(self):
@@ -725,6 +742,8 @@ class NodeItem(QGraphicsRectItem):
         input_count = len(self.backend.input_port_ids)
         for i, input_port_id in enumerate(self.backend.input_port_ids):
             input_port: PortItem = self.scene().scene.get(input_port_id)
+            print("Updating port position")
+            print(shorten_uid(input_port.parentItem().uid))
             y_offset = (i + 1) * self.rect().height() / (input_count + 1)
             input_port.backend.x = -10  # Keep x position constant
             input_port.backend.y = y_offset
@@ -861,6 +880,7 @@ class PortItem(QGraphicsPathItem):
 
     # The rest of your methods remain the same
     def add_edge(self, edge_id):
+        print(f"Adding edge {edge_id} to port {self.uid}")
         if edge_id not in self.backend.edge_ids:
             self.backend.edge_ids.append(edge_id)
             return True
@@ -1824,9 +1844,9 @@ class AddCustomNodeCmd(QUndoCommand):
             for uid, state in self.save_states.items():
                 if isinstance(state, NodeState) or isinstance(state, EdgeState):
                     involved_ids.append(uid)
-            custom_node = CustomNode(node_id=gen_uid(), unit_node_info=unit_node_info, final_node=self.save_states[self.out_node_id].node, involved_ids=involved_ids)
+            custom_node = CustomNode(node_id=gen_uid(), unit_node_info=unit_node_info, final_node=self.save_states[self.out_node_id].node, involved_ids=involved_ids, first_id=self.inp_node_id, end_id=self.out_node_id)
             # TODO: change where the node item is created
-            node_item = NodeItem(NodeState(custom_node.node_id, 0, 0, [], [], custom_node, 150, 150))
+            node_item = NodeItem(NodeState(custom_node.node_id, 0, 0, [], [], custom_node, 150, 150, nodes_to_update=[self.inp_node_id]))
             self.scene.add(node_item)
             self.pipeline_scene.addItem(node_item)
             node_item.create_ports()
@@ -1839,12 +1859,9 @@ class AddCustomNodeCmd(QUndoCommand):
             # Replace input port and output port ids
             for port_id in self.save_states[self.inp_node_id].input_port_ids + self.save_states[self.out_node_id].output_port_ids:
                 del self.save_states[port_id]
-            self.save_states[self.inp_node_id].input_port_ids = copy.deepcopy(node_item.backend.input_port_ids)
-            self.save_states[self.out_node_id].output_port_ids = copy.deepcopy(node_item.backend.output_port_ids)
-            for port_id in self.save_states[self.inp_node_id].input_port_ids:
-                self.custom_node_states[port_id].parent_node_id = self.inp_node_id
-            for port_id in self.save_states[self.out_node_id].output_port_ids:
-                self.custom_node_states[port_id].parent_node_id = self.out_node_id
+            self.save_states[self.inp_node_id].input_port_ids = []
+            self.save_states[self.out_node_id].output_port_ids = []
+            self.save_states[self.inp_node_id].ignore_inputs = True
             self.save_states[self.out_node_id].nodes_to_update = [node_item.uid]
 
 class PipelineScene(QGraphicsScene):
@@ -2098,12 +2115,14 @@ class PipelineScene(QGraphicsScene):
 
         for uid in node_ids:
             node = self.scene.get(uid)
-            node.update_vis_image()
-            node.update_label_containers()
+            if not node.backend.invisible:
+                node.update_vis_image()
+                node.update_label_containers()
 
         for uid in newly_joined_node_ids:
             node = self.scene.get(uid)
-            node.update_visualisations()
+            if not node.backend.invisible:
+                node.update_visualisations()
 
     def clear_scene(self):
         self.scene = Scene()
@@ -2135,7 +2154,8 @@ class PipelineScene(QGraphicsScene):
         dest_node = edge.dest_port.parentItem()
         self.scene.remove(edge.uid)
         self.removeItem(edge)
-        dest_node.update_visualisations()
+        node_to_update = self.scene.get(edge.dest_port.backend.parent_node_id)
+        node_to_update.update_visualisations()
 
     def add_edge(self, src_port_id, dst_port_id):
         edge = EdgeItem(EdgeState(gen_uid(), src_port_id, dst_port_id))
@@ -2613,6 +2633,9 @@ class PipelineEditor(QMainWindow):
                 state.nodes_to_update = [old_to_new_id_map[i] for i in state.nodes_to_update]
                 if isinstance(state.node, CustomNode):
                     state.node.involved_ids = [old_to_new_id_map[i] for i in state.node.involved_ids]
+                    state.node.first_id = old_to_new_id_map[state.node.first_id]
+                    state.node.end_id = old_to_new_id_map[state.node.end_id]
+                    state.node.final_node = None
             elif isinstance(state, PortState):
                 # Update parent node id
                 state.parent_node_id = old_to_new_id_map[state.parent_node_id]
@@ -2658,6 +2681,7 @@ class PipelineEditor(QMainWindow):
             # Deserialize with pickle
             node_states, port_states, edge_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
             save_states = self.deep_copy_items(node_states, port_states, edge_states)[0]
+            print(len(save_states))
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for state in save_states.values():
