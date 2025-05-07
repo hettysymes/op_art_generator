@@ -31,7 +31,7 @@ from ui.nodes.all_nodes import node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.immutable_elem_node import load_scene_with_elements
-from ui.nodes.nodes import CombinationNode, Node, UnitNode
+from ui.nodes.nodes import CombinationNode, Node, UnitNode, UnitNodeInfo, CustomNode
 from ui.nodes.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.shape_datatypes import Group
 from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
@@ -127,7 +127,8 @@ class NodeItem(QGraphicsRectItem):
         super().__init__(0, 0, width, height)
         self.backend = node_state
         self.uid = node_state.uid
-        self.setPos(node_state.x, node_state.y)
+        if (node_state.x is not None) and (node_state.y is not None):
+            self.setPos(node_state.x, node_state.y)
         self.setZValue(1)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
@@ -412,18 +413,42 @@ class NodeItem(QGraphicsRectItem):
             output_port: PortItem = self.scene().scene.get(output_port_id)
             for edge_id in output_port.backend.edge_ids:  # Each output port can have 1+ edges
                 edge: EdgeItem = self.scene().scene.get(edge_id)
-                output_nodes.append(edge.dest_port.parentItem())
+                output_nodes.append(self.scene().scene.get(edge.dest_port.backend.parent_node_id))
         return output_nodes
 
     def update_visualisations(self):
+        print(f"UPDATING VISUALISATIONS (Node {self.uid})")
         self.update_vis_image()
         for output_node in self.get_output_node_items():
+            print(output_node, output_node.uid)
             output_node.update_visualisations()
 
     def update_node(self):
+        print(f"updating node {shorten_uid(self.uid)}")
         if (not hasattr(self.backend, 'ignore_inputs')) or (not self.backend.ignore_inputs):
             self.node.input_nodes = self.get_input_node_items()
             self.backend.ignore_inputs = False # For future compatibility
+        if isinstance(self.node, CustomNode):
+            first_node = self.scene().scene.get(self.node.first_id)
+            first_node.node.input_nodes = self.node.input_nodes
+            self.node.final_node = self.scene().scene.get(self.node.end_id).node
+            first_node.update_visualisations()
+            print("First node uid: ", first_node.node.node_id)
+            print("Final node uid: ", self.node.final_node.node_id)
+            # print(self.node.final_node.input_nodes)
+            # if 'repeatable' in self.node.final_node.input_nodes:
+            #     if self.node.final_node.input_nodes['repeatable']:
+            #         print("ACTUAL INPUT NODE INFO")
+            #         print(self.node.final_node.input_nodes['repeatable'][0].input_nodes)
+            #         print(self.node.final_node.input_nodes['repeatable'][0].node_id)
+            # print(f"first node: {self.node.first_id}")
+            # print(first_node.input_nodes)
+            # print(first_node)
+            # for involved_id in self.node.involved_ids:
+            #     node_item = self.scene().scene.get(involved_id)
+            #     if isinstance(node_item, NodeItem):
+            #         node_item.update_node()
+        print(self.node.input_nodes)
         return self.node
 
     def create_ports(self):
@@ -717,6 +742,8 @@ class NodeItem(QGraphicsRectItem):
         input_count = len(self.backend.input_port_ids)
         for i, input_port_id in enumerate(self.backend.input_port_ids):
             input_port: PortItem = self.scene().scene.get(input_port_id)
+            print("Updating port position")
+            print(shorten_uid(input_port.parentItem().uid))
             y_offset = (i + 1) * self.rect().height() / (input_count + 1)
             input_port.backend.x = -10  # Keep x position constant
             input_port.backend.y = y_offset
@@ -776,7 +803,8 @@ class PortItem(QGraphicsPathItem):
         self.create_shape_for_port_type()
 
         # Position the port
-        self.setPos(self.backend.x, self.backend.y)
+        if (self.backend.x is not None) and (self.backend.y is not None):
+            self.setPos(self.backend.x, self.backend.y)
         self.setZValue(1)
 
         # Make port interactive
@@ -852,6 +880,7 @@ class PortItem(QGraphicsPathItem):
 
     # The rest of your methods remain the same
     def add_edge(self, edge_id):
+        print(f"Adding edge {edge_id} to port {self.uid}")
         if edge_id not in self.backend.edge_ids:
             self.backend.edge_ids.append(edge_id)
             return True
@@ -1704,11 +1733,13 @@ class AddPropertyPortCmd(QUndoCommand):
 
     def undo(self):
         self.node_item.remove_port_by_name(self.prop_key_name)
+        self.node_item.backend.prop_ports.remove(self.prop_key_name)
 
     def redo(self):
         for port_def in self.node_item.node.prop_port_defs():
             if port_def.key_name == self.prop_key_name:
                 self.node_item.add_port(port_def)
+                self.node_item.backend.prop_ports.append(self.prop_key_name)
                 break
 
 class RemovePropertyPortCmd(QUndoCommand):
@@ -1723,10 +1754,12 @@ class RemovePropertyPortCmd(QUndoCommand):
         for port_def in self.node_item.node.prop_port_defs():
             if port_def.key_name == self.prop_key_name:
                 self.node_item.add_port(port_def)
+                self.node_item.backend.prop_ports.append(self.prop_key_name)
                 break
 
     def redo(self):
         self.node_item.remove_port_by_name(self.prop_key_name)
+        self.node_item.backend.prop_ports.remove(self.prop_key_name)
 
 class PasteCmd(QUndoCommand):
     def __init__(self, pipeline_scene, save_states, description="Paste"):
@@ -1774,6 +1807,72 @@ class DeleteCmd(QUndoCommand):
             if edge.uid not in self.save_states:
                 self.save_states[edge.uid] = edge.backend
                 self.pipeline_scene.delete_edge(edge)
+
+class AddCustomNodeCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, save_states, inp_node_id, out_node_id, description="Make Custom Node"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.save_states = save_states
+        self.inp_node_id = inp_node_id
+        self.out_node_id = out_node_id
+        self.custom_node_states = None
+        print("Creating custom node: ", inp_node_id, out_node_id)
+
+    def undo(self):
+        assert self.custom_node_states
+        for uid, item in self.custom_node_states.items() + self.save_states.items():
+            self.scene.remove(uid)
+            self.pipeline_scene.removeItem(item)
+
+    def redo(self):
+        if not self.custom_node_states:
+            for state in self.save_states.values():
+                if isinstance(state, NodeState) or isinstance(state, EdgeState):
+                    state.invisible = True
+                if isinstance(state, NodeState) or isinstance(state, PortState):
+                    state.x = None
+                    state.y = None
+        self.pipeline_scene.load_from_save_states(self.save_states)
+        if self.custom_node_states:
+            self.pipeline_scene.load_from_save_states(self.custom_node_states)
+        else:
+            unit_node_info = UnitNodeInfo(
+                name="Custom node",
+                description="Custom node.",
+                in_port_defs=self.save_states[self.inp_node_id].node.in_port_defs(),
+                out_port_defs=self.save_states[self.out_node_id].node.out_port_defs(),
+                prop_port_defs=self.save_states[self.inp_node_id].node.prop_port_defs()
+            )
+            involved_ids = []
+            for uid, state in self.save_states.items():
+                if isinstance(state, NodeState) or isinstance(state, EdgeState):
+                    involved_ids.append(uid)
+            custom_node = CustomNode(node_id=gen_uid(), unit_node_info=unit_node_info, final_node=self.save_states[self.out_node_id].node, involved_ids=involved_ids, first_id=self.inp_node_id, end_id=self.out_node_id)
+            # TODO: change where the node item is created
+            node_item = NodeItem(NodeState(custom_node.node_id, 0, 0, [], [], custom_node, 150, 150, nodes_to_update=[self.inp_node_id]))
+            self.scene.add(node_item)
+            self.pipeline_scene.addItem(node_item)
+            node_item.create_ports()
+            node_item.update_vis_image()
+            # Add property ports
+            port_defs = {}
+            for port_def in self.save_states[self.inp_node_id].node.prop_port_defs():
+                port_defs[port_def.key_name] = port_def
+            for prop_port in self.save_states[self.inp_node_id].prop_ports:
+                node_item.add_port(port_defs[prop_port])
+            # Save states for further redos
+            self.custom_node_states = {node_item.uid: node_item.backend}
+            for port_id in node_item.backend.input_port_ids + node_item.backend.output_port_ids:
+                port = self.scene.get(port_id)
+                self.custom_node_states[port.uid] = port.backend
+            # Replace input port and output port ids
+            for port_id in self.save_states[self.inp_node_id].input_port_ids + self.save_states[self.out_node_id].output_port_ids:
+                del self.save_states[port_id]
+            self.save_states[self.inp_node_id].input_port_ids = []
+            self.save_states[self.out_node_id].output_port_ids = []
+            self.save_states[self.inp_node_id].ignore_inputs = True
+            self.save_states[self.out_node_id].nodes_to_update = [node_item.uid]
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -2002,6 +2101,9 @@ class PipelineScene(QGraphicsScene):
             if isinstance(v, NodeState):
                 node = NodeItem(v)
                 self.scene.add(node)
+                if not hasattr(node.backend, 'invisible'):
+                    node.backend.invisible = False  # For backward compatibility
+                if node.backend.invisible: node.setVisible(False)
                 self.addItem(node)
                 for port_id in v.input_port_ids + v.output_port_ids:
                     self.scene.add(PortItem(save_states[port_id], node))
@@ -2011,6 +2113,9 @@ class PipelineScene(QGraphicsScene):
             if isinstance(v, EdgeState):
                 edge = EdgeItem(v)
                 self.scene.add(edge)
+                if not hasattr(edge.backend, 'invisible'):
+                    edge.backend.invisible = False  # For backward compatibility
+                if edge.backend.invisible: edge.setVisible(False)
                 self.addItem(edge)
                 edge.set_ports()
                 added_src = edge.source_port.add_edge(edge.uid)
@@ -2020,12 +2125,14 @@ class PipelineScene(QGraphicsScene):
 
         for uid in node_ids:
             node = self.scene.get(uid)
-            node.update_vis_image()
-            node.update_label_containers()
+            if not node.backend.invisible:
+                node.update_vis_image()
+                node.update_label_containers()
 
         for uid in newly_joined_node_ids:
             node = self.scene.get(uid)
-            node.update_visualisations()
+            if not node.backend.invisible:
+                node.update_visualisations()
 
     def clear_scene(self):
         self.scene = Scene()
@@ -2057,7 +2164,8 @@ class PipelineScene(QGraphicsScene):
         dest_node = edge.dest_port.parentItem()
         self.scene.remove(edge.uid)
         self.removeItem(edge)
-        dest_node.update_visualisations()
+        node_to_update = self.scene.get(edge.dest_port.backend.parent_node_id)
+        node_to_update.update_visualisations()
 
     def add_edge(self, src_port_id, dst_port_id):
         edge = EdgeItem(EdgeState(gen_uid(), src_port_id, dst_port_id))
@@ -2066,7 +2174,8 @@ class PipelineScene(QGraphicsScene):
         edge.set_ports()
         edge.source_port.add_edge(edge.uid)
         edge.dest_port.add_edge(edge.uid)
-        edge.dest_port.parentItem().update_visualisations()
+        node_to_update = self.scene.get(edge.dest_port.backend.parent_node_id)
+        node_to_update.update_visualisations()
         return edge
 
     def delete_node(self, node: NodeItem):
@@ -2323,6 +2432,11 @@ class PipelineEditor(QMainWindow):
         select_all.setMenuRole(QAction.NoRole)
         scene_menu.addAction(select_all)
 
+        create_custom = QAction("Group Nodes to Custom", self)
+        create_custom.setShortcut("Ctrl+G")
+        create_custom.triggered.connect(self.create_custom_node)
+        scene_menu.addAction(create_custom)
+
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
@@ -2414,12 +2528,81 @@ class PipelineEditor(QMainWindow):
         if nodes_to_delete or edges_to_delete:
             self.scene.undo_stack.push(DeleteCmd(self.scene, nodes_to_delete, edges_to_delete))
 
-    def copy_selected_items(self):
+    class TwoInputDialog(QDialog):
+        def __init__(self):
+            super().__init__()
+            self.setWindowTitle("Create custom node")
+
+            self.layout = QVBoxLayout()
+
+            self.label1 = QLabel("Input node ID:")
+            self.input1 = QLineEdit()
+            self.hash_label = QLabel("#")
+
+            # Create a horizontal layout for the # and input field
+            self.input_layout1 = QHBoxLayout()
+            self.input_layout1.addWidget(self.hash_label)
+            self.input_layout1.addWidget(self.input1)
+
+            # Add to the main layout
+            self.layout.addWidget(self.label1)
+            self.layout.addLayout(self.input_layout1)
+
+            self.label2 = QLabel("Output node ID:")
+            self.input2 = QLineEdit()
+            self.hash_label = QLabel("#")
+
+            # Create a horizontal layout for the # and input field
+            self.input_layout2 = QHBoxLayout()
+            self.input_layout2.addWidget(self.hash_label)
+            self.input_layout2.addWidget(self.input2)
+
+            # Add to the main layout
+            self.layout.addWidget(self.label2)
+            self.layout.addLayout(self.input_layout2)
+
+            self.ok_button = QPushButton("OK")
+            self.ok_button.clicked.connect(self.accept)
+            self.layout.addWidget(self.ok_button)
+
+            self.setLayout(self.layout)
+
+        def get_inputs(self):
+            return self.input1.text(), self.input2.text()
+
+    def create_custom_node(self):
+        # Simple dialog for testing
+        dialog = PipelineEditor.TwoInputDialog()
+        if dialog.exec_():
+            node_states, port_states, edge_states = self.identify_selected_items()
+            save_states, old_to_new_id_map = self.deep_copy_items(node_states, port_states, edge_states)
+            inp_node_id = None
+            out_node_id = None
+            string1, string2 = dialog.get_inputs()
+            print("First:", string1)
+            print("Second:", string2)
+            for old_key, new_key in old_to_new_id_map.items():
+                short_id = shorten_uid(old_key)
+                if short_id == string1:
+                    inp_node_id = new_key
+                elif short_id == string2:
+                    out_node_id = new_key
+            if inp_node_id and out_node_id:
+                self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, save_states, inp_node_id, out_node_id))
+
+    def identify_selected_items(self):
         nodes = []
         edges = []
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
                 nodes.append(item)
+                if isinstance(item.node, CustomNode):
+                    for uid in item.node.involved_ids:
+                        custom_node_item = self.scene.scene.get(uid)
+                        if isinstance(custom_node_item, NodeItem):
+                            nodes.append(custom_node_item)
+                        elif isinstance(custom_node_item, EdgeItem):
+                            edges.append(custom_node_item)
             elif isinstance(item, EdgeItem):
                 edges.append(item)
         if not (nodes or edges):
@@ -2437,13 +2620,71 @@ class PipelineEditor(QMainWindow):
         for edge in edges:
             if (edge.backend.src_port_id in port_states) and (edge.backend.dst_port_id in port_states):
                 edge_states[edge.uid] = edge.backend
+        return node_states, port_states, edge_states
 
+    def deep_copy_items(self, node_states, port_states, edge_states):
+        # Update ids
+        save_states = {}
+        old_to_new_id_map = {}
+        for old_id, node_state in node_states.items():
+            new_node_state = copy.deepcopy(node_state)
+            # Set node uid
+            new_uid = gen_uid()
+            new_node_state.uid = new_uid
+            new_node_state.node.node_id = new_uid
+            old_to_new_id_map[old_id] = new_uid
+            save_states[new_uid] = new_node_state
+        for old_id, port_state in port_states.items():
+            new_port_state = copy.deepcopy(port_state)
+            # Set port uid
+            new_uid = gen_uid()
+            new_port_state.uid = new_uid
+            old_to_new_id_map[old_id] = new_uid
+            save_states[new_uid] = new_port_state
+        for old_id, edge_state in edge_states.items():
+            new_edge_state = copy.deepcopy(edge_state)
+            # Set edge uid
+            new_uid = gen_uid()
+            new_edge_state.uid = new_uid
+            old_to_new_id_map[old_id] = new_uid
+            save_states[new_uid] = new_edge_state
+        # Rewire connections
+        for state in save_states.values():
+            if isinstance(state, NodeState):
+                # Update port ids
+                state.input_port_ids = [old_to_new_id_map[i] for i in state.input_port_ids]
+                state.output_port_ids = [old_to_new_id_map[i] for i in state.output_port_ids]
+                if not hasattr(state, 'nodes_to_update'):
+                    state.nodes_to_update = []  # For backward compatibility
+                state.nodes_to_update = [old_to_new_id_map[i] for i in state.nodes_to_update]
+                if isinstance(state.node, CustomNode):
+                    state.node.involved_ids = [old_to_new_id_map[i] for i in state.node.involved_ids]
+                    state.node.first_id = old_to_new_id_map[state.node.first_id]
+                    state.node.end_id = old_to_new_id_map[state.node.end_id]
+                    state.node.final_node = None
+            elif isinstance(state, PortState):
+                # Update parent node id
+                state.parent_node_id = old_to_new_id_map[state.parent_node_id]
+                # Update edge ids
+                edge_ids = []
+                for old_edge_id in state.edge_ids:
+                    if old_edge_id in old_to_new_id_map:
+                        edge_ids.append(old_to_new_id_map[old_edge_id])
+                state.edge_ids = edge_ids
+            elif isinstance(state, EdgeState):
+                # Update src and dst port ids
+                state.src_port_id = old_to_new_id_map[state.src_port_id]
+                state.dst_port_id = old_to_new_id_map[state.dst_port_id]
+        return save_states, old_to_new_id_map
+
+    def copy_selected_items(self):
+        node_states, port_states, edge_states = self.identify_selected_items()
         if node_states:
             # Calculate bounding rect
             bounding_rect = None
             for item in self.scene.selectedItems():
                 if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
-                    if item.uid in node_states or item.uid in edge_states:
+                    if (item.uid in node_states or item.uid in edge_states) and not item.backend.invisible:
                         # Make part of bounding rect
                         if bounding_rect:
                             bounding_rect = bounding_rect.united(item.sceneBoundingRect())
@@ -2465,56 +2706,21 @@ class PipelineEditor(QMainWindow):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
             node_states, port_states, edge_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
-            # Update ids
-            save_states = {}
-            old_to_new_id_map = {}
-            for old_id, node_state in node_states.items():
-                new_node_state = copy.deepcopy(node_state)
-                # Set node uid
-                new_uid = gen_uid()
-                new_node_state.uid = new_uid
-                new_node_state.node.node_id = new_uid
-                old_to_new_id_map[old_id] = new_uid
-                save_states[new_uid] = new_node_state
-            for old_id, port_state in port_states.items():
-                new_port_state = copy.deepcopy(port_state)
-                # Set port uid
-                new_uid = gen_uid()
-                new_port_state.uid = new_uid
-                old_to_new_id_map[old_id] = new_uid
-                save_states[new_uid] = new_port_state
-            for old_id, edge_state in edge_states.items():
-                new_edge_state = copy.deepcopy(edge_state)
-                # Set edge uid
-                new_uid = gen_uid()
-                new_edge_state.uid = new_uid
-                old_to_new_id_map[old_id] = new_uid
-                save_states[new_uid] = new_edge_state
-            # Rewire connections
-            for state in save_states.values():
-                if isinstance(state, NodeState):
-                    # Update port ids
-                    state.input_port_ids = [old_to_new_id_map[i] for i in state.input_port_ids]
-                    state.output_port_ids = [old_to_new_id_map[i] for i in state.output_port_ids]
-                elif isinstance(state, PortState):
-                    # Update parent node id
-                    state.parent_node_id = old_to_new_id_map[state.parent_node_id]
-                    # Update edge ids
-                    edge_ids = []
-                    for old_edge_id in state.edge_ids:
-                        if old_edge_id in old_to_new_id_map:
-                            edge_ids.append(old_to_new_id_map[old_edge_id])
-                    state.edge_ids = edge_ids
-                elif isinstance(state, EdgeState):
-                    # Update src and dst port ids
-                    state.src_port_id = old_to_new_id_map[state.src_port_id]
-                    state.dst_port_id = old_to_new_id_map[state.dst_port_id]
+            save_states = self.deep_copy_items(node_states, port_states, edge_states)[0]
+            print(len(save_states))
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for state in save_states.values():
                 if isinstance(state, NodeState) or isinstance(state, PortState):
-                    state.x += offset.x()
-                    state.y += offset.y()
+                    if (state.x is not None) and (state.y is not None):
+                        if isinstance(state, NodeState):
+                            print(f"Changing node position: {shorten_uid(state.uid)} from ({state.x}, {state.y}) to ({state.x + offset.x()}, {state.y + offset.y()})")
+                            state.x += offset.x()
+                            state.y += offset.y()
+                        # if isinstance(state, PortState):
+                        #     print(f"Changing port position: {shorten_uid(state.uid)} from ({state.x}, {state.y}) to ({state.x + offset.x()}, {state.y + offset.y()})")
+                        # state.x += offset.x()
+                        # state.y += offset.y()
             # Perform paste
             self.scene.undo_stack.push(PasteCmd(self.scene, save_states))
 

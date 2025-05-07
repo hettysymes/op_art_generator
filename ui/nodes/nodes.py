@@ -133,6 +133,10 @@ class Node(ABC):
     def get_input_node(self, key_name):
         if self._is_multiple_input(key_name):
             default = []
+            print("Getting input node")
+            print(self.node_id)
+            print(self)
+            print(self.input_nodes)
             if key_name in self.input_nodes:
                 res = self.input_nodes[key_name]
                 return res if (res is not None) else default
@@ -232,3 +236,27 @@ class CombinationNode(Node):
 
     def visualise(self):
         return self.node_instance().visualise()
+
+class CustomNode(Node):
+    NAME = "Custom Node"
+
+    def __init__(self, node_id=None, input_nodes=None, unit_node_info=None, final_node=None, involved_ids=None, first_id=None, end_id=None):
+        self.unit_node_info = unit_node_info
+        self.final_node = final_node
+        self.involved_ids = involved_ids
+        self.first_id = first_id
+        self.end_id = end_id
+        super().__init__(node_id, input_nodes, None)
+
+    def node_info(self):
+        return self.unit_node_info
+
+    @classmethod
+    def display_name(cls):
+        return cls.NAME
+
+    def compute(self):
+        return self.final_node.compute()
+
+    def visualise(self):
+        return self.final_node.visualise()

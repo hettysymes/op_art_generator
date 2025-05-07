@@ -3,6 +3,8 @@ from ui.nodes.elem_ref import ElemRef
 
 def handle_multi_inputs(elem_nodes, prop_vals_list):
     elem_node_ids = [en.node_id for en in elem_nodes]
+    print("Polygon points")
+    print(elem_node_ids)
     elem_node_add_ids = [True for _ in range(len(elem_nodes))]
     indices_to_remove = []
     for i, elem_ref in enumerate(prop_vals_list):
