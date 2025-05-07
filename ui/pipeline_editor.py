@@ -432,7 +432,7 @@ class NodeItem(QGraphicsRectItem):
             first_node = self.scene().scene.get(self.node.first_id)
             first_node.node.input_nodes = self.node.input_nodes
             self.node.final_node = self.scene().scene.get(self.node.end_id).node
-            first_node.update_visualisations()
+            first_node.update_node()
             print("First node uid: ", first_node.node.node_id)
             print("Final node uid: ", self.node.final_node.node_id)
             # print(self.node.final_node.input_nodes)
@@ -2521,19 +2521,35 @@ class PipelineEditor(QMainWindow):
     class TwoInputDialog(QDialog):
         def __init__(self):
             super().__init__()
-            self.setWindowTitle("Enter Two Strings")
+            self.setWindowTitle("Create custom node")
 
             self.layout = QVBoxLayout()
 
-            self.label1 = QLabel("First string:")
+            self.label1 = QLabel("Input node ID:")
             self.input1 = QLineEdit()
-            self.layout.addWidget(self.label1)
-            self.layout.addWidget(self.input1)
+            self.hash_label = QLabel("#")
 
-            self.label2 = QLabel("Second string:")
+            # Create a horizontal layout for the # and input field
+            self.input_layout1 = QHBoxLayout()
+            self.input_layout1.addWidget(self.hash_label)
+            self.input_layout1.addWidget(self.input1)
+
+            # Add to the main layout
+            self.layout.addWidget(self.label1)
+            self.layout.addLayout(self.input_layout1)
+
+            self.label2 = QLabel("Output node ID:")
             self.input2 = QLineEdit()
+            self.hash_label = QLabel("#")
+
+            # Create a horizontal layout for the # and input field
+            self.input_layout2 = QHBoxLayout()
+            self.input_layout2.addWidget(self.hash_label)
+            self.input_layout2.addWidget(self.input2)
+
+            # Add to the main layout
             self.layout.addWidget(self.label2)
-            self.layout.addWidget(self.input2)
+            self.layout.addLayout(self.input_layout2)
 
             self.ok_button = QPushButton("OK")
             self.ok_button.clicked.connect(self.accept)
@@ -2561,8 +2577,8 @@ class PipelineEditor(QMainWindow):
                     inp_node_id = new_key
                 elif short_id == string2:
                     out_node_id = new_key
-            assert inp_node_id and out_node_id
-            self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, save_states, inp_node_id, out_node_id))
+            if inp_node_id and out_node_id:
+                self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, save_states, inp_node_id, out_node_id))
 
     def identify_selected_items(self):
         nodes = []
