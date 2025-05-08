@@ -1,28 +1,30 @@
-from ui_old.nodes.gradient_datatype import Gradient
-# from ui_old.nodes.drawers.element_drawer import ElementDrawer
-from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui_old.nodes.shape import RectangleNode
-from ui_old.nodes.shape_datatypes import Group
-from ui_old.port_defs import PortDef, PT_Gradient
+from ui.nodes.gradient_datatype import Gradient
+from ui.nodes.node_defs import NodeInfo, PropEntry, PropType
+from ui.nodes.node_implementations.shape import RectangleNode
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PortDef, PT_Gradient
+from ui.nodes.shape_datatypes import Group
 
-GRADIENT_NODE_INFO = UnitNodeInfo(
-    name="Gradient",
-    out_port_defs=[PortDef("Gradient", PT_Gradient)],
-    prop_type_list=PropTypeList([
-        PropType("start_col", "colour", default_value=(255, 255, 255, 0),
-                 description="Starting colour of the gradient.", display_name="Start colour"),
-        PropType("stop_col", "colour", default_value=(255, 255, 255, 255),
-                 description="Stop colour of the gradient.", display_name="Stop colour")
-    ]),
-    description="Define a linear gradient. This can be passed to a shape node as its fill."
+DEF_GRADIENT_NODE_INFO = NodeInfo(
+    description="Define a linear gradient. This can be passed to a shape node as its fill.",
+    port_defs={(PortIO.OUTPUT, '_main'): PortDef("Gradient", PT_Gradient)},
+    prop_entries={'start_col': PropEntry(PropType.FILL,
+                                         display_name="Start colour",
+                                         description="Starting colour of the gradient.",
+                                         default_value=(255, 255, 255, 0)),
+                  'stop_col': PropEntry(PropType.FILL,
+                                        display_name="Stop colour",
+                                        description="Stop colour of the gradient.",
+                                        default_value=(255, 255, 255, 255))}
 )
 
 
 class GradientNode(UnitNode):
-    UNIT_NODE_INFO = GRADIENT_NODE_INFO
+    NAME = "Gradient"
+    DEFAULT_NODE_INFO = DEF_GRADIENT_NODE_INFO
 
-    def compute(self):
-        return Gradient(self.get_prop_val('start_col'), self.get_prop_val('stop_col'))
+    def compute(self, out_port_key='_main'):
+        return Gradient(self._prop_val('start_col'), self._prop_val('stop_col'))
 
     def visualise(self):
         group = Group(debug_info="Gradient")
