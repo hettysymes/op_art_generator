@@ -423,17 +423,7 @@ class NodeItem(QGraphicsRectItem):
 
     def remove_port(self, port_id):
         port = self.port_items[port_id]
-
-        # Remove connections to/from this port
-        other_edge_ids = port.edge_items.keys()
-        for other_edge_id in other_edge_ids:
-            this_edge_id = (port.parentItem().node_state.node_id, port.port_key)
-            if port.is_input:
-                self.node_graph().remove_connection((this_edge_id, other_edge_id))
-            else:
-                self.node_graph().remove_connection((other_edge_id, this_edge_id))
-            port.edge_items[other_edge_id].remove_from_scene()
-
+        port.remove_edges() # Remove connections to/from this port
         del self.port_items[port_id] # Remove reference to port
         self.node_state.ports_open.remove(port_id) # Remove from open ports
         port.scene().removeItem(port) # Remove port from scene
@@ -556,6 +546,17 @@ class NodeItem(QGraphicsRectItem):
 
         width, height = self.node_size_from_svg_size(*self.node_state.svg_size)
         self.resize(width, height)
+
+    def remove_from_scene(self):
+        # Remove all connected edges
+        for port_item in self.port_items.values():
+            port_item.remove_edges()
+        # Remove tooltip
+        if self._help_tooltip:
+            self.scene().removeItem(self._help_tooltip)
+            self._help_tooltip = None
+        # Remove this node item
+        self.scene().removeItem(self)
 #
 #     def create_separated_inputs_copy(self):
 #         self.scene().undo_stack.push(SeparateFromInputsCmd(self.scene(), (self.pos().x(), self.pos().y()), self.node))
@@ -658,6 +659,16 @@ class PortItem(QGraphicsPathItem):
     def update_edge_positions(self):
         for edge in self.edge_items.values():
             edge.update_position()
+
+    def remove_edges(self):
+        other_edge_ids = list(self.edge_items.keys())
+        for other_edge_id in other_edge_ids:
+            this_edge_id = (self.parentItem().node_state.node_id, self.port_key)
+            if self.is_input:
+                self.scene().node_graph.remove_connection(other_edge_id, this_edge_id)
+            else:
+                self.scene().node_graph.remove_connection(this_edge_id, other_edge_id)
+            self.edge_items[other_edge_id].remove_from_scene()
 
 
 class EdgeItem(QGraphicsLineItem):
@@ -871,33 +882,26 @@ class PasteCmd(QUndoCommand):
         # Load items
         self.scene.load_from_node_states(self.node_states)
 
-# class DeleteCmd(QUndoCommand):
-#     def __init__(self, pipeline_scene, nodes_to_delete, edges_to_delete, description="Delete edge"):
-#         super().__init__(description)
-#         self.pipeline_scene = pipeline_scene
-#         self.nodes_to_delete = nodes_to_delete
-#         self.edges_to_delete = edges_to_delete
-#         self.save_states = None
-#
-#     def undo(self):
-#         assert self.save_states
-#         self.pipeline_scene.load_from_save_states(self.save_states)
-#
-#     def redo(self):
-#         self.save_states = {}
-#         for node in self.nodes_to_delete:
-#             self.save_states[node.uid] = node.backend
-#             for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
-#                 port = self.pipeline_scene.scene.get(port_id)
-#                 self.save_states[port_id] = port.backend
-#                 for edge_id in port.backend.edge_ids:
-#                     edge = self.pipeline_scene.scene.get(edge_id)
-#                     self.save_states[edge_id] = edge.backend
-#             self.pipeline_scene.delete_node(node)
-#         for edge in self.edges_to_delete:
-#             if edge.uid not in self.save_states:
-#                 self.save_states[edge.uid] = edge.backend
-#                 self.pipeline_scene.delete_edge(edge)
+class DeleteCmd(QUndoCommand):
+    def __init__(self, scene, node_items, edge_items, description="Delete edge"):
+        super().__init__(description)
+        self.scene = scene
+        self.node_items = node_items
+        self.edge_items = edge_items
+        self.save_states = None
+
+    def undo(self):
+        pass
+        # assert self.save_states
+        # self.pipeline_scene.load_from_save_states(self.save_states)
+
+    def redo(self):
+        for node_item in self.node_items:
+            node_item.remove_from_scene()
+        for edge_item in self.edge_items:
+            if edge_item.scene():
+                # Edge item has not been removed with node item, remove now
+                edge_item.remove_from_scene()
 #
 # class AddCustomNodeCmd(QUndoCommand):
 #     def __init__(self, pipeline_scene, save_states, inp_node_id, out_node_id, description="Make Custom Node"):
@@ -1261,26 +1265,6 @@ class PipelineScene(QGraphicsScene):
 #         node_to_update.update_visualisations()
 #         return edge
 #
-#     def delete_node(self, node: NodeItem):
-#         """Delete the given node and all its connections"""
-#         # Remove all connected edges first
-#         for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
-#             port: PortItem = self.scene.get(port_id)
-#             for edge_id in list(port.backend.edge_ids):  # Use a copy to avoid issues while removing
-#                 edge: EdgeItem = self.scene.get(edge_id)
-#                 self.delete_edge(edge)
-#
-#         for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
-#             self.scene.remove(port_id)
-#
-#         # Remove tooltip
-#         if node._help_tooltip:
-#             self.removeItem(node._help_tooltip)
-#             self._help_tooltip = None
-#
-#         self.scene.remove(node.uid)
-#         self.removeItem(node)
-#
 #     def change_node_selection(self, clicked_item: NodeItem, i):
 #         clicked_item.node.set_selection(i)
 #         clicked_item.update_visualisations()
@@ -1487,15 +1471,15 @@ class PipelineEditor(QMainWindow):
         load_action.setShortcut("Ctrl+L")
         load_action.triggered.connect(self.load_scene)
         file_menu.addAction(load_action)
-#
+
         scene_menu = menu_bar.addMenu("Scene")
-#
-#         # Add Delete action
-#         delete = QAction("Delete", self)
-#         delete.setShortcut(Qt.Key_Backspace)
-#         delete.triggered.connect(self.delete_selected_items)
-#         scene_menu.addAction(delete)
-#
+
+        # Add Delete action
+        delete = QAction("Delete", self)
+        delete.setShortcut(Qt.Key_Backspace)
+        delete.triggered.connect(self.delete_selected_items)
+        scene_menu.addAction(delete)
+
         copy = QAction("Copy", self)
         copy.setShortcut(QKeySequence.Copy)
         copy.triggered.connect(self.copy_selected_subgraph)
@@ -1599,17 +1583,17 @@ class PipelineEditor(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
                 item.setSelected(True)
-#
-#     def delete_selected_items(self):
-#         nodes_to_delete = []
-#         edges_to_delete = []
-#         for item in self.scene.selectedItems():
-#             if isinstance(item, NodeItem):
-#                 nodes_to_delete.append(item)
-#             elif isinstance(item, EdgeItem):
-#                 edges_to_delete.append(item)
-#         if nodes_to_delete or edges_to_delete:
-#             self.scene.undo_stack.push(DeleteCmd(self.scene, nodes_to_delete, edges_to_delete))
+
+    def delete_selected_items(self):
+        node_items = []
+        edge_items = []
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                node_items.append(item)
+            elif isinstance(item, EdgeItem):
+                edge_items.append(item)
+        if node_items or edge_items:
+            self.scene.undo_stack.push(DeleteCmd(self.scene, node_items, edge_items))
 #
 #     class TwoInputDialog(QDialog):
 #         def __init__(self):
