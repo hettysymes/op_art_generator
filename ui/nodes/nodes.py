@@ -7,7 +7,7 @@ class UnitNode(Node, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
-    def __init__(self, uid, graph_querier, prop_vals):
+    def __init__(self, uid, graph_querier, prop_vals=None):
         super().__init__(uid, graph_querier, prop_vals)
         self.node_info = self._default_node_info()
 
@@ -26,5 +26,5 @@ class UnitNode(Node, ABC):
 
     # Functions to implement
     @abstractmethod
-    def compute(self):
+    def compute(self, out_port_key='_main'):
         return

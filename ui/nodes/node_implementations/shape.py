@@ -139,16 +139,16 @@
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import Port, PortDef, PT_Polyline, PT_Fill, PT_Element
+from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Element
 from ui.nodes.shape_datatypes import Polygon, Group
 from ui.nodes.utils import process_rgb
 
 DEF_POLYGON_INFO = NodeInfo(
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-    port_defs={(Port.INPUT, 'import_points'): PortDef("Import Points", PT_Polyline),
-               (Port.INPUT, 'fill'): PortDef("Fill", PT_Fill),
-               (Port.OUTPUT, 'element'): PortDef("Drawing", PT_Element)},
-    prop_type_list={'points': PropEntry(PropType.POINT_TABLE,
+    port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_Polyline),
+               (PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill),
+               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)},
+    prop_entries={'points': PropEntry(PropType.POINT_TABLE,
                                         display_name="Points",
                                         description="Points defining the path of the polygon edge (in order).",
                                         default_value=[(0, 0), (0, 1), (1, 1)]),
@@ -175,7 +175,7 @@ class PolygonNode(UnitNode):
             fill, fill_opacity = process_rgb(fill)
         return Polygon(points, fill, fill_opacity, stroke, stroke_width)
 
-    def compute(self):
+    def compute(self, out_port_key='_main'):
         # Process input polylines
         # handle_multi_inputs(self._input_node('import_points'), self.prop_vals['points'])
         return PolygonNode.helper(self._prop_val('fill'), self._prop_val('points'), 'none',

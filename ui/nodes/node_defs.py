@@ -5,6 +5,7 @@ from enum import Enum, auto
 
 from ui.id_generator import shorten_uid
 from ui.nodes.node_input_exception import NodeInputException
+from ui.nodes.port_defs import PortIO
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
@@ -15,33 +16,22 @@ class GraphQuerier(ABC):
         pass
 
     @abstractmethod
-    def input_node(self, node_id, port_key):
+    def port_input(self, node_id, port_key):
         pass
-
-class PropTypeList:
-
-    def __init__(self, prop_types):
-        self.prop_types = prop_types
-
-    def default_values(self):
-        prop_vals = {}
-        for prop_type in self.prop_types:
-            prop_vals[prop_type.key_name] = copy.deepcopy(prop_type.default_value)
-        return prop_vals
-
-    def is_empty(self):
-        for prop in self.prop_types:
-            if prop.prop_type != "hidden":
-                return False
-        return True
-
-    def __iter__(self):
-        return iter(self.prop_types)
 
 class PropType(Enum):
     POINT_TABLE = auto()
     FILL = auto()
     FLOAT = auto()
+    INT = auto()
+    BOOL = auto()
+    COORDINATE = auto()
+    PROP_ENUM = auto()
+    SELECTOR_ENUM = auto()
+    ENUM = auto()
+    POINT_TABLE = auto()
+    ELEM_TABLE = auto()
+    COLOUR_TABLE = auto()
 
 
 class PropEntry:
@@ -61,10 +51,10 @@ class PropEntry:
 
 class NodeInfo:
 
-    def __init__(self, description, port_defs=None, prop_type_list=None):
+    def __init__(self, description, port_defs=None, prop_entries=None):
         self.description = description
         self.port_defs = port_defs if port_defs else {}
-        self.prop_type_list = prop_type_list if prop_type_list else PropTypeList([])
+        self.prop_entries = prop_entries if prop_entries else {}
 
 class BaseNode:
 
@@ -74,10 +64,10 @@ class BaseNode:
 class Node(BaseNode, ABC):
     NAME = None
 
-    def __init__(self, uid, graph_querier, prop_vals):
+    def __init__(self, uid, graph_querier, prop_vals=None):
         self.uid = uid
         self.graph_querier = graph_querier
-        self.prop_vals = prop_vals if prop_vals else self.prop_type_list().default_values()
+        self.prop_vals = prop_vals if prop_vals else self.prop_entries().default_values()
 
     def safe_visualise(self):
         # Catch exception if raised
@@ -104,20 +94,29 @@ class Node(BaseNode, ABC):
     def port_defs(self):
         return self.node_info().port_defs
 
-    def prop_type_list(self):
-        return self.node_info().prop_type_list
+    def port_defs_filter_by_io(self, port_io):
+        return {port_key: port_def for (io, port_key), port_def in self.port_defs().items() if io == port_io}
+
+    def prop_entries(self):
+        return self.node_info().prop_entries
+
+    def compulsory_ports(self):
+        compulsory_ports = []
+        for port_id, port_def in self.port_defs():
+            if not port_def.optional:
+                compulsory_ports.append(port_id)
+        return compulsory_ports
 
     # Private functions
     def _active_input_ports(self):
         return self.graph_querier.active_input_ports(self.uid)
 
-    def _input_node(self, port_key):
-        input_node = self.graph_querier.input_node(self.uid, port_key)
-        return input_node if input_node else BaseNode()
+    def _port_input(self, port_key):
+        return self.graph_querier.port_input(self.uid, port_key)
 
     def _prop_val(self, prop_key):
         if prop_key in self._active_input_ports():
-            prop_node_val = self._input_node(prop_key).compute()
+            prop_node_val = self._port_input(prop_key)
             if prop_node_val:
                 return prop_node_val
         return self.prop_vals[prop_key]
@@ -136,7 +135,7 @@ class Node(BaseNode, ABC):
         pass
 
     @abstractmethod
-    def compute(self):
+    def compute(self, out_port_key='_main'):
         pass
 
     @abstractmethod
