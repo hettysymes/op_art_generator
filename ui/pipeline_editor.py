@@ -391,31 +391,29 @@ class NodeItem(QGraphicsRectItem):
                 child = child.nextSibling()
 
     def create_ports(self):
-        for (port_io, port_key), port_def in self.node().port_defs():
-            is_input = port_io == PortIO.INPUT
-            port = PortItem(port_key=port_key,
-                            port_type=port_def.port_type,
-                            is_input=is_input,
-                            parent=self)
-            self.port_items[(port_io, port_key)] = port
+        for port_id, port_def in self.node().port_defs():
+            # Update layout at the end for efficiency
+            self.add_port(port_id, port_def, update_layout=False)
         self.update_all_port_positions()
-        self.update_label_containers()
 
-    def add_port(self, port_id, port_def):
+    def add_port(self, port_id, port_def, update_layout=True):
         port_io, port_key = port_id
         is_input = port_io == PortIO.INPUT
+        # Add port to scene
         port = PortItem(port_key=port_key,
                         port_type=port_def.port_type,
                         is_input=is_input,
                         parent=self)
-        self.port_items[port_id] = port
-        self.update_all_port_positions()
-        self.update_label_containers()
+        self.port_items[port_id] = port # Add reference to port
+        self.node_state.ports_open.append(port_id) # Add to open ports
+        # Update port positioning and label containers
+        if update_layout:
+            self.update_all_port_positions()
 
     def remove_port(self, port_id):
         port = self.port_items[port_id]
 
-        # First, remove any connections to/from this port
+        # Remove connections to/from this port
         other_edge_ids = port.edge_items.keys()
         for other_edge_id in other_edge_ids:
             this_edge_id = (port.parent().node_state.node_id, port.port_key)
@@ -425,18 +423,13 @@ class NodeItem(QGraphicsRectItem):
                 self.node_graph().remove_connection((other_edge_id, this_edge_id))
             port.edge_items[other_edge_id].remove_from_scene()
 
-        # Mark port as inactive
-        port_io = PortIO.INPUT if port.is_input else PortIO.OUTPUT
-        self.node_state.ports_open.remove((port_io, port.port_key))
-
-        # Remove port from scene
-        self.scene().removeItem(port)
-
+        del self.port_items[port_id] # Remove reference to port
+        self.node_state.ports_open.remove(port_id) # Remove from open ports
+        port.scene().removeItem(port) # Remove port from scene
+        # Update port positioning
         self.update_all_port_positions()
-        self.update_label_containers()
 
 
-#
 #     def paint(self, painter, option, widget):
 #         super().paint(painter, option, widget)
 #
@@ -559,6 +552,7 @@ class NodeItem(QGraphicsRectItem):
         """Update the positions of all ports based on current node dimensions"""
         self.update_port_positions(PortIO.INPUT)
         self.update_port_positions(PortIO.OUTPUT)
+        self.update_label_containers()
 
     def update_label_containers(self):
         # Calculate the maximum width needed for each side
