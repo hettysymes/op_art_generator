@@ -400,7 +400,7 @@ class NodeItem(QGraphicsRectItem):
             output_node.update_visualisations()
 
     def create_ports(self):
-        for port_id, port_def in self.node().get_port_defs():
+        for port_id, port_def in self.node().get_port_defs().items():
             # Update layout at the end for efficiency
             self.add_port(port_id, port_def, update_layout=False)
         self.update_all_port_positions()
@@ -498,7 +498,8 @@ class NodeItem(QGraphicsRectItem):
 
         # Draw port labels
         for port in self.port_items.values():
-            text = self.node().get_prop_entries()[port.port_key].display_name
+            port_io = PortIO.INPUT if port.is_input else PortIO.OUTPUT
+            text = self.node().get_port_defs()[(port_io, port.port_key)].display_name
             port_y = port.y()
             if port.is_input:
                 x_offset = NodeItem.MARGIN_X
@@ -713,6 +714,8 @@ class AddNewNodeCmd(QUndoCommand):
         node_item = NodeItem(node_state, node)
         self.scene.node_items[node_id] = node_item
         self.scene.addItem(node_item)
+        node_item.create_ports()
+        node_item.update_vis_image()
         # if self.save_states:
         #     self.pipeline_scene.load_from_save_states(self.save_states)
         # else:

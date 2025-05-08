@@ -87,5 +87,5 @@ class PortDef:
 
     def __init__(self, display_name, port_type, optional=False):
         self.display_name = display_name
-        self.port_type = port_type,
+        self.port_type = port_type
         self.optional = optional
