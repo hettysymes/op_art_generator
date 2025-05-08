@@ -178,7 +178,7 @@ class NodeItem(QGraphicsRectItem):
         self.scene().undo_stack.push(RemovePropertyPortCmd(self, prop_key))
 
     def change_properties(self, props_changed):
-        self.scene().undo_stack.push(ChangePropertiesCmd(self.scene(), self, props_changed))
+        self.scene().undo_stack.push(ChangePropertiesCmd(self, props_changed))
 
     def hoverMoveEvent(self, event):
         if self._help_icon_rect.contains(event.pos()):
@@ -801,10 +801,8 @@ class AddNewEdgeCmd(QUndoCommand):
         dst_port_item.edge_items[(self.src_node_id, self.src_port_key)] = edge
 
 class ChangePropertiesCmd(QUndoCommand):
-    def __init__(self, pipeline_scene, node_item: NodeItem, props_changed, description="Change properties"):
+    def __init__(self, node_item: NodeItem, props_changed, description="Change properties"):
         super().__init__(description)
-        self.pipeline_scene = pipeline_scene
-        self.scene: Scene = pipeline_scene.scene
         self.node_item = node_item
         self.props_changed = props_changed
 

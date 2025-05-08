@@ -117,11 +117,9 @@ class NodePropertiesDialog(QDialog):
             props_group.setLayout(props_layout)
 
             # Now modify your existing code to use this function
-            for prop_key, prop_entry in node_item.node().get_prop_entries().values():
-                if prop_entry.prop_type != "hidden":
-                    widget = self.create_property_widget(prop_entry, node_item.node.prop_vals.get(prop_key,
-                                                                                            prop_entry.default_value),
-                                                         node_item)
+            for prop_key, prop_entry in node_item.node().get_prop_entries().items():
+                if prop_entry.prop_type != PropType.HIDDEN:
+                    widget = self.create_property_widget(prop_key, prop_entry, node_item.node().get_property(prop_key), node_item)
 
                     # Create the row with label and help icon
                     label_container, widget_container = self.create_property_row(prop_key, prop_entry, widget, node_item)
@@ -169,8 +167,8 @@ class NodePropertiesDialog(QDialog):
                 self.node_item.remove_property_port(prop_key)
 
         # Add the help icon after the widget (on the right)
-        if prop_entry.get_description:
-            help_icon = HelpIconLabel(prop_entry.get_description, max_width=300)  # Set maximum width for tooltip
+        if prop_entry.description:
+            help_icon = HelpIconLabel(prop_entry.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
         if prop_key in node_item.node().port_defs_filter_by_io(PortIO.INPUT):
             input_ports_open = [port_key for (io, port_key) in node_item.node_state.ports_open if io == PortIO.INPUT]
@@ -660,7 +658,7 @@ class NodePropertiesDialog(QDialog):
         props_changed = {}
 
         # Update custom properties
-        for prop_name, widget in self.property_widgets.items():
+        for prop_key, widget in self.property_widgets.items():
             if isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
                 value = widget.value()
             elif isinstance(widget, QCheckBox):
@@ -672,9 +670,9 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
 
-            old_val = self.node_item.node.prop_vals[prop_name]
+            old_val = self.node_item.node().get_property(prop_key)
             if old_val != value:
-                props_changed[prop_name] = (copy.deepcopy(old_val), value)
+                props_changed[prop_key] = (copy.deepcopy(old_val), value)
 
         if props_changed:
             self.node_item.change_properties(props_changed)
