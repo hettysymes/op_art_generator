@@ -1,9 +1,9 @@
-from ui.nodes.gradient_datatype import Gradient
-# from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Group
-from ui.port_defs import PortDef, PT_Gradient
+from ui_old.nodes.gradient_datatype import Gradient
+# from ui_old.nodes.drawers.element_drawer import ElementDrawer
+from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui_old.nodes.shape import RectangleNode
+from ui_old.nodes.shape_datatypes import Group
+from ui_old.port_defs import PortDef, PT_Gradient
 
 GRADIENT_NODE_INFO = UnitNodeInfo(
     name="Gradient",

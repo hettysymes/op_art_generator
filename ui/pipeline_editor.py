@@ -25,21 +25,21 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 from sympy.physics.quantum.cartesian import PositionState3D
 
-from ui.colour_prop_widget import ColorPropertyWidget
-from ui.id_generator import gen_uid, shorten_uid
-from ui.nodes.all_nodes import node_classes
-from ui.nodes.drawers.group_drawer import GroupDrawer
-from ui.nodes.drawing_group import DrawingGroupNode
-from ui.nodes.elem_ref import ElemRef
-from ui.nodes.immutable_elem_node import load_scene_with_elements
-from ui.nodes.nodes import CombinationNode, Node, UnitNode, UnitNodeInfo, CustomNode
-from ui.nodes.random_colour_selector import RandomColourSelectorNode
-from ui.nodes.shape_datatypes import Group
-from ui.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
-from ui.reorderable_table_widget import ReorderableTableWidget
-from ui.scene import Scene, NodeState, PortState, EdgeState, AppState
-from ui.selectable_renderer import SelectableSvgElement
-from ui.vis_types import ErrorFig, Visualisable
+from ui_old.colour_prop_widget import ColorPropertyWidget
+from ui_old.id_generator import gen_uid, shorten_uid
+from ui_old.nodes.all_nodes import node_classes
+from ui_old.nodes.drawers.group_drawer import GroupDrawer
+from ui_old.nodes.drawing_group import DrawingGroupNode
+from ui_old.nodes.elem_ref import ElemRef
+from ui_old.nodes.immutable_elem_node import load_scene_with_elements
+from ui_old.nodes.nodes import CombinationNode, Node, UnitNode, UnitNodeInfo, CustomNode
+from ui_old.nodes.random_colour_selector import RandomColourSelectorNode
+from ui_old.nodes.shape_datatypes import Group
+from ui_old.port_defs import PT_Element, PT_Grid, PT_Function, PT_Warp, PT_ValueList
+from ui_old.reorderable_table_widget import ReorderableTableWidget
+from ui_old.scene import Scene, NodeState, PortState, EdgeState, AppState
+from ui_old.selectable_renderer import SelectableSvgElement
+from ui_old.vis_types import ErrorFig, Visualisable
 
 class ConnectionSignals(QObject):
     """Signals for the connection process"""
@@ -431,7 +431,7 @@ class NodeItem(QGraphicsRectItem):
             self.backend.ignore_inputs = False # For future compatibility
         if isinstance(self.node, CustomNode):
             first_node = self.scene().scene.get(self.node.first_id)
-            first_node.node.input_nodes = self.node.input_nodes
+            first_node.node.port_node_inputs = self.node.input_nodes
             self.node.final_node = self.scene().scene.get(self.node.end_id).node
             first_node.update_visualisations()
             print("First node uid: ", first_node.node.node_id)
@@ -1072,7 +1072,7 @@ class NodePropertiesDialog(QDialog):
 
         # Create the label
         add_text = ":" if prop.auto_format else ""
-        label = QLabel(prop.display_name + add_text)
+        label = QLabel(prop.name + add_text)
         label_layout.addWidget(label)
         label_layout.addStretch()
 
@@ -1168,11 +1168,11 @@ class NodePropertiesDialog(QDialog):
 
         elif prop.prop_type == "prop_enum":
             widget = QComboBox()
-            input_node_props = node_item.node.get_input_node('element').prop_type_list()
+            input_node_props = node_item.node._input_node('element').prop_type_list()
             # Populate the widget
             widget.addItem("[none]", userData=None)
             for inp_prop in input_node_props:
-                widget.addItem(inp_prop.display_name, userData=inp_prop.key_name)
+                widget.addItem(inp_prop.name, userData=inp_prop.key_name)
             # Set the current value if available
             if current_value is not None:
                 # Find the index where the key_name matches current_value
@@ -1182,7 +1182,7 @@ class NodePropertiesDialog(QDialog):
 
         elif prop.prop_type == "selector_enum":
             widget = QComboBox()
-            input_prop_compute = node_item.node.get_input_node('iterator').compute()
+            input_prop_compute = node_item.node._input_node('iterator').compute()
             # Populate the widget
             widget.addItem("[none]", userData=None)
             if input_prop_compute:
@@ -2053,7 +2053,7 @@ class PipelineScene(QGraphicsScene):
                 submenu = QMenu(f"Change {clicked_item.node.display_name()} to...")
                 for i in range(len(clicked_item.node.selections())):
                     if i == clicked_item.node.selection_index: continue
-                    change_action = QAction(clicked_item.node.selections()[i].display_name(), submenu)
+                    change_action = QAction(clicked_item.node.selections()[i].name(), submenu)
                     change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
                     submenu.addAction(change_action)
                 menu.addMenu(submenu)
@@ -2072,7 +2072,7 @@ class PipelineScene(QGraphicsScene):
                 if issubclass(node_class, CombinationNode):
                     submenu = menu.addMenu(node_class.display_name())
                     for i in range(len(node_class.selections())):
-                        change_action = QAction(node_class.selections()[i].display_name(), submenu)
+                        change_action = QAction(node_class.selections()[i].name(), submenu)
                         handler = partial(self.add_node_from_class, node_class, event.scenePos(), i)
                         change_action.triggered.connect(handler)
                         submenu.addAction(change_action)

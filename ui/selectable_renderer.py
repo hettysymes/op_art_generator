@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
-from ui.nodes.immutable_elem_node import get_node_from_element
+from ui_old.nodes.immutable_elem_node import get_node_from_element
 
 
 class SelectableSvgElement(QGraphicsItem):

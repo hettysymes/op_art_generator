@@ -1,4 +1,4 @@
-from ui.nodes.drawers.Drawing import Drawing
+from ui_old.nodes.drawers.Drawing import Drawing
 
 
 class ErrorDrawer(Drawing):

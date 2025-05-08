@@ -1,3 +1,6 @@
+from enum import Enum, auto
+
+
 class PortType:
     pass
 
@@ -76,11 +79,13 @@ class PT_Gradient(PT_Fill):
 class PT_Colour(PT_Fill):
     pass
 
+class Port(Enum):
+    INPUT = auto()
+    OUTPUT = auto()
 
 class PortDef:
 
-    def __init__(self, name, port_type, input_multiple=False, key_name=None):
-        self.name = name
-        self.port_type = port_type
-        self.input_multiple = input_multiple
-        self.key_name = key_name if key_name else self.name
+    def __init__(self, display_name, port_type, optional=False):
+        self.display_name = display_name
+        self.port_type = port_type,
+        self.optional = optional

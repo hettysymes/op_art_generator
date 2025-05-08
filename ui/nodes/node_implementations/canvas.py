@@ -1,7 +1,7 @@
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Group
-from ui.port_defs import PortDef, PT_Element
+from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui_old.nodes.shape import RectangleNode
+from ui_old.nodes.shape_datatypes import Group
+from ui_old.port_defs import PortDef, PT_Element
 
 CANVAS_NODE_INFO = UnitNodeInfo(
     name="Canvas",

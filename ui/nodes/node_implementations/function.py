@@ -1,12 +1,12 @@
 import numpy as np
 import sympy as sp
 
-from ui.nodes.drawers.draw_graph import create_graph_svg
-from ui.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.utils import cubic_f
-from ui.nodes.warp_utils import sample_fun
-from ui.port_defs import PortDef, PT_Function
-from ui.vis_types import MatplotlibFig
+from ui_old.nodes.drawers.draw_graph import create_graph_svg
+from ui_old.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo, PropTypeList, PropType
+from ui_old.nodes.utils import cubic_f
+from ui_old.nodes.warp_utils import sample_fun
+from ui_old.port_defs import PortDef, PT_Function
+from ui_old.vis_types import MatplotlibFig
 
 CUBIC_FUN_NODE_INFO = UnitNodeInfo(
     name="Cubic Function",

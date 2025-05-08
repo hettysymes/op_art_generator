@@ -1,10 +1,10 @@
 import random
 
-from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_datatypes import Group
-from ui.port_defs import PortDef, PT_ColourList, PT_Colour
+from ui_old.nodes.node_input_exception import NodeInputException
+from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui_old.nodes.shape import RectangleNode
+from ui_old.nodes.shape_datatypes import Group
+from ui_old.port_defs import PortDef, PT_ColourList, PT_Colour
 
 RANDOM_COLOUR_SELECTOR_NODE_INFO = UnitNodeInfo(
     name="Random Colour Selector",

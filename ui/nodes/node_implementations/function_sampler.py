@@ -1,8 +1,8 @@
-from ui.nodes.drawers.draw_graph import create_graph_svg
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.warp_utils import sample_fun
-from ui.port_defs import PortDef, PT_Function, PT_NumberList
-from ui.vis_types import MatplotlibFig
+from ui_old.nodes.drawers.draw_graph import create_graph_svg
+from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui_old.nodes.warp_utils import sample_fun
+from ui_old.port_defs import PortDef, PT_Function, PT_NumberList
+from ui_old.vis_types import MatplotlibFig
 
 FUN_SAMPLER_NODE = UnitNodeInfo(
     name="Function Sampler",

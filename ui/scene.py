@@ -1,4 +1,4 @@
-from ui.nodes.nodes import Node
+from ui_old.nodes.nodes import Node
 
 class AppState:
 

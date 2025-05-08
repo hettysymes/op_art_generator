@@ -3,10 +3,10 @@ import importlib
 import pickle
 import sys
 
-from ui.id_generator import gen_uid
-from ui.nodes.nodes import UnitNode, UnitNodeInfo
-from ui.nodes.shape_datatypes import Group, Element
-from ui.port_defs import PortDef
+from ui_old.id_generator import gen_uid
+from ui_old.nodes.nodes import UnitNode, UnitNodeInfo
+from ui_old.nodes.shape_datatypes import Group, Element
+from ui_old.port_defs import PortDef
 
 
 # Base class for immutable element nodes
@@ -133,7 +133,7 @@ class ElementNodeUnpickler(pickle.Unpickler):
                 # Try to find and register the type
                 try:
                     # This assumes your element types can be imported from somewhere
-                    type_module_name = 'ui.port_defs'
+                    type_module_name = 'ui_old.port_defs'
                     type_module = importlib.import_module(type_module_name)
                     element_type = getattr(type_module, type_name)
 

@@ -1,11 +1,11 @@
 import math
 from abc import ABC, abstractmethod
 
-from ui.id_generator import gen_uid, shorten_uid
-from ui.nodes.elem_ref import ElemRef
-from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
-from ui.port_defs import PT_Element, PT_Shape, PT_Polyline, PT_Ellipse
+from ui_old.id_generator import gen_uid, shorten_uid
+from ui_old.nodes.elem_ref import ElemRef
+from ui_old.nodes.gradient_datatype import Gradient
+from ui_old.nodes.transforms import TransformList, Translate, Scale, Rotate
+from ui_old.port_defs import PT_Element, PT_Shape, PT_Polyline, PT_Ellipse
 
 
 class Element(ABC):

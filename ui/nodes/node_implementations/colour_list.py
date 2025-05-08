@@ -1,8 +1,8 @@
-from ui.nodes.grid import GridNode
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape import RectangleNode
-from ui.nodes.shape_repeater import ShapeRepeaterNode
-from ui.port_defs import PortDef, PT_ColourList
+from ui_old.nodes.grid import GridNode
+from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui_old.nodes.shape import RectangleNode
+from ui_old.nodes.shape_repeater import ShapeRepeaterNode
+from ui_old.port_defs import PortDef, PT_ColourList
 
 COLOUR_LIST_NODE_INFO = UnitNodeInfo(
     name="Colour List",

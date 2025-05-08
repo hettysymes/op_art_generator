@@ -1,9 +1,9 @@
-from ui.nodes.canvas import CanvasNode
-from ui.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui.nodes.shape import StraightLineNode
-from ui.nodes.shape_datatypes import Group
-from ui.nodes.warp_utils import PosWarp, RelWarp
-from ui.port_defs import PortDef, PT_Warp, PT_Grid
+from ui_old.nodes.canvas import CanvasNode
+from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
+from ui_old.nodes.shape import StraightLineNode
+from ui_old.nodes.shape_datatypes import Group
+from ui_old.nodes.warp_utils import PosWarp, RelWarp
+from ui_old.port_defs import PortDef, PT_Warp, PT_Grid
 
 GRID_NODE_INFO = UnitNodeInfo(
     name="Grid",

@@ -1,8 +1,8 @@
 import math
 
-from ui.nodes.nodes import UnitNodeInfo, PropTypeList, PropType, UnitNode
-from ui.nodes.shape_datatypes import Ellipse, Group
-from ui.port_defs import PortDef, PT_Ellipse, PT_PointList
+from ui_old.nodes.nodes import UnitNodeInfo, PropTypeList, PropType, UnitNode
+from ui_old.nodes.shape_datatypes import Ellipse, Group
+from ui_old.port_defs import PortDef, PT_Ellipse, PT_PointList
 
 ELLIPSE_SAMPLER_NODE_INFO = UnitNodeInfo(
     name="Ellipse Sampler",
