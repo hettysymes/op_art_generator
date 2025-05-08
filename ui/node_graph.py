@@ -1,5 +1,6 @@
-from ui.id_generator import gen_uid
+from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.node_defs import GraphQuerier
+from ui.nodes.port_defs import PortType, PortIO
 
 
 class NodeGraph(GraphQuerier):
@@ -50,3 +51,15 @@ class NodeGraph(GraphQuerier):
         # Return node compute
         src_node_id, src_port_key = found_src_port_id
         return self.nodes[src_node_id].compute(src_port_key)
+
+    def __str__(self):
+        result = ""
+        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.connections:
+            src_node_name = self.node(src_node_id).name()
+            dst_node_name = self.node(dst_node_id).name()
+            src_port_display_name = self.node(src_node_id).get_port_defs()[(PortIO.OUTPUT, src_port_key)].display_name
+            dst_port_display_name = self.node(dst_node_id).get_port_defs()[(PortIO.INPUT, dst_port_key)].display_name
+            first_string = f"{src_node_name} [#{shorten_uid(src_node_id)}] (port \"{src_port_display_name}\")".ljust(40)
+            second_string = f"{dst_node_name} [#{shorten_uid(dst_node_id)}] (port \"{dst_port_display_name}\")"
+            result += f"{first_string} -> {second_string}\n"
+        return result

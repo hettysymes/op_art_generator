@@ -15,7 +15,7 @@ DEF_SHAPE_REPEATER_NODE_INFO = NodeInfo(
 
 
 class ShapeRepeaterNode(UnitNode):
-    NAME = "Shape Repeater Node"
+    NAME = "Shape Repeater"
     DEFAULT_NODE_INFO = DEF_SHAPE_REPEATER_NODE_INFO
 
     @staticmethod
