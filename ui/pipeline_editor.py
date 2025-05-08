@@ -400,154 +400,42 @@ class NodeItem(QGraphicsRectItem):
             self.port_items[(port_io, port_key)] = port
         self.update_all_port_positions()
         self.update_label_containers()
-#
-#     def add_port(self, port_def, is_input=True):
-#         """
-#         Add a new port to the node.
-#
-#         Args:
-#             is_input (bool): True for input port, False for output port
-#             port_def (dict): Port definition (if None, a default will be used)
-#
-#         Returns:
-#             PortItem: The newly created port item
-#         """
-#
-#         # Generate a unique ID for the new port
-#         state_id = gen_uid()
-#
-#         if is_input:
-#             # Calculate position for the new input port
-#             input_count = len(self.backend.input_port_ids) + 1
-#             y_offset = input_count * self.rect().height() / (input_count + 1)
-#
-#             # Create the new input port
-#             res_port = PortItem(PortState(state_id,
-#                                           -10, y_offset,
-#                                           self.uid,
-#                                           True,
-#                                           [], port_def), self)
-#
-#             # Add to the backend tracking
-#             self.backend.input_port_ids.append(state_id)
-#
-#             # Add to scene
-#             self.scene().scene.add(res_port)
-#
-#             # Reposition existing input ports to distribute evenly
-#             self._reposition_ports(True)
-#
-#         else:
-#             # Calculate position for the new output port
-#             output_count = len(self.backend.output_port_ids) + 1
-#             y_offset = output_count * self.rect().height() / (output_count + 1)
-#
-#             # Create the new output port
-#             res_port = PortItem(PortState(state_id,
-#                                           self.rect().width() + 10, y_offset,
-#                                           self.uid,
-#                                           False,
-#                                           [], port_def), self)
-#
-#             # Add to the backend tracking
-#             self.backend.output_port_ids.append(state_id)
-#
-#             # Add to scene
-#             self.scene().scene.add(res_port)
-#
-#             # Reposition existing output ports to distribute evenly
-#             self._reposition_ports(False)
-#
-#         self.update_node()
-#
-#     def remove_port_by_name(self, key_name, is_input=None):
-#         """
-#         Remove a port from the node by its key name.
-#
-#         Args:
-#             key_name (str): The name of the port to remove
-#             is_input (bool, optional): Whether to only look for input or output ports.
-#                                       If None, will search both types.
-#
-#         Returns:
-#             bool: True if the port was successfully removed, False otherwise
-#         """
-#         # Find the port to remove by name
-#         port_to_remove = None
-#
-#         for item in self.scene().items():
-#             if isinstance(item, PortItem) and item.parentItem().uid == self.uid:
-#                 # Check if port definition has the specified name
-#                 if item.backend.port_def.key_name == key_name:
-#                     port_to_remove = item
-#                     break
-#
-#         # If no port found to remove
-#         if port_to_remove is None:
-#             return False
-#
-#         # First, remove any connections to/from this port
-#         edges_to_remove = []
-#         for edge_id in port_to_remove.backend.edge_ids:
-#             edge: EdgeItem = self.scene().scene.get(edge_id)
-#             edges_to_remove.append(edge)
-#         for edge in edges_to_remove:
-#             self.scene().delete_edge(edge)
-#
-#         # Remove port from backend tracking
-#         if port_to_remove.backend.is_input:
-#             if port_to_remove.uid in self.backend.input_port_ids:
-#                 self.backend.input_port_ids.remove(port_to_remove.uid)
-#         else:
-#             if port_to_remove.uid in self.backend.output_port_ids:
-#                 self.backend.output_port_ids.remove(port_to_remove.uid)
-#
-#         # Remove port from scene
-#         self.scene().scene.remove(port_to_remove.uid)
-#         self.scene().removeItem(port_to_remove)
-#
-#         # Reposition remaining ports to maintain even spacing
-#         self._reposition_ports(port_to_remove.backend.is_input)
-#
-#         # Update label containers
-#         self.update_label_containers()
-#         self.update_node()
-#
-#         return True
-#
-#     def _reposition_ports(self, is_input=True):
-#         """
-#         Reposition all ports of a given type to be evenly distributed.
-#
-#         Args:
-#             is_input (bool): True for input ports, False for output ports
-#         """
-#         # Get all relevant port items
-#         port_items = []
-#         for item in self.scene().items():
-#             if isinstance(item, PortItem) and item.uid == self.uid:
-#                 if item.backend.is_input == is_input:
-#                     port_items.append(item)
-#
-#         # Calculate new positions
-#         port_count = len(port_items)
-#         for i, port in enumerate(port_items):
-#             y_offset = (i + 1) * self.rect().height() / (port_count + 1)
-#             if is_input:
-#                 port.state.x = -10
-#             else:
-#                 port.state.x = self.rect().width() + 10
-#             port.state.y = y_offset
-#             port.setPos(port.state.x, port.state.y)
-#
-#         # Update connections if needed
-#         for port in port_items:
-#             for edge_id in port.backend.edge_ids:
-#                 edge: EdgeItem = self.scene.get(edge_id)
-#                 edge.update_position()
-#
-#         # Update the label containers to reflect new ports
-#         self.update_label_containers()
+
+    def add_port(self, port_id, port_def):
+        port_io, port_key = port_id
+        is_input = port_io == PortIO.INPUT
+        port = PortItem(port_key=port_key,
+                        port_type=port_def.port_type,
+                        is_input=is_input,
+                        parent=self)
+        self.port_items[port_id] = port
+        self.update_all_port_positions()
+        self.update_label_containers()
+
+    def remove_port(self, port_id):
+        port = self.port_items[port_id]
+
+        # First, remove any connections to/from this port
+        other_edge_ids = port.edge_items.keys()
+        for other_edge_id in other_edge_ids:
+            this_edge_id = (port.parent().node_state.node_id, port.port_key)
+            if port.is_input:
+                self.node_graph().remove_connection((this_edge_id, other_edge_id))
+            else:
+                self.node_graph().remove_connection((other_edge_id, this_edge_id))
+            port.edge_items[other_edge_id].remove_from_scene()
+
+        # Mark port as inactive
+        port_io = PortIO.INPUT if port.is_input else PortIO.OUTPUT
+        self.node_state.ports_open.remove((port_io, port.port_key))
+
+        # Remove port from scene
+        self.scene().removeItem(port)
+
+        self.update_all_port_positions()
+        self.update_label_containers()
+
+
 #
 #     def paint(self, painter, option, widget):
 #         super().paint(painter, option, widget)
@@ -809,6 +697,13 @@ class EdgeItem(QGraphicsLineItem):
         source_pos = self.src_port.get_center_scene_pos()
         dest_pos = self.dst_port.get_center_scene_pos()
         self.setLine(QLineF(source_pos, dest_pos))
+
+    def remove_from_scene(self):
+        src_node_id = self.src_port.parent().node_state.node_id
+        dst_node_id = self.dst_port.parent().node_state.node_id
+        del self.src_port.edge_items[(dst_node_id, self.dst_port.port_key)]
+        del self.dst_port.edge_items[(src_node_id, self.src_port.port_key)]
+        self.scene().removeItem(self)
 
 
 class AddNewNodeCmd(QUndoCommand):

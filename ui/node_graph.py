@@ -21,6 +21,9 @@ class NodeGraph(GraphQuerier):
     def add_connection(self, src_node_id, src_port_key, dst_node_id, dst_port_key):
         self.connections.append(((src_node_id, src_port_key), (dst_node_id, dst_port_key)))
 
+    def remove_connection(self, src_node_id, src_port_key, dst_node_id, dst_port_key):
+        self.connections.remove(((src_node_id, src_port_key), (dst_node_id, dst_port_key)))
+
     def active_input_ports(self, node_id):
         return [
                     dst_port_key
