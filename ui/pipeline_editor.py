@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 from sympy.physics.quantum.cartesian import PositionState3D
 
-from ui.app_state import NodeState
+from ui.app_state import NodeState, AppState
 from ui.id_generator import shorten_uid
 from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
@@ -709,12 +709,7 @@ class AddNewNodeCmd(QUndoCommand):
                                ports_open=[],
                                pos=(self.pos.x(), self.pos.y()),
                                svg_size=(150, 150)) # TODO: save as constant somewhere
-        node = self.node_graph.node(node_id)
-        node_item = NodeItem(node_state, node)
-        self.scene.node_items[node_id] = node_item
-        self.scene.addItem(node_item)
-        node_item.create_ports()
-        node_item.update_vis_image()
+        self.scene.add_node(node_state)
         # if self.save_states:
         #     self.pipeline_scene.load_from_save_states(self.save_states)
         # else:
@@ -771,14 +766,12 @@ class AddNewNodeCmd(QUndoCommand):
 #         self.output_port_ids = node_item.backend.output_port_ids
 #
 class AddNewEdgeCmd(QUndoCommand):
-    def __init__(self, scene, src_node_id, src_port_key, dst_node_id, dst_port_key, description="Add new edge"):
+    def __init__(self, scene, src_conn_id, dst_conn_id, description="Add new edge"):
         super().__init__(description)
         self.scene = scene
         self.node_graph = self.scene.node_graph
-        self.src_node_id = src_node_id
-        self.src_port_key = src_port_key
-        self.dst_node_id = dst_node_id
-        self.dst_port_key = dst_port_key
+        self.src_conn_id = src_conn_id
+        self.dst_conn_id = dst_conn_id
 
     def undo(self):
         pass
@@ -786,18 +779,8 @@ class AddNewEdgeCmd(QUndoCommand):
         # self.pipeline_scene.delete_edge(self.edge)
 
     def redo(self):
-        self.node_graph.add_connection(self.src_node_id, self.src_port_key, self.dst_node_id, self.dst_port_key)
-        src_node_item = self.scene.node_items[self.src_node_id]
-        dst_node_item = self.scene.node_items[self.dst_node_id]
-        src_port_item = src_node_item.port_items[(PortIO.OUTPUT, self.src_port_key)]
-        dst_port_item = dst_node_item.port_items[(PortIO.INPUT, self.dst_port_key)]
-        edge = EdgeItem(src_port_item, dst_port_item)
-        self.scene.addItem(edge)
-        edge.update_position()
-        dst_node_item.update_visualisations()
-        # Update port edge_items
-        src_port_item.edge_items[(self.dst_node_id, self.dst_port_key)] = edge
-        dst_port_item.edge_items[(self.src_node_id, self.src_port_key)] = edge
+        self.node_graph.add_connection(self.src_conn_id, self.dst_conn_id)
+        self.scene.add_edge(self.src_conn_id, self.dst_conn_id)
 
 class ChangePropertiesCmd(QUndoCommand):
     def __init__(self, node_item: NodeItem, props_changed, description="Change properties"):
@@ -1045,7 +1028,7 @@ class PipelineScene(QGraphicsScene):
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.edge_items) > 0
                 if not connection_exists and issubclass(source_port.port_type, dest_port.port_type) and (not target_has_connection):
-                    self.undo_stack.push(AddNewEdgeCmd(self, src_node_id, source_port.port_key, dst_node_id, dest_port.port_key))
+                    self.undo_stack.push(AddNewEdgeCmd(self, (src_node_id, source_port.port_key), (dst_node_id, dest_port.port_key)))
                 # target_has_connection = len(dest_port.backend.edge_ids) > 0
                 # if not connection_exists and issubclass(source_port.backend.port_def.port_type,
                 #                                         dest_port.backend.port_def.port_type) and (
@@ -1188,81 +1171,66 @@ class PipelineScene(QGraphicsScene):
     def add_new_node(self, pos, node_class):
         self.undo_stack.push(AddNewNodeCmd(self, pos, node_class))
 
+    def save_scene(self, filepath):
+        view = self.view()
+        center = view.mapToScene(view.viewport().rect().center())
+        zoom = view.current_zoom
+        with open(filepath, "wb") as f:
+            pickle.dump(AppState(view_pos=(center.x(), center.y()),
+                                 zoom=zoom,
+                                 node_states=[node_item.node_state for node_item in self.node_items.values()],
+                                 node_graph=self.node_graph), f)
 
-#
-#     def save_scene(self, filepath):
-#         save_states = {}
-#         for k, v in self.scene.states.items():
-#             save_states[k] = v.backend
-#         view = self.view()
-#         center = view.mapToScene(view.viewport().rect().center())
-#         zoom = view.current_zoom
-#         with open(filepath, "wb") as f:
-#             pickle.dump(AppState((center.x(), center.y()), zoom, save_states), f)
-#
-#     def load_from_save_states(self, save_states):
-#         # Process the loaded states as before
-#         node_ids = []
-#         newly_joined_node_ids = []
-#         for v in save_states.values():
-#             if isinstance(v, NodeState):
-#                 node = NodeItem(v)
-#                 self.scene.add(node)
-#                 if not hasattr(node.backend, 'invisible'):
-#                     node.backend.invisible = False  # For backward compatibility
-#                 if node.backend.invisible: node.setVisible(False)
-#                 self.addItem(node)
-#                 for port_id in v.input_port_ids + v.output_port_ids:
-#                     self.scene.add(PortItem(save_states[port_id], node))
-#                 node_ids.append(v.uid)
-#
-#         for v in save_states.values():
-#             if isinstance(v, EdgeState):
-#                 edge = EdgeItem(v)
-#                 self.scene.add(edge)
-#                 if not hasattr(edge.backend, 'invisible'):
-#                     edge.backend.invisible = False  # For backward compatibility
-#                 if edge.backend.invisible: edge.setVisible(False)
-#                 self.addItem(edge)
-#                 edge.set_ports()
-#                 added_src = edge.source_port.add_edge(edge.uid)
-#                 added_dst = edge.dest_port.add_edge(edge.uid)
-#                 if added_src or added_dst:
-#                     newly_joined_node_ids.append(edge.dest_port.parentItem().uid)
-#
-#         for uid in node_ids:
-#             node = self.scene.get(uid)
-#             if not node.backend.invisible:
-#                 node.update_vis_image()
-#                 node.update_label_containers()
-#
-#         for uid in newly_joined_node_ids:
-#             node = self.scene.get(uid)
-#             if not node.backend.invisible:
-#                 node.update_visualisations()
-#
-#     def clear_scene(self):
-#         self.scene = Scene()
-#         for item in self.items():
-#             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
-#                 self.removeItem(item)
-#
-#     def load_scene(self, filepath):
-#         self.clear_scene()
-#
-#         # Use the custom unpickler to load the scene
-#         try:
-#             # Import the helper function - adjust the import path as needed
-#             app_state = load_scene_with_elements(filepath)
-#         except ImportError:
-#             # Fall back to regular unpickler if the helper isn't available
-#             with open(filepath, "rb") as f:
-#                 app_state = pickle.load(f)
-#         self.view().centerOn(*app_state.pos)
-#         self.view().set_zoom(app_state.zoom)
-#         self.load_from_save_states(app_state.save_states)
-#         self.undo_stack.clear()
-#         self.filepath = filepath
+    def add_edge(self, src_conn_id, dst_conn_id):
+        src_node_id, src_port_key = src_conn_id
+        dst_node_id, dst_port_key = dst_conn_id
+        src_node_item = self.node_items[src_node_id]
+        dst_node_item = self.node_items[dst_node_id]
+        src_port_item = src_node_item.port_items[(PortIO.OUTPUT, src_port_key)]
+        dst_port_item = dst_node_item.port_items[(PortIO.INPUT, dst_port_key)]
+        edge = EdgeItem(src_port_item, dst_port_item)
+        self.addItem(edge)
+        edge.update_position()
+        dst_node_item.update_visualisations()
+        # Update port edge_items
+        src_port_item.edge_items[dst_conn_id] = edge
+        dst_port_item.edge_items[src_conn_id] = edge
+
+    def add_node(self, node_state):
+        node = self.node_graph.node(node_state.node_id)
+        node_item = NodeItem(node_state, node)
+        self.node_items[node_state.node_id] = node_item
+        self.addItem(node_item)
+        node_item.create_ports()
+        node_item.update_vis_image()
+
+    def load_from_node_states(self, node_states):
+        # Add node items
+        for node_state in node_states:
+            self.add_node(node_state)
+        # Add edge items
+        for src_conn_id, dst_conn_id in self.node_graph.connections:
+            self.add_edge(src_conn_id, dst_conn_id)
+
+    def clear_scene(self):
+        for item in self.items():
+            if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
+                if isinstance(item, NodeItem):
+                    del self.node_items[item.node_state.node_id]
+                self.removeItem(item)
+
+    def load_scene(self, filepath):
+        self.clear_scene()
+
+        with open(filepath, "rb") as f:
+            app_state = pickle.load(f)
+
+        self.view().centerOn(*app_state.view_pos)
+        self.view().set_zoom(app_state.zoom)
+        self.node_graph = app_state.node_graph
+        self.load_from_node_states(app_state.node_states)
+        self.undo_stack.clear()
+        self.filepath = filepath
 #
 #     def delete_edge(self, edge):
 #         """Delete the given edge"""
@@ -1485,8 +1453,8 @@ class PipelineEditor(QMainWindow):
         # Create the menu bar
         menu_bar = self.menuBar()
 
-#         # Create File menu
-#         file_menu = menu_bar.addMenu("File")
+        # Create File menu
+        file_menu = menu_bar.addMenu("File")
 #
 #         # Add New scene action
 #         new_scene_action = QAction("New Scene", self)
@@ -1494,23 +1462,23 @@ class PipelineEditor(QMainWindow):
 #         new_scene_action.triggered.connect(self.new_scene)
 #         file_menu.addAction(new_scene_action)
 #
-#         # Add Save action
-#         save_action = QAction("Save", self)
-#         save_action.setShortcut(QKeySequence.Save)
-#         save_action.triggered.connect(self.save_scene)
-#         file_menu.addAction(save_action)
+        # Add Save action
+        save_action = QAction("Save", self)
+        save_action.setShortcut(QKeySequence.Save)
+        save_action.triggered.connect(self.save_scene)
+        file_menu.addAction(save_action)
 #
-#         # Add Save As action
-#         save_action = QAction("Save As", self)
-#         save_action.setShortcut(QKeySequence.SaveAs)
-#         save_action.triggered.connect(self.save_as_scene)
-#         file_menu.addAction(save_action)
+        # Add Save As action
+        save_action = QAction("Save As", self)
+        save_action.setShortcut(QKeySequence.SaveAs)
+        save_action.triggered.connect(self.save_as_scene)
+        file_menu.addAction(save_action)
 #
-#         # Add Load action
-#         load_action = QAction("Load from file", self)
-#         load_action.setShortcut("Ctrl+L")
-#         load_action.triggered.connect(self.load_scene)
-#         file_menu.addAction(load_action)
+        # Add Load action
+        load_action = QAction("Load from file", self)
+        load_action.setShortcut("Ctrl+L")
+        load_action.triggered.connect(self.load_scene)
+        file_menu.addAction(load_action)
 #
         scene_menu = menu_bar.addMenu("Scene")
 #
@@ -1584,40 +1552,40 @@ class PipelineEditor(QMainWindow):
 #         self.view.reset_zoom()
 #         self.view.centerOn(0, 0)
 #
-#     def save_as_scene(self):
-#         filepath, _ = QFileDialog.getSaveFileName(
-#             self,
-#             "Save Pipeline Scene",
-#             "",
-#             "Pipeline Scene Files (*.pipeline);;All Files (*)"
-#         )
-#
-#         if filepath:
-#             self.scene.save_scene(filepath)
-#
-#     def save_scene(self, filepath=None):
-#         if filepath:
-#             save_filepath = filepath
-#         elif self.scene.filepath:
-#             save_filepath = self.scene.filepath
-#         else:
-#             return self.save_as_scene()
-#         self.scene.save_scene(save_filepath)
-#         self.statusBar().showMessage(f"Scene saved to {save_filepath}", 3000)
-#
-#     def load_scene(self):
-#         file_path, _ = QFileDialog.getOpenFileName(
-#             self,
-#             "Load Pipeline Scene",
-#             "",
-#             "Pipeline Scene Files (*.pipeline);;All Files (*)"
-#         )
-#
-#         if file_path:
-#             self.scene.load_scene(file_path)
-#             # Update the view to reflect the loaded scene
-#             self.view.update()
-#             self.statusBar().showMessage(f"Scene loaded from {file_path}", 3000)
+    def save_as_scene(self):
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Pipeline Scene",
+            "",
+            "Pipeline Scene Files (*.pipeline);;All Files (*)"
+        )
+
+        if filepath:
+            self.scene.save_scene(filepath)
+
+    def save_scene(self, filepath=None):
+        if filepath:
+            save_filepath = filepath
+        elif self.scene.filepath:
+            save_filepath = self.scene.filepath
+        else:
+            return self.save_as_scene()
+        self.scene.save_scene(save_filepath)
+        self.statusBar().showMessage(f"Scene saved to {save_filepath}", 3000)
+
+    def load_scene(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Load Pipeline Scene",
+            "",
+            "Pipeline Scene Files (*.pipeline);;All Files (*)"
+        )
+
+        if file_path:
+            self.scene.load_scene(file_path)
+            # Update the view to reflect the loaded scene
+            self.view.update()
+            self.statusBar().showMessage(f"Scene loaded from {file_path}", 3000)
 #
 #     def select_all(self):
 #         for item in self.scene.items():
