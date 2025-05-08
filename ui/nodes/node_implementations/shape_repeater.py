@@ -1,23 +1,22 @@
 import itertools
 
-from ui_old.nodes.nodes import UnitNode, UnitNodeInfo
-from ui_old.nodes.shape_datatypes import Group, Element
-from ui_old.nodes.transforms import Scale, Translate
-from ui_old.port_defs import PortDef, PT_Grid, PT_Element, PT_Repeatable
+from ui.nodes.node_defs import NodeInfo
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Repeatable, PT_Element
+from ui.nodes.shape_datatypes import Group, Element
+from ui.nodes.transforms import Scale, Translate
 
-SHAPE_REPEATER_NODE_INFO = UnitNodeInfo(
-    name="Shape Repeater",
-    in_port_defs=[
-        PortDef("Grid", PT_Grid, key_name='grid'),
-        PortDef("Drawing", PT_Repeatable, key_name='repeatable')
-    ],
-    out_port_defs=[PortDef("Drawing", PT_Element)],
-    description="Repeat a drawing in a grid-like structure."
+DEF_SHAPE_REPEATER_NODE_INFO = NodeInfo(
+    description="Repeat a drawing in a grid-like structure.",
+    port_defs={(PortIO.INPUT, 'grid'): PortDef("Grid", PT_Grid),
+               (PortIO.INPUT, 'repeatable'): PortDef("Drawing", PT_Repeatable),
+               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)}
 )
 
 
 class ShapeRepeaterNode(UnitNode):
-    UNIT_NODE_INFO = SHAPE_REPEATER_NODE_INFO
+    NAME = "Shape Repeater Node"
+    DEFAULT_NODE_INFO = DEF_SHAPE_REPEATER_NODE_INFO
 
     @staticmethod
     def helper(grid, elements):
@@ -38,9 +37,9 @@ class ShapeRepeaterNode(UnitNode):
                 ret_group.add(cell_group)
         return ret_group
 
-    def compute(self):
-        grid = self.get_input_node('grid').compute()
-        elements = self.get_input_node('repeatable').compute()
+    def compute(self, out_port_key='_main'):
+        grid = self._prop_val('grid')
+        elements = self._prop_val('repeatable')
         if grid and elements:
             return ShapeRepeaterNode.helper(grid, elements)
         return None
