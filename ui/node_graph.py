@@ -18,6 +18,13 @@ class NodeGraph(GraphQuerier):
     def node(self, node_id):
         return self.nodes[node_id]
 
+    def output_node_ids(self, node_id):
+        output_node_ids = []
+        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.connections:
+            if src_node_id == node_id:
+                output_node_ids.append(dst_node_id)
+        return output_node_ids
+
     def add_connection(self, src_node_id, src_port_key, dst_node_id, dst_port_key):
         self.connections.append(((src_node_id, src_port_key), (dst_node_id, dst_port_key)))
 

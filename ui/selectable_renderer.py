@@ -75,5 +75,6 @@ class SelectableSvgElement(QGraphicsItem):
 
     def extractIntoNode(self):
         """Handle the 'Extract into node' action."""
-        node = get_node_from_element(self.backend_child_elem)
-        self.parent_node_item.add_new_node(node)
+        # node = get_node_from_element(self.backend_child_elem)
+        # self.parent_node_item.add_new_node(node)
+        pass

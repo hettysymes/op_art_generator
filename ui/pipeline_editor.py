@@ -26,9 +26,10 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 from sympy.physics.quantum.cartesian import PositionState3D
 
 from ui.app_state import NodeState
+from ui.id_generator import shorten_uid
 from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
-from ui.nodes.all_nodes import node_setting
+from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_ValueList, PT_Function, PT_Grid
 from ui.nodes.shape_datatypes import Group
@@ -110,16 +111,11 @@ class NodeItem(QGraphicsRectItem):
     LABEL_FONT = QFont("Arial", 8)
 
     def __init__(self, node_state: NodeState):
+        super().__init__(0, 0, 0, 0)
         self.node_state = node_state
         self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
         self.right_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
-        if node_setting(self.node().name()).resizable:
-            svg_width, svg_height = node_state.svg_size
-            width, height = self.node_size_from_svg_size(svg_width, svg_height)
-        else:
-            # Assumes it's a canvas node TODO: also put constant somewhere
-            width, height = self.node_size_from_svg_size(self.node().prop_vals.get('width', 150),
-                                                         self.node().prop_vals.get('height', 150))
+        width, height = self.node_size_from_svg_size(*node_state.svg_size)
         super().__init__(0, 0, width, height)
         self.svg_items = None
         self.svg_item = None
@@ -133,138 +129,110 @@ class NodeItem(QGraphicsRectItem):
         self.setBrush(QBrush(QColor(220, 230, 250)))
         self.setPen(QPen(Qt.black, 2))
 
-        if self.node().prop_entries().is_empty():
-            self._property_button = None
-        else:
-            self._property_button = QPushButton("P")
-            self._property_button.setFixedSize(20, 20)
-            self._property_button.setStyleSheet("""
-                QPushButton {
-                    background-color: #f0f0f0;
-                    border: 1px solid #646464;
-                    border-radius: 4px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #cccccc;
-                }
-            """)
-            self._property_button.clicked.connect(lambda: self.scene().edit_node_properties(self))  # Define this method
-            self._property_proxy = QGraphicsProxyWidget(self)
-            self._property_proxy.setWidget(self._property_button)
-            self._property_proxy.setZValue(101)
-            self._property_button.setToolTip("Edit node properties")
-
-
-        self._help_icon_rect = QRectF()
-        self._help_hover_timer = QTimer()
-        self._help_hover_timer.setSingleShot(True)
-        self._help_hover_timer.timeout.connect(self._showHelpTooltip)
-        self._help_tooltip = None
-        self.setAcceptHoverEvents(True)
-
-        # Set the help text for this node
-        self._help_text = f"{self.node.name()} Help:\n{self.node.description()}"
-
         self.resize_handle = None
-
-        if self.node.resizable():
-            # Add resize handle
-            self.resize_handle = ResizeHandle(self, 'bottomright')
 
     def node_graph(self):
         return self.scene().node_graph
 
     def node(self):
         return self.node_graph().node(self.node_state.node_id)
-#
-#     def hoverMoveEvent(self, event):
-#         if self._help_icon_rect.contains(event.pos()):
-#             if not self._help_hover_timer.isActive():
-#                 # Start the timer when hovering over the help icon
-#                 self._help_hover_timer.start(500)  # 500ms delay before showing tooltip
-#         else:
-#             # Stop the timer if the mouse moves away from the help icon
-#             self._help_hover_timer.stop()
-#             if self._help_tooltip and self._help_tooltip.isVisible():
-#                 self._help_tooltip.hide()
-#
-#         super().hoverMoveEvent(event)
-#
-#     def hoverLeaveEvent(self, event):
-#         # Stop the timer when the mouse leaves the item
-#         self._help_hover_timer.stop()
-#         if self._help_tooltip and self._help_tooltip.isVisible():
-#             self._help_tooltip.hide()
-#
-#         super().hoverLeaveEvent(event)
-#
-#     def _showHelpTooltip(self):
-#         # Create a tooltip if it doesn't exist
-#         if not self._help_tooltip:
-#             # Split text into title and content parts
-#             parts = self._help_text.split('\n', 1)
-#             title = parts[0]
-#             body = parts[1] if len(parts) > 1 else ""
-#
-#             # Format the body text with paragraph breaks
-#             formatted_body = body.replace('\n', '<br>')
-#
-#             # Create the tooltip HTML
-#             tooltip_html = f"""
-#             <div style='
-#                 background-color: #ffcccc;
-#                 color: #333333;
-#                 padding: 12px;  /* Extra padding around the entire tooltip */
-#                 border-radius: 12px;
-#                 width: 200px;
-#                 position: relative;
-#                 word-wrap: break-word;
-#                 border: 1px solid #d0d0d0;  /* Slightly darker border */
-#             '>
-#                 <div style='
-#                     font-weight: bold;
-#                     text-align: center;
-#                     padding-bottom: 6px;
-#                     background-color: #ffcccc;  /* Explicitly set background color */
-#                     border-bottom: 1px solid rgba(0,0,0,0.2);
-#                 '>{title}</div>
-#
-#                 <div style='background-color: #ffcccc; padding-top: 6px;'>{formatted_body}</div>
-#
-#                 <div style='
-#                     position: absolute;
-#                     bottom: -10px;
-#                     left: 50%;
-#                     margin-left: -10px;
-#                     width: 0;
-#                     height: 0;
-#                     border-left: 10px solid transparent;
-#                     border-right: 10px solid transparent;
-#                     border-top: 10px solid #ffcccc;  /* Match the tooltip color */
-#                 '></div>
-#             </div>
-#
-#             """
-#
-#             self._help_tooltip = QGraphicsTextItem()
-#             self.scene().addItem(self._help_tooltip)
-#             self._help_tooltip.setDefaultTextColor(QColor("#333333"))
-#             self._help_tooltip.setHtml(tooltip_html)
-#             self._help_tooltip.setZValue(100)  # Make sure it's on top
-#             self._help_tooltip.setTextWidth(224)  # Account for padding (200px + 24px padding)
-#
-#         # Position the tooltip above the help icon
-#         tooltip_rect = self._help_tooltip.boundingRect()
-#
-#         # Center above the icon with some spacing
-#         tooltip_pos_local = QPointF(
-#             self._help_icon_rect.center().x() - tooltip_rect.width() / 2,
-#             self._help_icon_rect.top() - tooltip_rect.height()
-#         )
-#         self._help_tooltip.setPos(self.mapToScene(tooltip_pos_local))
-#         self._help_tooltip.show()
-#
+
+    def add_property_port(self, prop_key):
+        self.scene().undo_stack.push(AddPropertyPortCmd(self, prop_key))
+
+    def remove_property_port(self, prop_key):
+        self.scene().undo_stack.push(RemovePropertyPortCmd(self, prop_key))
+
+    def change_properties(self, props_changed):
+        self.scene().undo_stack.push(ChangePropertiesCmd(self.scene(), self, props_changed))
+
+    def hoverMoveEvent(self, event):
+        if self._help_icon_rect.contains(event.pos()):
+            if not self._help_hover_timer.isActive():
+                # Start the timer when hovering over the help icon
+                self._help_hover_timer.start(500)  # 500ms delay before showing tooltip
+        else:
+            # Stop the timer if the mouse moves away from the help icon
+            self._help_hover_timer.stop()
+            if self._help_tooltip and self._help_tooltip.isVisible():
+                self._help_tooltip.hide()
+
+        super().hoverMoveEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        # Stop the timer when the mouse leaves the item
+        self._help_hover_timer.stop()
+        if self._help_tooltip and self._help_tooltip.isVisible():
+            self._help_tooltip.hide()
+
+        super().hoverLeaveEvent(event)
+
+    def _showHelpTooltip(self):
+        # Create a tooltip if it doesn't exist
+        if not self._help_tooltip:
+            # Split text into title and content parts
+            parts = self._help_text.split('\n', 1)
+            title = parts[0]
+            body = parts[1] if len(parts) > 1 else ""
+
+            # Format the body text with paragraph breaks
+            formatted_body = body.replace('\n', '<br>')
+
+            # Create the tooltip HTML
+            tooltip_html = f"""
+            <div style='
+                background-color: #ffcccc;
+                color: #333333;
+                padding: 12px;  /* Extra padding around the entire tooltip */
+                border-radius: 12px;
+                width: 200px;
+                position: relative;
+                word-wrap: break-word;
+                border: 1px solid #d0d0d0;  /* Slightly darker border */
+            '>
+                <div style='
+                    font-weight: bold;
+                    text-align: center;
+                    padding-bottom: 6px;
+                    background-color: #ffcccc;  /* Explicitly set background color */
+                    border-bottom: 1px solid rgba(0,0,0,0.2);
+                '>{title}</div>
+
+                <div style='background-color: #ffcccc; padding-top: 6px;'>{formatted_body}</div>
+
+                <div style='
+                    position: absolute;
+                    bottom: -10px;
+                    left: 50%;
+                    margin-left: -10px;
+                    width: 0;
+                    height: 0;
+                    border-left: 10px solid transparent;
+                    border-right: 10px solid transparent;
+                    border-top: 10px solid #ffcccc;  /* Match the tooltip color */
+                '></div>
+            </div>
+
+            """
+
+            self._help_tooltip = QGraphicsTextItem()
+            self.scene().addItem(self._help_tooltip)
+            self._help_tooltip.setDefaultTextColor(QColor("#333333"))
+            self._help_tooltip.setHtml(tooltip_html)
+            self._help_tooltip.setZValue(100)  # Make sure it's on top
+            self._help_tooltip.setTextWidth(224)  # Account for padding (200px + 24px padding)
+
+        # Position the tooltip above the help icon
+        tooltip_rect = self._help_tooltip.boundingRect()
+
+        # Center above the icon with some spacing
+        tooltip_pos_local = QPointF(
+            self._help_icon_rect.center().x() - tooltip_rect.width() / 2,
+            self._help_icon_rect.top() - tooltip_rect.height()
+        )
+        self._help_tooltip.setPos(self.mapToScene(tooltip_pos_local))
+        self._help_tooltip.show()
+
     def resize(self, width, height):
         """Resize the node to the specified dimensions"""
         self.setRect(0, 0, width, height)
@@ -390,8 +358,14 @@ class NodeItem(QGraphicsRectItem):
                     self.svg_items.append(selectable_item)
                 child = child.nextSibling()
 
+    def update_visualisations(self):
+        self.update_vis_image()
+        for output_node_id in self.node_graph().output_node_ids(self.node_state.node_id):
+            output_node = self.node_graph().node(output_node_id)
+            output_node.update_visualisations()
+
     def create_ports(self):
-        for port_id, port_def in self.node().port_defs():
+        for port_id, port_def in self.node().get_port_defs():
             # Update layout at the end for efficiency
             self.add_port(port_id, port_def, update_layout=False)
         self.update_all_port_positions()
@@ -430,113 +404,122 @@ class NodeItem(QGraphicsRectItem):
         self.update_all_port_positions()
 
 
-#     def paint(self, painter, option, widget):
-#         super().paint(painter, option, widget)
-#
-#         painter.setFont(QFont("Arial", 8))
-#         painter.setPen(QColor("grey"))
-#         id_rect = self.rect().adjusted(10, 10, 0, 0)  # Shift the top edge down
-#         painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{shorten_uid(self.node.node_id)}")
-#
-#         # Draw node title
-#         title_font = QFont("Arial", 10)
-#         painter.setFont(title_font)
-#         painter.setPen(QColor("black"))
-#         metrics = QFontMetrics(title_font)
-#         title_text = self.node.name()
-#         text_width = metrics.horizontalAdvance(title_text)
-#         text_height = metrics.height()
-#         node_rect = self.rect()
-#         title_x = node_rect.center().x() - text_width / 2
-#         title_y = node_rect.top() + 10  # adjust vertical offset as needed
-#         title_rect = QRectF(title_x, title_y, text_width, text_height)
-#         painter.drawText(title_rect, Qt.AlignLeft | Qt.AlignTop, title_text)
-#
-#         # Draw the help icon (question mark) in the top-right corner
-#         help_icon_size = 9
-#         help_rect = QRectF(
-#             title_rect.right() + help_icon_size / 2,
-#             title_rect.center().y() - help_icon_size / 2,  # center vertically
-#             help_icon_size,
-#             help_icon_size
-#         )
-#
-#         # Draw the circle background
-#         painter.setPen(QPen(QColor(100, 100, 100), 1))
-#         painter.setBrush(Qt.NoBrush)
-#         painter.drawEllipse(help_rect)
-#
-#         # Draw the question mark
-#         painter.setFont(QFont("Arial", help_icon_size, QFont.Bold))
-#         painter.setPen(QColor(80, 80, 80))
-#         painter.drawText(help_rect, Qt.AlignCenter, "?")
-#
-#         # Store the help icon rect for hit testing in hover events
-#         self._help_icon_rect = help_rect
-#         if self._property_button:
-#             property_button_pos = QPointF(
-#                 self.rect().right() - 25,  # Button width (20) + 5px spacing
-#                 self.rect().top() + 5
-#             )
-#             self._property_proxy.setPos(property_button_pos)
-#
-#         # Draw port labels if there are multiple
-#         painter.setFont(NodeItem.LABEL_FONT)
-#         font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
-#         text_height = font_metrics.height()
-#
-#         # Draw input port labels (left side)
-#         for port_id in self.backend.input_port_ids:
-#             port = self.scene().scene.get(port_id)
-#             text = port.backend.port_def.name
-#
-#             # Calculate port's position in this item's coordinate system
-#             port_y = port.y()  # Since port is a child of this item
-#
-#             # Center text vertically with port
-#             text_rect = QRectF(
-#                 NodeItem.MARGIN_X,  # Left padding
-#                 port_y - (text_height / 2),  # Vertical center alignment
-#                 self.left_max_width,  # Width minus padding
-#                 text_height  # Font height
-#             )
-#
-#             # Draw the text
-#             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, text)
-#
-#         # Draw output port labels (right side)
-#         rect = self.rect()
-#         for port_id in self.backend.output_port_ids:
-#             port = self.scene().scene.get(port_id)
-#             text = port.backend.port_def.name
-#
-#             # Calculate port's position in this item's coordinate system
-#             port_y = port.y()  # Since port is a child of this item
-#
-#             # Center text vertically with port
-#             text_rect = QRectF(
-#                 rect.width() - self.right_max_width - NodeItem.MARGIN_X,  # Right-aligned
-#                 port_y - (text_height / 2),  # Vertical center alignment
-#                 self.right_max_width,  # Width minus padding
-#                 text_height  # Font height
-#             )
-#
-#             # Draw the text
-#             painter.drawText(text_rect, Qt.AlignRight | Qt.AlignVCenter, text)
-#
-#     def itemChange(self, change, value):
-#         if change == QGraphicsItem.ItemPositionChange:
-#             # Update connected edges when node moves
-#             for port_id in self.backend.input_port_ids + self.backend.output_port_ids:
-#                 port: PortItem = self.scene().scene.get(port_id)
-#                 for edge_id in port.backend.edge_ids:
-#                     edge: EdgeItem = self.scene().scene.get(edge_id)
-#                     edge.update_position()
-#         elif change == QGraphicsItem.ItemPositionHasChanged:
-#             self.backend.x = self.pos().x()
-#             self.backend.y = self.pos().y()
-#
-#         return super().itemChange(change, value)
+    def paint(self, painter, option, widget):
+        super().paint(painter, option, widget)
+        if self.node().prop_entries_is_empty():
+            self._property_button = None
+        else:
+            self._property_button = QPushButton("P")
+            self._property_button.setFixedSize(20, 20)
+            self._property_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #f0f0f0;
+                    border: 1px solid #646464;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #cccccc;
+                }
+            """)
+            self._property_button.clicked.connect(lambda: self.scene().edit_node_properties(self))  # Define this method
+            self._property_proxy = QGraphicsProxyWidget(self)
+            self._property_proxy.setWidget(self._property_button)
+            self._property_proxy.setZValue(101)
+            self._property_button.setToolTip("Edit node properties")
+        self._help_icon_rect = QRectF()
+        self._help_hover_timer = QTimer()
+        self._help_hover_timer.setSingleShot(True)
+        self._help_hover_timer.timeout.connect(self._showHelpTooltip)
+        self._help_tooltip = None
+        self.setAcceptHoverEvents(True)
+
+        # Set the help text for this node
+        self._help_text = f"{self.node().name()} Help:\n{self.node().get_description()}"
+
+        if node_setting(self.node().name()).resizable:
+            # Add resize handle
+            self.resize_handle = ResizeHandle(self, 'bottomright')
+
+        painter.setFont(QFont("Arial", 8))
+        painter.setPen(QColor("grey"))
+        id_rect = self.rect().adjusted(10, 10, 0, 0)  # Shift the top edge down
+        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{shorten_uid(self.node_state.node_id)}")
+
+        # Draw node title
+        title_font = QFont("Arial", 10)
+        painter.setFont(title_font)
+        painter.setPen(QColor("black"))
+        metrics = QFontMetrics(title_font)
+        title_text = self.node().base_node_name()
+        text_width = metrics.horizontalAdvance(title_text)
+        text_height = metrics.height()
+        node_rect = self.rect()
+        title_x = node_rect.center().x() - text_width / 2
+        title_y = node_rect.top() + 10  # adjust vertical offset as needed
+        title_rect = QRectF(title_x, title_y, text_width, text_height)
+        painter.drawText(title_rect, Qt.AlignLeft | Qt.AlignTop, title_text)
+
+        # Draw the help icon (question mark) in the top-right corner
+        help_icon_size = 9
+        help_rect = QRectF(
+            title_rect.right() + help_icon_size / 2,
+            title_rect.center().y() - help_icon_size / 2,  # center vertically
+            help_icon_size,
+            help_icon_size
+        )
+
+        # Draw the circle background
+        painter.setPen(QPen(QColor(100, 100, 100), 1))
+        painter.setBrush(Qt.NoBrush)
+        painter.drawEllipse(help_rect)
+
+        # Draw the question mark
+        painter.setFont(QFont("Arial", help_icon_size, QFont.Bold))
+        painter.setPen(QColor(80, 80, 80))
+        painter.drawText(help_rect, Qt.AlignCenter, "?")
+
+        # Store the help icon rect for hit testing in hover events
+        self._help_icon_rect = help_rect
+        if self._property_button:
+            property_button_pos = QPointF(
+                self.rect().right() - 25,  # Button width (20) + 5px spacing
+                self.rect().top() + 5
+            )
+            self._property_proxy.setPos(property_button_pos)
+
+        # Draw port labels if there are multiple
+        painter.setFont(NodeItem.LABEL_FONT)
+        font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
+        text_height = font_metrics.height()
+
+        # Draw port labels
+        for port in self.port_items.values():
+            text = self.node().get_prop_entries()[port.port_key].display_name
+            port_y = port.y()
+            if port.is_input:
+                x_offset = NodeItem.MARGIN_X
+                width_to_use = self.left_max_width
+            else:
+                x_offset = self.rect().width() - self.right_max_width - NodeItem.MARGIN_X
+                width_to_use = self.right_max_width
+            text_rect = QRectF(
+                x_offset,
+                port_y - (text_height / 2),  # Vertical center alignment
+                width_to_use,
+                text_height  # Font height
+            )
+            # Draw the text
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, text)
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionChange:
+            # Update connected edges when node moves
+            for port in self.port_items.values():
+                port.update_edge_positions()
+        elif change == QGraphicsItem.ItemPositionHasChanged:
+            self.node_state.pos = (self.pos().x(), self.pos().y())
+        return super().itemChange(change, value)
 
     def update_port_positions(self, port_io):
         port_dict = {port_key: port for (io, port_key), port in self.port_items.items() if io == port_io}
@@ -561,7 +544,7 @@ class NodeItem(QGraphicsRectItem):
         self.right_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
 
         for port_id in self.port_items:
-            text = self.node().port_defs()[port_id].display_name
+            text = self.node().get_port_defs()[port_id].display_name
             width = font_metrics.horizontalAdvance(text)
             if port_id[0] == PortIO.INPUT:
                 self.left_max_width = max(self.left_max_width, width)
@@ -808,39 +791,38 @@ class AddNewEdgeCmd(QUndoCommand):
         # Update port edge_items
         src_port_item.edge_items[(self.dst_node_id, self.dst_port_key)] = edge
         dst_port_item.edge_items[(self.src_node_id, self.src_port_key)] = edge
-#
-# class ChangePropertiesCmd(QUndoCommand):
-#     def __init__(self, pipeline_scene, node_item: NodeItem, props_changed, description="Change properties"):
-#         super().__init__(description)
-#         self.pipeline_scene = pipeline_scene
-#         self.scene: Scene = pipeline_scene.scene
-#         self.node_item = node_item
-#         self.props_changed = props_changed
-#
-#     def update_properties(self, props):
-#         for prop_name, prop in props.items():
-#             self.node_item.node.prop_vals[prop_name] = prop
-#             if (not self.node_item.node.resizable()) and (prop_name == 'width' or prop_name == 'height'):
-#                 svg_width = self.node_item.node.prop_vals.get('width', self.node_item.rect().width())
-#                 svg_height = self.node_item.node.prop_vals.get('height', self.node_item.rect().height())
-#                 self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width, svg_height))
-#
-#         # Update the node's appearance
-#         self.node_item.update()
-#         self.node_item.update_visualisations()
-#
-#     def undo(self):
-#         props = {}
-#         for prop_name, value in self.props_changed.items():
-#             props[prop_name] = value[0]
-#         self.update_properties(props)
-#
-#     def redo(self):
-#         props = {}
-#         for prop_name, value in self.props_changed.items():
-#             props[prop_name] = value[1]
-#         self.update_properties(props)
-#
+
+class ChangePropertiesCmd(QUndoCommand):
+    def __init__(self, pipeline_scene, node_item: NodeItem, props_changed, description="Change properties"):
+        super().__init__(description)
+        self.pipeline_scene = pipeline_scene
+        self.scene: Scene = pipeline_scene.scene
+        self.node_item = node_item
+        self.props_changed = props_changed
+
+    def update_properties(self, props):
+        for prop_key, value in props.items():
+            self.node_item.node().set_property(prop_key, value)
+            if (not node_setting(self.node_item.node().name()).resizable) and (prop_key == 'width' or prop_key == 'height'):
+                svg_width = self.node_item.node().get_property('width')
+                svg_height = self.node_item.node().get_property('height')
+                self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width, svg_height))
+        # Update the node's appearance
+        self.node_item.update_visualisations()
+
+    def undo(self):
+        pass
+        # props = {}
+        # for prop_name, value in self.props_changed.items():
+        #     props[prop_name] = value[0]
+        # self.update_properties(props)
+
+    def redo(self):
+        props = {}
+        for prop_name, value in self.props_changed.items():
+            props[prop_name] = value[1]
+        self.update_properties(props)
+
 class AddPropertyPortCmd(QUndoCommand):
     def __init__(self, node_item: NodeItem, prop_key, description="Add property port"):
         super().__init__(description)
@@ -853,30 +835,26 @@ class AddPropertyPortCmd(QUndoCommand):
         # self.node_item.backend.prop_ports.remove(self.prop_key_name)
 
     def redo(self):
-        for port_def in self.node_item.node().prop_port_defs():
-            if port_def.key_name == self.prop_key_name:
-                self.node_item.add_port(port_def)
-                self.node_item.backend.prop_ports.append(self.prop_key_name)
-                break
-#
-# class RemovePropertyPortCmd(QUndoCommand):
-#     def __init__(self, pipeline_scene, node_item: NodeItem, prop_key_name, description="Remove property port"):
-#         super().__init__(description)
-#         self.pipeline_scene = pipeline_scene
-#         self.scene: Scene = pipeline_scene.scene
-#         self.node_item = node_item
-#         self.prop_key_name = prop_key_name
-#
-#     def undo(self):
-#         for port_def in self.node_item.node.prop_port_defs():
-#             if port_def.key_name == self.prop_key_name:
-#                 self.node_item.add_port(port_def)
-#                 self.node_item.backend.prop_ports.append(self.prop_key_name)
-#                 break
-#
-#     def redo(self):
-#         self.node_item.remove_port_by_name(self.prop_key_name)
-#         self.node_item.backend.prop_ports.remove(self.prop_key_name)
+        input_port_defs = self.node_item.node().port_defs_filter_by_io(PortIO.INPUT)
+        port_def = input_port_defs[self.prop_key]
+        self.node_item.add_port((PortIO.INPUT, self.prop_key), port_def)
+
+class RemovePropertyPortCmd(QUndoCommand):
+    def __init__(self, node_item: NodeItem, prop_key, description="Remove property port"):
+        super().__init__(description)
+        self.node_item = node_item
+        self.prop_key = prop_key
+
+    def undo(self):
+        pass
+        # for port_def in self.node_item.node.prop_port_defs():
+        #     if port_def.key_name == self.prop_key_name:
+        #         self.node_item.add_port(port_def)
+        #         self.node_item.backend.prop_ports.append(self.prop_key_name)
+        #         break
+
+    def redo(self):
+        self.node_item.remove_port((PortIO.INPUT, self.prop_key))
 #
 # class PasteCmd(QUndoCommand):
 #     def __init__(self, pipeline_scene, save_states, description="Paste"):
@@ -1019,16 +997,7 @@ class PipelineScene(QGraphicsScene):
 
     def view(self):
         return self.views()[0]
-#
-#     def add_node_from_class(self, node_class, pos, index=None):
-#         """Add a new node of the given type at the specified position"""
-#         uid = gen_uid()
-#         if index is None:
-#             node = node_class(node_id=uid)
-#         else:
-#             node = node_class(node_id=uid, selection_index=index)
-#         return self.add_new_node(pos, node)
-#
+
     def add_new_node(self, pos, node):
         self.undo_stack.push(AddNewNodeCmd(self, pos, node))
 
@@ -1086,124 +1055,135 @@ class PipelineScene(QGraphicsScene):
         # Reset ports
         self.source_port = None
         self.dest_port = None
-#
-#     def mousePressEvent(self, event):
-#         """Handle mouse press events for the scene"""
-#         if event.button() == Qt.LeftButton:
-#             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
-#
-#             if isinstance(item, PortItem) and not item.backend.is_input:
-#                 # Start creating a connection if an output port is clicked
-#                 self.connection_signals.connectionStarted.emit(item)
-#                 event.accept()
-#                 return
-#
-#         super().mousePressEvent(event)
-#
-#     def mouseMoveEvent(self, event):
-#         """Handle mouse move events for the scene"""
-#         if self.source_port and self.temp_line:
-#             self.update_temp_connection(event.scenePos())
-#
-#             # Highlight input port if we're hovering over one
-#             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
-#             if isinstance(item, PortItem) and item.backend.is_input:
-#                 if self.dest_port != item:
-#                     # Reset previous dest port highlighting
-#                     if self.dest_port:
-#                         self.dest_port.setPen(QPen(Qt.black, 1))
-#
-#                     # Set new dest port
-#                     self.dest_port = item
-#                     self.dest_port.setPen(QPen(Qt.red, 2))
-#             elif self.dest_port:
-#                 # Reset dest port highlighting if not hovering over an input port
-#                 self.dest_port.setPen(QPen(Qt.black, 1))
-#                 self.dest_port = None
-#
-#             event.accept()
-#             return
-#
-#         super().mouseMoveEvent(event)
-#
-#     def mouseReleaseEvent(self, event):
-#         """Handle mouse release events for the scene"""
-#         if event.button() == Qt.LeftButton and self.source_port:
-#             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
-#             if isinstance(item, PortItem) and item.backend.is_input:
-#                 # Create permanent connection
-#                 self.connection_signals.connectionMade.emit(self.source_port, item)
-#                 event.accept()
-#                 return
-#             else:
-#                 # Clean up if not released over an input port
-#                 if self.temp_line:
-#                     self.removeItem(self.temp_line)
-#                     self.temp_line = None
-#                 self.source_port = None
-#
-#                 # Reset dest port highlighting if needed
-#                 if self.dest_port:
-#                     self.dest_port.setPen(QPen(Qt.black, 1))
-#                     self.dest_port = None
-#
-#         super().mouseReleaseEvent(event)
-#
-#     def contextMenuEvent(self, event):
-#         """Handle context menu events for the scene"""
-#         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
-#
-#         if isinstance(clicked_item, EdgeItem):
-#             # Context menu for connections
-#             menu = QMenu()
-#             delete_action = QAction("Delete Connection", menu)
-#             delete_action.triggered.connect(lambda: self.delete_edge(clicked_item))
-#             menu.addAction(delete_action)
-#             menu.exec_(event.screenPos())
-#         elif isinstance(clicked_item, NodeItem) or isinstance(clicked_item, PortItem):
-#             # Context menu for nodes (or ports on nodes)
-#             if isinstance(clicked_item, PortItem):
-#                 clicked_item = clicked_item.parentItem()
-#
-#             menu = QMenu()
-#             separate_from_inputs_action = QAction("Separate from inputs", menu)
-#             separate_from_inputs_action.triggered.connect(lambda: self.separate_from_inputs_action(clicked_item))
-#             menu.addAction(separate_from_inputs_action)
-#
-#             if isinstance(clicked_item.node, CombinationNode):
-#                 submenu = QMenu(f"Change {clicked_item.node.display_name()} to...")
-#                 for i in range(len(clicked_item.node.selections())):
-#                     if i == clicked_item.node.selection_index: continue
-#                     change_action = QAction(clicked_item.node.selections()[i].name(), submenu)
-#                     change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
-#                     submenu.addAction(change_action)
-#                 menu.addMenu(submenu)
-#
-#             if isinstance(clicked_item.node, RandomColourSelectorNode):
-#                 randomise_action = QAction("Randomise", menu)
-#                 randomise_action.triggered.connect(lambda: self.randomise(clicked_item))
-#                 menu.addAction(randomise_action)
-#
-#             menu.exec_(event.screenPos())
-#         else:
-#             menu = QMenu()
-#
-#             # Add actions for each node type
-#             for node_class in node_classes:
-#                 if issubclass(node_class, CombinationNode):
-#                     submenu = menu.addMenu(node_class.display_name())
-#                     for i in range(len(node_class.selections())):
-#                         change_action = QAction(node_class.selections()[i].name(), submenu)
-#                         handler = partial(self.add_node_from_class, node_class, event.scenePos(), i)
-#                         change_action.triggered.connect(handler)
-#                         submenu.addAction(change_action)
-#                 else:
-#                     action = QAction(node_class.display_name(), menu)
-#                     handler = partial( self.add_node_from_class, node_class, event.scenePos(), None)
-#                     action.triggered.connect(handler)
-#                     menu.addAction(action)
-#
-#             menu.exec_(event.screenPos())
+
+    def mousePressEvent(self, event):
+        """Handle mouse press events for the scene"""
+        if event.button() == Qt.LeftButton:
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
+
+            if isinstance(item, PortItem) and not item.is_input:
+                # Start creating a connection if an output port is clicked
+                self.connection_signals.connectionStarted.emit(item)
+                event.accept()
+                return
+
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Handle mouse move events for the scene"""
+        if self.source_port and self.temp_line:
+            self.update_temp_connection(event.scenePos())
+
+            # Highlight input port if we're hovering over one
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
+            if isinstance(item, PortItem) and item.is_input:
+                if self.dest_port != item:
+                    # Reset previous dest port highlighting
+                    if self.dest_port:
+                        self.dest_port.setPen(QPen(Qt.black, 1))
+
+                    # Set new dest port
+                    self.dest_port = item
+                    self.dest_port.setPen(QPen(Qt.red, 2))
+            elif self.dest_port:
+                # Reset dest port highlighting if not hovering over an input port
+                self.dest_port.setPen(QPen(Qt.black, 1))
+                self.dest_port = None
+
+            event.accept()
+            return
+
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release events for the scene"""
+        if event.button() == Qt.LeftButton and self.source_port:
+            item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
+            if isinstance(item, PortItem) and item.is_input:
+                # Create permanent connection
+                self.connection_signals.connectionMade.emit(self.source_port, item)
+                event.accept()
+                return
+            else:
+                # Clean up if not released over an input port
+                if self.temp_line:
+                    self.removeItem(self.temp_line)
+                    self.temp_line = None
+                self.source_port = None
+
+                # Reset dest port highlighting if needed
+                if self.dest_port:
+                    self.dest_port.setPen(QPen(Qt.black, 1))
+                    self.dest_port = None
+
+        super().mouseReleaseEvent(event)
+
+    def contextMenuEvent(self, event):
+        """Handle context menu events for the scene"""
+        clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
+
+        if isinstance(clicked_item, EdgeItem):
+            pass
+            # Context menu for connections
+            # menu = QMenu()
+            # delete_action = QAction("Delete Connection", menu)
+            # delete_action.triggered.connect(lambda: self.delete_edge(clicked_item))
+            # menu.addAction(delete_action)
+            # menu.exec_(event.screenPos())
+        elif isinstance(clicked_item, NodeItem) or isinstance(clicked_item, PortItem):
+            pass
+            # Context menu for nodes (or ports on nodes)
+            # if isinstance(clicked_item, PortItem):
+        #             #     clicked_item = clicked_item.parentItem()
+        #             #
+        #             # menu = QMenu()
+        #             # separate_from_inputs_action = QAction("Separate from inputs", menu)
+        #             # separate_from_inputs_action.triggered.connect(lambda: self.separate_from_inputs_action(clicked_item))
+        #             # menu.addAction(separate_from_inputs_action)
+        #             #
+        #             # if isinstance(clicked_item.node, CombinationNode):
+        #             #     submenu = QMenu(f"Change {clicked_item.node.display_name()} to...")
+        #             #     for i in range(len(clicked_item.node.selections())):
+        #             #         if i == clicked_item.node.selection_index: continue
+        #             #         change_action = QAction(clicked_item.node.selections()[i].name(), submenu)
+        #             #         change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
+        #             #         submenu.addAction(change_action)
+        #             #     menu.addMenu(submenu)
+        #             #
+        #             # if isinstance(clicked_item.node, RandomColourSelectorNode):
+        #             #     randomise_action = QAction("Randomise", menu)
+        #             #     randomise_action.triggered.connect(lambda: self.randomise(clicked_item))
+        #             #     menu.addAction(randomise_action)
+        #             #
+        #             # menu.exec_(event.screenPos())
+        else:
+            menu = QMenu()
+
+            # Add actions for each node type
+            for node_class in node_classes():
+                action = QAction(node_class.name(), menu)
+                handler = partial(self.add_new_node, event.scenePos(), node_class)
+                action.triggered.connect(handler)
+                menu.addAction(action)
+                # if issubclass(node_class, CombinationNode):
+                #     submenu = menu.addMenu(node_class.display_name())
+                #     for i in range(len(node_class.selections())):
+                #         change_action = QAction(node_class.selections()[i].name(), submenu)
+                #         handler = partial(self.add_node_from_class, node_class, event.scenePos(), i)
+                #         change_action.triggered.connect(handler)
+                #         submenu.addAction(change_action)
+                # else:
+                #     action = QAction(node_class.display_name(), menu)
+                #     handler = partial(self.add_node_from_class, node_class, event.scenePos(), None)
+                #     action.triggered.connect(handler)
+                #     menu.addAction(action)
+
+            menu.exec_(event.screenPos())
+
+    def add_new_node(self, pos, node_class):
+        self.undo_stack.push(AddNewNodeCmd(self, pos, node_class))
+
+
 #
 #     def save_scene(self, filepath):
 #         save_states = {}
@@ -1332,148 +1312,148 @@ class PipelineScene(QGraphicsScene):
 #         clicked_item.create_separated_inputs_copy()
 #
 #
-# class PipelineView(QGraphicsView):
-#     """View to interact with the pipeline scene"""
-#
-#     def __init__(self, scene, parent=None):
-#         super().__init__(scene, parent)
-#         self.mouse_pos = scene.sceneRect().center()
-#         self.setRenderHint(QPainter.Antialiasing)
-#         self.setRenderHint(QPainter.TextAntialiasing)
-#         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-#         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-#         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-#         self.setDragMode(QGraphicsView.RubberBandDrag)
-#         self.setBackgroundBrush(QBrush(QColor(240, 240, 240)))
-#
-#         # Zoom settings
-#         self.default_zoom = 0.8
-#         self.zoom_factor = 1.15
-#         self.zoom_min = 0.1
-#         self.zoom_max = 10.0
-#         self.current_zoom = self.default_zoom
-#         self.setTransform(QTransform().scale(self.current_zoom, self.current_zoom))
-#
-#         self.centerOn(0, 0)
-#
-#         # Add grid lines
-#         self.draw_grid()
-#
-#     def event(self, event):
-#         """Handle macOS native pinch-to-zoom gesture"""
-#         if isinstance(event, QNativeGestureEvent) and event.gestureType() == Qt.ZoomNativeGesture:
-#             return self.zoomNativeEvent(event)
-#         return super().event(event)
-#
-#     def zoomNativeEvent(self, event: QNativeGestureEvent):
-#         """Zoom in/out based on pinch gesture on macOS"""
-#         # event.value() > 0 means pinch out (zoom in), < 0 means pinch in (zoom out)
-#         sensitivity = 0.7
-#         factor = 1 + event.value()*sensitivity  # Typically a small float, e.g. ±0.1
-#         resulting_zoom = self.current_zoom * factor
-#
-#         if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
-#             return True  # consume event, but no zoom
-#
-#         self.scale(factor, factor)
-#         self.current_zoom *= factor
-#         self.update()
-#         return True  # event handled
-#
-#     def wheelEvent(self, event):
-#         """Handle zoom or pan based on wheel/trackpad event"""
-#         delta = event.angleDelta()
-#         delta_x = delta.x()
-#         delta_y = delta.y()
-#         threshold = 15  # Dead zone for accidental touches
-#
-#         # Ctrl/Command+Scroll = Zoom
-#         if event.modifiers() & Qt.ControlModifier:
-#             if abs(delta_y) < threshold:
-#                 return  # Too small, ignore
-#             zoom_in = delta_y > 0
-#             factor = self.zoom_factor if zoom_in else 1 / self.zoom_factor
-#             resulting_zoom = self.current_zoom * factor
-#
-#             if self.zoom_min <= resulting_zoom <= self.zoom_max:
-#                 self.scale(factor, factor)
-#                 self.current_zoom *= factor
-#                 self.update()
-#             return
-#
-#         # Otherwise, treat as panning (touchpad 2-finger scroll)
-#         # Use scroll deltas to translate the view
-#         self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta_x)
-#         self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta_y)
-#
-#     def zoom(self, factor):
-#         resulting_zoom = self.current_zoom * factor
-#         if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
-#             return
-#         self.scale(factor, factor)
-#         self.current_zoom *= factor
-#         self.update()
-#
-#     def set_zoom(self, zoom):
-#         self.setTransform(QTransform().scale(zoom, zoom))
-#         self.current_zoom = zoom
-#         self.update()
-#
-#     def reset_zoom(self):
-#         self.set_zoom(self.default_zoom)
-#
-#     def draw_grid(self):
-#         """Draw a grid background for the scene"""
-#         grid_size = 20
-#         scene_rect = self.scene().sceneRect()
-#
-#         left = int(scene_rect.left())
-#         right = int(scene_rect.right())
-#         top = int(scene_rect.top())
-#         bottom = int(scene_rect.bottom())
-#
-#         # Align to the grid
-#         left -= left % grid_size
-#         top -= top % grid_size
-#
-#         # Draw vertical lines
-#         for x in range(left, right + 1, grid_size):
-#             line = QGraphicsLineItem(x, top, x, bottom)
-#             line.setPen(QPen(QColor(200, 200, 200), 1))
-#             line.setZValue(-1000)
-#             self.scene().addItem(line)
-#
-#         # Draw horizontal lines
-#         for y in range(top, bottom + 1, grid_size):
-#             line = QGraphicsLineItem(left, y, right, y)
-#             line.setPen(QPen(QColor(200, 200, 200), 1))
-#             line.setZValue(-1000)
-#             self.scene().addItem(line)
-#
-#     def mousePressEvent(self, event):
-#         """Handle mouse press events for the view"""
-#         if event.button() == Qt.MiddleButton:
-#             self.setDragMode(QGraphicsView.ScrollHandDrag)
-#             # Create a fake mouse press event to initiate the drag
-#             fake_event = event
-#             fake_event.button = lambda: Qt.LeftButton
-#             super().mousePressEvent(fake_event)
-#         else:
-#             super().mousePressEvent(event)
-#
-#     def mouseReleaseEvent(self, event):
-#         """Handle mouse release events for the view"""
-#         if event.button() == Qt.MiddleButton:
-#             self.setDragMode(QGraphicsView.RubberBandDrag)
-#
-#         super().mouseReleaseEvent(event)
-#
-#     def mouseMoveEvent(self, event):
-#         # Get mouse position relative to the scene
-#         self.mouse_pos = self.mapToScene(event.pos())
-#         super().mouseMoveEvent(event)
-#
-#
+class PipelineView(QGraphicsView):
+    """View to interact with the pipeline scene"""
+
+    def __init__(self, scene, parent=None):
+        super().__init__(scene, parent)
+        self.mouse_pos = scene.sceneRect().center()
+        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.TextAntialiasing)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        self.setDragMode(QGraphicsView.RubberBandDrag)
+        self.setBackgroundBrush(QBrush(QColor(240, 240, 240)))
+
+        # Zoom settings
+        self.default_zoom = 0.8
+        self.zoom_factor = 1.15
+        self.zoom_min = 0.1
+        self.zoom_max = 10.0
+        self.current_zoom = self.default_zoom
+        self.setTransform(QTransform().scale(self.current_zoom, self.current_zoom))
+
+        self.centerOn(0, 0)
+
+        # Add grid lines
+        self.draw_grid()
+
+    def event(self, event):
+        """Handle macOS native pinch-to-zoom gesture"""
+        if isinstance(event, QNativeGestureEvent) and event.gestureType() == Qt.ZoomNativeGesture:
+            return self.zoomNativeEvent(event)
+        return super().event(event)
+
+    def zoomNativeEvent(self, event: QNativeGestureEvent):
+        """Zoom in/out based on pinch gesture on macOS"""
+        # event.value() > 0 means pinch out (zoom in), < 0 means pinch in (zoom out)
+        sensitivity = 0.7
+        factor = 1 + event.value()*sensitivity  # Typically a small float, e.g. ±0.1
+        resulting_zoom = self.current_zoom * factor
+
+        if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
+            return True  # consume event, but no zoom
+
+        self.scale(factor, factor)
+        self.current_zoom *= factor
+        self.update()
+        return True  # event handled
+
+    def wheelEvent(self, event):
+        """Handle zoom or pan based on wheel/trackpad event"""
+        delta = event.angleDelta()
+        delta_x = delta.x()
+        delta_y = delta.y()
+        threshold = 15  # Dead zone for accidental touches
+
+        # Ctrl/Command+Scroll = Zoom
+        if event.modifiers() & Qt.ControlModifier:
+            if abs(delta_y) < threshold:
+                return  # Too small, ignore
+            zoom_in = delta_y > 0
+            factor = self.zoom_factor if zoom_in else 1 / self.zoom_factor
+            resulting_zoom = self.current_zoom * factor
+
+            if self.zoom_min <= resulting_zoom <= self.zoom_max:
+                self.scale(factor, factor)
+                self.current_zoom *= factor
+                self.update()
+            return
+
+        # Otherwise, treat as panning (touchpad 2-finger scroll)
+        # Use scroll deltas to translate the view
+        self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta_x)
+        self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta_y)
+
+    def zoom(self, factor):
+        resulting_zoom = self.current_zoom * factor
+        if resulting_zoom < self.zoom_min or resulting_zoom > self.zoom_max:
+            return
+        self.scale(factor, factor)
+        self.current_zoom *= factor
+        self.update()
+
+    def set_zoom(self, zoom):
+        self.setTransform(QTransform().scale(zoom, zoom))
+        self.current_zoom = zoom
+        self.update()
+
+    def reset_zoom(self):
+        self.set_zoom(self.default_zoom)
+
+    def draw_grid(self):
+        """Draw a grid background for the scene"""
+        grid_size = 20
+        scene_rect = self.scene().sceneRect()
+
+        left = int(scene_rect.left())
+        right = int(scene_rect.right())
+        top = int(scene_rect.top())
+        bottom = int(scene_rect.bottom())
+
+        # Align to the grid
+        left -= left % grid_size
+        top -= top % grid_size
+
+        # Draw vertical lines
+        for x in range(left, right + 1, grid_size):
+            line = QGraphicsLineItem(x, top, x, bottom)
+            line.setPen(QPen(QColor(200, 200, 200), 1))
+            line.setZValue(-1000)
+            self.scene().addItem(line)
+
+        # Draw horizontal lines
+        for y in range(top, bottom + 1, grid_size):
+            line = QGraphicsLineItem(left, y, right, y)
+            line.setPen(QPen(QColor(200, 200, 200), 1))
+            line.setZValue(-1000)
+            self.scene().addItem(line)
+
+    def mousePressEvent(self, event):
+        """Handle mouse press events for the view"""
+        if event.button() == Qt.MiddleButton:
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            # Create a fake mouse press event to initiate the drag
+            fake_event = event
+            fake_event.button = lambda: Qt.LeftButton
+            super().mousePressEvent(fake_event)
+        else:
+            super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release events for the view"""
+        if event.button() == Qt.MiddleButton:
+            self.setDragMode(QGraphicsView.RubberBandDrag)
+
+        super().mouseReleaseEvent(event)
+
+    def mouseMoveEvent(self, event):
+        # Get mouse position relative to the scene
+        self.mouse_pos = self.mapToScene(event.pos())
+        super().mouseMoveEvent(event)
+
+
 class PipelineEditor(QMainWindow):
     """Main application window"""
 
@@ -1495,11 +1475,11 @@ class PipelineEditor(QMainWindow):
             "Right-click for node menu | Drag from output port (green) to input port (gray) to create connections")
 
         self.show()
-#
-#     def setup_menu(self):
-#         # Create the menu bar
-#         menu_bar = self.menuBar()
-#
+
+    def setup_menu(self):
+        # Create the menu bar
+        menu_bar = self.menuBar()
+
 #         # Create File menu
 #         file_menu = menu_bar.addMenu("File")
 #
@@ -1527,7 +1507,7 @@ class PipelineEditor(QMainWindow):
 #         load_action.triggered.connect(self.load_scene)
 #         file_menu.addAction(load_action)
 #
-#         scene_menu = menu_bar.addMenu("Scene")
+        scene_menu = menu_bar.addMenu("Scene")
 #
 #         # Add Delete action
 #         delete = QAction("Delete", self)
@@ -1569,29 +1549,29 @@ class PipelineEditor(QMainWindow):
 #         redo.setShortcut(QKeySequence.Redo)
 #         scene_menu.addAction(redo)
 #
-#         # Add Zoom in action
-#         zoom_in = QAction("Zoom In", self)
-#         zoom_in.setShortcut(QKeySequence.ZoomIn)
-#         zoom_in.triggered.connect(lambda: self.view.zoom(self.view.zoom_factor))
-#         scene_menu.addAction(zoom_in)
-#
-#         # Add Zoom out action
-#         zoom_out = QAction("Zoom Out", self)
-#         zoom_out.setShortcut(QKeySequence.ZoomOut)
-#         zoom_out.triggered.connect(lambda: self.view.zoom(1/self.view.zoom_factor))
-#         scene_menu.addAction(zoom_out)
-#
-#         # Add Reset zoom action
-#         reset_zoom = QAction("Reset Zoom", self)
-#         reset_zoom.setShortcut("Ctrl+0")
-#         reset_zoom.triggered.connect(self.view.reset_zoom)
-#         scene_menu.addAction(reset_zoom)
-#
-#         # Add Centre view action
-#         centre = QAction("Centre View", self)
-#         centre.setShortcut("Ctrl+1")
-#         centre.triggered.connect(lambda: self.view.centerOn(0, 0))
-#         scene_menu.addAction(centre)
+        # Add Zoom in action
+        zoom_in = QAction("Zoom In", self)
+        zoom_in.setShortcut(QKeySequence.ZoomIn)
+        zoom_in.triggered.connect(lambda: self.view.zoom(self.view.zoom_factor))
+        scene_menu.addAction(zoom_in)
+
+        # Add Zoom out action
+        zoom_out = QAction("Zoom Out", self)
+        zoom_out.setShortcut(QKeySequence.ZoomOut)
+        zoom_out.triggered.connect(lambda: self.view.zoom(1/self.view.zoom_factor))
+        scene_menu.addAction(zoom_out)
+
+        # Add Reset zoom action
+        reset_zoom = QAction("Reset Zoom", self)
+        reset_zoom.setShortcut("Ctrl+0")
+        reset_zoom.triggered.connect(self.view.reset_zoom)
+        scene_menu.addAction(reset_zoom)
+
+        # Add Centre view action
+        centre = QAction("Centre View", self)
+        centre.setShortcut("Ctrl+1")
+        centre.triggered.connect(lambda: self.view.centerOn(0, 0))
+        scene_menu.addAction(centre)
 #
 #     def new_scene(self):
 #         self.scene.filepath = None

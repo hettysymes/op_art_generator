@@ -2,7 +2,7 @@ class ElemRef:
 
     def __init__(self, node):
         self.node = node
-        self.node_type = node.node_info().name
+        self.node_type = node.get_node_info().name
         self.node_id = node.node_id
         self.reversed = False
         self.deletable = False

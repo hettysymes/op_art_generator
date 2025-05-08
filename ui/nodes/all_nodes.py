@@ -12,7 +12,7 @@ class NodeSettings:
 
 node_settings = [(PolygonNode, NodeSettings(resizable=True))]
 
-def nodes_list():
+def node_classes():
     node_classes = []
     for node_setting in node_settings:
         node = node_setting[0]

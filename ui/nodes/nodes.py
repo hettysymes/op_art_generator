@@ -14,7 +14,7 @@ class UnitNode(Node, ABC):
     def base_node_name(self):
         return self.name()
 
-    def node_info(self):
+    def get_node_info(self):
         return self.node_info
 
     def visualise(self):

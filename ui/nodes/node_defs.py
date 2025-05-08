@@ -29,9 +29,9 @@ class PropType(Enum):
     PROP_ENUM = auto()
     SELECTOR_ENUM = auto()
     ENUM = auto()
-    POINT_TABLE = auto()
     ELEM_TABLE = auto()
     COLOUR_TABLE = auto()
+    HIDDEN = auto()
 
 
 class PropEntry:
@@ -67,7 +67,13 @@ class Node(BaseNode, ABC):
     def __init__(self, uid, graph_querier, prop_vals=None):
         self.uid = uid
         self.graph_querier = graph_querier
-        self.prop_vals = prop_vals if prop_vals else self.prop_entries().default_values()
+        self.prop_vals = prop_vals
+
+    def _default_prop_vals(self):
+        default_prop_vals = {}
+        for prop_key, prop_entry in self.get_prop_entries().items():
+            default_prop_vals[prop_key] = prop_entry.default_value
+        return default_prop_vals
 
     def safe_visualise(self):
         # Catch exception if raised
@@ -88,21 +94,37 @@ class Node(BaseNode, ABC):
         return vis
 
     # Getter functions for node info
-    def description(self):
-        return self.node_info().description
+    def get_description(self):
+        return self.get_node_info().description
 
-    def port_defs(self):
-        return self.node_info().port_defs
+    def get_port_defs(self):
+        return self.get_node_info().port_defs
 
     def port_defs_filter_by_io(self, port_io):
-        return {port_key: port_def for (io, port_key), port_def in self.port_defs().items() if io == port_io}
+        return {port_key: port_def for (io, port_key), port_def in self.get_port_defs().items() if io == port_io}
 
-    def prop_entries(self):
-        return self.node_info().prop_entries
+    def get_prop_entries(self):
+        return self.get_node_info().prop_entries
+
+    def set_property(self, prop_key, value):
+        if not self.prop_vals:
+            self.prop_vals = self._default_prop_vals()
+        self.prop_vals[prop_key] = value
+
+    def get_property(self, prop_key):
+        if not self.prop_vals:
+            self.prop_vals = self._default_prop_vals()
+        return self.prop_vals[prop_key]
+
+    def prop_entries_is_empty(self):
+        for prop_entry in self.get_prop_entries().values():
+            if prop_entry.prop_type != PropType.HIDDEN:
+                return False
+        return True
 
     def compulsory_ports(self):
         compulsory_ports = []
-        for port_id, port_def in self.port_defs():
+        for port_id, port_def in self.get_port_defs().items():
             if not port_def.optional:
                 compulsory_ports.append(port_id)
         return compulsory_ports
@@ -131,7 +153,7 @@ class Node(BaseNode, ABC):
         pass
 
     @abstractmethod
-    def node_info(self):
+    def get_node_info(self):
         pass
 
     @abstractmethod

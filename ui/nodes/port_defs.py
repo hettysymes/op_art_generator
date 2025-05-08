@@ -83,9 +83,6 @@ class PortIO(Enum):
     INPUT = auto()
     OUTPUT = auto()
 
-def filter_port_ids(port_ids, port_io):
-    return [port_key for (io, port_key) in port_ids if io == port_io]
-
 class PortDef:
 
     def __init__(self, display_name, port_type, optional=False):

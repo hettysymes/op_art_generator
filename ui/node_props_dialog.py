@@ -9,8 +9,7 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QTableWidgetItem, Q
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import shorten_uid
 from ui.nodes.node_defs import PropType
-from ui.nodes.port_defs import filter_port_ids, PortIO
-from ui.pipeline_editor import NodeItem
+from ui.nodes.port_defs import PortIO
 from ui.reorderable_table_widget import ReorderableTableWidget
 
 
@@ -97,7 +96,7 @@ class NodePropertiesDialog(QDialog):
 
     def __init__(self, node_item, parent=None):
         super().__init__(parent)
-        self.node_item: NodeItem = node_item
+        self.node_item = node_item
         self.setWindowTitle(f"Properties: {node_item.node().name()}")
         self.setMinimumWidth(400)
 
@@ -112,13 +111,13 @@ class NodePropertiesDialog(QDialog):
         self.property_widgets = {}
 
         # Add custom properties based on node type
-        if node_item.node().prop_entries():
+        if node_item.node().get_prop_entries():
             props_group = QGroupBox("Node Properties")
             props_layout = QFormLayout()
             props_group.setLayout(props_layout)
 
             # Now modify your existing code to use this function
-            for prop_key, prop_entry in node_item.node().prop_entries().values():
+            for prop_key, prop_entry in node_item.node().get_prop_entries().values():
                 if prop_entry.prop_type != "hidden":
                     widget = self.create_property_widget(prop_entry, node_item.node.prop_vals.get(prop_key,
                                                                                             prop_entry.default_value),
@@ -139,7 +138,7 @@ class NodePropertiesDialog(QDialog):
         main_layout.addLayout(form_layout)
         main_layout.addWidget(button_box)
 
-    def create_property_row(self, prop_key, prop_entry, widget, node_item: NodeItem):
+    def create_property_row(self, prop_key, prop_entry, widget, node_item):
         """Create a row with property label and a help icon to the right of the widget"""
 
         # Create a container widget for the label
@@ -164,19 +163,18 @@ class NodePropertiesDialog(QDialog):
         widget_layout.addWidget(widget)
 
         def change_property_port(adding):
-            scene = self.node_item.scene()
             if adding:
-                scene.undo_stack.push(AddPropertyPortCmd(self.node_item, prop_key))
+                self.node_item.add_property_port(prop_key)
             else:
-                scene.undo_stack.push(RemovePropertyPortCmd(self.node_item, prop_key))
+                self.node_item.remove_property_port(prop_key)
 
         # Add the help icon after the widget (on the right)
-        if prop.description:
-            help_icon = HelpIconLabel(prop.description, max_width=300)  # Set maximum width for tooltip
+        if prop_entry.get_description:
+            help_icon = HelpIconLabel(prop_entry.get_description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
-        if prop.key_name in node_item.node().input_ports():
-            input_ports_open = filter_port_ids(node_item.node_state.ports_open, PortIO.INPUT)
-            if prop.key_name in input_ports_open:
+        if prop_key in node_item.node().port_defs_filter_by_io(PortIO.INPUT):
+            input_ports_open = [port_key for (io, port_key) in node_item.node_state.ports_open if io == PortIO.INPUT]
+            if prop_key in input_ports_open:
                 # Exists port to modify this property, add minus button
                 minus_btn = ModifyPropertyPortButton(change_property_port,
                                                      adding=False)  # Set maximum width for tooltip
@@ -679,6 +677,5 @@ class NodePropertiesDialog(QDialog):
                 props_changed[prop_name] = (copy.deepcopy(old_val), value)
 
         if props_changed:
-            scene = self.node_item.scene()
-            scene.undo_stack.push(ChangePropertiesCmd(scene, self.node_item, props_changed))
+            self.node_item.change_properties(props_changed)
         super().accept()
