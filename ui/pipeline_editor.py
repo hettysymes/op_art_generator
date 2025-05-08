@@ -110,7 +110,7 @@ class NodeItem(QGraphicsRectItem):
     MARGIN_Y = 10
     LABEL_FONT = QFont("Arial", 8)
 
-    def __init__(self, node_state: NodeState):
+    def __init__(self, node_state: NodeState, node):
         super().__init__(0, 0, 0, 0)
         self.node_state = node_state
         self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
@@ -129,7 +129,41 @@ class NodeItem(QGraphicsRectItem):
         self.setBrush(QBrush(QColor(220, 230, 250)))
         self.setPen(QPen(Qt.black, 2))
 
+        if node.prop_entries_is_empty():
+            self._property_button = None
+        else:
+            self._property_button = QPushButton("P")
+            self._property_button.setFixedSize(20, 20)
+            self._property_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #f0f0f0;
+                    border: 1px solid #646464;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #cccccc;
+                }
+            """)
+            self._property_button.clicked.connect(lambda: self.scene().edit_node_properties(self))  # Define this method
+            self._property_proxy = QGraphicsProxyWidget(self)
+            self._property_proxy.setWidget(self._property_button)
+            self._property_proxy.setZValue(101)
+            self._property_button.setToolTip("Edit node properties")
+        self._help_icon_rect = QRectF()
+        self._help_hover_timer = QTimer()
+        self._help_hover_timer.setSingleShot(True)
+        self._help_hover_timer.timeout.connect(self._showHelpTooltip)
+        self._help_tooltip = None
+        self.setAcceptHoverEvents(True)
+
+        # Set the help text for this node
+        self._help_text = f"{node.name()} Help:\n{node.get_description()}"
+
         self.resize_handle = None
+        if node_setting(node.name()).resizable:
+            # Add resize handle
+            self.resize_handle = ResizeHandle(self, 'bottomright')
 
     def node_graph(self):
         return self.scene().node_graph
@@ -254,16 +288,16 @@ class NodeItem(QGraphicsRectItem):
     def svg_size_from_node_size(self, rect_w, rect_h):
         return rect_w - self.left_max_width - self.right_max_width - 2 * NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
-#     def visualise(self):
-#         return self.update_node().safe_visualise()
-#
-#     def get_svg_path(self):
-#         wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
-#         # svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
-#         compute = self.update_node().safe_visualise(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
-#         # return svg_path
-#         return
-#
+    def visualise(self):
+        return self.node().safe_visualise()
+
+    # def get_svg_path(self):
+    #     wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
+    #     # svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
+    #     compute = self.update_node().safe_visualise(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
+    #     # return svg_path
+    #     return
+
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
         # Remove existing SVG items if necessary
@@ -280,13 +314,14 @@ class NodeItem(QGraphicsRectItem):
 
         # Get item to draw
         vis = self.visualise()
-        svg_filepath = os.path.join(self.scene().temp_dir, f"{self.uid}.svg")
+        svg_filepath = os.path.join(self.scene().temp_dir, f"{self.node_state.node_id}.svg")
         # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
         svg_width, svg_height = self.node_state.svg_size
 
-        if isinstance(vis, ErrorFig) or not self.node.selectable():
+        # TODO: add check for selectable node
+        if isinstance(vis, ErrorFig) or True:
             if isinstance(vis, Group):
                 GroupDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
             else:
@@ -369,6 +404,7 @@ class NodeItem(QGraphicsRectItem):
             # Update layout at the end for efficiency
             self.add_port(port_id, port_def, update_layout=False)
         self.update_all_port_positions()
+        self.update_label_containers()
 
     def add_port(self, port_id, port_def, update_layout=True):
         port_io, port_key = port_id
@@ -383,6 +419,7 @@ class NodeItem(QGraphicsRectItem):
         # Update port positioning and label containers
         if update_layout:
             self.update_all_port_positions()
+            self.update_label_containers()
 
     def remove_port(self, port_id):
         port = self.port_items[port_id]
@@ -402,45 +439,11 @@ class NodeItem(QGraphicsRectItem):
         port.scene().removeItem(port) # Remove port from scene
         # Update port positioning
         self.update_all_port_positions()
+        self.update_label_containers()
 
 
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
-        if self.node().prop_entries_is_empty():
-            self._property_button = None
-        else:
-            self._property_button = QPushButton("P")
-            self._property_button.setFixedSize(20, 20)
-            self._property_button.setStyleSheet("""
-                QPushButton {
-                    background-color: #f0f0f0;
-                    border: 1px solid #646464;
-                    border-radius: 4px;
-                    font-weight: bold;
-                }
-                QPushButton:hover {
-                    background-color: #cccccc;
-                }
-            """)
-            self._property_button.clicked.connect(lambda: self.scene().edit_node_properties(self))  # Define this method
-            self._property_proxy = QGraphicsProxyWidget(self)
-            self._property_proxy.setWidget(self._property_button)
-            self._property_proxy.setZValue(101)
-            self._property_button.setToolTip("Edit node properties")
-        self._help_icon_rect = QRectF()
-        self._help_hover_timer = QTimer()
-        self._help_hover_timer.setSingleShot(True)
-        self._help_hover_timer.timeout.connect(self._showHelpTooltip)
-        self._help_tooltip = None
-        self.setAcceptHoverEvents(True)
-
-        # Set the help text for this node
-        self._help_text = f"{self.node().name()} Help:\n{self.node().get_description()}"
-
-        if node_setting(self.node().name()).resizable:
-            # Add resize handle
-            self.resize_handle = ResizeHandle(self, 'bottomright')
-
         painter.setFont(QFont("Arial", 8))
         painter.setPen(QColor("grey"))
         id_rect = self.rect().adjusted(10, 10, 0, 0)  # Shift the top edge down
@@ -535,7 +538,6 @@ class NodeItem(QGraphicsRectItem):
         """Update the positions of all ports based on current node dimensions"""
         self.update_port_positions(PortIO.INPUT)
         self.update_port_positions(PortIO.OUTPUT)
-        self.update_label_containers()
 
     def update_label_containers(self):
         # Calculate the maximum width needed for each side
@@ -707,7 +709,8 @@ class AddNewNodeCmd(QUndoCommand):
                                ports_open=ports_open,
                                pos=(self.pos.x(), self.pos.y()),
                                svg_size=(150, 150)) # TODO: save as constant somewhere
-        node_item = NodeItem(node_state)
+        node = self.node_graph.node(node_id)
+        node_item = NodeItem(node_state, node)
         self.scene.node_items[node_id] = node_item
         self.scene.addItem(node_item)
         # if self.save_states:
