@@ -400,9 +400,9 @@ class NodeItem(QGraphicsRectItem):
             output_node.update_visualisations()
 
     def create_ports(self):
-        for port_id, port_def in self.node().get_port_defs().items():
+        for port_id in self.node().compulsory_ports():
             # Update layout at the end for efficiency
-            self.add_port(port_id, port_def, update_layout=False)
+            self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
         self.update_all_port_positions()
         self.update_label_containers()
 
@@ -705,9 +705,8 @@ class AddNewNodeCmd(QUndoCommand):
 
     def redo(self):
         node_id = self.node_graph.add_new_node(self.node_class)
-        ports_open = self.node_graph.node(node_id).compulsory_ports()
         node_state = NodeState(node_id=node_id,
-                               ports_open=ports_open,
+                               ports_open=[],
                                pos=(self.pos.x(), self.pos.y()),
                                svg_size=(150, 150)) # TODO: save as constant somewhere
         node = self.node_graph.node(node_id)

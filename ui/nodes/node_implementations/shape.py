@@ -145,7 +145,7 @@ class StraightLineNode(UnitNode):
 DEF_POLYGON_INFO = NodeInfo(
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_Polyline),
-               (PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill),
+               (PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill, optional=True),
                (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)},
     prop_entries={'points': PropEntry(PropType.POINT_TABLE,
                                         display_name="Points",
