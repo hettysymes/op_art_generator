@@ -26,7 +26,7 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 from sympy.physics.quantum.cartesian import PositionState3D
 
 from ui.app_state import NodeState, AppState
-from ui.id_generator import shorten_uid
+from ui.id_generator import shorten_uid, gen_uid
 from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
@@ -427,7 +427,7 @@ class NodeItem(QGraphicsRectItem):
         # Remove connections to/from this port
         other_edge_ids = port.edge_items.keys()
         for other_edge_id in other_edge_ids:
-            this_edge_id = (port.parent().node_state.node_id, port.port_key)
+            this_edge_id = (port.parentItem().node_state.node_id, port.port_key)
             if port.is_input:
                 self.node_graph().remove_connection((this_edge_id, other_edge_id))
             else:
@@ -679,8 +679,8 @@ class EdgeItem(QGraphicsLineItem):
         self.setLine(QLineF(source_pos, dest_pos))
 
     def remove_from_scene(self):
-        src_node_id = self.src_port.parent().node_state.node_id
-        dst_node_id = self.dst_port.parent().node_state.node_id
+        src_node_id = self.src_port.parentItem().node_state.node_id
+        dst_node_id = self.dst_port.parentItem().node_state.node_id
         del self.src_port.edge_items[(dst_node_id, self.dst_port.port_key)]
         del self.dst_port.edge_items[(src_node_id, self.src_port.port_key)]
         self.scene().removeItem(self)
@@ -843,26 +843,34 @@ class RemovePropertyPortCmd(QUndoCommand):
 
     def redo(self):
         self.node_item.remove_port((PortIO.INPUT, self.prop_key))
-#
-# class PasteCmd(QUndoCommand):
-#     def __init__(self, pipeline_scene, save_states, description="Paste"):
-#         super().__init__(description)
-#         self.pipeline_scene = pipeline_scene
-#         self.scene: Scene = pipeline_scene.scene
-#         self.save_states = save_states
-#
-#     def undo(self):
-#         items_to_remove = {}
-#         for uid, state in self.save_states.items():
-#             if not isinstance(state, PortState):
-#                 items_to_remove[uid] = self.scene.get(uid)
-#         for uid, item in items_to_remove.items():
-#             self.scene.remove(uid)
-#             self.pipeline_scene.removeItem(item)
-#
-#     def redo(self):
-#         self.pipeline_scene.load_from_save_states(self.save_states)
-#
+
+class PasteCmd(QUndoCommand):
+    def __init__(self, scene, node_states, nodes, connections, description="Paste"):
+        super().__init__(description)
+        self.scene = scene
+        self.node_states = node_states
+        self.nodes = nodes
+        self.connections = connections
+
+    def undo(self):
+        pass
+        # items_to_remove = {}
+        # for uid, state in self.save_states.items():
+        #     if not isinstance(state, PortState):
+        #         items_to_remove[uid] = self.scene.get(uid)
+        # for uid, item in items_to_remove.items():
+        #     self.scene.remove(uid)
+        #     self.pipeline_scene.removeItem(item)
+
+    def redo(self):
+        # Add to node graph
+        for node in self.nodes:
+            self.scene.node_graph.add_existing_node(node)
+        for connection in self.connections:
+            self.scene.node_graph.add_connection(*connection)
+        # Load items
+        self.scene.load_from_node_states(self.node_states)
+
 # class DeleteCmd(QUndoCommand):
 #     def __init__(self, pipeline_scene, nodes_to_delete, edges_to_delete, description="Delete edge"):
 #         super().__init__(description)
@@ -1488,24 +1496,24 @@ class PipelineEditor(QMainWindow):
 #         delete.triggered.connect(self.delete_selected_items)
 #         scene_menu.addAction(delete)
 #
-#         copy = QAction("Copy", self)
-#         copy.setShortcut(QKeySequence.Copy)
-#         copy.triggered.connect(self.copy_selected_items)
-#         copy.setMenuRole(QAction.NoRole)
-#         scene_menu.addAction(copy)
-#
-#         paste = QAction("Paste", self)
-#         paste.setShortcut(QKeySequence.Paste)
-#         paste.triggered.connect(self.paste_items)
-#         paste.setMenuRole(QAction.NoRole)
-#         scene_menu.addAction(paste)
-#
-#         # Add Select all action
-#         select_all = QAction("Select All", self)
-#         select_all.setShortcut(QKeySequence.SelectAll)
-#         select_all.triggered.connect(self.select_all)
-#         select_all.setMenuRole(QAction.NoRole)
-#         scene_menu.addAction(select_all)
+        copy = QAction("Copy", self)
+        copy.setShortcut(QKeySequence.Copy)
+        copy.triggered.connect(self.copy_selected_subgraph)
+        copy.setMenuRole(QAction.NoRole)
+        scene_menu.addAction(copy)
+
+        paste = QAction("Paste", self)
+        paste.setShortcut(QKeySequence.Paste)
+        paste.triggered.connect(self.paste_subgraph)
+        paste.setMenuRole(QAction.NoRole)
+        scene_menu.addAction(paste)
+
+        # Add Select all action
+        select_all = QAction("Select All", self)
+        select_all.setShortcut(QKeySequence.SelectAll)
+        select_all.triggered.connect(self.select_all)
+        select_all.setMenuRole(QAction.NoRole)
+        scene_menu.addAction(select_all)
 #
 #         create_custom = QAction("Group Nodes to Custom", self)
 #         create_custom.setShortcut("Ctrl+G")
@@ -1586,11 +1594,11 @@ class PipelineEditor(QMainWindow):
             # Update the view to reflect the loaded scene
             self.view.update()
             self.statusBar().showMessage(f"Scene loaded from {file_path}", 3000)
-#
-#     def select_all(self):
-#         for item in self.scene.items():
-#             if isinstance(item, NodeItem) or isinstance(item, EdgeItem) or isinstance(item, PortItem):
-#                 item.setSelected(True)
+
+    def select_all(self):
+        for item in self.scene.items():
+            if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
+                item.setSelected(True)
 #
 #     def delete_selected_items(self):
 #         nodes_to_delete = []
@@ -1665,147 +1673,92 @@ class PipelineEditor(QMainWindow):
 #             if inp_node_id and out_node_id:
 #                 self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, save_states, inp_node_id, out_node_id))
 #
-#     def identify_selected_items(self):
-#         nodes = []
-#         edges = []
-#         for item in self.scene.selectedItems():
-#             if isinstance(item, NodeItem):
-#                 nodes.append(item)
-#                 if isinstance(item.node, CustomNode):
-#                     for uid in item.node.involved_ids:
-#                         custom_node_item = self.scene.scene.get(uid)
-#                         if isinstance(custom_node_item, NodeItem):
-#                             nodes.append(custom_node_item)
-#                         elif isinstance(custom_node_item, EdgeItem):
-#                             edges.append(custom_node_item)
-#             elif isinstance(item, EdgeItem):
-#                 edges.append(item)
-#         if not (nodes or edges):
-#             return
-#
-#         # Populate states
-#         node_states = {}
-#         port_states = {}
-#         for node in nodes:
-#             node_states[node.uid] = node.backend
-#             for port_id in node.backend.input_port_ids + node.backend.output_port_ids:
-#                 port = self.scene.scene.get(port_id)
-#                 port_states[port_id] = port.backend
-#         edge_states = {}
-#         for edge in edges:
-#             if (edge.backend.src_port_id in port_states) and (edge.backend.dst_port_id in port_states):
-#                 edge_states[edge.uid] = edge.backend
-#         return node_states, port_states, edge_states
-#
-#     def deep_copy_items(self, node_states, port_states, edge_states):
-#         # Update ids
-#         save_states = {}
-#         old_to_new_id_map = {}
-#         for old_id, node_state in node_states.items():
-#             new_node_state = copy.deepcopy(node_state)
-#             # Set node uid
-#             new_uid = gen_uid()
-#             new_node_state.uid = new_uid
-#             new_node_state.node.node_id = new_uid
-#             old_to_new_id_map[old_id] = new_uid
-#             save_states[new_uid] = new_node_state
-#         for old_id, port_state in port_states.items():
-#             new_port_state = copy.deepcopy(port_state)
-#             # Set port uid
-#             new_uid = gen_uid()
-#             new_port_state.uid = new_uid
-#             old_to_new_id_map[old_id] = new_uid
-#             save_states[new_uid] = new_port_state
-#         for old_id, edge_state in edge_states.items():
-#             new_edge_state = copy.deepcopy(edge_state)
-#             # Set edge uid
-#             new_uid = gen_uid()
-#             new_edge_state.uid = new_uid
-#             old_to_new_id_map[old_id] = new_uid
-#             save_states[new_uid] = new_edge_state
-#         # Rewire connections
-#         for state in save_states.values():
-#             if isinstance(state, NodeState):
-#                 # Update port ids
-#                 state.input_port_ids = [old_to_new_id_map[i] for i in state.input_port_ids]
-#                 state.output_port_ids = [old_to_new_id_map[i] for i in state.output_port_ids]
-#                 if not hasattr(state, 'nodes_to_update'):
-#                     state.nodes_to_update = []  # For backward compatibility
-#                 state.nodes_to_update = [old_to_new_id_map[i] for i in state.nodes_to_update]
-#                 if isinstance(state.node, CustomNode):
-#                     state.node.involved_ids = [old_to_new_id_map[i] for i in state.node.involved_ids]
-#                     state.node.first_id = old_to_new_id_map[state.node.first_id]
-#                     state.node.end_id = old_to_new_id_map[state.node.end_id]
-#                     state.node.final_node = None
-#                 if isinstance(state.node, DrawingGroupNode):
-#                     for elem_ref in state.node.prop_vals['elem_order']:
-#                         new_id = old_to_new_id_map[elem_ref.node_id]
-#                         elem_ref.node = save_states[new_id].node
-#                         elem_ref.node_type = elem_ref.node.node_info().name
-#                         elem_ref.node_id = new_id
-#             elif isinstance(state, PortState):
-#                 # Update parent node id
-#                 state.parent_node_id = old_to_new_id_map[state.parent_node_id]
-#                 # Update edge ids
-#                 edge_ids = []
-#                 for old_edge_id in state.edge_ids:
-#                     if old_edge_id in old_to_new_id_map:
-#                         edge_ids.append(old_to_new_id_map[old_edge_id])
-#                 state.edge_ids = edge_ids
-#             elif isinstance(state, EdgeState):
-#                 # Update src and dst port ids
-#                 state.src_port_id = old_to_new_id_map[state.src_port_id]
-#                 state.dst_port_id = old_to_new_id_map[state.dst_port_id]
-#         return save_states, old_to_new_id_map
-#
-#     def copy_selected_items(self):
-#         node_states, port_states, edge_states = self.identify_selected_items()
-#         if node_states:
-#             # Calculate bounding rect
-#             bounding_rect = None
-#             for item in self.scene.selectedItems():
-#                 if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
-#                     if (item.uid in node_states or item.uid in edge_states) and not item.backend.invisible:
-#                         # Make part of bounding rect
-#                         if bounding_rect:
-#                             bounding_rect = bounding_rect.united(item.sceneBoundingRect())
-#                         else:
-#                             bounding_rect = item.sceneBoundingRect()
-#             assert bounding_rect
-#
-#             # Save to clipboard
-#             mime_data = QMimeData()
-#             mime_data.setData("application/pipeline_editor_items", pickle.dumps((node_states, port_states, edge_states, bounding_rect.center())))
-#             clipboard = QApplication.clipboard()
-#             clipboard.setMimeData(mime_data)
-#
-#     def paste_items(self):
-#         clipboard = QApplication.clipboard()
-#         mime = clipboard.mimeData()
-#
-#         if mime.hasFormat("application/pipeline_editor_items"):
-#             raw_data = mime.data("application/pipeline_editor_items")
-#             # Deserialize with pickle
-#             node_states, port_states, edge_states, bounding_rect_centre = pickle.loads(bytes(raw_data))
-#             save_states = self.deep_copy_items(node_states, port_states, edge_states)[0]
-#             print(len(save_states))
-#             # Modify positions
-#             offset = self.view.mouse_pos - bounding_rect_centre
-#             for state in save_states.values():
-#                 if isinstance(state, NodeState) or isinstance(state, PortState):
-#                     if (state.x is not None) and (state.y is not None):
-#                         if isinstance(state, NodeState):
-#                             print(f"Changing node position: {shorten_uid(state.uid)} from ({state.x}, {state.y}) to ({state.x + offset.x()}, {state.y + offset.y()})")
-#                             state.x += offset.x()
-#                             state.y += offset.y()
-#                         # if isinstance(state, PortState):
-#                         #     print(f"Changing port position: {shorten_uid(state.uid)} from ({state.x}, {state.y}) to ({state.x + offset.x()}, {state.y + offset.y()})")
-#                         # state.x += offset.x()
-#                         # state.y += offset.y()
-#             # Perform paste
-#             self.scene.undo_stack.push(PasteCmd(self.scene, save_states))
-#
-#
+    def identify_selected_subgraph(self):
+        node_states = {}
+        connections = []
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                node_states[item.node_state.node_id] = item.node_state
+            elif isinstance(item, EdgeItem):
+                src_node_id = item.src_port.parentItem().node_state.node_id
+                src_port_key = item.src_port.port_key
+                dst_node_id = item.dst_port.parentItem().node_state.node_id
+                dst_port_key = item.dst_port.port_key
+                connections.append(((src_node_id, src_port_key), (dst_node_id, dst_port_key)))
+
+        # Remove edges which are not connected at both ends to selected nodes
+        connection_indices_to_remove = []
+        for i, ((src_node_id, src_port_key), (dst_node_id, dst_port_key)) in enumerate(connections):
+            if (src_node_id not in node_states) or (dst_node_id not in node_states):
+                connection_indices_to_remove.append(i)
+        connection_indices_to_remove.reverse()
+        for i in connection_indices_to_remove:
+            del connections[i]
+
+        # Return node states and connections between them
+        return list(node_states.values()), connections
+
+    def deep_copy_subgraph(self, node_states, connections):
+        old_to_new_id_map = {}
+        # Copy nodes
+        new_node_states = []
+        new_nodes = []
+        for node_state in node_states:
+            new_uid = gen_uid()
+            # Copy node state
+            new_node_state = copy.deepcopy(node_state)
+            new_node_state.node_id = new_uid
+            new_node_states.append(new_node_state)
+            # Copy node
+            node = self.scene.node_graph.node(node_state.node_id)
+            new_node = copy.deepcopy(node)
+            new_node.uid = new_uid
+            new_nodes.append(new_node)
+            # Add id to conversion map
+            old_to_new_id_map[node_state.node_id] = new_uid
+        # Update ids in connections
+        new_connections = []
+        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in connections:
+            new_connections.append(((old_to_new_id_map[src_node_id], src_port_key),
+                                    (old_to_new_id_map[dst_node_id], dst_port_key)))
+        # Return new node states and connections
+        return new_node_states, new_nodes, new_connections
+
+    def copy_selected_subgraph(self):
+        node_states, connections = self.identify_selected_subgraph()
+        if node_states:
+            # Calculate bounding rect
+            bounding_rect = None
+            for node_state in node_states:
+                node_item = self.scene.node_items[node_state.node_id]
+                # Make part of bounding rect
+                if bounding_rect:
+                    bounding_rect = bounding_rect.united(node_item.sceneBoundingRect())
+                else:
+                    bounding_rect = node_item.sceneBoundingRect()
+            # Save to clipboard
+            mime_data = QMimeData()
+            mime_data.setData("application/pipeline_editor_items", pickle.dumps((node_states, connections, bounding_rect.center())))
+            clipboard = QApplication.clipboard()
+            clipboard.setMimeData(mime_data)
+
+    def paste_subgraph(self):
+        clipboard = QApplication.clipboard()
+        mime = clipboard.mimeData()
+
+        if mime.hasFormat("application/pipeline_editor_items"):
+            raw_data = mime.data("application/pipeline_editor_items")
+            # Deserialize with pickle
+            node_states, connections, bounding_rect_centre = pickle.loads(bytes(raw_data))
+            node_states, nodes, connections = self.deep_copy_subgraph(node_states, connections)
+            # Modify positions
+            offset = self.view.mouse_pos - bounding_rect_centre
+            for node_state in node_states:
+                node_state.pos = (node_state.pos[0] + offset.x(), node_state.pos[1] + offset.y())
+            # Perform paste
+            self.scene.undo_stack.push(PasteCmd(self.scene, node_states, nodes, connections))
+
+
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as temp_dir:
         app = QApplication(sys.argv)
