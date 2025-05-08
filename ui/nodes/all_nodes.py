@@ -5,6 +5,7 @@
 from enum import Enum, auto
 
 from ui.nodes.node_implementations.canvas import CanvasNode
+from ui.nodes.node_implementations.colour import ColourNode
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.shape import PolygonNode, RectangleNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
@@ -18,7 +19,8 @@ node_settings = [(PolygonNode, NodeSettings(resizable=True)),
                  (GridNode, NodeSettings(resizable=True)),
                  (CanvasNode, NodeSettings(resizable=False)),
                  (ShapeRepeaterNode, NodeSettings(resizable=True)),
-                 (RectangleNode, NodeSettings(resizable=True))]
+                 (RectangleNode, NodeSettings(resizable=True)),
+                 (ColourNode, NodeSettings(resizable=True))]
 
 def node_classes():
     node_classes = []

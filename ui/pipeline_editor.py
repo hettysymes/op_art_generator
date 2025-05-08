@@ -396,8 +396,8 @@ class NodeItem(QGraphicsRectItem):
     def update_visualisations(self):
         self.update_vis_image()
         for output_node_id in self.node_graph().output_node_ids(self.node_state.node_id):
-            output_node = self.node_graph().node(output_node_id)
-            output_node.update_visualisations()
+            output_node_item = self.scene().node_items[output_node_id]
+            output_node_item.update_visualisations()
 
     def create_ports(self):
         for port_id in self.node().compulsory_ports():

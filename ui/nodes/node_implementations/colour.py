@@ -1,25 +1,26 @@
-from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui_old.nodes.shape import RectangleNode
-from ui_old.nodes.shape_datatypes import Group
-from ui_old.port_defs import PortDef, PT_Colour, PT_Fill
+from ui.nodes.node_defs import NodeInfo, PropEntry, PropType
+from ui.nodes.node_implementations.shape import RectangleNode
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PT_Fill, PortDef, PT_Colour
+from ui.nodes.shape_datatypes import Group
 
-COLOUR_NODE_INFO = UnitNodeInfo(
-    name="Colour",
-    prop_port_defs=[PortDef('Colour', PT_Fill, key_name='colour')],
-    out_port_defs=[PortDef("Colour", PT_Colour)],
-    prop_type_list=PropTypeList([
-        PropType("colour", "colour", default_value=(0, 0, 0, 255),
-                 description="Output colour.", display_name="Colour", port_modifiable=True)
-    ]),
-    description="Outputs a desired colour."
+DEF_COLOUR_NODE_INFO = NodeInfo(
+    description="Outputs a desired colour.",
+    port_defs={(PortIO.INPUT, 'colour'): PortDef("Colour", PT_Fill),
+               (PortIO.OUTPUT, '_main'): PortDef("Colour", PT_Colour)},
+    prop_entries={'colour': PropEntry(PropType.FILL,
+                                      display_name="Output colour.",
+                                      description="Colour",
+                                      default_value=(0, 0, 0, 255))}
 )
 
 
 class ColourNode(UnitNode):
-    UNIT_NODE_INFO = COLOUR_NODE_INFO
+    NAME = "Colour"
+    DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO
 
-    def compute(self):
-        return self.get_prop_val('colour')
+    def compute(self, out_port_key='_main'):
+        return self._prop_val('colour')
 
     def visualise(self):
         group = Group(debug_info="Colour")
