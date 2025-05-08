@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ui_old.nodes.drawers.error_drawer import ErrorDrawer
+from ui.nodes.drawers.error_drawer import ErrorDrawer
 
 
 class Visualisable(ABC):

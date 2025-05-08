@@ -1,10 +1,9 @@
-# from ui_old.nodes.gradient_datatype import Gradient
-# from ui_old.nodes.multi_input_handler import handle_multi_inputs
-# from ui_old.nodes.node_input_exception import NodeInputException
-# from ui_old.nodes.nodes import UnitNode, PropType, PropTypeList, CombinationNode, UnitNodeInfo
-# from ui_old.nodes.shape_datatypes import Polygon, Ellipse, SineWave, Polyline, Group
-# from ui_old.nodes.utils import process_rgb
-# from ui_old.port_defs import PortDef, PT_Element, PT_Polyline, PT_Ellipse, PT_Fill
+from ui.nodes.gradient_datatype import Gradient
+from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Element
+from ui.nodes.shape_datatypes import Polygon, Group, Polyline
+from ui.nodes.utils import process_rgb
 #
 # SINE_WAVE_NODE_INFO = UnitNodeInfo(
 #     name="Sine Wave",
@@ -100,48 +99,48 @@
 #         return group
 #
 #
-# STRAIGHT_LINE_NODE_INFO = UnitNodeInfo(
-#     name="Straight Line",
-#     out_port_defs=[PortDef("Drawing", PT_Polyline)],
-#     prop_type_list=PropTypeList(
-#         [
-#             PropType("start_coord", "coordinate", default_value=(1, 0),
-#                      description="Coordinate of the start of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                      display_name="Start coordinate"),
-#             PropType("stop_coord", "coordinate", default_value=(0, 1),
-#                      description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                      display_name="Stop coordinate"),
-#             PropType("stroke_width", "float", default_value=1.0,
-#                      description="Thickness of the straight line.", display_name="Line thickness", min_value=0.0)
-#         ]
-#     ),
-#     description="Create a straight line by defining the start and stop points. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner."
-# )
-#
-#
-# class StraightLineNode(UnitNode):
-#     UNIT_NODE_INFO = STRAIGHT_LINE_NODE_INFO
-#
-#     @staticmethod
-#     def helper(start_coord, stop_coord, stroke='black', stroke_width=1):
-#         return Polyline([start_coord, stop_coord], stroke, stroke_width)
-#
-#     def compute(self):
-#         return StraightLineNode.helper(self.get_prop_val('start_coord'), self.get_prop_val('stop_coord'), 'black',
-#                                        self.get_prop_val('stroke_width'))
-#
-#     def visualise(self):
-#         group = Group(debug_info="Straight Line")
-#         group.add(self.compute())
-#         return group
-#
-#
-from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
-from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Element
-from ui.nodes.shape_datatypes import Polygon, Group
-from ui.nodes.utils import process_rgb
+DEF_STRAIGHT_LINE_NODE_INFO = NodeInfo(
+    description="Create a straight line by defining the start and stop points. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+    port_defs={
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline)
+    },
+    prop_entries={
+        'start_coord': PropEntry(PropType.COORDINATE,
+                                 display_name="Start coordinate",
+                                 description="Coordinate of the start of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+                                 default_value=(1, 0)),
+        'stop_coord': PropEntry(PropType.COORDINATE,
+                                 display_name="Stop coordinate",
+                                 description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+                                 default_value=(1, 0)),
+        'stroke_width': PropEntry(PropType.FLOAT,
+                                  display_name="Line thickness",
+                                  description="Thickness of the straight line.",
+                                  default_value=1,
+                                  min_value=0)
+    }
+)
+
+
+class StraightLineNode(UnitNode):
+    NAME = "Straight Line"
+    DEFAULT_NODE_INFO = DEF_STRAIGHT_LINE_NODE_INFO
+
+    @staticmethod
+    def helper(start_coord, stop_coord, stroke='black', stroke_width=1):
+        return Polyline([start_coord, stop_coord], stroke, stroke_width)
+
+    def compute(self, out_port_key='_main'):
+        return StraightLineNode.helper(self._prop_val('start_coord'), self._prop_val('stop_coord'), 'black',
+                                       self._prop_val('stroke_width'))
+
+    def visualise(self):
+        group = Group(debug_info="Straight Line")
+        group.add(self.compute())
+        return group
+
+
+
 
 DEF_POLYGON_INFO = NodeInfo(
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -185,37 +184,35 @@ class PolygonNode(UnitNode):
         group = Group(debug_info="Polygon")
         group.add(self.compute())
         return group
-#
-#
-# RECTANGLE_NODE_INFO = UnitNodeInfo(
-#     name="Rectangle",
-#     prop_port_defs=[PortDef('Colour', PT_Fill, key_name='fill')],
-#     out_port_defs=[PortDef("Drawing", PT_Element)],
-#     prop_type_list=PropTypeList(
-#         [
-#             PropType("fill", "colour", default_value=(0, 0, 0, 255),
-#                      description="Rectangle fill colour.", display_name="Colour", port_modifiable=True)
-#         ]
-#     ),
-#     description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape."
-# )
-#
-#
-# class RectangleNode(UnitNode):
-#     UNIT_NODE_INFO = RECTANGLE_NODE_INFO
-#
-#     @staticmethod
-#     def helper(colour):
-#         return PolygonNode.helper(colour, [(0, 0), (0, 1), (1, 1), (1, 0)], 'none', 1)
-#
-#     def compute(self):
-#         return RectangleNode.helper(self.get_prop_val('fill'))
-#
-#     def visualise(self):
-#         group = Group(debug_info="Rectangle")
-#         group.add(self.compute())
-#         return group
-#
+
+
+DEF_RECTANGLE_NODE_INFO = NodeInfo(
+    description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape.",
+    port_defs={(PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill),
+               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)},
+    prop_entries={'fill': PropEntry(PropType.FILL,
+                                      display_name="Fill",
+                                      description="Rectangle fill colour.",
+                                      default_value=(0, 0, 0, 255))}
+)
+
+
+class RectangleNode(UnitNode):
+    NAME = "Rectangle"
+    DEFAULT_NODE_INFO = DEF_RECTANGLE_NODE_INFO
+
+    @staticmethod
+    def helper(colour):
+        return PolygonNode.helper(colour, [(0, 0), (0, 1), (1, 1), (1, 0)], 'none', 1)
+
+    def compute(self, out_port_key='_main'):
+        return RectangleNode.helper(self._prop_val('fill'))
+
+    def visualise(self):
+        group = Group(debug_info="Rectangle")
+        group.add(self.compute())
+        return group
+
 #
 # ELLIPSE_NODE_INFO = UnitNodeInfo(
 #     name="Ellipse",

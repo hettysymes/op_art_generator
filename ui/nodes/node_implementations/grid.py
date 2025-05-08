@@ -1,29 +1,32 @@
-from ui_old.nodes.canvas import CanvasNode
-from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui_old.nodes.shape import StraightLineNode
-from ui_old.nodes.shape_datatypes import Group
-from ui_old.nodes.warp_utils import PosWarp, RelWarp
-from ui_old.port_defs import PortDef, PT_Warp, PT_Grid
+from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
+from ui.nodes.node_implementations.canvas import CanvasNode
+from ui.nodes.node_implementations.shape import StraightLineNode
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PortDef, PT_Warp, PT_Grid
+from ui.nodes.shape_datatypes import Group
+from ui.nodes.warp_utils import PosWarp, RelWarp
 
-GRID_NODE_INFO = UnitNodeInfo(
-    name="Grid",
-    selectable=False,
-    in_port_defs=[PortDef("X Warp", PT_Warp, key_name='x_warp'), PortDef("Y Warp", PT_Warp, key_name='y_warp')],
-    out_port_defs=[PortDef("Grid", PT_Grid)],
-    prop_type_list=PropTypeList(
-        [
-            PropType("width", "int", default_value=5, min_value=1,
-                     description="Number of cells in the width of the grid, at most 1.", display_name="Width"),
-            PropType("height", "int", default_value=5, min_value=1,
-                     description="Number of cells in the height of the grid, at most 1.", display_name="Height")
-        ]
-    ),
-    description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively."
+DEF_GRID_INFO = NodeInfo(
+    description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively.",
+    port_defs={(PortIO.INPUT, 'x_warp'): PortDef("X Warp", PT_Warp, optional=True),
+               (PortIO.INPUT, 'y_warp'): PortDef("Y Warp", PT_Warp, optional=True),
+               (PortIO.OUTPUT, '_main'): PortDef("Grid", PT_Grid)},
+    prop_entries={'width': PropEntry(PropType.INT,
+                                     display_name="Width",
+                                     description="Number of cells in the width of the grid, at most 1.",
+                                     default_value=5,
+                                     min_value=1),
+                  'height': PropEntry(PropType.INT,
+                                     display_name="Height",
+                                     description="Number of cells in the height of the grid, at most 1.",
+                                     default_value=5,
+                                     min_value=1)}
 )
 
 
 class GridNode(UnitNode):
-    UNIT_NODE_INFO = GRID_NODE_INFO
+    NAME = "Grid"
+    DEFAULT_NODE_INFO = DEF_GRID_INFO
 
     @staticmethod
     def helper(x_warp, y_warp, width, height):
@@ -41,11 +44,11 @@ class GridNode(UnitNode):
         h_line_ys = y_warp.sample(height + 1)
         return v_line_xs, h_line_ys
 
-    def compute(self):
+    def compute(self, out_port_key='_main'):
         # Get warp functions
-        x_warp = self.get_input_node('x_warp').compute()
-        y_warp = self.get_input_node('y_warp').compute()
-        return GridNode.helper(x_warp, y_warp, self.get_prop_val('width'), self.get_prop_val('height'))
+        x_warp = self._prop_val('x_warp')
+        y_warp = self._prop_val('y_warp')
+        return GridNode.helper(x_warp, y_warp, self._prop_val('width'), self._prop_val('height'))
 
     def visualise(self):
         v_line_xs, h_line_ys = self.compute()

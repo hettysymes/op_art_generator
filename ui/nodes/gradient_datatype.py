@@ -1,5 +1,5 @@
-from ui_old.id_generator import gen_uid
-from ui_old.nodes.utils import process_rgb
+from ui.id_generator import gen_uid
+from ui.nodes.utils import process_rgb
 
 
 class Gradient:

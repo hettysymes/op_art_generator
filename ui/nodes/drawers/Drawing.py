@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import cairosvg
 import svgwrite
 
-from ui_old.nodes.utils import process_rgb
+from ui.nodes.utils import process_rgb
 
 
 class Drawing(ABC):

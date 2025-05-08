@@ -790,10 +790,12 @@ class AddNewEdgeCmd(QUndoCommand):
         self.node_graph.add_connection(self.src_node_id, self.src_port_key, self.dst_node_id, self.dst_port_key)
         src_node_item = self.scene.node_items[self.src_node_id]
         dst_node_item = self.scene.node_items[self.dst_node_id]
-        src_port_item = src_node_item.port_items[(PortIO.INPUT, self.src_port_key)]
-        dst_port_item = dst_node_item.port_items[(PortIO.OUTPUT, self.dst_port_key)]
+        src_port_item = src_node_item.port_items[(PortIO.OUTPUT, self.src_port_key)]
+        dst_port_item = dst_node_item.port_items[(PortIO.INPUT, self.dst_port_key)]
         edge = EdgeItem(src_port_item, dst_port_item)
         self.scene.addItem(edge)
+        edge.update_position()
+        dst_node_item.update_visualisations()
         # Update port edge_items
         src_port_item.edge_items[(self.dst_node_id, self.dst_port_key)] = edge
         dst_port_item.edge_items[(self.src_node_id, self.src_port_key)] = edge

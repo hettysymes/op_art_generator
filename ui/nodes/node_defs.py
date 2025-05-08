@@ -141,7 +141,7 @@ class Node(BaseNode, ABC):
             prop_node_val = self._port_input(prop_key)
             if prop_node_val:
                 return prop_node_val
-        return self.prop_vals[prop_key]
+        return self.prop_vals.get(prop_key)
 
     @classmethod
     def name(cls):

@@ -1,28 +1,37 @@
-from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui_old.nodes.shape import RectangleNode
-from ui_old.nodes.shape_datatypes import Group
-from ui_old.port_defs import PortDef, PT_Element
+from ui.nodes.node_defs import NodeInfo, PropEntry, PropType
+from ui.nodes.node_implementations.shape import RectangleNode
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PortDef, PT_Element
+from ui.nodes.shape_datatypes import Group
 
-CANVAS_NODE_INFO = UnitNodeInfo(
-    name="Canvas",
-    resizable=False,
-    selectable=False,
-    in_port_defs=[PortDef("Drawing", PT_Element, key_name='element')],
-    out_port_defs=[],
-    prop_type_list=PropTypeList([
-        PropType("width", "int", default_value=150, max_value=500, min_value=1,
-                 description="Width of canvas in pixels, set between 1 and 500.", display_name="Width (pixels)"),
-        PropType("height", "int", default_value=150, max_value=500, min_value=1,
-                 description="Height of canvas in pixels, set between 1 and 500.", display_name="Height (pixels)"),
-        PropType("bg_col", "colour", default_value=(255, 255, 255, 255),
-                 description="Background colour of canvas.", display_name="Background colour")
-    ]),
-    description="Place a drawing on a canvas, where the height and width can be set accurately, as well as the background colour."
+DEF_CANVAS_NODE_INFO = NodeInfo(
+    description="Place a drawing on a canvas, where the height and width can be set accurately, as well as the background colour.",
+    port_defs={(PortIO.INPUT, 'element'): PortDef("Drawing", PT_Element)},
+    prop_entries={
+        'width': PropEntry(PropType.INT,
+                           display_name="Width (pixels)",
+                           description="Width of canvas in pixels, set between 1 and 500.",
+                           default_value=150,
+                           min_value=1,
+                           max_value=500),
+        'height': PropEntry(PropType.INT,
+                            display_name="Height (pixels)",
+                            description="Height of canvas in pixels, set between 1 and 500.",
+                            default_value=150,
+                            min_value=1,
+                            max_value=500),
+        'bg_fill': PropEntry(PropType.FILL,
+                             display_name="Background fill",
+                             description="Background fill of canvas.",
+                             default_value=(255, 255, 255, 255)
+                             )
+    }
 )
 
 
 class CanvasNode(UnitNode):
-    UNIT_NODE_INFO = CANVAS_NODE_INFO
+    NAME = "Canvas"
+    DEFAULT_NODE_INFO = DEF_CANVAS_NODE_INFO
 
     @staticmethod
     def helper(colour, element=None):
@@ -32,8 +41,8 @@ class CanvasNode(UnitNode):
             group.add(element)
         return group
 
-    def compute(self):
-        return self.get_input_node('element').compute()
+    def compute(self, out_port_key='_main'):
+        return self._prop_val('element')
 
     def visualise(self):
-        return CanvasNode.helper(self.get_prop_val('bg_col'), self.compute())
+        return CanvasNode.helper(self._prop_val('bg_fill'), self.compute())
