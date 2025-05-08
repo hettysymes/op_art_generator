@@ -8,8 +8,8 @@ class UnitNode(Node, ABC):
     DEFAULT_NODE_INFO = None
 
     def __init__(self, uid, graph_querier, prop_vals=None):
-        super().__init__(uid, graph_querier, prop_vals)
         self.node_info = self._default_node_info()
+        super().__init__(uid, graph_querier, prop_vals)
 
     def base_node_name(self):
         return self.name()

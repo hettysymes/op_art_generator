@@ -67,7 +67,7 @@ class Node(BaseNode, ABC):
     def __init__(self, uid, graph_querier, prop_vals=None):
         self.uid = uid
         self.graph_querier = graph_querier
-        self.prop_vals = prop_vals
+        self.prop_vals = prop_vals if prop_vals else self._default_prop_vals()
 
     def _default_prop_vals(self):
         default_prop_vals = {}
