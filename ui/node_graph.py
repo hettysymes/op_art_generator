@@ -16,6 +16,10 @@ class NodeGraph(GraphQuerier):
     def add_existing_node(self, node):
         self.nodes[node.uid] = node
 
+    def remove_node(self, node_id):
+        # Assumes related node connections have been removed
+        del self.nodes[node_id]
+
     def node(self, node_id):
         return self.nodes[node_id]
 
@@ -40,7 +44,7 @@ class NodeGraph(GraphQuerier):
                 ]
 
     def port_input(self, node_id, port_key):
-        # Find input node
+        # Get node input
         found_src_port_id = None
         for src_port_id, (dst_node_id, dst_port_key) in self.connections:
             if dst_node_id == node_id and dst_port_key == port_key:
@@ -62,4 +66,6 @@ class NodeGraph(GraphQuerier):
             first_string = f"{src_node_name} [#{shorten_uid(src_node_id)}] (port \"{src_port_display_name}\")".ljust(40)
             second_string = f"{dst_node_name} [#{shorten_uid(dst_node_id)}] (port \"{dst_port_display_name}\")"
             result += f"{first_string} -> {second_string}\n"
+        if not result:
+            result = "[no connections]\n"
         return result

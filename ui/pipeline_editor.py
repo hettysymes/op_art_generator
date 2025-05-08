@@ -556,6 +556,7 @@ class NodeItem(QGraphicsRectItem):
             self.scene().removeItem(self._help_tooltip)
             self._help_tooltip = None
         # Remove this node item
+        self.scene().node_graph.remove_node(self.node_state.node_id)
         self.scene().removeItem(self)
 #
 #     def create_separated_inputs_copy(self):
@@ -694,6 +695,11 @@ class EdgeItem(QGraphicsLineItem):
         dst_node_id = self.dst_port.parentItem().node_state.node_id
         del self.src_port.edge_items[(dst_node_id, self.dst_port.port_key)]
         del self.dst_port.edge_items[(src_node_id, self.src_port.port_key)]
+        # Remove from node graph
+        self.scene().node_graph.remove_connection((src_node_id, self.src_port.port_key), (dst_node_id, self.dst_port.port_key))
+        # Update dest node visualisations
+        self.dst_port.parentItem().update_visualisations()
+        # Remove from scene
         self.scene().removeItem(self)
 
 
@@ -1223,6 +1229,10 @@ class PipelineScene(QGraphicsScene):
         # Add edge items
         for src_conn_id, dst_conn_id in self.node_graph.connections:
             self.add_edge(src_conn_id, dst_conn_id)
+        # Update visualisations
+        for node_state in node_states:
+            node_item = self.node_items[node_state.node_id]
+            node_item.update_visualisations()
 
     def clear_scene(self):
         for item in self.items():
@@ -1697,6 +1707,7 @@ class PipelineEditor(QMainWindow):
             node = self.scene.node_graph.node(node_state.node_id)
             new_node = copy.deepcopy(node)
             new_node.uid = new_uid
+            new_node.graph_querier = self.scene.node_graph # Keep original graph querier
             new_nodes.append(new_node)
             # Add id to conversion map
             old_to_new_id_map[node_state.node_id] = new_uid
