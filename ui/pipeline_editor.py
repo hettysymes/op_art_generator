@@ -400,7 +400,7 @@ class NodeItem(QGraphicsRectItem):
             output_node_item.update_visualisations()
 
     def create_ports(self):
-        for port_id in self.node().compulsory_ports():
+        for port_id in self.node_state.ports_open:
             # Update layout at the end for efficiency
             self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
         self.update_all_port_positions()
@@ -415,7 +415,8 @@ class NodeItem(QGraphicsRectItem):
                         is_input=is_input,
                         parent=self)
         self.port_items[port_id] = port # Add reference to port
-        self.node_state.ports_open.append(port_id) # Add to open ports
+        if port_id not in self.node_state.ports_open:
+            self.node_state.ports_open.append(port_id) # Add to open ports
         # Update port positioning and label containers
         if update_layout:
             self.update_all_port_positions()
@@ -557,6 +558,7 @@ class NodeItem(QGraphicsRectItem):
             self._help_tooltip = None
         # Remove this node item
         self.scene().node_graph.remove_node(self.node_state.node_id)
+        del self.scene().node_items[self.node_state.node_id] # Remove reference to item
         self.scene().removeItem(self)
 #
 #     def create_separated_inputs_copy(self):
@@ -664,11 +666,6 @@ class PortItem(QGraphicsPathItem):
     def remove_edges(self):
         other_edge_ids = list(self.edge_items.keys())
         for other_edge_id in other_edge_ids:
-            this_edge_id = (self.parentItem().node_state.node_id, self.port_key)
-            if self.is_input:
-                self.scene().node_graph.remove_connection(other_edge_id, this_edge_id)
-            else:
-                self.scene().node_graph.remove_connection(this_edge_id, other_edge_id)
             self.edge_items[other_edge_id].remove_from_scene()
 
 
@@ -722,8 +719,9 @@ class AddNewNodeCmd(QUndoCommand):
 
     def redo(self):
         node_id = self.node_graph.add_new_node(self.node_class)
+        node = self.node_graph.node(node_id)
         node_state = NodeState(node_id=node_id,
-                               ports_open=[],
+                               ports_open=node.compulsory_ports(),
                                pos=(self.pos.x(), self.pos.y()),
                                svg_size=(150, 150)) # TODO: save as constant somewhere
         self.scene.add_node(node_state)
@@ -1128,15 +1126,7 @@ class PipelineScene(QGraphicsScene):
         """Handle context menu events for the scene"""
         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
-        if isinstance(clicked_item, EdgeItem):
-            pass
-            # Context menu for connections
-            # menu = QMenu()
-            # delete_action = QAction("Delete Connection", menu)
-            # delete_action.triggered.connect(lambda: self.delete_edge(clicked_item))
-            # menu.addAction(delete_action)
-            # menu.exec_(event.screenPos())
-        elif isinstance(clicked_item, NodeItem) or isinstance(clicked_item, PortItem):
+        if isinstance(clicked_item, NodeItem) or isinstance(clicked_item, PortItem):
             pass
             # Context menu for nodes (or ports on nodes)
             # if isinstance(clicked_item, PortItem):
@@ -1227,19 +1217,13 @@ class PipelineScene(QGraphicsScene):
         for node_state in node_states:
             self.add_node(node_state)
         # Add edge items
-        for src_conn_id, dst_conn_id in self.node_graph.connections:
-            self.add_edge(src_conn_id, dst_conn_id)
-        # Update visualisations
-        for node_state in node_states:
-            node_item = self.node_items[node_state.node_id]
-            node_item.update_visualisations()
+        for connection in self.node_graph.connections:
+            self.add_edge(*connection)
 
     def clear_scene(self):
-        for item in self.items():
-            if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
-                if isinstance(item, NodeItem):
-                    del self.node_items[item.node_state.node_id]
-                self.removeItem(item)
+        node_ids = list(self.node_items.keys())
+        for node_id in node_ids:
+            self.node_items[node_id].remove_from_scene()
 
     def load_scene(self, filepath):
         self.clear_scene()
@@ -1253,27 +1237,6 @@ class PipelineScene(QGraphicsScene):
         self.load_from_node_states(app_state.node_states)
         self.undo_stack.clear()
         self.filepath = filepath
-#
-#     def delete_edge(self, edge):
-#         """Delete the given edge"""
-#         edge.source_port.remove_edge(edge.uid)
-#         edge.dest_port.remove_edge(edge.uid)
-#         dest_node = edge.dest_port.parentItem()
-#         self.scene.remove(edge.uid)
-#         self.removeItem(edge)
-#         node_to_update = self.scene.get(edge.dest_port.backend.parent_node_id)
-#         node_to_update.update_visualisations()
-#
-#     def add_edge(self, src_port_id, dst_port_id):
-#         edge = EdgeItem(EdgeState(gen_uid(), src_port_id, dst_port_id))
-#         self.scene.add(edge)
-#         self.addItem(edge)
-#         edge.set_ports()
-#         edge.source_port.add_edge(edge.uid)
-#         edge.dest_port.add_edge(edge.uid)
-#         node_to_update = self.scene.get(edge.dest_port.backend.parent_node_id)
-#         node_to_update.update_visualisations()
-#         return edge
 #
 #     def change_node_selection(self, clicked_item: NodeItem, i):
 #         clicked_item.node.set_selection(i)
@@ -1457,25 +1420,25 @@ class PipelineEditor(QMainWindow):
 
         # Create File menu
         file_menu = menu_bar.addMenu("File")
-#
-#         # Add New scene action
-#         new_scene_action = QAction("New Scene", self)
-#         new_scene_action.setShortcut(QKeySequence.New)
-#         new_scene_action.triggered.connect(self.new_scene)
-#         file_menu.addAction(new_scene_action)
-#
+
+        # Add New scene action
+        new_scene_action = QAction("New Scene", self)
+        new_scene_action.setShortcut(QKeySequence.New)
+        new_scene_action.triggered.connect(self.new_scene)
+        file_menu.addAction(new_scene_action)
+
         # Add Save action
         save_action = QAction("Save", self)
         save_action.setShortcut(QKeySequence.Save)
         save_action.triggered.connect(self.save_scene)
         file_menu.addAction(save_action)
-#
+
         # Add Save As action
         save_action = QAction("Save As", self)
         save_action.setShortcut(QKeySequence.SaveAs)
         save_action.triggered.connect(self.save_as_scene)
         file_menu.addAction(save_action)
-#
+
         # Add Load action
         load_action = QAction("Load from file", self)
         load_action.setShortcut("Ctrl+L")
@@ -1547,13 +1510,13 @@ class PipelineEditor(QMainWindow):
         centre.setShortcut("Ctrl+1")
         centre.triggered.connect(lambda: self.view.centerOn(0, 0))
         scene_menu.addAction(centre)
-#
-#     def new_scene(self):
-#         self.scene.filepath = None
-#         self.scene.clear_scene()
-#         self.view.reset_zoom()
-#         self.view.centerOn(0, 0)
-#
+
+    def new_scene(self):
+        self.scene.filepath = None
+        self.scene.clear_scene()
+        self.view.reset_zoom()
+        self.view.centerOn(0, 0)
+
     def save_as_scene(self):
         filepath, _ = QFileDialog.getSaveFileName(
             self,
