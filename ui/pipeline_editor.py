@@ -774,13 +774,7 @@ class AddNewEdgeCmd(QUndoCommand):
         self.dst_conn_id = dst_conn_id
 
     def undo(self):
-        # Obtain edge via source port
-        src_node_id, src_port_key = self.src_conn_id
-        src_node_item = self.scene.node_items[src_node_id]
-        src_port_item = src_node_item.port_items[(PortIO.OUTPUT, src_port_key)]
-        # Remove edge item
-        edge_item = src_port_item.edge_items[self.dst_conn_id]
-        edge_item.remove_from_scene()
+        self.scene.remove_edge(self.src_conn_id, self.dst_conn_id)
 
     def redo(self):
         self.node_graph.add_connection(self.src_conn_id, self.dst_conn_id)
@@ -851,14 +845,15 @@ class PasteCmd(QUndoCommand):
         self.connections = connections
 
     def undo(self):
-        pass
-        # items_to_remove = {}
-        # for uid, state in self.save_states.items():
-        #     if not isinstance(state, PortState):
-        #         items_to_remove[uid] = self.scene.get(uid)
-        # for uid, item in items_to_remove.items():
-        #     self.scene.remove(uid)
-        #     self.pipeline_scene.removeItem(item)
+        # Remove nodes
+        for node_state in self.node_states:
+            node_item = self.scene.node_items[node_state.node_id]
+            node_item.remove_from_scene()
+        # Remove edges
+        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.connections:
+            if src_node_id in self.scene.node_items and dst_node_id in self.scene.node_items:
+                # Connection still exists, remove now
+                self.scene.remove_edge((src_node_id, src_port_key), (dst_node_id, dst_port_key))
 
     def redo(self):
         # Add to node graph
@@ -1186,6 +1181,15 @@ class PipelineScene(QGraphicsScene):
         # Update port edge_items
         src_port_item.edge_items[dst_conn_id] = edge
         dst_port_item.edge_items[src_conn_id] = edge
+
+    def remove_edge(self, src_conn_id, dst_conn_id):
+        # Obtain edge via source port
+        src_node_id, src_port_key = src_conn_id
+        src_node_item = self.node_items[src_node_id]
+        src_port_item = src_node_item.port_items[(PortIO.OUTPUT, src_port_key)]
+        # Remove edge item
+        edge_item = src_port_item.edge_items[dst_conn_id]
+        edge_item.remove_from_scene()
 
     def add_node(self, node_state):
         node = self.node_graph.node(node_state.node_id)
