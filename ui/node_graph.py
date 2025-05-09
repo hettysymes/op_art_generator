@@ -44,17 +44,16 @@ class NodeGraph(GraphQuerier):
                 ]
 
     def port_input(self, node_id, port_key):
-        # Get node input
-        found_src_port_id = None
-        for src_port_id, (dst_node_id, dst_port_key) in self.connections:
-            if dst_node_id == node_id and dst_port_key == port_key:
-                found_src_port_id = src_port_id
-                break
-        if not found_src_port_id:
+        # Get node input at specified port, returns a list as multiple nodes may be connected
+        found_src_port_ids = [
+            src_port_id
+            for src_port_id, (dst_node_id, dst_port_key) in self.connections
+            if dst_node_id == node_id and dst_port_key == port_key
+        ]
+        if not found_src_port_ids:
             raise KeyError("Input node not found for given port.")
-        # Return node compute
-        src_node_id, src_port_key = found_src_port_id
-        return self.nodes[src_node_id].compute(src_port_key)
+        # Return node computes
+        return [self.nodes[src_node_id].compute(src_port_key) for src_node_id, src_port_key in found_src_port_ids]
 
     def __str__(self):
         result = ""

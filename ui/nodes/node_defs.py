@@ -4,6 +4,7 @@ from enum import Enum, auto
 
 from ui.id_generator import shorten_uid
 from ui.nodes.node_input_exception import NodeInputException
+from ui.nodes.port_defs import PortIO, PT_Scalar
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
@@ -138,9 +139,18 @@ class Node(BaseNode, ABC):
 
     def _prop_val(self, prop_key):
         if prop_key in self._active_input_ports():
-            prop_node_val = self._port_input(prop_key)
-            if prop_node_val:
-                return prop_node_val
+            prop_node_vals = self._port_input(prop_key)
+            # Get port type
+            port_type = self.port_defs_filter_by_io(PortIO.INPUT)[prop_key].port_type
+            if isinstance(port_type, PT_Scalar):
+                # Return only the item in the list
+                assert len(prop_node_vals) == 1
+                if prop_node_vals[0] is not None:
+                    # Do not default to property values dictionary
+                    return prop_node_vals[0]
+            else:
+                # Return the full list
+                return prop_node_vals
         return self.prop_vals.get(prop_key)
 
     @classmethod
