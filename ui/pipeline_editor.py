@@ -865,25 +865,32 @@ class PasteCmd(QUndoCommand):
         self.scene.load_from_node_states(self.node_states)
 
 class DeleteCmd(QUndoCommand):
-    def __init__(self, scene, node_items, edge_items, description="Delete edge"):
+    def __init__(self, scene, node_states, nodes, connections, description="Delete"):
         super().__init__(description)
         self.scene = scene
-        self.node_items = node_items
-        self.edge_items = edge_items
-        self.save_states = None
+        self.node_states = node_states
+        self.nodes = nodes
+        self.connections = connections
 
     def undo(self):
-        pass
-        # assert self.save_states
-        # self.pipeline_scene.load_from_save_states(self.save_states)
+        # Add to node graph
+        for node in self.nodes:
+            self.scene.node_graph.add_existing_node(node)
+        for connection in self.connections:
+            self.scene.node_graph.add_connection(*connection)
+        # Load items
+        self.scene.load_from_node_states(self.node_states)
 
     def redo(self):
-        for node_item in self.node_items:
+        # Remove nodes
+        for node_state in self.node_states:
+            node_item = self.scene.node_items[node_state.node_id]
             node_item.remove_from_scene()
-        for edge_item in self.edge_items:
-            if edge_item.scene():
-                # Edge item has not been removed with node item, remove now
-                edge_item.remove_from_scene()
+        # Remove edges
+        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.connections:
+            if src_node_id in self.scene.node_items and dst_node_id in self.scene.node_items:
+                # Connection still exists, remove now
+                self.scene.remove_edge((src_node_id, src_port_key), (dst_node_id, dst_port_key))
 #
 # class AddCustomNodeCmd(QUndoCommand):
 #     def __init__(self, pipeline_scene, save_states, inp_node_id, out_node_id, description="Make Custom Node"):
@@ -1543,17 +1550,6 @@ class PipelineEditor(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
                 item.setSelected(True)
-
-    def delete_selected_items(self):
-        node_items = []
-        edge_items = []
-        for item in self.scene.selectedItems():
-            if isinstance(item, NodeItem):
-                node_items.append(item)
-            elif isinstance(item, EdgeItem):
-                edge_items.append(item)
-        if node_items or edge_items:
-            self.scene.undo_stack.push(DeleteCmd(self.scene, node_items, edge_items))
 #
 #     class TwoInputDialog(QDialog):
 #         def __init__(self):
@@ -1617,7 +1613,7 @@ class PipelineEditor(QMainWindow):
 #             if inp_node_id and out_node_id:
 #                 self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, save_states, inp_node_id, out_node_id))
 #
-    def identify_selected_subgraph(self):
+    def identify_selected_items(self):
         node_states = {}
         connections = []
         for item in self.scene.selectedItems():
@@ -1629,7 +1625,16 @@ class PipelineEditor(QMainWindow):
                 dst_node_id = item.dst_port.parentItem().node_state.node_id
                 dst_port_key = item.dst_port.port_key
                 connections.append(((src_node_id, src_port_key), (dst_node_id, dst_port_key)))
+        return node_states, connections
 
+    def delete_selected_items(self):
+        node_states, connections = self.identify_selected_items()
+        if node_states or connections:
+            nodes = [self.scene.node_graph.node(node_id) for node_id in node_states]
+            self.scene.undo_stack.push(DeleteCmd(self.scene, list(node_states.values()), nodes, connections))
+
+    def identify_selected_subgraph(self):
+        node_states, connections = self.identify_selected_items()
         # Remove edges which are not connected at both ends to selected nodes
         connection_indices_to_remove = []
         for i, ((src_node_id, src_port_key), (dst_node_id, dst_port_key)) in enumerate(connections):
@@ -1638,7 +1643,6 @@ class PipelineEditor(QMainWindow):
         connection_indices_to_remove.reverse()
         for i in connection_indices_to_remove:
             del connections[i]
-
         # Return node states and connections between them
         return list(node_states.values()), connections
 
