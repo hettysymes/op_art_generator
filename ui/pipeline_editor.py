@@ -821,9 +821,7 @@ class AddPropertyPortCmd(QUndoCommand):
         self.prop_key = prop_key
 
     def undo(self):
-        pass
-        # self.node_item.remove_port_by_name(self.prop_key_name)
-        # self.node_item.backend.prop_ports.remove(self.prop_key_name)
+        self.node_item.remove_port((PortIO.INPUT, self.prop_key))
 
     def redo(self):
         input_port_defs = self.node_item.node().port_defs_filter_by_io(PortIO.INPUT)
@@ -837,12 +835,9 @@ class RemovePropertyPortCmd(QUndoCommand):
         self.prop_key = prop_key
 
     def undo(self):
-        pass
-        # for port_def in self.node_item.node.prop_port_defs():
-        #     if port_def.key_name == self.prop_key_name:
-        #         self.node_item.add_port(port_def)
-        #         self.node_item.backend.prop_ports.append(self.prop_key_name)
-        #         break
+        input_port_defs = self.node_item.node().port_defs_filter_by_io(PortIO.INPUT)
+        port_def = input_port_defs[self.prop_key]
+        self.node_item.add_port((PortIO.INPUT, self.prop_key), port_def)
 
     def redo(self):
         self.node_item.remove_port((PortIO.INPUT, self.prop_key))
