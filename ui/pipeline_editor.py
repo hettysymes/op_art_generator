@@ -404,8 +404,7 @@ class NodeItem(QGraphicsRectItem):
         for port_id in self.node_state.ports_open:
             # Update layout at the end for efficiency
             self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
-        self.update_all_port_positions()
-        self.update_label_containers()
+        self.update_label_port_positions()
 
     def reset_ports_open(self, new_ports_open):
         # Remove ports no longer in use
@@ -423,8 +422,7 @@ class NodeItem(QGraphicsRectItem):
             new_port_items[port_id] = self.port_items[port_id]
         # Set new port item order
         self.port_items = new_port_items
-        self.update_all_port_positions()
-        self.update_label_containers()
+        self.update_label_port_positions()
 
     def add_port(self, port_id, port_def, update_layout=True):
         port_io, port_key = port_id
@@ -438,9 +436,7 @@ class NodeItem(QGraphicsRectItem):
         if port_id not in self.node_state.ports_open:
             self.node_state.ports_open.append(port_id) # Add to open ports
         if update_layout:
-            # Update port positioning and label containers
-            self.update_all_port_positions()
-            self.update_label_containers()
+            self.update_label_port_positions()
 
     def remove_port(self, port_id, update_layout=True):
         port = self.port_items[port_id]
@@ -449,9 +445,7 @@ class NodeItem(QGraphicsRectItem):
         self.node_state.ports_open.remove(port_id) # Remove from open ports
         port.scene().removeItem(port) # Remove port from scene
         if update_layout:
-            # Update port positioning
-            self.update_all_port_positions()
-            self.update_label_containers()
+            self.update_label_port_positions()
 
 
     def paint(self, painter, option, widget):
@@ -552,7 +546,7 @@ class NodeItem(QGraphicsRectItem):
         self.update_port_positions(PortIO.INPUT)
         self.update_port_positions(PortIO.OUTPUT)
 
-    def update_label_containers(self):
+    def update_label_port_positions(self):
         # Calculate the maximum width needed for each side
         font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
         self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
