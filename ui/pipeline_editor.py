@@ -1190,12 +1190,12 @@ class PipelineScene(QGraphicsScene):
         node_item.create_ports()
         node_item.update_vis_image()
 
-    def load_from_node_states(self, node_states):
+    def load_from_node_states(self, node_states, connections):
         # Add node items
         for node_state in node_states:
             self.add_node(node_state)
         # Add edge items
-        for connection in self.node_graph.connections:
+        for connection in connections:
             self.add_edge(*connection)
 
     def add_to_graph_and_scene(self, node_states, nodes, connections, port_refs):
@@ -1206,7 +1206,7 @@ class PipelineScene(QGraphicsScene):
             self.node_graph.add_connection(*connection)
         self.node_graph.extend_port_refs(port_refs)
         # Load items
-        self.load_from_node_states(node_states)
+        self.load_from_node_states(node_states, connections)
 
     def remove_from_graph_and_scene(self, node_states, connections):
         # Remove nodes
@@ -1233,7 +1233,7 @@ class PipelineScene(QGraphicsScene):
         self.view().centerOn(*app_state.view_pos)
         self.view().set_zoom(app_state.zoom)
         self.node_graph = app_state.node_graph
-        self.load_from_node_states(app_state.node_states)
+        self.load_from_node_states(app_state.node_states, self.node_graph.connections)
         self.undo_stack.clear()
         self.filepath = filepath
 
@@ -1646,6 +1646,7 @@ class PipelineEditor(QMainWindow):
 
     def identify_selected_subgraph(self):
         node_states, connections = self.identify_selected_items()
+        nodes = {node_id: copy.deepcopy(self.scene.node_graph.node(node_id)) for node_id in node_states}
         # Remove edges which are not connected at both ends to selected nodes
         connection_indices_to_remove = []
         for i, ((src_node_id, src_port_key), (dst_node_id, dst_port_key)) in enumerate(connections):
@@ -1669,9 +1670,9 @@ class PipelineEditor(QMainWindow):
                     if src_node_id not in node_states:
                         del port_refs[dst_conn_id]['ref_map'][ref_id]
         # Return node states and connections between them
-        return list(node_states.values()), connections, port_refs
+        return list(node_states.values()), nodes, connections, port_refs
 
-    def deep_copy_subgraph(self, node_states, connections, port_refs):
+    def deep_copy_subgraph(self, node_states, nodes, connections, port_refs):
         old_to_new_id_map = {}
         # Copy nodes
         new_node_states = []
@@ -1683,7 +1684,7 @@ class PipelineEditor(QMainWindow):
             new_node_state.node_id = new_uid
             new_node_states.append(new_node_state)
             # Copy node
-            node = self.scene.node_graph.node(node_state.node_id)
+            node = nodes[node_state.node_id]
             new_node = copy.deepcopy(node)
             new_node.uid = new_uid
             new_node.graph_querier = self.scene.node_graph # Keep original graph querier
@@ -1707,7 +1708,7 @@ class PipelineEditor(QMainWindow):
         return new_node_states, new_nodes, new_connections, new_port_refs
 
     def copy_selected_subgraph(self):
-        node_states, connections, port_refs = self.identify_selected_subgraph()
+        node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
         if node_states:
             # Calculate bounding rect
             bounding_rect = None
@@ -1720,7 +1721,7 @@ class PipelineEditor(QMainWindow):
                     bounding_rect = node_item.sceneBoundingRect()
             # Save to clipboard
             mime_data = QMimeData()
-            mime_data.setData("application/pipeline_editor_items", pickle.dumps((node_states, connections, port_refs, bounding_rect.center())))
+            mime_data.setData("application/pipeline_editor_items", pickle.dumps((node_states, nodes, connections, port_refs, bounding_rect.center())))
             clipboard = QApplication.clipboard()
             clipboard.setMimeData(mime_data)
 
@@ -1731,8 +1732,8 @@ class PipelineEditor(QMainWindow):
         if mime.hasFormat("application/pipeline_editor_items"):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
-            node_states, connections, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
-            node_states, nodes, connections, port_refs = self.deep_copy_subgraph(node_states, connections, port_refs)
+            node_states, nodes, connections, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
+            node_states, nodes, connections, port_refs = self.deep_copy_subgraph(node_states, nodes, connections, port_refs)
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for node_state in node_states:
