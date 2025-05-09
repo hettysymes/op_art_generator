@@ -87,7 +87,8 @@ class PortIO(Enum):
 
 class PortDef:
 
-    def __init__(self, display_name, port_type, optional=False):
+    def __init__(self, display_name, port_type, optional=False, description=None):
         self.display_name = display_name
         self.port_type = port_type
         self.optional = optional
+        self.description = description
