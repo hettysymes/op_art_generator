@@ -62,7 +62,7 @@ class BaseNode:
         return
 
 class Node(BaseNode, ABC):
-    NAME = None
+    NAME = None # To override
 
     def __init__(self, uid, graph_querier, prop_vals=None):
         self.uid = uid

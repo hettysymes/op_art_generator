@@ -1,6 +1,6 @@
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
-from ui.nodes.nodes import UnitNode
+from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Element
 from ui.nodes.shape_datatypes import Polygon, Group, Polyline
 from ui.nodes.utils import process_rgb
@@ -307,6 +307,6 @@ class RectangleNode(UnitNode):
 #         return group
 #
 #
-# class ShapeNode(CombinationNode):
-#     NAME = "Shape"
-#     SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, CustomLineNode, StraightLineNode]
+class ShapeNode(CombinationNode):
+    NAME = "Shape"
+    SELECTIONS = [PolygonNode, RectangleNode, StraightLineNode]

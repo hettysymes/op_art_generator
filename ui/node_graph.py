@@ -8,9 +8,9 @@ class NodeGraph(GraphQuerier):
         self.nodes = nodes if nodes else {} # Map node id to node
         self.connections = connections if connections else []
 
-    def add_new_node(self, node_class, node_id=None):
+    def add_new_node(self, node_class, add_info=None, node_id=None):
         uid = node_id if node_id else gen_uid()
-        self.nodes[uid] = node_class(uid, self)
+        self.nodes[uid] = node_class(uid, self, add_info=add_info)
         return uid
 
     def add_existing_node(self, node):

@@ -31,6 +31,7 @@ from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
+from ui.nodes.nodes import CombinationNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_ValueList, PT_Function, PT_Grid
 from ui.nodes.shape_datatypes import Group
 from ui.selectable_renderer import SelectableSvgElement
@@ -701,12 +702,13 @@ class EdgeItem(QGraphicsLineItem):
 
 
 class AddNewNodeCmd(QUndoCommand):
-    def __init__(self, scene, pos, node_class, description="Add new node"):
+    def __init__(self, scene, pos, node_class, add_info=None, description="Add new node"):
         super().__init__(description)
         self.scene = scene
         self.node_graph: NodeGraph = scene.node_graph
         self.pos = pos
         self.node_class = node_class
+        self.add_info = add_info
         self.node_state = None
 
     def undo(self):
@@ -715,7 +717,7 @@ class AddNewNodeCmd(QUndoCommand):
 
     def redo(self):
         node_id = self.node_state.node_id if self.node_state else None
-        node_id = self.node_graph.add_new_node(self.node_class, node_id=node_id)
+        node_id = self.node_graph.add_new_node(self.node_class, add_info=self.add_info, node_id=node_id)
         if not self.node_state:
             node = self.node_graph.node(node_id)
             self.node_state = NodeState(node_id=node_id,
@@ -960,8 +962,8 @@ class PipelineScene(QGraphicsScene):
     def view(self):
         return self.views()[0]
 
-    def add_new_node(self, pos, node):
-        self.undo_stack.push(AddNewNodeCmd(self, pos, node))
+    def add_new_node(self, pos, node, add_info=None):
+        self.undo_stack.push(AddNewNodeCmd(self, pos, node, add_info=add_info))
 
     def edit_node_properties(self, node):
         """Open a dialog to edit the node's properties"""
@@ -1115,27 +1117,20 @@ class PipelineScene(QGraphicsScene):
 
             # Add actions for each node type
             for node_class in node_classes():
-                action = QAction(node_class.name(), menu)
-                handler = partial(self.add_new_node, event.scenePos(), node_class)
-                action.triggered.connect(handler)
-                menu.addAction(action)
-                # if issubclass(node_class, CombinationNode):
-                #     submenu = menu.addMenu(node_class.display_name())
-                #     for i in range(len(node_class.selections())):
-                #         change_action = QAction(node_class.selections()[i].name(), submenu)
-                #         handler = partial(self.add_node_from_class, node_class, event.scenePos(), i)
-                #         change_action.triggered.connect(handler)
-                #         submenu.addAction(change_action)
-                # else:
-                #     action = QAction(node_class.display_name(), menu)
-                #     handler = partial(self.add_node_from_class, node_class, event.scenePos(), None)
-                #     action.triggered.connect(handler)
-                #     menu.addAction(action)
+                if issubclass(node_class, CombinationNode):
+                    submenu = menu.addMenu(node_class.name())
+                    for i in range(len(node_class.selections())):
+                        change_action = QAction(node_class.selections()[i].name(), submenu)
+                        handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=i)
+                        change_action.triggered.connect(handler)
+                        submenu.addAction(change_action)
+                else:
+                    action = QAction(node_class.name(), menu)
+                    handler = partial(self.add_new_node, event.scenePos(), node_class)
+                    action.triggered.connect(handler)
+                    menu.addAction(action)
 
             menu.exec_(event.screenPos())
-
-    def add_new_node(self, pos, node_class):
-        self.undo_stack.push(AddNewNodeCmd(self, pos, node_class))
 
     def save_scene(self, filepath):
         view = self.view()

@@ -8,21 +8,20 @@ from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.colour import ColourNode
 from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.grid import GridNode
-from ui.nodes.node_implementations.shape import PolygonNode, RectangleNode
+from ui.nodes.node_implementations.shape import PolygonNode, RectangleNode, ShapeNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 
 
 class NodeSettings:
-    def __init__(self, resizable):
+    def __init__(self, resizable=True):
         self.resizable = resizable
 
-node_settings = [(PolygonNode, NodeSettings(resizable=True)),
-                 (GridNode, NodeSettings(resizable=True)),
+node_settings = [(ShapeNode, NodeSettings()),
+                 (GridNode, NodeSettings()),
                  (CanvasNode, NodeSettings(resizable=False)),
-                 (ShapeRepeaterNode, NodeSettings(resizable=True)),
-                 (RectangleNode, NodeSettings(resizable=True)),
-                 (ColourNode, NodeSettings(resizable=True)),
-                 (GradientNode, NodeSettings(resizable=True))]
+                 (ShapeRepeaterNode, NodeSettings()),
+                 (ColourNode, NodeSettings()),
+                 (GradientNode, NodeSettings())]
 
 def node_classes():
     node_classes = []
