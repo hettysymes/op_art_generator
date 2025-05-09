@@ -47,6 +47,12 @@ class NodeGraph(GraphQuerier):
             if id_to_delete:
                 del id_to_port_refs[id_to_delete]
 
+    def get_port_refs_for_port(self, node_id, port_key):
+        return self.port_refs.get((node_id, port_key))
+
+    def extend_port_refs(self, new_port_refs):
+        self.port_refs.update(new_port_refs)
+
     def get_port_ref(self, node_id, port_key, ref_id):
         src_node_id, src_port_key = self.port_refs[(node_id, port_key)]['ref_map'][ref_id]
         src_base_node_name = self.node(src_node_id).base_node_name()
