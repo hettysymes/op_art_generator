@@ -112,7 +112,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = NodeInfo(
         'stop_coord': PropEntry(PropType.COORDINATE,
                                  display_name="Stop coordinate",
                                  description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-                                 default_value=(1, 0)),
+                                 default_value=(0, 1)),
         'stroke_width': PropEntry(PropType.FLOAT,
                                   display_name="Line thickness",
                                   description="Thickness of the straight line.",
