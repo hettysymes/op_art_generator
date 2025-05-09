@@ -774,9 +774,13 @@ class AddNewEdgeCmd(QUndoCommand):
         self.dst_conn_id = dst_conn_id
 
     def undo(self):
-        pass
-        # assert self.edge
-        # self.pipeline_scene.delete_edge(self.edge)
+        # Obtain edge via source port
+        src_node_id, src_port_key = self.src_conn_id
+        src_node_item = self.scene.node_items[src_node_id]
+        src_port_item = src_node_item.port_items[(PortIO.OUTPUT, src_port_key)]
+        # Remove edge item
+        edge_item = src_port_item.edge_items[self.dst_conn_id]
+        edge_item.remove_from_scene()
 
     def redo(self):
         self.node_graph.add_connection(self.src_conn_id, self.dst_conn_id)
