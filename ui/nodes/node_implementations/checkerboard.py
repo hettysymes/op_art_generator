@@ -7,10 +7,10 @@ from ui.nodes.transforms import Scale, Translate
 DEF_CHECKERBOARD_INFO = NodeInfo(
     description="Create a checkerboard pattern from a grid and two drawings. The two drawings are placed alternately in a checkerboard pattern on the grid.",
     port_defs={
-        (PortIO.INPUT, 'grid'): PortDef("Grid", PT_Grid),
-        (PortIO.INPUT, 'elem1'): PortDef("Drawing 1", PT_Element),
-        (PortIO.INPUT, 'elem2'): PortDef("Drawing 2", PT_Element),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)
+        (PortIO.INPUT, 'grid'): PortDef("Grid", PT_Grid()),
+        (PortIO.INPUT, 'elem1'): PortDef("Drawing 1", PT_Element()),
+        (PortIO.INPUT, 'elem2'): PortDef("Drawing 2", PT_Element()),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={}
 )

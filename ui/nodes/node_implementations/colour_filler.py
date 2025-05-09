@@ -3,16 +3,16 @@ import itertools
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortDef, PortIO, PT_ColourList, PT_Element
+from ui.nodes.port_defs import PortDef, PortIO, PT_Element, PT_List, PT_Colour
 from ui.nodes.shape_datatypes import Group, Polygon, Element, Polyline
 from ui.nodes.utils import process_rgb
 
 DEF_COLOUR_FILLER_INFO = NodeInfo(
     description="Given a colour list and a drawing consisting of lines, cycle through the colours and use them to fill the gaps between the lines.",
     port_defs={
-        (PortIO.INPUT, 'colour_list'): PortDef("Colours", PT_ColourList),
-        (PortIO.INPUT, 'element'): PortDef("Drawing", PT_Element),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)
+        (PortIO.INPUT, 'colour_list'): PortDef("Colours", PT_List(PT_Colour())),
+        (PortIO.INPUT, 'element'): PortDef("Drawing", PT_Element()),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={}
 )

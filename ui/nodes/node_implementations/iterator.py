@@ -5,14 +5,14 @@ from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_ElementList, PT_ValueList, PT_Element
+from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_Scalar
 
 DEF_ITERATOR_INFO = NodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",
     port_defs={
-        (PortIO.INPUT, 'value_list'): PortDef("Value list", PT_ValueList),
-        (PortIO.INPUT, 'element'): PortDef("Shape", PT_Element),
-        (PortIO.OUTPUT, '_main'): PortDef("Iterator", PT_ElementList)
+        (PortIO.INPUT, 'value_list'): PortDef("Value list", PT_List(PT_Scalar())),
+        (PortIO.INPUT, 'element'): PortDef("Shape", PT_Element()),
+        (PortIO.OUTPUT, '_main'): PortDef("Iterator", PT_List(PT_Element()))
     },
     prop_entries={
         'prop_to_change': PropEntry(PropType.STRING,

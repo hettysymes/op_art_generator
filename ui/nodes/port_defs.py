@@ -1,33 +1,52 @@
+from abc import ABC, abstractclassmethod, abstractmethod
 from enum import Enum, auto
 
 
-class PortType:
-    pass
+class PortType(ABC):
 
+    @abstractmethod
+    def is_compatible_with(self, dest_type):
+        pass
+
+# List
+class PT_List(PortType):
+    def __init__(self, item_type: PortType):
+        self.item_type = item_type
+
+    def is_compatible_with(self, dest_type) -> bool:
+        if isinstance(dest_type, PT_List):
+            # List-to-list: inner types must be compatible
+            return self.item_type.is_compatible_with(dest_type.item_type)
+        return False
+
+# Scalar
+class PT_Scalar(PortType):
+    def is_compatible_with(self, dest_type):
+        if isinstance(dest_type, PT_List):
+            # Scalar-to-list: inner types must be compatible
+            return self.is_compatible_with(dest_type.item_type)
+        return isinstance(self, type(dest_type))
 
 # Function
 
-class PT_Function(PortType):
+class PT_Function(PT_Scalar):
     pass
 
 
 # Warp
 
-class PT_Warp(PortType):
+class PT_Warp(PT_Scalar):
     pass
 
 
 # Grid
-class PT_Grid(PortType):
+class PT_Grid(PT_Scalar):
     pass
 
 
 # Elements
-class PT_Repeatable(PortType):
-    pass
 
-
-class PT_Element(PT_Repeatable):
+class PT_Element(PT_Scalar):
     pass
 
 
@@ -43,32 +62,18 @@ class PT_Polyline(PT_Element):
     pass
 
 
-# Value Lists
+# Sampling
 
-class PT_ValueList(PortType):
+class PT_Float(PT_Scalar):
     pass
 
 
-class PT_ColourList(PT_ValueList):
+class PT_Point(PT_Scalar):
     pass
-
-
-class PT_NumberList(PT_ValueList):
-    pass
-
-
-class PT_PointList(PT_ValueList):
-    pass
-
-
-# Element List
-
-class PT_ElementList(PT_Repeatable):
-    pass
-
 
 # Fill
-class PT_Fill(PortType):
+
+class PT_Fill(PT_Scalar):
     pass
 
 

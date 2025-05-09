@@ -1,13 +1,13 @@
 from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PT_Element, PortDef, PT_ElementList
+from ui.nodes.port_defs import PortIO, PT_Element, PortDef, PT_List
 
 DEF_ITERATOR_SELECTOR_INFO = NodeInfo(
     description="Select one of the outputs of an Iterator node by inputting its index.",
     port_defs={
-        (PortIO.INPUT, 'iterator'): PortDef("Iterator", PT_ElementList),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)
+        (PortIO.INPUT, 'iterator'): PortDef("Iterator", PT_List(PT_Element())),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
         'select_idx': PropEntry(PropType.STRING,

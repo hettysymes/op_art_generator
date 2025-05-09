@@ -32,7 +32,7 @@ from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.nodes import CombinationNode
-from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_ValueList, PT_Function, PT_Grid
+from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
 from ui.nodes.shape_datatypes import Group
 from ui.selectable_renderer import SelectableSvgElement
 from ui.vis_types import ErrorFig, Visualisable
@@ -618,13 +618,13 @@ class PortItem(QGraphicsPathItem):
     def create_shape_for_port_type(self):
         path = QPainterPath()
         half_size = self.size / 2
-        if issubclass(self.port_type, PT_Element):
+        if self.port_type.is_compatible_with(PT_Element()):
             # Circle for number type
             path.addEllipse(-half_size, -half_size, self.size, self.size)
-        elif issubclass(self.port_type, PT_Grid):
+        elif self.port_type.is_compatible_with(PT_Grid()):
             # Rounded rectangle for string type
             path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
-        elif issubclass(self.port_type, PT_Function):
+        elif self.port_type.is_compatible_with(PT_Function()):
             # Diamond for boolean type
             points = [
                 QPointF(0, -half_size),  # Top
@@ -637,11 +637,11 @@ class PortItem(QGraphicsPathItem):
                 path.lineTo(points[i])
             path.closeSubpath()
 
-        elif issubclass(self.port_type, PT_Warp):
+        elif self.port_type.is_compatible_with(PT_Warp()):
             # Square for array type
             path.addRect(-half_size, -half_size, self.size, self.size)
 
-        elif issubclass(self.port_type, PT_ValueList):
+        elif self.port_type.is_compatible_with(PT_List(PT_Scalar())):
             # Hexagon for object type
             points = []
             for i in range(6):
@@ -1025,7 +1025,7 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.edge_items) > 0
-                if not connection_exists and issubclass(source_port.port_type, dest_port.port_type) and (not target_has_connection):
+                if not connection_exists and source_port.port_type.is_compatible_with(dest_port.port_type) and (not target_has_connection):
                     self.undo_stack.push(AddNewEdgeCmd(self, (src_node_id, source_port.port_key), (dst_node_id, dest_port.port_key)))
                 # target_has_connection = len(dest_port.backend.edge_ids) > 0
                 # if not connection_exists and issubclass(source_port.backend.port_def.port_type,

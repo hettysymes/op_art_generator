@@ -6,7 +6,7 @@ from ui.nodes.shape_datatypes import Group
 
 DEF_CANVAS_NODE_INFO = NodeInfo(
     description="Place a drawing on a canvas, where the height and width can be set accurately, as well as the background colour.",
-    port_defs={(PortIO.INPUT, 'element'): PortDef("Drawing", PT_Element)},
+    port_defs={(PortIO.INPUT, 'element'): PortDef("Drawing", PT_Element())},
     prop_entries={
         'width': PropEntry(PropType.INT,
                            display_name="Width (pixels)",

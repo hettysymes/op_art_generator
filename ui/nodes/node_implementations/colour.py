@@ -6,8 +6,8 @@ from ui.nodes.shape_datatypes import Group
 
 DEF_COLOUR_NODE_INFO = NodeInfo(
     description="Outputs a desired colour.",
-    port_defs={(PortIO.INPUT, 'colour'): PortDef("Colour", PT_Colour, optional=True),
-               (PortIO.OUTPUT, '_main'): PortDef("Colour", PT_Colour)},
+    port_defs={(PortIO.INPUT, 'colour'): PortDef("Colour", PT_Colour(), optional=True),
+               (PortIO.OUTPUT, '_main'): PortDef("Colour", PT_Colour())},
     prop_entries={'colour': PropEntry(PropType.FILL,
                                       display_name="Output colour.",
                                       description="Colour",

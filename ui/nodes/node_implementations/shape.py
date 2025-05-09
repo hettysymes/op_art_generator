@@ -9,7 +9,7 @@ from ui.nodes.utils import process_rgb
 DEF_SINE_WAVE_INFO = NodeInfo(
     description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     port_defs={
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline)
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline())
     },
     prop_entries={
         'amplitude': PropEntry(PropType.FLOAT,
@@ -88,7 +88,7 @@ class SineWaveNode(UnitNode):
 DEF_CUSTOM_LINE_INFO = NodeInfo(
     description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     port_defs={
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline)
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline())
     },
     prop_entries={
         'points': PropEntry(PropType.POINT_TABLE,
@@ -124,7 +124,7 @@ class CustomLineNode(UnitNode):
 DEF_STRAIGHT_LINE_NODE_INFO = NodeInfo(
     description="Create a straight line by defining the start and stop points. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     port_defs={
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline)
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline())
     },
     prop_entries={
         'start_coord': PropEntry(PropType.COORDINATE,
@@ -164,9 +164,9 @@ class StraightLineNode(UnitNode):
 
 DEF_POLYGON_INFO = NodeInfo(
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-    port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_Polyline),
-               (PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill, optional=True),
-               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)},
+    port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_Polyline()),
+               (PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill(), optional=True),
+               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())},
     prop_entries={'points': PropEntry(PropType.POINT_TABLE,
                                       display_name="Points",
                                       description="Points defining the path of the polygon edge (in order).",
@@ -209,8 +209,8 @@ class PolygonNode(UnitNode):
 
 DEF_RECTANGLE_NODE_INFO = NodeInfo(
     description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape.",
-    port_defs={(PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill),
-               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)},
+    port_defs={(PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill()),
+               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())},
     prop_entries={'fill': PropEntry(PropType.FILL,
                                     display_name="Fill",
                                     description="Rectangle fill colour.",
@@ -238,8 +238,8 @@ class RectangleNode(UnitNode):
 DEF_ELLIPSE_INFO = NodeInfo(
     description="Create an ellipse shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     port_defs={
-        (PortIO.INPUT, 'fill'): PortDef("Colour", PT_Fill, optional=True),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Ellipse)
+        (PortIO.INPUT, 'fill'): PortDef("Colour", PT_Fill(), optional=True),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Ellipse())
     },
     prop_entries={
         'rx': PropEntry(PropType.FLOAT,
@@ -297,8 +297,8 @@ class EllipseNode(UnitNode):
 DEF_CIRCLE_INFO = NodeInfo(
     description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     port_defs={
-        (PortIO.INPUT, 'fill'): PortDef("Colour", PT_Fill, optional=True),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Ellipse)
+        (PortIO.INPUT, 'fill'): PortDef("Colour", PT_Fill(), optional=True),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Ellipse())
     },
     prop_entries={
         'r': PropEntry(PropType.FLOAT,

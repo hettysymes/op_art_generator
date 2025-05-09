@@ -2,14 +2,14 @@ import math
 
 from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_PointList, PT_Ellipse
+from ui.nodes.port_defs import PortIO, PortDef, PT_Ellipse, PT_Point, PT_List
 from ui.nodes.shape_datatypes import Ellipse, Group
 
 DEF_ELLIPSE_SAMPLER_INFO = NodeInfo(
     description="Sample (angularly) equally-spaced points along the edge of an ellipse or circle.",
     port_defs={
-        (PortIO.INPUT, 'ellipse'): PortDef("Ellipse", PT_Ellipse),
-        (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_PointList)
+        (PortIO.INPUT, 'ellipse'): PortDef("Ellipse", PT_Ellipse()),
+        (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_List(PT_Point()))
     },
     prop_entries={
         'start_angle': PropEntry(PropType.FLOAT,

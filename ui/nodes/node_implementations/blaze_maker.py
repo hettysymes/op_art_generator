@@ -1,15 +1,15 @@
 from ui.nodes.node_defs import NodeInfo, PropEntry, PropType
 from ui.nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_Ellipse
+from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_Ellipse, PT_List
 from ui.nodes.shape_datatypes import Group, Polygon
 from ui.nodes.utils import process_rgb
 
 DEF_BLAZE_MAKER_INFO = NodeInfo(
     description="Input 2+ circle/ellipse shapes to create an image similar to those in the Blaze series by Bridget Riley.",
     port_defs={
-        (PortIO.INPUT, 'ellipses'): PortDef("Input Ellipses", PT_Ellipse),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)
+        (PortIO.INPUT, 'ellipses'): PortDef("Input Ellipses", PT_List(PT_Ellipse())),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
         'num_polygons': PropEntry(PropType.INT,

@@ -3,12 +3,12 @@ from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.shape import RectangleNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_ColourList
+from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PT_List
 
 DEF_COLOUR_LIST_INFO = NodeInfo(
     description="Define a list of colours. This can be provided as input to an Iterator or a Colour Filler.",
     port_defs={
-        (PortIO.OUTPUT, '_main'): PortDef("Colours", PT_ColourList)
+        (PortIO.OUTPUT, '_main'): PortDef("Colours", PT_List(PT_Colour()))
     },
     prop_entries={
         'colours': PropEntry(PropType.COLOUR_TABLE,

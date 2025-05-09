@@ -7,7 +7,7 @@ from ui.nodes.shape_datatypes import Group
 
 DEF_GRADIENT_NODE_INFO = NodeInfo(
     description="Define a linear gradient. This can be passed to a shape node as its fill.",
-    port_defs={(PortIO.OUTPUT, '_main'): PortDef("Gradient", PT_Gradient)},
+    port_defs={(PortIO.OUTPUT, '_main'): PortDef("Gradient", PT_Gradient())},
     prop_entries={'start_col': PropEntry(PropType.FILL,
                                          display_name="Start colour",
                                          description="Starting colour of the gradient.",

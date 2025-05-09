@@ -12,7 +12,7 @@ from ui.vis_types import MatplotlibFig
 DEF_CUBIC_FUN_INFO = NodeInfo(
     description="Define a cubic function.",
     port_defs={
-        (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function)
+        (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function())
     },
     prop_entries={
         'a_coeff': PropEntry(PropType.FLOAT,
@@ -50,7 +50,7 @@ class CubicFunNode(UnitNode):
 DEF_CUSTOM_FUN_INFO = NodeInfo(
     description="Define a custom function by entering an equation in terms of x.",
     port_defs={
-        (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function)
+        (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function())
     },
     prop_entries={
         'fun_def': PropEntry(PropType.STRING,
@@ -78,7 +78,7 @@ class CustomFunNode(UnitNode):
 DEF_PIECEWISE_FUN_INFO = NodeInfo(
     description="Define a piecewise linear function by entering points the function passes through.",
     port_defs={
-        (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function)
+        (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function())
     },
     prop_entries={
         'points': PropEntry(PropType.POINT_TABLE,

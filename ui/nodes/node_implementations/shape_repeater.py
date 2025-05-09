@@ -2,15 +2,15 @@ import itertools
 
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Repeatable, PT_Element
+from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Element, PT_List
 from ui.nodes.shape_datatypes import Group, Element
 from ui.nodes.transforms import Scale, Translate
 
 DEF_SHAPE_REPEATER_NODE_INFO = NodeInfo(
     description="Repeat a drawing in a grid-like structure.",
-    port_defs={(PortIO.INPUT, 'grid'): PortDef("Grid", PT_Grid),
-               (PortIO.INPUT, 'repeatable'): PortDef("Drawing", PT_Repeatable),
-               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)}
+    port_defs={(PortIO.INPUT, 'grid'): PortDef("Grid", PT_Grid()),
+               (PortIO.INPUT, 'repeatable'): PortDef("Drawing", PT_List(PT_Element())),
+               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())}
 )
 
 

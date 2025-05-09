@@ -1,14 +1,14 @@
 from ui.nodes.node_defs import NodeInfo, PropEntry, PropType
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortDef, PT_Element, PT_Repeatable, PortIO
+from ui.nodes.port_defs import PortDef, PT_Element, PortIO, PT_List
 from ui.nodes.shape_datatypes import Group, Element
 from ui.nodes.transforms import Translate, Scale
 
 DEF_STACKER_NODE_INFO = NodeInfo(
     description="Stack multiple drawings together, either vertically or horizontally.",
     port_defs={
-        (PortIO.INPUT, 'repeatables'): PortDef("Input Drawings", PT_Repeatable),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)
+        (PortIO.INPUT, 'repeatables'): PortDef("Input Drawings", PT_List(PT_Element())),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
         'elem_order': PropEntry(PropType.ELEM_TABLE,

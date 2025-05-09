@@ -1,15 +1,15 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_NumberList, PT_Function
+from ui.nodes.port_defs import PortIO, PortDef, PT_Function, PT_Float, PT_List
 from ui.nodes.warp_utils import sample_fun
 from ui.vis_types import MatplotlibFig
 
 DEF_FUN_SAMPLER_INFO = NodeInfo(
     description="Sample a function f(x) at equal intervals in the range x ∈ [0, 1].",
     port_defs={
-        (PortIO.INPUT, 'function'): PortDef("Function", PT_Function),
-        (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_NumberList)
+        (PortIO.INPUT, 'function'): PortDef("Function", PT_Function()),
+        (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_List(PT_Float()))
     },
     prop_entries={
         'num_samples': PropEntry(PropType.INT,

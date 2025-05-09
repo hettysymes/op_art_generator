@@ -4,14 +4,14 @@ from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
 from ui.nodes.node_implementations.shape import RectangleNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_ColourList, PT_Colour
+from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PT_List
 from ui.nodes.shape_datatypes import Group
 
 DEF_RANDOM_COLOUR_SELECTOR_INFO = NodeInfo(
     description="Randomly select a colour from a colour list.",
     port_defs={
-        (PortIO.INPUT, 'colour_list'): PortDef("Colour list", PT_ColourList),
-        (PortIO.OUTPUT, '_main'): PortDef("Random colour", PT_Colour)
+        (PortIO.INPUT, 'colour_list'): PortDef("Colour list", PT_List(PT_Colour())),
+        (PortIO.OUTPUT, '_main'): PortDef("Random colour", PT_Colour())
     },
     prop_entries={
         'use_seed': PropEntry(PropType.BOOL,

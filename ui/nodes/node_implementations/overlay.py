@@ -1,13 +1,13 @@
 from ui.nodes.node_defs import NodeInfo, PropEntry, PropType
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Element
+from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List
 from ui.nodes.shape_datatypes import Group
 
 DEF_OVERLAY_INFO = NodeInfo(
     description="Overlay 2+ drawings and define their order.",
     port_defs={
-        (PortIO.INPUT, 'elements'): PortDef("Input Drawings", PT_Element),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)
+        (PortIO.INPUT, 'elements'): PortDef("Input Drawings", PT_List(PT_Element())),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
         'elem_order': PropEntry(PropType.ELEM_TABLE,
