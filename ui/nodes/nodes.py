@@ -33,17 +33,29 @@ class CombinationNode(Node, ABC):
     NAME = None
     SELECTIONS = [] # To override
 
+    # Additional info (add_info) is the selection index
     def __init__(self, uid, graph_querier, prop_vals=None, add_info=0):
-        self.selection_index = add_info
-        self._node = self._cur_node_class()(uid, graph_querier, prop_vals)
+        self._selection_index = add_info
+        self._node = self.selections()[add_info](uid, graph_querier, prop_vals)
         super().__init__(self._node.uid, self._node.graph_querier, self._node.prop_vals)
 
     @classmethod
     def selections(cls):
         return cls.SELECTIONS
 
-    def _cur_node_class(self):
-        return self.selections()[self.selection_index]
+    def selection_index(self):
+        return self._selection_index
+
+    def set_selection(self, index):
+        self._selection_index = index
+        # Set new node with default properties
+        self._node = self.selections()[index](self.uid, self.graph_querier, prop_vals=None)
+        # Keep shared properties e.g. fill colour
+        for prop_key, old_value in self.prop_vals.items():
+            if prop_key in self._node.prop_vals:
+                self._node.set_property(prop_key, old_value)
+        # Set reference to node prop vals in this node
+        self.prop_vals = self._node.prop_vals
 
     def base_node_name(self):
         return self._node.base_node_name()

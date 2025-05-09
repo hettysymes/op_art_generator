@@ -407,6 +407,14 @@ class NodeItem(QGraphicsRectItem):
         self.update_all_port_positions()
         self.update_label_containers()
 
+    def refresh_ports(self, new_ports_open):
+        port_ids = list(self.port_items.keys())
+        for port_id in port_ids:
+            # Layout is already updated later in create ports
+            self.remove_port(port_id, update_layout=False)
+        self.node_state.ports_open = new_ports_open
+        self.create_ports()
+
     def add_port(self, port_id, port_def, update_layout=True):
         port_io, port_key = port_id
         is_input = port_io == PortIO.INPUT
@@ -418,20 +426,21 @@ class NodeItem(QGraphicsRectItem):
         self.port_items[port_id] = port # Add reference to port
         if port_id not in self.node_state.ports_open:
             self.node_state.ports_open.append(port_id) # Add to open ports
-        # Update port positioning and label containers
         if update_layout:
+            # Update port positioning and label containers
             self.update_all_port_positions()
             self.update_label_containers()
 
-    def remove_port(self, port_id):
+    def remove_port(self, port_id, update_layout=True):
         port = self.port_items[port_id]
         port.remove_edges() # Remove connections to/from this port
         del self.port_items[port_id] # Remove reference to port
         self.node_state.ports_open.remove(port_id) # Remove from open ports
         port.scene().removeItem(port) # Remove port from scene
-        # Update port positioning
-        self.update_all_port_positions()
-        self.update_label_containers()
+        if update_layout:
+            # Update port positioning
+            self.update_all_port_positions()
+            self.update_label_containers()
 
 
     def paint(self, painter, option, widget):
@@ -1086,32 +1095,28 @@ class PipelineScene(QGraphicsScene):
         """Handle context menu events for the scene"""
         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
-        if isinstance(clicked_item, NodeItem) or isinstance(clicked_item, PortItem):
-            pass
-            # Context menu for nodes (or ports on nodes)
-            # if isinstance(clicked_item, PortItem):
-        #             #     clicked_item = clicked_item.parentItem()
-        #             #
-        #             # menu = QMenu()
-        #             # separate_from_inputs_action = QAction("Separate from inputs", menu)
-        #             # separate_from_inputs_action.triggered.connect(lambda: self.separate_from_inputs_action(clicked_item))
-        #             # menu.addAction(separate_from_inputs_action)
-        #             #
-        #             # if isinstance(clicked_item.node, CombinationNode):
-        #             #     submenu = QMenu(f"Change {clicked_item.node.display_name()} to...")
-        #             #     for i in range(len(clicked_item.node.selections())):
-        #             #         if i == clicked_item.node.selection_index: continue
-        #             #         change_action = QAction(clicked_item.node.selections()[i].name(), submenu)
-        #             #         change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
-        #             #         submenu.addAction(change_action)
-        #             #     menu.addMenu(submenu)
-        #             #
-        #             # if isinstance(clicked_item.node, RandomColourSelectorNode):
-        #             #     randomise_action = QAction("Randomise", menu)
-        #             #     randomise_action.triggered.connect(lambda: self.randomise(clicked_item))
-        #             #     menu.addAction(randomise_action)
-        #             #
-        #             # menu.exec_(event.screenPos())
+        if isinstance(clicked_item, NodeItem):
+            # Context menu for nodes
+            menu = QMenu()
+            # separate_from_inputs_action = QAction("Separate from inputs", menu)
+            # separate_from_inputs_action.triggered.connect(lambda: self.separate_from_inputs_action(clicked_item))
+            # menu.addAction(separate_from_inputs_action)
+
+            if isinstance(clicked_item.node(), CombinationNode):
+                submenu = QMenu(f"Change {clicked_item.node().name()} to...")
+                for i in range(len(clicked_item.node().selections())):
+                    if i == clicked_item.node().selection_index(): continue
+                    change_action = QAction(clicked_item.node().selections()[i].name(), submenu)
+                    change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
+                    submenu.addAction(change_action)
+                menu.addMenu(submenu)
+
+            # if isinstance(clicked_item.node, RandomColourSelectorNode):
+            #     randomise_action = QAction("Randomise", menu)
+            #     randomise_action.triggered.connect(lambda: self.randomise(clicked_item))
+            #     menu.addAction(randomise_action)
+
+            menu.exec_(event.screenPos())
         else:
             menu = QMenu()
 
@@ -1219,10 +1224,11 @@ class PipelineScene(QGraphicsScene):
         self.load_from_node_states(app_state.node_states)
         self.undo_stack.clear()
         self.filepath = filepath
-#
-#     def change_node_selection(self, clicked_item: NodeItem, i):
-#         clicked_item.node.set_selection(i)
-#         clicked_item.update_visualisations()
+
+    def change_node_selection(self, clicked_item: NodeItem, index):
+        clicked_item.node().set_selection(index)
+        clicked_item.refresh_ports(new_ports_open=clicked_item.node().compulsory_ports())
+        clicked_item.update_visualisations()
 #
 #     def randomise(self, clicked_item: RandomColourSelectorNode):
 #         clicked_item.node.prop_vals['_actual_seed'] = random.random()

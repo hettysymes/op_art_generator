@@ -107,13 +107,9 @@ class Node(BaseNode, ABC):
         return self.get_node_info().prop_entries
 
     def set_property(self, prop_key, value):
-        if not self.prop_vals:
-            self.prop_vals = self._default_prop_vals()
         self.prop_vals[prop_key] = value
 
     def get_property(self, prop_key):
-        if not self.prop_vals:
-            self.prop_vals = self._default_prop_vals()
         return self.prop_vals[prop_key]
 
     def prop_entries_is_empty(self):
