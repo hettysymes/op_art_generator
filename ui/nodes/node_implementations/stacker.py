@@ -11,7 +11,7 @@ DEF_STACKER_NODE_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
-        'elem_order': PropEntry(PropType.ELEM_TABLE,
+        'elem_order': PropEntry(PropType.PORT_REF_TABLE,
                                 display_name="Drawing order",
                                 description="Order of drawings in which to stack them. Drawings at the top of the list are drawn first (i.e. at the top for vertical stacking, and at the left for horizontal stacking).",
                                 default_value=[]),

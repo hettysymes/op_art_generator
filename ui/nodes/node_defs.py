@@ -9,9 +9,10 @@ from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
 class PortRef:
-    def __init__(self, node_id, port_key, port_display_name):
+    def __init__(self, node_id, port_key, base_node_name, port_display_name):
         self.node_id = node_id
         self.port_key = port_key
+        self.base_node_name = base_node_name
         self.port_display_name = port_display_name
 
 class GraphQuerier(ABC):
@@ -39,7 +40,7 @@ class PropType(Enum):
     PROP_ENUM = auto()
     SELECTOR_ENUM = auto()
     ENUM = auto()
-    ELEM_TABLE = auto()
+    PORT_REF_TABLE = auto()
     COLOUR_TABLE = auto()
     HIDDEN = auto()
     STRING = auto()
@@ -50,7 +51,7 @@ class PropEntry:
 
     def __init__(self, prop_type, display_name=None, description=None, default_value=None, min_value=None,
                  max_value=None,
-                 auto_format=True, options=None):
+                 auto_format=True, options=None, linked_port_key=None):
         self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
         self.display_name = display_name
         self.description = description
@@ -59,6 +60,7 @@ class PropEntry:
         self.max_value = max_value
         self.auto_format = auto_format
         self.options = options  # options for (constant) enum type
+        self.linked_port_key = linked_port_key
 
 
 class NodeInfo:

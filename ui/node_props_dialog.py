@@ -98,6 +98,7 @@ class NodePropertiesDialog(QDialog):
     def __init__(self, node_item, parent=None):
         super().__init__(parent)
         self.node_item = node_item
+        self.scene = node_item.scene()
         self.setWindowTitle(f"Properties: {node_item.node().name()}")
         self.setMinimumWidth(400)
 
@@ -469,99 +470,97 @@ class NodePropertiesDialog(QDialog):
             container.table_widget = table  # Store a reference to the actual table
 
             widget = container
-        # elif prop_entry.prop_type == PropType.ELEM_TABLE:
-        #
-        #     def add_elem_item(elem_ref: ElemRef, row=None, table=None):
-        #         item = QTableWidgetItem()
-        #         item.setTextAlignment(Qt.AlignCenter)
-        #         item.setData(Qt.UserRole, elem_ref)
-        #         item.setText(f"{elem_ref.node_type} (id: #{shorten_uid(elem_ref.node_id)})")
-        #         if not elem_ref.is_deletable():
-        #             # Set red background for non-deletable elements
-        #             item.setBackground(QColor(237, 130, 157))
-        #         if (row is not None) and (table is not None):
-        #             table.setItem(row, 0, item)
-        #         return item
-        #
-        #     # Create our custom table widget
-        #     table = ReorderableTableWidget(add_elem_item)
-        #
-        #     # Set up the basic table structure with single column
-        #     table.setColumnCount(1)
-        #     table.setHorizontalHeaderLabels(["Drawing"])
-        #
-        #     # Custom delegate to ensure text alignment is centered
-        #     class CenteredItemDelegate(QStyledItemDelegate):
-        #         def initStyleOption(self, option, index):
-        #             super().initStyleOption(option, index)
-        #             option.displayAlignment = Qt.AlignCenter
-        #
-        #     # Apply the delegate to the table
-        #     centered_delegate = CenteredItemDelegate()
-        #     table.setItemDelegate(centered_delegate)
-        #     table.verticalHeader().setDefaultSectionSize(40)
-        #     table.setWordWrap(True)
-        #
-        #     # Populate with current data
-        #     elem_refs = current_value or prop_entry.default_value or []
-        #     table.setRowCount(len(elem_refs))
-        #     for row, elem_ref in enumerate(elem_refs):
-        #         add_elem_item(elem_ref, row, table)
-        #
-        #     # Set up context menu for deletion and duplicating
-        #     def show_context_menu(position):
-        #         row = table.rowAt(position.y())
-        #
-        #         if row >= 0:
-        #             item = table.item(row, 0)
-        #             elem_ref: ElemRef = item.data(Qt.UserRole)
-        #             menu = QMenu()
-        #             duplicate_action = menu.addAction("Duplicate")
-        #             if elem_ref.is_deletable():
-        #                 delete_action = menu.addAction("Delete")
-        #
-        #             action = menu.exec_(table.viewport().mapToGlobal(position))
-        #
-        #             if elem_ref.is_deletable() and action == delete_action:
-        #                 table.removeRow(row)
-        #
-        #             if action == duplicate_action:
-        #                 # Add a new row below the current one
-        #                 table.insertRow(row + 1)
-        #                 # Create a new item
-        #                 new_item = QTableWidgetItem(item.text())
-        #                 # Set the same user data (elem_ref)
-        #                 new_elem_ref: ElemRef = copy.deepcopy(elem_ref)
-        #                 new_elem_ref.set_deletable(True)
-        #                 new_item.setData(Qt.UserRole, new_elem_ref)
-        #                 # Add the item to the table
-        #                 table.setItem(row + 1, 0, new_item)
-        #
-        #     table.setContextMenuPolicy(Qt.CustomContextMenu)
-        #     table.customContextMenuRequested.connect(show_context_menu)
-        #
-        #     # Create a container for the table and button
-        #     container = QWidget()
-        #     layout = QVBoxLayout(container)
-        #     layout.addWidget(table)
-        #
-        #     # Function to get the current value from the table
-        #     def get_table_value():
-        #         elem_refs = []
-        #         for row in range(table.rowCount()):
-        #             item = table.item(row, 0)
-        #             if item:
-        #                 # Retrieve the actual tuple data stored in UserRole
-        #                 elem_ref = item.data(Qt.UserRole)
-        #                 if elem_ref:
-        #                     elem_refs.append(elem_ref)
-        #         return elem_refs
-        #
-        #     # Store both the getter function and the reference to the table with the container
-        #     container.get_value = get_table_value
-        #     container.table_widget = table  # Store a reference to the actual table
-        #
-        #     widget = container
+        elif prop_entry.prop_type == PropType.PORT_REF_TABLE:
+
+            def add_item(table_entry, row=None, table=None):
+                ref_id = table_entry[0]
+                port_ref = self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id, prop_entry.linked_port_key, ref_id)
+                item = QTableWidgetItem()
+                item.setTextAlignment(Qt.AlignCenter)
+                item.setData(Qt.UserRole, table_entry)
+                item.setText(f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})")
+                # if not elem_ref.is_deletable():
+                #     # Set red background for non-deletable elements
+                #     item.setBackground(QColor(237, 130, 157))
+                if (row is not None) and (table is not None):
+                    table.setItem(row, 0, item)
+                return item
+
+            # Create our custom table widget
+            table = ReorderableTableWidget(add_item)
+
+            # Set up the basic table structure with single column
+            table.setColumnCount(1)
+            table.setHorizontalHeaderLabels(["Drawing"])
+
+            # Custom delegate to ensure text alignment is centered
+            class CenteredItemDelegate(QStyledItemDelegate):
+                def initStyleOption(self, option, index):
+                    super().initStyleOption(option, index)
+                    option.displayAlignment = Qt.AlignCenter
+
+            # Apply the delegate to the table
+            centered_delegate = CenteredItemDelegate()
+            table.setItemDelegate(centered_delegate)
+            table.verticalHeader().setDefaultSectionSize(40)
+            table.setWordWrap(True)
+
+            # Populate with current data
+            current_entries = current_value or prop_entry.default_value or []
+            table.setRowCount(len(current_entries))
+            for row, table_entry in enumerate(current_entries):
+                add_item(table_entry, row, table)
+
+            # Set up context menu for deletion and duplicating
+            # def show_context_menu(position):
+            #     row = table.rowAt(position.y())
+            #
+            #     if row >= 0:
+            #         item = table.item(row, 0)
+            #         data = item.data(Qt.UserRole)
+            #         menu = QMenu()
+            #         duplicate_action = menu.addAction("Duplicate")
+            #         if elem_ref.is_deletable():
+            #             delete_action = menu.addAction("Delete")
+            #
+            #         action = menu.exec_(table.viewport().mapToGlobal(position))
+            #
+            #         if elem_ref.is_deletable() and action == delete_action:
+            #             table.removeRow(row)
+            #
+            #         if action == duplicate_action:
+            #             # Add a new row below the current one
+            #             table.insertRow(row + 1)
+            #             # Create a new item
+            #             new_item = QTableWidgetItem(item.text())
+            #             # Set the same user data (elem_ref)
+            #             new_elem_ref: ElemRef = copy.deepcopy(elem_ref)
+            #             new_elem_ref.set_deletable(True)
+            #             new_item.setData(Qt.UserRole, new_elem_ref)
+            #             # Add the item to the table
+            #             table.setItem(row + 1, 0, new_item)
+            #
+            # table.setContextMenuPolicy(Qt.CustomContextMenu)
+            # table.customContextMenuRequested.connect(show_context_menu)
+
+            # Create a container for the table and button
+            container = QWidget()
+            layout = QVBoxLayout(container)
+            layout.addWidget(table)
+
+            # Function to get the current value from the table
+            def get_table_value():
+                data = []
+                for row in range(table.rowCount()):
+                    item = table.item(row, 0)
+                    data.append(item.data(Qt.UserRole))
+                return data
+
+            # Store both the getter function and the reference to the table with the container
+            container.get_value = get_table_value
+            container.table_widget = table  # Store a reference to the actual table
+
+            widget = container
         # elif prop_entry.prop_type == PropType.COLOUR_TABLE:
         #     def add_colour_item(colour, row=None, table=None):
         #         string_col = str((colour.red(), colour.green(), colour.blue(), colour.alpha()))

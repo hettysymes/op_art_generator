@@ -49,8 +49,9 @@ class NodeGraph(GraphQuerier):
 
     def get_port_ref(self, node_id, port_key, ref_id):
         src_node_id, src_port_key = self.port_refs[(node_id, port_key)]['ref_map'][ref_id]
+        src_base_node_name = self.node(src_node_id).base_node_name()
         src_port_display_name = self.node(src_node_id).get_port_defs()[(PortIO.OUTPUT, src_port_key)].display_name
-        return PortRef(src_node_id, src_port_key, src_port_display_name)
+        return PortRef(src_node_id, src_port_key, src_base_node_name, src_port_display_name)
 
     def active_input_ports(self, node_id):
         return [

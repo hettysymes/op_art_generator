@@ -10,10 +10,11 @@ DEF_OVERLAY_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
-        'elem_order': PropEntry(PropType.ELEM_TABLE,
+        'elem_order': PropEntry(PropType.PORT_REF_TABLE,
                                 display_name="Drawing order",
                                 description="Order of drawings in which to overlay them. Drawings at the top of the list are drawn first (i.e. at the bottom of the final overlayed image).",
-                                default_value=[])
+                                default_value=[],
+                                linked_port_key='elements')
     }
 )
 
@@ -31,8 +32,9 @@ class OverlayNode(UnitNode):
         indices_to_remove = []
         for i, (ref_id, _) in enumerate(self._prop_val('elem_order')):
             if ref_id in ref_elements:
-                # Element already exists - do not add again
+                # Element already exists - do not add again but update element
                 ref_ids_to_add.remove(ref_id)
+                self._prop_val('elem_order')[i] = (ref_id, ref_elements[ref_id])
             else:
                 # Element has been removed
                 indices_to_remove.append(i)
