@@ -109,6 +109,7 @@ class NodeItem(QGraphicsRectItem):
     TITLE_HEIGHT = 20
     MARGIN_X = 5
     MARGIN_Y = 10
+    LABEL_SVG_DIST = 5
     LABEL_FONT = QFont("Arial", 8)
 
     def __init__(self, node_state: NodeState, node):
@@ -284,10 +285,10 @@ class NodeItem(QGraphicsRectItem):
         self.update_all_port_positions()
 
     def node_size_from_svg_size(self, svg_w, svg_h):
-        return svg_w + self.left_max_width + self.right_max_width + 2 * NodeItem.MARGIN_X, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
+        return svg_w + self.left_max_width + self.right_max_width + 2 * NodeItem.MARGIN_X + 2 * NodeItem.LABEL_SVG_DIST, svg_h + 2 * NodeItem.MARGIN_Y + NodeItem.TITLE_HEIGHT
 
     def svg_size_from_node_size(self, rect_w, rect_h):
-        return rect_w - self.left_max_width - self.right_max_width - 2 * NodeItem.MARGIN_X, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
+        return rect_w - self.left_max_width - self.right_max_width - 2 * NodeItem.MARGIN_X - 2 * NodeItem.LABEL_SVG_DIST, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
     def visualise(self):
         return self.node().safe_visualise()
@@ -317,7 +318,7 @@ class NodeItem(QGraphicsRectItem):
         vis = self.visualise()
         svg_filepath = os.path.join(self.scene().temp_dir, f"{self.node_state.node_id}.svg")
         # Base position for all SVG elements
-        svg_pos_x = self.left_max_width + NodeItem.MARGIN_X
+        svg_pos_x = self.left_max_width + NodeItem.MARGIN_X + NodeItem.LABEL_SVG_DIST
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
         svg_width, svg_height = self.node_state.svg_size
 
@@ -510,9 +511,11 @@ class NodeItem(QGraphicsRectItem):
             if port.is_input:
                 x_offset = NodeItem.MARGIN_X
                 width_to_use = self.left_max_width
+                alignment = Qt.AlignLeft | Qt.AlignVCenter
             else:
                 x_offset = self.rect().width() - self.right_max_width - NodeItem.MARGIN_X
                 width_to_use = self.right_max_width
+                alignment = Qt.AlignRight | Qt.AlignVCenter
             text_rect = QRectF(
                 x_offset,
                 port_y - (text_height / 2),  # Vertical center alignment
@@ -520,7 +523,7 @@ class NodeItem(QGraphicsRectItem):
                 text_height  # Font height
             )
             # Draw the text
-            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, text)
+            painter.drawText(text_rect, alignment, text)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange:
@@ -549,8 +552,8 @@ class NodeItem(QGraphicsRectItem):
     def update_label_port_positions(self):
         # Calculate the maximum width needed for each side
         font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
-        self.left_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
-        self.right_max_width = NodeItem.MARGIN_Y - NodeItem.MARGIN_X
+        self.left_max_width = 0
+        self.right_max_width = 0
 
         for port_id in self.port_items:
             text = self.node().get_port_defs()[port_id].display_name
@@ -559,6 +562,11 @@ class NodeItem(QGraphicsRectItem):
                 self.left_max_width = max(self.left_max_width, width)
             else:
                 self.right_max_width = max(self.right_max_width, width)
+
+        if self.left_max_width == 0:
+            self.left_max_width = NodeItem.LABEL_SVG_DIST
+        if self.right_max_width == 0:
+            self.right_max_width = NodeItem.LABEL_SVG_DIST
 
         width, height = self.node_size_from_svg_size(*self.node_state.svg_size)
         self.resize(width, height)

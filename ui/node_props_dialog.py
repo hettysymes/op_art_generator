@@ -146,7 +146,6 @@ class NodePropertiesDialog(QDialog):
                 widget_layout.setSpacing(4)
 
                 text = f"{port_def.display_name}: {port_def.description}"
-                print(text)  # Debugging output to check the text
 
                 # Create and add label
                 label = QLabel(text)
