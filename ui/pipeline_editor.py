@@ -803,16 +803,15 @@ class ChangePropertiesCmd(QUndoCommand):
         self.node_item.update_visualisations()
 
     def undo(self):
-        pass
-        # props = {}
-        # for prop_name, value in self.props_changed.items():
-        #     props[prop_name] = value[0]
-        # self.update_properties(props)
+        props = {}
+        for prop_name, value in self.props_changed.items():
+            props[prop_name] = value[0] # Take the old value
+        self.update_properties(props)
 
     def redo(self):
         props = {}
         for prop_name, value in self.props_changed.items():
-            props[prop_name] = value[1]
+            props[prop_name] = value[1] # Take the new value
         self.update_properties(props)
 
 class AddPropertyPortCmd(QUndoCommand):
