@@ -23,9 +23,12 @@ class OverlayNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_OVERLAY_INFO
 
     def compute(self, out_port_key='_main'):
-        self.prop_vals['elem_order'] = self._prop_val('elements')
-        ret_group = Group(debug_info="Overlay")
-        for element in self._prop_val('elem_order'):
-            if element:
-                ret_group.add(element)
-        return ret_group
+        elements = self._prop_val('elements')
+        if elements:
+            self.prop_vals['elem_order'] = self._prop_val('elements')
+            ret_group = Group(debug_info="Overlay")
+            for element in self._prop_val('elem_order'):
+                if element:
+                    ret_group.add(element)
+            return ret_group
+        return None

@@ -12,6 +12,10 @@ from ui.vis_types import ErrorFig
 class GraphQuerier(ABC):
 
     @abstractmethod
+    def get_port_ref(self, node_id, port_key, ref_id):
+        pass
+
+    @abstractmethod
     def active_input_ports(self, node_id):  # Return input port keys connected to a node
         pass
 
