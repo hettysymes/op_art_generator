@@ -407,13 +407,24 @@ class NodeItem(QGraphicsRectItem):
         self.update_all_port_positions()
         self.update_label_containers()
 
-    def refresh_ports(self, new_ports_open):
+    def reset_ports_open(self, new_ports_open):
+        # Remove ports no longer in use
         port_ids = list(self.port_items.keys())
         for port_id in port_ids:
-            # Layout is already updated later in create ports
-            self.remove_port(port_id, update_layout=False)
-        self.node_state.ports_open = new_ports_open
-        self.create_ports()
+            if port_id not in new_ports_open:
+                # Update layout at the end for efficiency
+                self.remove_port(port_id, update_layout=False)
+        # Add new ports
+        new_port_items = {}
+        for port_id in new_ports_open:
+            if port_id not in self.node_state.ports_open:
+                # Update layout at the end for efficiency
+                self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
+            new_port_items[port_id] = self.port_items[port_id]
+        # Set new port item order
+        self.port_items = new_port_items
+        self.update_all_port_positions()
+        self.update_label_containers()
 
     def add_port(self, port_id, port_def, update_layout=True):
         port_io, port_key = port_id
@@ -1227,7 +1238,11 @@ class PipelineScene(QGraphicsScene):
 
     def change_node_selection(self, clicked_item: NodeItem, index):
         clicked_item.node().set_selection(index)
-        clicked_item.refresh_ports(new_ports_open=clicked_item.node().compulsory_ports())
+        new_ports_open = clicked_item.node().compulsory_ports()
+        for port_id in clicked_item.node_state.ports_open:
+            if (port_id in clicked_item.node().get_port_defs()) and (port_id not in new_ports_open):
+                new_ports_open.append(port_id)
+        clicked_item.reset_ports_open(new_ports_open)
         clicked_item.update_visualisations()
 #
 #     def randomise(self, clicked_item: RandomColourSelectorNode):
