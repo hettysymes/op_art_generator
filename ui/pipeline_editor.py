@@ -845,24 +845,10 @@ class PasteCmd(QUndoCommand):
         self.connections = connections
 
     def undo(self):
-        # Remove nodes
-        for node_state in self.node_states:
-            node_item = self.scene.node_items[node_state.node_id]
-            node_item.remove_from_scene()
-        # Remove edges
-        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.connections:
-            if src_node_id in self.scene.node_items and dst_node_id in self.scene.node_items:
-                # Connection still exists, remove now
-                self.scene.remove_edge((src_node_id, src_port_key), (dst_node_id, dst_port_key))
+        self.scene.remove_from_graph_and_scene(self.node_states, self.connections)
 
     def redo(self):
-        # Add to node graph
-        for node in self.nodes:
-            self.scene.node_graph.add_existing_node(node)
-        for connection in self.connections:
-            self.scene.node_graph.add_connection(*connection)
-        # Load items
-        self.scene.load_from_node_states(self.node_states)
+        self.scene.add_to_graph_and_scene(self.node_states, self.nodes, self.connections)
 
 class DeleteCmd(QUndoCommand):
     def __init__(self, scene, node_states, nodes, connections, description="Delete"):
@@ -873,24 +859,11 @@ class DeleteCmd(QUndoCommand):
         self.connections = connections
 
     def undo(self):
-        # Add to node graph
-        for node in self.nodes:
-            self.scene.node_graph.add_existing_node(node)
-        for connection in self.connections:
-            self.scene.node_graph.add_connection(*connection)
-        # Load items
-        self.scene.load_from_node_states(self.node_states)
+        self.scene.add_to_graph_and_scene(self.node_states, self.nodes, self.connections)
 
     def redo(self):
-        # Remove nodes
-        for node_state in self.node_states:
-            node_item = self.scene.node_items[node_state.node_id]
-            node_item.remove_from_scene()
-        # Remove edges
-        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.connections:
-            if src_node_id in self.scene.node_items and dst_node_id in self.scene.node_items:
-                # Connection still exists, remove now
-                self.scene.remove_edge((src_node_id, src_port_key), (dst_node_id, dst_port_key))
+        self.scene.remove_from_graph_and_scene(self.node_states, self.connections)
+
 #
 # class AddCustomNodeCmd(QUndoCommand):
 #     def __init__(self, pipeline_scene, save_states, inp_node_id, out_node_id, description="Make Custom Node"):
@@ -1213,6 +1186,26 @@ class PipelineScene(QGraphicsScene):
         # Add edge items
         for connection in self.node_graph.connections:
             self.add_edge(*connection)
+
+    def add_to_graph_and_scene(self, node_states, nodes, connections):
+        # Add to node graph
+        for node in nodes:
+            self.node_graph.add_existing_node(node)
+        for connection in connections:
+            self.node_graph.add_connection(*connection)
+        # Load items
+        self.load_from_node_states(node_states)
+
+    def remove_from_graph_and_scene(self, node_states, connections):
+        # Remove nodes
+        for node_state in node_states:
+            node_item = self.node_items[node_state.node_id]
+            node_item.remove_from_scene()
+        # Remove edges
+        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in connections:
+            if src_node_id in self.node_items and dst_node_id in self.node_items:
+                # Connection still exists, remove now
+                self.remove_edge((src_node_id, src_port_key), (dst_node_id, dst_port_key))
 
     def clear_scene(self):
         node_ids = list(self.node_items.keys())
