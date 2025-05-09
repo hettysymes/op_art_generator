@@ -1,23 +1,23 @@
-import copy
 import traceback
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
 from ui.id_generator import shorten_uid
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.port_defs import PortIO
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
+
 
 class GraphQuerier(ABC):
 
     @abstractmethod
-    def active_input_ports(self, node_id): # Return input port keys connected to a node
+    def active_input_ports(self, node_id):  # Return input port keys connected to a node
         pass
 
     @abstractmethod
     def port_input(self, node_id, port_key):
         pass
+
 
 class PropType(Enum):
     POINT_TABLE = auto()
@@ -32,14 +32,15 @@ class PropType(Enum):
     ELEM_TABLE = auto()
     COLOUR_TABLE = auto()
     HIDDEN = auto()
+    STRING = auto()
 
 
 class PropEntry:
     """Defines a property for a node"""
 
-    def __init__(self, prop_type, display_name=None, description=None, default_value=None, min_value=None, max_value=None,
+    def __init__(self, prop_type, display_name=None, description=None, default_value=None, min_value=None,
+                 max_value=None,
                  auto_format=True, options=None):
-
         self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
         self.display_name = display_name
         self.description = description
@@ -49,6 +50,7 @@ class PropEntry:
         self.auto_format = auto_format
         self.options = options  # options for (constant) enum type
 
+
 class NodeInfo:
 
     def __init__(self, description, port_defs=None, prop_entries=None):
@@ -56,13 +58,15 @@ class NodeInfo:
         self.port_defs = port_defs if port_defs else {}
         self.prop_entries = prop_entries if prop_entries else {}
 
+
 class BaseNode:
 
     def compute(self):
         return
 
+
 class Node(BaseNode, ABC):
-    NAME = None # To override
+    NAME = None  # To override
 
     def __init__(self, uid, graph_querier, prop_vals=None):
         self.uid = uid

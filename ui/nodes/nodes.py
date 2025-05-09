@@ -29,9 +29,10 @@ class UnitNode(Node, ABC):
     def compute(self, out_port_key='_main'):
         return
 
+
 class CombinationNode(Node, ABC):
     NAME = None
-    SELECTIONS = [] # To override
+    SELECTIONS = []  # To override
 
     # Additional info (add_info) is the selection index
     def __init__(self, uid, graph_querier, prop_vals=None, add_info=0):

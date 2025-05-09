@@ -1,30 +1,30 @@
-from ui_old.nodes.node_input_exception import NodeInputException
-from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui_old.port_defs import PortDef, PT_Element, PT_ElementList
+from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
+from ui.nodes.node_input_exception import NodeInputException
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PT_Element, PortDef, PT_ElementList
 
-ITERATOR_SELECTOR_NODE_INFO = UnitNodeInfo(
-    name="Iterator Selector",
-    selectable=False,
-    in_port_defs=[PortDef("Iterator", PT_ElementList, key_name='iterator')],
-    out_port_defs=[PortDef("Drawing", PT_Element)],
-    prop_type_list=PropTypeList(
-        [
-            PropType("select_idx", "selector_enum",
-                     description="Index of the element in the iterator output you'd like to select.",
-                     display_name="Select index")
-        ]
-    ),
-    description="Select one of the outputs of an Iterator node by inputting its index."
+DEF_ITERATOR_SELECTOR_INFO = NodeInfo(
+    description="Select one of the outputs of an Iterator node by inputting its index.",
+    port_defs={
+        (PortIO.INPUT, 'iterator'): PortDef("Iterator", PT_ElementList),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)
+    },
+    prop_entries={
+        'select_idx': PropEntry(PropType.STRING,
+                                display_name="Select index",
+                                description="Index of the element in the iterator output you'd like to select.")
+    }
 )
 
 
 class IteratorSelectorNode(UnitNode):
-    UNIT_NODE_INFO = ITERATOR_SELECTOR_NODE_INFO
+    NAME = "Iterator Selector"
+    DEFAULT_NODE_INFO = DEF_ITERATOR_SELECTOR_INFO
 
-    def compute(self):
-        elements = self.get_input_node('iterator').compute()
-        if elements and (self.get_prop_val('select_idx') is not None):
-            if self.get_prop_val('select_idx') >= len(elements):
-                raise NodeInputException("Select index is greater than number of iterator outputs.", self.node_id)
-            return elements[self.get_prop_val('select_idx')]
+    def compute(self, out_port_key="_main"):
+        elements = self._prop_val('iterator')
+        if elements and (self._prop_val('select_idx') is not None):
+            if self._prop_val('select_idx') >= len(elements):
+                raise NodeInputException("Select index is greater than number of iterator outputs.", self.uid)
+            return elements[self._prop_val('select_idx')]
         return None

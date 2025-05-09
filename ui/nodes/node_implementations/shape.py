@@ -58,7 +58,6 @@ DEF_SINE_WAVE_INFO = NodeInfo(
 )
 
 
-
 class SineWaveNode(UnitNode):
     NAME = "Sine Wave"
     DEFAULT_NODE_INFO = DEF_SINE_WAVE_INFO
@@ -68,7 +67,7 @@ class SineWaveNode(UnitNode):
         return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points).rotate(
             orientation, (0.5, 0.5))
 
-    def compute(self, output_port_key='_main'):
+    def compute(self, out_port_key='_main'):
         try:
             sine_wave = SineWaveNode.helper(self._prop_val('amplitude'), self._prop_val('wavelength'),
                                             self._prop_val('centre_y'),
@@ -105,7 +104,6 @@ DEF_CUSTOM_LINE_INFO = NodeInfo(
 )
 
 
-
 class CustomLineNode(UnitNode):
     NAME = "Custom Line"
     DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
@@ -114,7 +112,7 @@ class CustomLineNode(UnitNode):
     def helper(points, stroke='black', stroke_width=1):
         return Polyline(points, stroke, stroke_width)
 
-    def compute(self, output_port_key='_main'):
+    def compute(self, out_port_key='_main'):
         return CustomLineNode.helper(self._prop_val('points'), 'black', self._prop_val('stroke_width'))
 
     def visualise(self):
@@ -134,9 +132,9 @@ DEF_STRAIGHT_LINE_NODE_INFO = NodeInfo(
                                  description="Coordinate of the start of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                                  default_value=(1, 0)),
         'stop_coord': PropEntry(PropType.COORDINATE,
-                                 display_name="Stop coordinate",
-                                 description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-                                 default_value=(0, 1)),
+                                display_name="Stop coordinate",
+                                description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+                                default_value=(0, 1)),
         'stroke_width': PropEntry(PropType.FLOAT,
                                   display_name="Line thickness",
                                   description="Thickness of the straight line.",
@@ -164,27 +162,26 @@ class StraightLineNode(UnitNode):
         return group
 
 
-
-
 DEF_POLYGON_INFO = NodeInfo(
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_Polyline),
                (PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill, optional=True),
                (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)},
     prop_entries={'points': PropEntry(PropType.POINT_TABLE,
-                                        display_name="Points",
-                                        description="Points defining the path of the polygon edge (in order).",
-                                        default_value=[(0, 0), (0, 1), (1, 1)]),
-                    'fill': PropEntry(PropType.FILL,
-                                      display_name="Fill",
-                                      description="Polygon fill colour.",
-                                      default_value=(0, 0, 0, 255)),
-                    'stroke_width': PropEntry(PropType.FLOAT,
-                                              display_name="Border thickness",
-                                              description="Thickness of the line drawing the polygon border.",
-                                              default_value=1,
-                                              min_value=0)}
+                                      display_name="Points",
+                                      description="Points defining the path of the polygon edge (in order).",
+                                      default_value=[(0, 0), (0, 1), (1, 1)]),
+                  'fill': PropEntry(PropType.FILL,
+                                    display_name="Fill",
+                                    description="Polygon fill colour.",
+                                    default_value=(0, 0, 0, 255)),
+                  'stroke_width': PropEntry(PropType.FLOAT,
+                                            display_name="Border thickness",
+                                            description="Thickness of the line drawing the polygon border.",
+                                            default_value=1,
+                                            min_value=0)}
 )
+
 
 class PolygonNode(UnitNode):
     NAME = "Polygon"
@@ -215,9 +212,9 @@ DEF_RECTANGLE_NODE_INFO = NodeInfo(
     port_defs={(PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill),
                (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)},
     prop_entries={'fill': PropEntry(PropType.FILL,
-                                      display_name="Fill",
-                                      description="Rectangle fill colour.",
-                                      default_value=(0, 0, 0, 255))}
+                                    display_name="Fill",
+                                    description="Rectangle fill colour.",
+                                    default_value=(0, 0, 0, 255))}
 )
 
 
@@ -272,7 +269,6 @@ DEF_ELLIPSE_INFO = NodeInfo(
 )
 
 
-
 class EllipseNode(UnitNode):
     NAME = "Ellipse"
     DEFAULT_NODE_INFO = DEF_ELLIPSE_INFO
@@ -287,7 +283,7 @@ class EllipseNode(UnitNode):
         return Ellipse(centre, radius, fill,
                        fill_opacity, stroke, stroke_width)
 
-    def compute(self, output_port_key='_main'):
+    def compute(self, out_port_key='_main'):
         return EllipseNode.helper(self._prop_val('fill'), self._prop_val('centre'),
                                   (self._prop_val('rx'), self._prop_val('ry')),
                                   'none', self._prop_val('stroke_width'))
@@ -327,7 +323,6 @@ DEF_CIRCLE_INFO = NodeInfo(
 )
 
 
-
 class CircleNode(UnitNode):
     NAME = "Circle"
     DEFAULT_NODE_INFO = DEF_CIRCLE_INFO
@@ -336,7 +331,7 @@ class CircleNode(UnitNode):
     def helper(colour, centre, radius, stroke='none', stroke_width=1):
         return EllipseNode.helper(colour, centre, (radius, radius), stroke, stroke_width)
 
-    def compute(self, output_port_key='_main'):
+    def compute(self, out_port_key='_main'):
         return CircleNode.helper(self._prop_val('fill'),
                                  self._prop_val('centre'),
                                  self._prop_val('r'),

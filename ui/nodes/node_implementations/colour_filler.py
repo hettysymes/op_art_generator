@@ -1,24 +1,26 @@
 import itertools
 
-from ui_old.nodes.node_input_exception import NodeInputException
-from ui_old.nodes.nodes import UnitNode, UnitNodeInfo
-from ui_old.nodes.shape_datatypes import Group, Polyline, Polygon, Element
-from ui_old.nodes.utils import process_rgb
-from ui_old.port_defs import PortDef, PT_ColourList, PT_Element
+from ui.nodes.node_defs import NodeInfo
+from ui.nodes.node_input_exception import NodeInputException
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortDef, PortIO, PT_ColourList, PT_Element
+from ui.nodes.shape_datatypes import Group, Polygon, Element, Polyline
+from ui.nodes.utils import process_rgb
 
-COLOUR_FILLER_NODE_INFO = UnitNodeInfo(
-    name="Colour Filler",
-    in_port_defs=[
-        PortDef("Colours", PT_ColourList, key_name='colour_list'),
-        PortDef("Drawing", PT_Element, key_name='element')
-    ],
-    out_port_defs=[PortDef("Drawing", PT_Element)],
-    description="Given a colour list and a drawing consisting of lines, cycle through the colours and use them to fill the gaps between the lines."
+DEF_COLOUR_FILLER_INFO = NodeInfo(
+    description="Given a colour list and a drawing consisting of lines, cycle through the colours and use them to fill the gaps between the lines.",
+    port_defs={
+        (PortIO.INPUT, 'colour_list'): PortDef("Colours", PT_ColourList),
+        (PortIO.INPUT, 'element'): PortDef("Drawing", PT_Element),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element)
+    },
+    prop_entries={}
 )
 
 
 class ColourFillerNode(UnitNode):
-    UNIT_NODE_INFO = COLOUR_FILLER_NODE_INFO
+    NAME = "Colour Filler"
+    DEFAULT_NODE_INFO = DEF_COLOUR_FILLER_INFO
 
     @staticmethod
     def helper(colours, element):
@@ -33,15 +35,15 @@ class ColourFillerNode(UnitNode):
             ret_group.add(Polygon(points, fill, fill_opacity))
         return ret_group
 
-    def compute(self):
-        colours = self.get_input_node('colour_list').compute()
-        element: Element = self.get_input_node('element').compute()
+    def compute(self, out_port_key='_main'):
+        colours = self._prop_val('colour_list')
+        element: Element = self._prop_val('element')
         if (colours is not None) and element:
             if not colours:
-                raise NodeInputException("Input colour list must contain at least one colour.", self.node_id)
+                raise NodeInputException("Input colour list must contain at least one colour.", self.uid)
             # Check all shapes are polylines
             for transformed_shape in element.shape_transformations():
                 if not isinstance(transformed_shape[0], Polyline):
-                    raise NodeInputException("Input drawing must only consist of lines.", self.node_id)
+                    raise NodeInputException("Input drawing must only consist of lines.", self.uid)
             return ColourFillerNode.helper(colours, element)
         return None

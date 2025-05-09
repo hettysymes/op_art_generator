@@ -1,33 +1,35 @@
-from ui_old.nodes.drawers.draw_graph import create_graph_svg
-from ui_old.nodes.node_input_exception import NodeInputException
-from ui_old.nodes.nodes import UnitNode, CombinationNode, UnitNodeInfo
-from ui_old.nodes.warp_utils import PosWarp, RelWarp
-from ui_old.port_defs import PortDef, PT_Function, PT_Warp
-from ui_old.vis_types import MatplotlibFig
+from ui.nodes.drawers.draw_graph import create_graph_svg
+from ui.nodes.node_defs import NodeInfo
+from ui.nodes.node_input_exception import NodeInputException
+from ui.nodes.nodes import UnitNode, CombinationNode
+from ui.nodes.port_defs import PortDef, PortIO, PT_Warp, PT_Function
+from ui.nodes.warp_utils import PosWarp, RelWarp
+from ui.vis_types import MatplotlibFig
 
-POS_WARP_NODE_INFO = UnitNodeInfo(
-    name="Position Warp",
-    selectable=False,
-    in_port_defs=[PortDef("Function", PT_Function, key_name='function')],
-    out_port_defs=[PortDef("Warp", PT_Warp)],
-    description="Given a function, convert it to a warp by normalising f(x) to be between 0 & 1 for x ∈ [0,1]. The input function must pass through the origin."
+DEF_POS_WARP_NODE_INFO = NodeInfo(
+    description="Given a function, convert it to a warp by normalising f(x) to be between 0 & 1 for x ∈ [0,1]. The input function must pass through the origin.",
+    port_defs={
+        (PortIO.INPUT, 'function'): PortDef("Function", PT_Function),
+        (PortIO.OUTPUT, '_main'): PortDef("Warp", PT_Warp)
+    }
 )
 
 
 class PosWarpNode(UnitNode):
-    UNIT_NODE_INFO = POS_WARP_NODE_INFO
+    NAME = "Position Warp"
+    DEFAULT_NODE_INFO = DEF_POS_WARP_NODE_INFO
 
     @staticmethod
     def helper(function):
         return PosWarp(function)
 
-    def compute(self):
-        f = self.get_input_node('function').compute()
+    def compute(self, out_port_key='_main'):
+        f = self._prop_val('function')
         if f:
             try:
                 warp = PosWarpNode.helper(f)
             except ValueError as e:
-                raise NodeInputException(str(e), self.node_id)
+                raise NodeInputException(str(e), self.uid)
             return warp
         return None
 
@@ -38,29 +40,30 @@ class PosWarpNode(UnitNode):
         return None
 
 
-REL_WARP_NODE_INFO = UnitNodeInfo(
-    name="Relative Warp",
-    selectable=False,
-    in_port_defs=[PortDef("Function", PT_Function, key_name='function')],
-    out_port_defs=[PortDef("Warp", PT_Warp)],
-    description="Given a function, use it to accumulate positions based on evenly spaced indices between 0 & 1, giving a new list of samples which are normalised between 0 & 1. The input function must pass through the origin."
+DEF_REL_WARP_NODE_INFO = NodeInfo(
+    description="Given a function, use it to accumulate positions based on evenly spaced indices between 0 & 1, giving a new list of samples which are normalised between 0 & 1. The input function must pass through the origin.",
+    port_defs={
+        (PortIO.INPUT, 'function'): PortDef("Function", PT_Function),
+        (PortIO.OUTPUT, '_main'): PortDef("Warp", PT_Warp)
+    }
 )
 
 
 class RelWarpNode(UnitNode):
-    UNIT_NODE_INFO = REL_WARP_NODE_INFO
+    NAME = "Relative Warp"
+    DEFAULT_NODE_INFO = DEF_REL_WARP_NODE_INFO
 
     @staticmethod
     def helper(function):
         return RelWarp(function)
 
-    def compute(self):
-        f = self.get_input_node('function').compute()
+    def compute(self, out_port_key='_main'):
+        f = self._prop_val('function')
         if f:
             try:
                 warp = RelWarpNode.helper(f)
             except ValueError as e:
-                raise NodeInputException(str(e), self.node_id)
+                raise NodeInputException(str(e), self.uid)
             return warp
         return None
 

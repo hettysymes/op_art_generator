@@ -17,10 +17,10 @@ DEF_GRID_INFO = NodeInfo(
                                      default_value=5,
                                      min_value=1),
                   'height': PropEntry(PropType.INT,
-                                     display_name="Height",
-                                     description="Number of cells in the height of the grid, at most 1.",
-                                     default_value=5,
-                                     min_value=1)}
+                                      display_name="Height",
+                                      description="Number of cells in the height of the grid, at most 1.",
+                                      default_value=5,
+                                      min_value=1)}
 )
 
 

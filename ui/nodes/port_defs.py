@@ -79,9 +79,11 @@ class PT_Gradient(PT_Fill):
 class PT_Colour(PT_Fill):
     pass
 
+
 class PortIO(Enum):
     INPUT = auto()
     OUTPUT = auto()
+
 
 class PortDef:
 

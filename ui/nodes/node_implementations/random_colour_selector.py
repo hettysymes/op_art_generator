@@ -1,44 +1,47 @@
 import random
 
-from ui_old.nodes.node_input_exception import NodeInputException
-from ui_old.nodes.nodes import UnitNode, UnitNodeInfo, PropTypeList, PropType
-from ui_old.nodes.shape import RectangleNode
-from ui_old.nodes.shape_datatypes import Group
-from ui_old.port_defs import PortDef, PT_ColourList, PT_Colour
+from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
+from ui.nodes.node_implementations.shape import RectangleNode
+from ui.nodes.node_input_exception import NodeInputException
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PortDef, PT_ColourList, PT_Colour
+from ui.nodes.shape_datatypes import Group
 
-RANDOM_COLOUR_SELECTOR_NODE_INFO = UnitNodeInfo(
-    name="Random Colour Selector",
-    selectable=False,
-    in_port_defs=[PortDef("Colour list", PT_ColourList, key_name='colour_list')],
-    out_port_defs=[PortDef("Random colour", PT_Colour)],
-    prop_type_list=PropTypeList(
-        [
-            PropType("use_seed", "bool",
-                     description="If checked, use the provided seed for random selection. Random selections done with the same seed will always be the same.",
-                     display_name="Use random seed?", auto_format=False),
-            PropType("user_seed", "int", default_value=42,
-                     description="If random seed is used, use this as the random seed.", display_name="Random seed"),
-            PropType("_actual_seed", "hidden")
-        ]
-    ),
-    description="Randomly select a colour from a colour list."
+DEF_RANDOM_COLOUR_SELECTOR_INFO = NodeInfo(
+    description="Randomly select a colour from a colour list.",
+    port_defs={
+        (PortIO.INPUT, 'colour_list'): PortDef("Colour list", PT_ColourList),
+        (PortIO.OUTPUT, '_main'): PortDef("Random colour", PT_Colour)
+    },
+    prop_entries={
+        'use_seed': PropEntry(PropType.BOOL,
+                              display_name="Use random seed?",
+                              description="If checked, use the provided seed for random selection. Random selections done with the same seed will always be the same.",
+                              default_value=False),
+        'user_seed': PropEntry(PropType.INT,
+                               display_name="Random seed",
+                               description="If random seed is used, use this as the random seed.",
+                               default_value=42),
+        '_actual_seed': PropEntry(PropType.HIDDEN)
+    }
 )
 
 
 class RandomColourSelectorNode(UnitNode):
-    UNIT_NODE_INFO = RANDOM_COLOUR_SELECTOR_NODE_INFO
+    NAME = "Random Colour Selector"
+    DEFAULT_NODE_INFO = DEF_RANDOM_COLOUR_SELECTOR_INFO
 
-    def compute(self):
-        colours = self.get_input_node('colour_list').compute()
+    def compute(self, out_port_key='_main'):
+        colours = self._prop_val('colour_list')
         if colours is not None:
             if not colours:
-                raise NodeInputException("At least one input colour is required.", self.node_id)
-            if self.get_prop_val('use_seed'):
-                rng = random.Random(self.get_prop_val('user_seed'))
+                raise NodeInputException("At least one input colour is required.", self.uid)
+            if self._prop_val('use_seed'):
+                rng = random.Random(self._prop_val('user_seed'))
             else:
-                if not self.get_prop_val('_actual_seed'):
+                if not self._prop_val('_actual_seed'):
                     self.prop_vals['_actual_seed'] = random.random()
-                rng = random.Random(self.get_prop_val('_actual_seed'))
+                rng = random.Random(self._prop_val('_actual_seed'))
             return rng.choice(colours)
         return None
 

@@ -1,30 +1,33 @@
 import math
 
-from ui_old.nodes.nodes import UnitNodeInfo, PropTypeList, PropType, UnitNode
-from ui_old.nodes.shape_datatypes import Ellipse, Group
-from ui_old.port_defs import PortDef, PT_Ellipse, PT_PointList
+from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PortDef, PT_PointList, PT_Ellipse
+from ui.nodes.shape_datatypes import Ellipse, Group
 
-ELLIPSE_SAMPLER_NODE_INFO = UnitNodeInfo(
-    name="Ellipse Sampler",
-    selectable=False,
-    in_port_defs=[PortDef("Ellipse", PT_Ellipse, key_name='ellipse')],
-    out_port_defs=[PortDef("Samples", PT_PointList)],
-    prop_type_list=PropTypeList(
-        [
-            PropType("start_angle", "float", default_value=0,
-                     description="Central angle (in degrees) of the first sample (point along the edge of the ellipse) with the ellipse's right-most point. The angle is measured clockwise. At 0° the first sample is at its right-most point. At 90° the first sample is at the bottom-most point.",
-                     display_name="Angle of first sample (°)"),
-            PropType("num_samples", "int", default_value=5,
-                     description="Number of samples (points along the edge of the ellipse), at most 1.", min_value=1,
-                     display_name="Sample number")
-        ]
-    ),
-    description="Sample (angularly) equally-spaced points along the edge of an ellipse or circle."
+DEF_ELLIPSE_SAMPLER_INFO = NodeInfo(
+    description="Sample (angularly) equally-spaced points along the edge of an ellipse or circle.",
+    port_defs={
+        (PortIO.INPUT, 'ellipse'): PortDef("Ellipse", PT_Ellipse),
+        (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_PointList)
+    },
+    prop_entries={
+        'start_angle': PropEntry(PropType.FLOAT,
+                                 display_name="Angle of first sample (°)",
+                                 description="Central angle (in degrees) of the first sample (point along the edge of the ellipse) with the ellipse's right-most point. The angle is measured clockwise. At 0° the first sample is at its right-most point. At 90° the first sample is at the bottom-most point.",
+                                 default_value=0),
+        'num_samples': PropEntry(PropType.INT,
+                                 display_name="Sample number",
+                                 description="Number of samples (points along the edge of the ellipse), at most 1.",
+                                 default_value=5,
+                                 min_value=1)
+    }
 )
 
 
 class EllipseSamplerNode(UnitNode):
-    UNIT_NODE_INFO = ELLIPSE_SAMPLER_NODE_INFO
+    NAME = "Ellipse Sampler"
+    DEFAULT_NODE_INFO = DEF_ELLIPSE_SAMPLER_INFO
 
     @staticmethod
     def angle_to_point(angle_rad, ellipse):
@@ -43,11 +46,11 @@ class EllipseSamplerNode(UnitNode):
             angle += step
         return samples
 
-    def compute(self):
-        ellipse = self.get_input_node('ellipse').compute()
+    def compute(self, out_port_key='_main'):
+        ellipse = self._prop_val('ellipse')
         if ellipse:
-            return EllipseSamplerNode.helper(ellipse, self.get_prop_val('start_angle'),
-                                             self.get_prop_val('num_samples'))
+            return EllipseSamplerNode.helper(ellipse, self._prop_val('start_angle'),
+                                             self._prop_val('num_samples'))
         return None
 
     def visualise(self):
