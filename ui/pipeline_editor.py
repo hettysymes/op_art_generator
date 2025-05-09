@@ -707,37 +707,22 @@ class AddNewNodeCmd(QUndoCommand):
         self.node_graph: NodeGraph = scene.node_graph
         self.pos = pos
         self.node_class = node_class
+        self.node_state = None
 
     def undo(self):
-        pass
-        # assert self.save_states
-        # for state in self.save_states.values():
-        #     if isinstance(state, NodeState):
-        #         node_item = self.scene.get(state.uid)
-        #         self.pipeline_scene.delete_node(node_item)
-        #         return
+        node_item = self.scene.node_items[self.node_state.node_id]
+        node_item.remove_from_scene()
 
     def redo(self):
-        node_id = self.node_graph.add_new_node(self.node_class)
-        node = self.node_graph.node(node_id)
-        node_state = NodeState(node_id=node_id,
-                               ports_open=node.compulsory_ports(),
-                               pos=(self.pos.x(), self.pos.y()),
-                               svg_size=(150, 150)) # TODO: save as constant somewhere
-        self.scene.add_node(node_state)
-        # if self.save_states:
-        #     self.pipeline_scene.load_from_save_states(self.save_states)
-        # else:
-        #     node_item = NodeItem(NodeState(self.node.node_id, self.pos.x(), self.pos.y(), [], [], self.node, 150, 150))
-        #     self.scene.add(node_item)
-        #     self.pipeline_scene.addItem(node_item)
-        #     node_item.create_ports()
-        #     node_item.update_vis_image()
-        #     # Save to save_states for further redos
-        #     self.save_states = {node_item.uid: node_item.backend}
-        #     for port_id in node_item.backend.input_port_ids + node_item.backend.output_port_ids:
-        #         port = self.scene.get(port_id)
-        #         self.save_states[port.uid] = port.backend
+        node_id = self.node_state.node_id if self.node_state else None
+        node_id = self.node_graph.add_new_node(self.node_class, node_id=node_id)
+        if not self.node_state:
+            node = self.node_graph.node(node_id)
+            self.node_state = NodeState(node_id=node_id,
+                                       ports_open=node.compulsory_ports(),
+                                       pos=(self.pos.x(), self.pos.y()),
+                                       svg_size=(150, 150)) # TODO: save as constant somewhere
+        self.scene.add_node(self.node_state)
 #
 # class SeparateFromInputsCmd(QUndoCommand):
 #     def __init__(self, pipeline_scene, pos, node: Node, description="Separate Node From Inputs"):
@@ -1477,16 +1462,16 @@ class PipelineEditor(QMainWindow):
 #         create_custom.triggered.connect(self.create_custom_node)
 #         scene_menu.addAction(create_custom)
 #
-#         # Add Undo action
-#         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
-#         undo.setShortcut(QKeySequence.Undo)
-#         scene_menu.addAction(undo)
-#
-#         # Add Redo action
-#         redo = self.scene.undo_stack.createRedoAction(self, "Redo")
-#         redo.setShortcut(QKeySequence.Redo)
-#         scene_menu.addAction(redo)
-#
+        # Add Undo action
+        undo = self.scene.undo_stack.createUndoAction(self, "Undo")
+        undo.setShortcut(QKeySequence.Undo)
+        scene_menu.addAction(undo)
+
+        # Add Redo action
+        redo = self.scene.undo_stack.createRedoAction(self, "Redo")
+        redo.setShortcut(QKeySequence.Redo)
+        scene_menu.addAction(redo)
+
         # Add Zoom in action
         zoom_in = QAction("Zoom In", self)
         zoom_in.setShortcut(QKeySequence.ZoomIn)
