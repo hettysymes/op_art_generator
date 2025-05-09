@@ -1,5 +1,5 @@
 from ui.id_generator import gen_uid, shorten_uid
-from ui.nodes.node_defs import GraphQuerier
+from ui.nodes.node_defs import GraphQuerier, PortRef
 from ui.nodes.port_defs import PortType, PortIO
 
 
@@ -50,7 +50,7 @@ class NodeGraph(GraphQuerier):
     def get_port_ref(self, node_id, port_key, ref_id):
         src_node_id, src_port_key = self.port_refs[(node_id, port_key)]['ref_map'][ref_id]
         src_port_display_name = self.node(src_node_id).get_port_defs()[(PortIO.OUTPUT, src_port_key)].display_name
-        return src_node_id, src_port_key, src_port_display_name
+        return PortRef(src_node_id, src_port_key, src_port_display_name)
 
     def active_input_ports(self, node_id):
         return [
@@ -70,7 +70,7 @@ class NodeGraph(GraphQuerier):
             raise KeyError("Input node not found for given port.")
         # Return node computes
         if get_refs:
-            result = {}
+            result = []
             if (node_id, port_key) not in self.port_refs:
                 self.port_refs[(node_id, port_key)] = {'ref_map': {}, 'next_id': 0} # Create entry
             id_to_port_refs = self.port_refs[(node_id, port_key)]['ref_map']
@@ -86,7 +86,7 @@ class NodeGraph(GraphQuerier):
                     id_to_port_refs[ref_id] = src_port_id
                 # Add compute to result
                 src_node_id, src_port_key = src_port_id
-                result[ref_id] = self.nodes[src_node_id].compute(src_port_key)
+                result.append((ref_id, self.nodes[src_node_id].compute(src_port_key)))
         else:
             result = [self.nodes[src_node_id].compute(src_port_key) for src_node_id, src_port_key in found_src_port_ids]
         return result

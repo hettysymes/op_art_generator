@@ -8,6 +8,11 @@ from ui.nodes.port_defs import PortIO, PT_Scalar
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
+class PortRef:
+    def __init__(self, node_id, port_key, port_display_name):
+        self.node_id = node_id
+        self.port_key = port_key
+        self.port_display_name = port_display_name
 
 class GraphQuerier(ABC):
 
@@ -20,7 +25,7 @@ class GraphQuerier(ABC):
         pass
 
     @abstractmethod
-    def port_input(self, node_id, port_key):
+    def port_input(self, node_id, port_key, get_refs=False):
         pass
 
 
@@ -138,12 +143,12 @@ class Node(BaseNode, ABC):
     def _active_input_ports(self):
         return self.graph_querier.active_input_ports(self.uid)
 
-    def _port_input(self, port_key):
-        return self.graph_querier.port_input(self.uid, port_key)
+    def _port_input(self, port_key, get_refs=False):
+        return self.graph_querier.port_input(self.uid, port_key, get_refs)
 
-    def _prop_val(self, prop_key):
+    def _prop_val(self, prop_key, get_refs=False):
         if prop_key in self._active_input_ports():
-            prop_node_vals = self._port_input(prop_key)
+            prop_node_vals = self._port_input(prop_key, get_refs)
             # Get port type
             port_type = self.port_defs_filter_by_io(PortIO.INPUT)[prop_key].port_type
             if isinstance(port_type, PT_Scalar):
@@ -151,10 +156,10 @@ class Node(BaseNode, ABC):
                 assert len(prop_node_vals) == 1
                 if prop_node_vals[0] is not None:
                     # Do not default to property values dictionary
-                    return prop_node_vals[0]
+                    return dict(prop_node_vals[0]) if get_refs else prop_node_vals[0]
             else:
                 # Return the full list
-                return prop_node_vals
+                return dict(prop_node_vals) if get_refs else prop_node_vals
         return self.prop_vals.get(prop_key)
 
     @classmethod
