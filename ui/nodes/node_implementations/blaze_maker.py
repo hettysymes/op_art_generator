@@ -1,5 +1,6 @@
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
+from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_Ellipse, PT_List
 from ui.nodes.prop_defs import PrT_Int, PrT_Float, PrT_Fill, PrT_Hidden, PropEntry
@@ -25,11 +26,7 @@ DEF_BLAZE_MAKER_INFO = NodeInfo(
         'fill': PropEntry(PrT_Fill(),
                           display_name="Zig-zag colour",
                           description="Zig-zag colour.",
-                          default_value=(0, 0, 0, 255)),
-        'ellipses': PropEntry(PrT_Hidden(),
-                              display_name="",
-                              description="",
-                              default_value=[])
+                          default_value=(0, 0, 0, 255))
     }
 )
 
@@ -39,10 +36,9 @@ class BlazeMakerNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_BLAZE_MAKER_INFO
 
     @staticmethod
-    def helper(num_polygons, ellipse_elem_refs, angle_diff, colour):
+    def helper(num_polygons, ellipses, angle_diff, colour):
         num_samples = num_polygons * 2
         ret_group = Group(debug_info="Blaze Maker")
-        ellipses = [elem_ref.compute() for elem_ref in ellipse_elem_refs]
         # Sort ellipses in order of ascending radius
         ellipses.sort(key=lambda ellipse: ellipse.r[0] ** 2 + ellipse.r[1] ** 2)
         start_angle = 0
@@ -64,14 +60,7 @@ class BlazeMakerNode(UnitNode):
         return ret_group
 
     def compute(self, out_port_key='_main'):
-        # input_nodes = self.get_input_node('ellipses')
-        # handle_multi_inputs(input_nodes, self.prop_vals['ellipses'])
-        # if input_nodes:
-        #     return BlazeMakerNode.helper(self.get_prop_val('num_polygons'), self.get_prop_val('ellipses'),
-        #                                  self.get_prop_val('angle_diff'), self.get_prop_val('fill'))
-        # return None
-        ellipse = self._prop_val('ellipses')
-        if ellipse:
+        if self._prop_val('ellipses'):
             return BlazeMakerNode.helper(self._prop_val('num_polygons'), self._prop_val('ellipses'),
                                          self._prop_val('angle_diff'), self._prop_val('fill'))
         return None

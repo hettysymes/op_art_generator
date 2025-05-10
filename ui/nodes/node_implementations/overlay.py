@@ -26,9 +26,9 @@ class OverlayNode(UnitNode):
 
     def compute(self, out_port_key='_main'):
         ref_elements = self._prop_val('elements', get_refs=True)
-        handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
+        elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
         # Return final element
         ret_group = Group(debug_info="Overlay")
-        for entry in self._prop_val('elem_order'):
-            ret_group.add(entry.port_data)
+        for element in elements:
+            ret_group.add(element)
         return ret_group

@@ -1,5 +1,5 @@
 from ui.nodes.node_defs import NodeInfo
-from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
+from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table, flatten_list
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortDef, PT_Element, PortIO, PT_List
 from ui.nodes.prop_defs import PrT_ElemRefTable, PrT_Enum, PrT_Float, PropEntry
@@ -51,8 +51,7 @@ class StackerNode(UnitNode):
 
     def compute(self, out_port_key='_main'):
         ref_elements = self._prop_val('elements', get_refs=True)
-        handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
+        elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
         # Compute final element
-        elements = [entry.port_data for entry in self._prop_val('elem_order')]
         return StackerNode.helper(elements, self._prop_val('wh_diff'),
                                   self._prop_val('stack_layout') == 'Vertical')

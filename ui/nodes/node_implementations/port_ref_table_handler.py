@@ -22,3 +22,10 @@ def handle_port_ref_table(ref_data, port_ref_table, entry_class=PortRefTableEntr
     # Add new refs
     for ref_id in ref_ids_to_add:
         port_ref_table.append(entry_class(ref_id, False, ref_data[ref_id]))
+    # Return flattened port data list
+    return flatten_list(
+        [entry.port_data if isinstance(entry, PortRefTableEntry) else entry for entry in port_ref_table]
+    )
+
+def flatten_list(lst):
+    return [item for sublist in lst for item in (sublist if isinstance(sublist, list) else [sublist])]

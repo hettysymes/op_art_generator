@@ -9,7 +9,7 @@ from ui.nodes.transforms import Scale, Translate
 DEF_SHAPE_REPEATER_NODE_INFO = NodeInfo(
     description="Repeat a drawing in a grid-like structure.",
     port_defs={(PortIO.INPUT, 'grid'): PortDef("Grid", PT_Grid()),
-               (PortIO.INPUT, 'repeatable'): PortDef("Drawing", PT_List(PT_Element())),
+               (PortIO.INPUT, 'elements'): PortDef("Drawing", PT_List(PT_Element())),
                (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())}
 )
 
@@ -39,7 +39,7 @@ class ShapeRepeaterNode(UnitNode):
 
     def compute(self, out_port_key='_main'):
         grid = self._prop_val('grid')
-        elements = self._prop_val('repeatable')
+        elements = self._prop_val('elements')
         if grid and elements:
             return ShapeRepeaterNode.helper(grid, elements)
         return None
