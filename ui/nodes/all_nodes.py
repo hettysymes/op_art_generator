@@ -11,7 +11,6 @@ from ui.nodes.node_implementations.function_sampler import FunSamplerNode
 from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.iterator import IteratorNode
-from ui.nodes.node_implementations.iterator_selector import IteratorSelectorNode
 from ui.nodes.node_implementations.overlay import OverlayNode
 from ui.nodes.node_implementations.random_colour_selector import RandomColourSelectorNode
 from ui.nodes.node_implementations.shape import ShapeNode
@@ -39,7 +38,6 @@ node_settings = [
     (ColourFillerNode, NodeSettings()),
     (OverlayNode, NodeSettings()),
     (GradientNode, NodeSettings()),
-    (IteratorSelectorNode, NodeSettings()),
     (EllipseSamplerNode, NodeSettings()),
     (BlazeMakerNode, NodeSettings()),
     (StackerNode, NodeSettings()),
