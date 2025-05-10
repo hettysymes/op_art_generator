@@ -10,11 +10,11 @@ from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
 class PortRef:
-    def __init__(self, node_id, port_key, base_node_name, port_display_name):
+    def __init__(self, node_id, port_key, base_node_name, port_def):
         self.node_id = node_id
         self.port_key = port_key
         self.base_node_name = base_node_name
-        self.port_display_name = port_display_name
+        self.port_def = port_def
 
 class GraphQuerier(ABC):
 
