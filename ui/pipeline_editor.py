@@ -974,6 +974,7 @@ class PipelineScene(QGraphicsScene):
     def __init__(self, temp_dir, node_graph=None, parent=None):
         super().__init__(parent)
         self.setSceneRect(-100000, -100000, 200000, 200000)
+        self.skip_next_context_menu = False
 
         # Connection related variables
         self.connection_signals = ConnectionSignals()
@@ -1115,6 +1116,11 @@ class PipelineScene(QGraphicsScene):
 
     def contextMenuEvent(self, event):
         """Handle context menu events for the scene"""
+        if self.skip_next_context_menu:
+            self.skip_next_context_menu = False
+            event.accept()  # Suppress the default scene menu
+            return
+
         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
         if isinstance(clicked_item, NodeItem):

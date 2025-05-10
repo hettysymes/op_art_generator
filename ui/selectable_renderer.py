@@ -71,6 +71,7 @@ class SelectableSvgElement(QGraphicsItem):
         view = self.scene().views()[0]  # Assuming there's at least one view
         global_pos = view.mapToGlobal(view.mapFromScene(scene_pos))
 
+        event.accept()
         # Show the menu
         menu.exec_(global_pos)
 
@@ -78,6 +79,7 @@ class SelectableSvgElement(QGraphicsItem):
         """Handle the 'Extract into node' action."""
         node: SelectableNode = self.node_item.node()
         port_id = node.extract_element(self.parent_group, self.element_id)
+        self.scene().skip_next_context_menu = True
         # Defer deletion of this element (from updating svg image) until after element extraction
         QTimer.singleShot(0, lambda: self.scene().extract_element(self.node_item, port_id))
 
