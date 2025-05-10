@@ -62,6 +62,12 @@ class Group(Element):
                 return elem
         return None
 
+    def get_element_index_from_id(self, element_id):
+        for i, elem in enumerate(self.elements):
+            if elem.uid == element_id:
+                return i
+        return None
+
     def __iter__(self):
         for element in self.elements:
             yield element

@@ -31,7 +31,7 @@ from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
-from ui.nodes.nodes import CombinationNode
+from ui.nodes.nodes import CombinationNode, SelectableNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
 from ui.nodes.shape_datatypes import Group
 from ui.selectable_renderer import SelectableSvgElement
@@ -323,7 +323,7 @@ class NodeItem(QGraphicsRectItem):
         svg_width, svg_height = self.node_state.svg_size
 
         # TODO: add check for selectable node
-        if isinstance(vis, ErrorFig) or True:
+        if isinstance(vis, ErrorFig) or not isinstance(self.node(), SelectableNode):
             if isinstance(vis, Group):
                 GroupDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
             else:
@@ -386,9 +386,7 @@ class NodeItem(QGraphicsRectItem):
                     child_element = child.toElement()
                     child_elem_id = child_element.attribute('id')
                     assert child_elem_id
-                    backend_child_elem = vis.get_element_from_id(child_elem_id)
-                    assert backend_child_elem is not None
-                    selectable_item = SelectableSvgElement(child_elem_id, backend_child_elem, svg_renderer, self)
+                    selectable_item = SelectableSvgElement(child_elem_id, vis, svg_renderer, self)
                     selectable_item.setParentItem(viewport_svg)
                     selectable_item.setPos(0, 0)
                     selectable_item.setZValue(3)
@@ -860,6 +858,19 @@ class RemovePropertyPortCmd(QUndoCommand):
     def redo(self):
         self.node_item.remove_port((PortIO.INPUT, self.prop_key))
 
+class ExtractElementCmd(QUndoCommand):
+    def __init__(self, node_item: NodeItem, port_id, description="Extract element"):
+        super().__init__(description)
+        self.node_item = node_item
+        self.port_id = port_id
+
+    def undo(self):
+        pass
+
+    def redo(self):
+        port_def = self.node_item.node().get_port_defs()[self.port_id]
+        self.node_item.add_port(self.port_id, port_def)
+
 class PasteCmd(QUndoCommand):
     def __init__(self, scene, node_states, nodes, connections, port_refs, description="Paste"):
         super().__init__(description)
@@ -1245,6 +1256,9 @@ class PipelineScene(QGraphicsScene):
                 new_ports_open.append(port_id)
         clicked_item.reset_ports_open(new_ports_open)
         clicked_item.update_visualisations()
+
+    def extract_element(self, node_item, port_id):
+        self.undo_stack.push(ExtractElementCmd(node_item, port_id))
 #
 #     def randomise(self, clicked_item: RandomColourSelectorNode):
 #         clicked_item.node.prop_vals['_actual_seed'] = random.random()

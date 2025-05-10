@@ -29,6 +29,18 @@ class UnitNode(Node, ABC):
     def compute(self, out_port_key='_main'):
         return
 
+class SelectableNode(UnitNode, ABC):
+    NAME = None
+    DEFAULT_NODE_INFO = None
+
+    @abstractmethod
+    def compute(self, out_port_key='_main'):
+        return
+
+    @abstractmethod
+    def extract_element(self, parent_group, element_id):
+        return
+
 
 class CombinationNode(Node, ABC):
     NAME = None

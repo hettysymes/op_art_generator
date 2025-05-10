@@ -1,16 +1,19 @@
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtCore import Qt, QRectF, QTimer
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
+
+from ui.nodes.nodes import SelectableNode
+
 
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""
 
-    def __init__(self, element_id, backend_child_elem, renderer, parent_node_item):
+    def __init__(self, element_id, parent_group, renderer, node_item):
         super().__init__()
         self.element_id = element_id
-        self.backend_child_elem = backend_child_elem
+        self.parent_group = parent_group
         self.renderer = renderer
-        self.parent_node_item = parent_node_item
+        self.node_item = node_item
 
         # Set flags for interaction - selectable but NOT movable
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -21,7 +24,7 @@ class SelectableSvgElement(QGraphicsItem):
     def boundingRect(self):
         """Return the bounding rectangle of the element."""
         rect = self.renderer.boundsOnElement(self.element_id)
-        width, height = self.parent_node_item.backend.svg_width, self.parent_node_item.backend.svg_height
+        width, height = self.node_item.node_state.svg_size
         return QRectF(rect.x() * width, rect.y() * height,
                       max(rect.width() * width, 1), max(rect.height() * height, 1))  # Minimum width/height of 1
 
@@ -60,7 +63,7 @@ class SelectableSvgElement(QGraphicsItem):
 
         # Add "Extract into node" action
         extract_action = QAction("Extract into node", menu)
-        extract_action.triggered.connect(self.extractIntoNode)
+        extract_action.triggered.connect(self.extractElement)
         menu.addAction(extract_action)
 
         # Get the global position for the menu
@@ -71,8 +74,10 @@ class SelectableSvgElement(QGraphicsItem):
         # Show the menu
         menu.exec_(global_pos)
 
-    def extractIntoNode(self):
+    def extractElement(self):
         """Handle the 'Extract into node' action."""
-        # node = get_node_from_element(self.backend_child_elem)
-        # self.parent_node_item.add_new_node(node)
-        pass
+        node: SelectableNode = self.node_item.node()
+        port_id = node.extract_element(self.parent_group, self.element_id)
+        # Defer deletion of this element (from updating svg image) until after element extraction
+        QTimer.singleShot(0, lambda: self.scene().extract_element(self.node_item, port_id))
+
