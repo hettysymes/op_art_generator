@@ -1,12 +1,6 @@
-import copy
-
-from ui.nodes.node_defs import NodeInfo, Node
-from ui.nodes.node_implementations.grid import GridNode
-from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
-from ui.nodes.node_input_exception import NodeInputException
+from ui.nodes.node_defs import NodeInfo
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_Scalar
-from ui.nodes.prop_defs import PrT_String, PrT_Enum, PropEntry
+from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_Scalar, PT_Enum, PropEntry
 
 DEF_ITERATOR_INFO = NodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",
@@ -16,11 +10,11 @@ DEF_ITERATOR_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Iterator", PT_List(PT_Element()))
     },
     prop_entries={
-        'prop_to_change': PropEntry(PrT_Enum(),
+        'prop_to_change': PropEntry(PT_Enum(),
                                     display_name="Property to change",
                                     description="Property of the input shape of which to modify using the value list.",
                                     default_value=None),
-        'vis_layout': PropEntry(PrT_Enum(["Vertical", "Horizontal"]),
+        'vis_layout': PropEntry(PT_Enum(["Vertical", "Horizontal"]),
                                 display_name="Visualisation layout",
                                 description="Iterations can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
                                 default_value="Vertical")

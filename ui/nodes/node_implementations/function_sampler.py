@@ -1,8 +1,7 @@
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Function, PT_Float, PT_List
-from ui.nodes.prop_defs import PrT_Int, PropEntry
+from ui.nodes.port_defs import PortIO, PortDef, PT_Function, PT_Float, PT_List, PT_Int, PropEntry
 from ui.nodes.warp_utils import sample_fun
 from ui.vis_types import MatplotlibFig
 
@@ -13,7 +12,7 @@ DEF_FUN_SAMPLER_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_List(PT_Float()))
     },
     prop_entries={
-        'num_samples': PropEntry(PrT_Int(),
+        'num_samples': PropEntry(PT_Int(),
                                  display_name="Sample number",
                                  description="Number of samples to obtain from the function f(x), i.e. x values (between 0 & 1) to input.",
                                  default_value=5,

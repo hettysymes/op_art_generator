@@ -4,8 +4,7 @@ from enum import Enum, auto
 
 from ui.id_generator import shorten_uid
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.port_defs import PortIO, PT_Scalar
-from ui.nodes.prop_defs import PrT_Hidden
+from ui.nodes.port_defs import PortIO, PT_Scalar, PT_Hidden
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
@@ -102,7 +101,7 @@ class Node(BaseNode, ABC):
 
     def prop_entries_is_empty(self):
         for prop_entry in self.get_prop_entries().values():
-            if not isinstance(prop_entry.prop_type, PrT_Hidden):
+            if not isinstance(prop_entry.prop_type, PT_Hidden):
                 return False
         return True
 

@@ -1,8 +1,7 @@
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table, flatten_list
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortDef, PT_Element, PortIO, PT_List
-from ui.nodes.prop_defs import PrT_ElemRefTable, PrT_Enum, PrT_Float, PropEntry
+from ui.nodes.port_defs import PortDef, PT_Element, PortIO, PT_List, PT_ElemRefTable, PT_Enum, PT_Float, PropEntry
 from ui.nodes.shape_datatypes import Group, Element
 from ui.nodes.transforms import Translate, Scale
 
@@ -13,15 +12,15 @@ DEF_STACKER_NODE_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
-        'elem_order': PropEntry(PrT_ElemRefTable('elements'),
+        'elem_order': PropEntry(PT_ElemRefTable('elements'),
                                 display_name="Drawing order",
                                 description="Order of drawings in which to stack them. Drawings at the top of the list are drawn first (i.e. at the top for vertical stacking, and at the left for horizontal stacking).",
                                 default_value=[]),
-        'stack_layout': PropEntry(PrT_Enum(["Vertical", "Horizontal"]),
+        'stack_layout': PropEntry(PT_Enum(["Vertical", "Horizontal"]),
                                   display_name="Stack layout",
                                   description="Stacking of drawings can be done either top-to-bottom (vertical) or left-to-right (horizontal)",
                                   default_value="Vertical"),
-        'wh_diff': PropEntry(PrT_Float(),
+        'wh_diff': PropEntry(PT_Float(),
                              display_name="Height/width distance",
                              description="Distance to place between stacked drawings, proportional to the height or width of one drawing (height for vertical stacking, width for horizontal stacking). E.g. if set to 0.5, the second drawing will be stacked halfway along the first drawing.",
                              default_value=0.4, min_value=0.1)

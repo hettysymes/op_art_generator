@@ -3,8 +3,7 @@ from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List
-from ui.nodes.prop_defs import PrT_Enum, PrT_ElemRefTable, PropEntry
+from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PropEntry, PT_Enum, PT_ElemRefTable
 
 DEF_DRAWING_GROUP_INFO = NodeInfo(
     description="Create a group from input drawings.",
@@ -13,11 +12,11 @@ DEF_DRAWING_GROUP_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing Group", PT_List(PT_Element()))
     },
     prop_entries={
-        'elem_order': PropEntry(PrT_ElemRefTable('elements'),
+        'elem_order': PropEntry(PT_ElemRefTable('elements'),
                                 display_name="Drawing group order",
                                 description="Order of drawings in the drawing group.",
                                 default_value=[]),
-        'vis_layout': PropEntry(PrT_Enum(["Vertical", "Horizontal"]),
+        'vis_layout': PropEntry(PT_Enum(["Vertical", "Horizontal"]),
                                 display_name="Visualisation layout",
                                 description="Drawings can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
                                 default_value="Vertical")

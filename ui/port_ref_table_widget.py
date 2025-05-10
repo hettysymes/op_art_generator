@@ -5,7 +5,7 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyledItemDelegate
 
 from ui.id_generator import shorten_uid
-from ui.nodes.prop_defs import LineRef, PortRefTableEntry
+from ui.nodes.port_defs import PortRefTableEntry
 from ui.reorderable_table_widget import ReorderableTableWidget
 
 

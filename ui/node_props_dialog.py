@@ -9,9 +9,8 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QTableWidgetItem, Q
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
-from ui.nodes.port_defs import PortIO
-from ui.nodes.prop_defs import PrT_Int, PrT_Float, PrT_Bool, PrT_Point, PrT_Enum, PrT_PortRefTable, PrT_Hidden, \
-    PrT_Fill, PrT_ElemRefTable, PrT_PointRefTable, LineRef
+from ui.nodes.port_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
+    LineRef, PT_Fill, PT_Hidden
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
@@ -122,7 +121,7 @@ class NodePropertiesDialog(QDialog):
             props_group.setLayout(props_layout)
 
             for prop_key, prop_entry in node_item.node().get_prop_entries().items():
-                if not isinstance(prop_entry.prop_type, PrT_Hidden):
+                if not isinstance(prop_entry.prop_type, PT_Hidden):
                     widget = self.create_property_widget(prop_key, prop_entry, node_item.node().get_property(prop_key), node_item)
 
                     # Create the row with label and help icon
@@ -229,8 +228,9 @@ class NodePropertiesDialog(QDialog):
         return label_container, widget_container
 
     def create_property_widget(self, prop_key, prop_entry, current_value, node_item):
+        prop_type = prop_entry.prop_type
         """Create an appropriate widget for the property type"""
-        if isinstance(prop_entry.prop_type, PrT_Int):
+        if isinstance(prop_type, PT_Int):
             widget = QSpinBox()
             if prop_entry.min_value is not None:
                 widget.setMinimum(prop_entry.min_value)
@@ -238,18 +238,18 @@ class NodePropertiesDialog(QDialog):
                 widget.setMaximum(prop_entry.max_value)
             widget.setValue(current_value or 0)
 
-        elif isinstance(prop_entry.prop_type, PrT_Float):
+        elif isinstance(prop_type, PT_Float):
             widget = QDoubleSpinBox()
             widget.setMinimum(prop_entry.min_value if prop_entry.min_value is not None else -999999.0)
             if prop_entry.max_value is not None:
                 widget.setMaximum(prop_entry.max_value)
             widget.setValue(current_value or 0.0)
 
-        elif isinstance(prop_entry.prop_type, PrT_Bool):
+        elif isinstance(prop_type, PT_Bool):
             widget = QCheckBox()
             widget.setChecked(current_value or False)
 
-        elif isinstance(prop_entry.prop_type, PrT_Point):
+        elif isinstance(prop_type, PT_Point):
             # Create the widget
             widget = QWidget()
 
@@ -314,14 +314,14 @@ class NodePropertiesDialog(QDialog):
         #                       if widget.itemData(i) == current_value), 0)
         #         widget.setCurrentIndex(index)
 
-        elif isinstance(prop_entry.prop_type, PrT_Enum):
+        elif isinstance(prop_type, PT_Enum):
             widget = QComboBox()
-            for display, data in prop_entry.prop_type.display_data_options():
+            for display, data in prop_type.display_data_options():
                 widget.addItem(display, userData=data)
             if current_value is not None:
-                index = prop_entry.prop_type.get_options().index(current_value) if current_value in prop_entry.prop_type.get_options() else 0
+                index = prop_type.get_options().index(current_value) if current_value in prop_type.get_options() else 0
                 widget.setCurrentIndex(index)
-        elif isinstance(prop_entry.prop_type, PrT_ElemRefTable):
+        elif isinstance(prop_type, PT_ElemRefTable):
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
                                                                                   prop_entry.prop_type.linked_port_key, ref_id),
@@ -329,7 +329,7 @@ class NodePropertiesDialog(QDialog):
                 entries=current_value
             )
             widget = port_ref_table
-        elif isinstance(prop_entry.prop_type, PrT_PointRefTable):
+        elif isinstance(prop_type, PT_PointRefTable):
             def text_callback(port_ref, table_entry):
                 if isinstance(table_entry, LineRef):
                     points = table_entry.points()
@@ -492,7 +492,7 @@ class NodePropertiesDialog(QDialog):
         #
         #     widget = container
 
-        elif isinstance(prop_entry.prop_type, PrT_Fill):
+        elif isinstance(prop_type, PT_Fill):
             r, g, b, a = current_value
             widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
         else:  # Default to string type

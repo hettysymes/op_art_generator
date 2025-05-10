@@ -2,8 +2,7 @@ import math
 
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Ellipse, PT_Point, PT_List
-from ui.nodes.prop_defs import PrT_Float, PrT_Int, PropEntry
+from ui.nodes.port_defs import PortIO, PortDef, PT_Ellipse, PT_Point, PT_List, PT_Int, PT_Float, PropEntry
 from ui.nodes.shape_datatypes import Ellipse, Group
 
 DEF_ELLIPSE_SAMPLER_INFO = NodeInfo(
@@ -13,11 +12,11 @@ DEF_ELLIPSE_SAMPLER_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_List(PT_Point()))
     },
     prop_entries={
-        'start_angle': PropEntry(PrT_Float(),
+        'start_angle': PropEntry(PT_Float(),
                                  display_name="Angle of first sample (°)",
                                  description="Central angle (in degrees) of the first sample (point along the edge of the ellipse) with the ellipse's right-most point. The angle is measured clockwise. At 0° the first sample is at its right-most point. At 90° the first sample is at the bottom-most point.",
                                  default_value=0),
-        'num_samples': PropEntry(PrT_Int(),
+        'num_samples': PropEntry(PT_Int(),
                                  display_name="Sample number",
                                  description="Number of samples (points along the edge of the ellipse), at most 1.",
                                  default_value=5,

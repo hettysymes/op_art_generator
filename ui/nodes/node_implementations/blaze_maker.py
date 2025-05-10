@@ -2,8 +2,7 @@ from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_Ellipse, PT_List
-from ui.nodes.prop_defs import PrT_Int, PrT_Float, PrT_Fill, PrT_Hidden, PropEntry
+from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_Ellipse, PT_List, PT_Fill, PT_Float, PT_Int, PropEntry
 from ui.nodes.shape_datatypes import Group, Polygon
 from ui.nodes.utils import process_rgb
 
@@ -14,16 +13,16 @@ DEF_BLAZE_MAKER_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
-        'num_polygons': PropEntry(PrT_Int(),
+        'num_polygons': PropEntry(PT_Int(),
                                   display_name="Zig-zag number",
                                   description="Number of zig-zags, at most 1.",
                                   default_value=36,
                                   min_value=1),
-        'angle_diff': PropEntry(PrT_Float(),
+        'angle_diff': PropEntry(PT_Float(),
                                 display_name="Zig-zag angle (°)",
                                 description="Angle (in degrees) determining the sharpness and direction of the zig-zags. Angles with a higher magnitude give sharper zig-zags. Negative angles give zig-zags in the reverse direction to positive angles.",
                                 default_value=20),
-        'fill': PropEntry(PrT_Fill(),
+        'fill': PropEntry(PT_Fill(),
                           display_name="Zig-zag colour",
                           description="Zig-zag colour.",
                           default_value=(0, 0, 0, 255))

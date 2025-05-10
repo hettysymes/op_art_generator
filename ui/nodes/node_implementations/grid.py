@@ -2,8 +2,7 @@ from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.shape import StraightLineNode
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Warp, PT_Grid
-from ui.nodes.prop_defs import PrT_Int, PropEntry
+from ui.nodes.port_defs import PortIO, PortDef, PT_Warp, PT_Grid, PT_Int, PropEntry
 from ui.nodes.shape_datatypes import Group
 from ui.nodes.warp_utils import PosWarp, RelWarp
 
@@ -12,12 +11,12 @@ DEF_GRID_INFO = NodeInfo(
     port_defs={(PortIO.INPUT, 'x_warp'): PortDef("X Warp", PT_Warp(), optional=True, description="By default vertical grid lines are spaced equally."),
                (PortIO.INPUT, 'y_warp'): PortDef("Y Warp", PT_Warp(), optional=True, description="By default horizontal grid lines are spaced equally."),
                (PortIO.OUTPUT, '_main'): PortDef("Grid", PT_Grid())},
-    prop_entries={'width': PropEntry(PrT_Int(),
+    prop_entries={'width': PropEntry(PT_Int(),
                                      display_name="Width",
                                      description="Number of cells in the width of the grid, at most 1.",
                                      default_value=5,
                                      min_value=1),
-                  'height': PropEntry(PrT_Int(),
+                  'height': PropEntry(PT_Int(),
                                       display_name="Height",
                                       description="Number of cells in the height of the grid, at most 1.",
                                       default_value=5,

@@ -1,8 +1,7 @@
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List
-from ui.nodes.prop_defs import PrT_ElemRefTable, PropEntry
+from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_ElemRefTable, PropEntry
 from ui.nodes.shape_datatypes import Group
 
 DEF_OVERLAY_INFO = NodeInfo(
@@ -12,7 +11,7 @@ DEF_OVERLAY_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
-        'elem_order': PropEntry(PrT_ElemRefTable('elements'),
+        'elem_order': PropEntry(PT_ElemRefTable('elements'),
                                 display_name="Drawing order",
                                 description="Order of drawings in which to overlay them. Drawings at the top of the list are drawn first (i.e. at the bottom of the final overlayed image).",
                                 default_value=[])

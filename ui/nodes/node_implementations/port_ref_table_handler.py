@@ -1,4 +1,4 @@
-from ui.nodes.prop_defs import PortRefTableEntry
+from ui.nodes.port_defs import PortRefTableEntry
 
 
 def handle_port_ref_table(ref_data, port_ref_table, entry_class=PortRefTableEntry):
