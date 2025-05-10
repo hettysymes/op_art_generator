@@ -35,7 +35,9 @@ class PortRefTableWidget(QWidget):
             self.add_item(entry, row)
 
     def add_item(self, table_entry, row=None):
-        port_ref = self.port_ref_getter(table_entry.ref_id)
+        port_ref = None
+        if table_entry.ref_id:
+            port_ref = self.port_ref_getter(table_entry.ref_id)
         item = QTableWidgetItem()
         item.setTextAlignment(Qt.AlignCenter)
         item.setData(Qt.UserRole, table_entry)

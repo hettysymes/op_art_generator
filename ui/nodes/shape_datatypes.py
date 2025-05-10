@@ -155,7 +155,7 @@ class Polyline(Shape):
         self.stroke_width = stroke_width
 
     def get(self, dwg):
-        return dwg.polyline(points=self.points,
+        return dwg.polyline(points=[(p.x(), p.y()) for p in self.points],
                             stroke=self.stroke,
                             stroke_width=self.stroke_width,
                             fill='none',
@@ -189,7 +189,7 @@ class Polygon(Shape):
             if isinstance(p, ElemRef):
                 points += p.get_points()
             else:
-                points.append(p)
+                points.append((p.x(), p.y()))
         return dwg.polygon(points=points,
                            fill=self.fill,
                            fill_opacity=self.fill_opacity,

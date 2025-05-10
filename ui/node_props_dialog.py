@@ -10,8 +10,8 @@ from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.port_defs import PortIO
-from ui.nodes.prop_defs import PrT_Int, PrT_Float, PrT_Bool, PrT_Coordinate, PrT_Enum, PrT_PortRefTable, PrT_Hidden, \
-    PrT_Fill
+from ui.nodes.prop_defs import PrT_Int, PrT_Float, PrT_Bool, PrT_Point, PrT_Enum, PrT_PortRefTable, PrT_Hidden, \
+    PrT_Fill, PrT_ElemRefTable, PrT_PointRefTable, Point
 from ui.point_dialog import show_point_dialog
 from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
@@ -249,7 +249,7 @@ class NodePropertiesDialog(QDialog):
             widget = QCheckBox()
             widget.setChecked(current_value or False)
 
-        elif isinstance(prop_entry.prop_type, PrT_Coordinate):
+        elif isinstance(prop_entry.prop_type, PrT_Point):
             # Create the widget
             widget = QWidget()
 
@@ -464,12 +464,25 @@ class NodePropertiesDialog(QDialog):
             # container.table_widget = table  # Store a reference to the actual table
             #
             # widget = container
-        elif isinstance(prop_entry.prop_type, PrT_PortRefTable):
+        elif isinstance(prop_entry.prop_type, PrT_ElemRefTable):
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
                                                                                   prop_entry.prop_type.linked_port_key, ref_id),
                 table_heading="Drawing",
                 entries=current_value
+            )
+            widget = port_ref_table
+        elif isinstance(prop_entry.prop_type, PrT_PointRefTable):
+            def text_callback(port_ref, table_entry):
+                if isinstance(table_entry, Point):
+                    return f"({table_entry.x():.2f}, {table_entry.y():.2f})"
+                return "[ERROR]"
+            port_ref_table = PortRefTableWidget(
+                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
+                                                                                  prop_entry.prop_type.linked_port_key, ref_id),
+                table_heading="Points (X, Y)",
+                entries=current_value,
+                text_callback=text_callback
             )
             widget = port_ref_table
         # elif prop_entry.prop_type == PrT_ColourTable():

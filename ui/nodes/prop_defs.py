@@ -9,6 +9,14 @@ class PropType:
 
 # Tables
 
+class Point(PortRefTableEntry):
+    def __init__(self, x, y):
+        super().__init__(None, True, (x, y))
+    def x(self):
+        return self.data[0]
+    def y(self):
+        return self.data[1]
+
 class PrT_PortRefTable(PropType):
     def __init__(self, linked_port_key=None):
         self.linked_port_key = linked_port_key
@@ -33,7 +41,7 @@ class PrT_Int(PropType):
 class PrT_Bool(PropType):
     pass
 
-class PrT_Coordinate(PropType):
+class PrT_Point(PropType):
     pass
 
 class PrT_PropEnum(PropType):

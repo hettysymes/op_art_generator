@@ -3,7 +3,7 @@ from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Element, PT_Ellipse
-from ui.nodes.prop_defs import PrT_Float, PrT_Int, PrT_PointRefTable, PrT_Coordinate, PrT_Fill, PropEntry
+from ui.nodes.prop_defs import PrT_Float, PrT_Int, PrT_PointRefTable, PrT_Point, PrT_Fill, PropEntry, Point
 from ui.nodes.shape_datatypes import Polygon, Group, Polyline, SineWave, Ellipse
 from ui.nodes.utils import process_rgb
 
@@ -95,7 +95,7 @@ DEF_CUSTOM_LINE_INFO = NodeInfo(
         'points': PropEntry(PrT_PointRefTable(),
                             display_name="Points",
                             description="Points defining the path of the line (in order).",
-                            default_value=[(0, 0), (0.5, 0.5), (1, 0)]),
+                            default_value=[Point(0, 0), Point(0.5, 0.5), Point(1, 0)]),
         'stroke_width': PropEntry(PrT_Float(),
                                   display_name="Line thickness",
                                   description="Thickness of the line drawing.",
@@ -128,11 +128,11 @@ DEF_STRAIGHT_LINE_NODE_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline())
     },
     prop_entries={
-        'start_coord': PropEntry(PrT_Coordinate(),
+        'start_coord': PropEntry(PrT_Point(),
                                  display_name="Start coordinate",
                                  description="Coordinate of the start of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                                  default_value=(1, 0)),
-        'stop_coord': PropEntry(PrT_Coordinate(),
+        'stop_coord': PropEntry(PrT_Point(),
                                 display_name="Stop coordinate",
                                 description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                                 default_value=(0, 1)),
@@ -171,7 +171,7 @@ DEF_POLYGON_INFO = NodeInfo(
     prop_entries={'points': PropEntry(PrT_PointRefTable(),
                                       display_name="Points",
                                       description="Points defining the path of the polygon edge (in order).",
-                                      default_value=[(0, 0), (0, 1), (1, 1)]),
+                                      default_value=[Point(0, 0), Point(0, 1), Point(1, 1)]),
                   'fill': PropEntry(PrT_Fill(),
                                     display_name="Fill",
                                     description="Polygon fill colour.",
@@ -225,7 +225,7 @@ class RectangleNode(UnitNode):
 
     @staticmethod
     def helper(colour):
-        return PolygonNode.helper(colour, [(0, 0), (0, 1), (1, 1), (1, 0)], 'none', 1)
+        return PolygonNode.helper(colour, [Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)], 'none', 1)
 
     def compute(self, out_port_key='_main'):
         return RectangleNode.helper(self._prop_val('fill'))
@@ -253,7 +253,7 @@ DEF_ELLIPSE_INFO = NodeInfo(
                         description="Vertical semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                         default_value=0.5,
                         min_value=0.0),
-        'centre': PropEntry(PrT_Coordinate(),
+        'centre': PropEntry(PrT_Point(),
                             display_name="Centre coordinate",
                             description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                             default_value=(0.5, 0.5)),
@@ -307,7 +307,7 @@ DEF_CIRCLE_INFO = NodeInfo(
                        description="Radius of the circle. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                        default_value=0.5,
                        min_value=0.0),
-        'centre': PropEntry(PrT_Coordinate(),
+        'centre': PropEntry(PrT_Point(),
                             display_name="Centre coordinate",
                             description="Coordinate of the circle centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                             default_value=(0.5, 0.5)),
