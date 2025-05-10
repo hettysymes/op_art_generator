@@ -13,11 +13,10 @@ DEF_STACKER_NODE_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
-        'elem_order': PropEntry(PrT_ElemRefTable(),
+        'elem_order': PropEntry(PrT_ElemRefTable('elements'),
                                 display_name="Drawing order",
                                 description="Order of drawings in which to stack them. Drawings at the top of the list are drawn first (i.e. at the top for vertical stacking, and at the left for horizontal stacking).",
-                                default_value=[],
-                                linked_port_key='elements'),
+                                default_value=[]),
         'stack_layout': PropEntry(PrT_Enum(),
                                   display_name="Stack layout",
                                   description="Stacking of drawings can be done either top-to-bottom (vertical) or left-to-right (horizontal)",
@@ -54,6 +53,6 @@ class StackerNode(UnitNode):
         ref_elements = self._prop_val('elements', get_refs=True)
         handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
         # Compute final element
-        elements = [entry[1] for entry in self._prop_val('elem_order')]
+        elements = [entry.data for entry in self._prop_val('elem_order')]
         return StackerNode.helper(elements, self._prop_val('wh_diff'),
                                   self._prop_val('stack_layout') == 'Vertical')

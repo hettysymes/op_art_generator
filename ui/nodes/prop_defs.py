@@ -10,7 +10,8 @@ class PropType:
 # Tables
 
 class PrT_PortRefTable(PropType):
-    pass
+    def __init__(self, linked_port_key=None):
+        self.linked_port_key = linked_port_key
 
 class PrT_ElemRefTable(PrT_PortRefTable):
     pass
@@ -59,7 +60,7 @@ class PropEntry:
 
     def __init__(self, prop_type, display_name=None, description=None, default_value=None, min_value=None,
                  max_value=None,
-                 auto_format=True, options=None, linked_port_key=None):
+                 auto_format=True, options=None):
         self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
         self.display_name = display_name
         self.description = description
@@ -68,4 +69,3 @@ class PropEntry:
         self.max_value = max_value
         self.auto_format = auto_format
         self.options = options  # options for (constant) enum type
-        self.linked_port_key = linked_port_key

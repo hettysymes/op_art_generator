@@ -467,7 +467,7 @@ class NodePropertiesDialog(QDialog):
         elif isinstance(prop_entry.prop_type, PrT_PortRefTable):
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
-                                                                                  prop_entry.linked_port_key, ref_id),
+                                                                                  prop_entry.prop_type.linked_port_key, ref_id),
                 table_heading="Drawing",
                 entries=current_value
             )

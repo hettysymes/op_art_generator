@@ -12,11 +12,10 @@ DEF_OVERLAY_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
-        'elem_order': PropEntry(PrT_ElemRefTable(),
+        'elem_order': PropEntry(PrT_ElemRefTable('elements'),
                                 display_name="Drawing order",
                                 description="Order of drawings in which to overlay them. Drawings at the top of the list are drawn first (i.e. at the bottom of the final overlayed image).",
-                                default_value=[],
-                                linked_port_key='elements')
+                                default_value=[])
     }
 )
 
@@ -31,6 +30,5 @@ class OverlayNode(UnitNode):
         # Return final element
         ret_group = Group(debug_info="Overlay")
         for entry in self._prop_val('elem_order'):
-            if entry.data:
-                ret_group.add(entry.data)
+            ret_group.add(entry.data)
         return ret_group
