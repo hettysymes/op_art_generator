@@ -1,4 +1,8 @@
+import copy
+
 from ui.nodes.node_defs import NodeInfo
+from ui.nodes.node_implementations.grid import GridNode
+from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_Scalar, PT_Enum, PropEntry
 
@@ -26,14 +30,14 @@ class IteratorNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
 
     def _update_prop_change_enum(self):
-        enum_type: PrT_Enum = self.node_info.prop_entries['prop_to_change'].prop_type
+        enum_type: PT_Enum = self.node_info.prop_entries['prop_to_change'].prop_type
         elem_input = self._prop_val('element', get_refs=True)
         if not elem_input:
             enum_type.set_options([])
             return None
         ref_id, element = next(iter(elem_input.items()))
-        node_id = self._port_ref('element', ref_id).node_id
-        node = self.graph_querier.node(node_id)
+        port_ref = self._port_ref('element', ref_id)
+        node = self.graph_querier.node(port_ref.node_id)
         options = []
         display_options = []
         prop_types = {}
@@ -46,7 +50,7 @@ class IteratorNode(UnitNode):
         if self._prop_val('prop_to_change') not in enum_type.get_options():
             self.set_property('prop_to_change', enum_type.get_options()[0])
         prop_change_key = self._prop_val('prop_to_change')
-        return node, prop_change_key, prop_types[prop_change_key]
+        return node, prop_change_key, prop_types[prop_change_key], port_ref.port_key
 
     def _validate_values(self, prop_type):
         values_input = self._prop_val('value_list', get_refs=True)
@@ -60,25 +64,33 @@ class IteratorNode(UnitNode):
         # Check compatibility between value and property types
         assert isinstance(value_type, PT_Scalar)
         assert isinstance(prop_type, PT_Scalar)
-        return value_type.is_compatible_with(prop_type)
+        return values if value_type.is_compatible_with(prop_type) else None
 
     def compute(self, out_port_key='_main'):
         ret = self._update_prop_change_enum()
         if not ret:
             return None
-        element_node, prop_change_key, prop_change_type = ret
-        print(self._validate_values(prop_change_type))
-        return None
+        element_node, prop_change_key, prop_change_type, src_port_key = ret
+        values = self._validate_values(prop_change_type)
+        if values is None:
+            print("Values not compatible")
+            return None
+        new_elements = []
+        for value in values:
+            new_element_node = copy.deepcopy(element_node)
+            new_element_node.set_property(prop_change_key, value)
+            new_elements.append(new_element_node.compute(src_port_key))
+        return new_elements
+
 
     def visualise(self):
-        self.compute()
-        # elements = self.compute()
-        # if elements:
-        #     if self._prop_val('vis_layout') == "Vertical":
-        #         # Draw in vertical grid
-        #         grid = GridNode.helper(None, None, 1, len(elements))
-        #     else:
-        #         # Draw in Horizontal grid
-        #         grid = GridNode.helper(None, None, len(elements), 1)
-        #     return ShapeRepeaterNode.helper(grid, elements)
+        elements = self.compute()
+        if elements:
+            if self._prop_val('vis_layout') == "Vertical":
+                # Draw in vertical grid
+                grid = GridNode.helper(None, None, 1, len(elements))
+            else:
+                # Draw in Horizontal grid
+                grid = GridNode.helper(None, None, len(elements), 1)
+            return ShapeRepeaterNode.helper(grid, elements)
         return None
