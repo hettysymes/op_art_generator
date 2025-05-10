@@ -1628,7 +1628,7 @@ class PipelineEditor(QMainWindow):
         connections = []
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
-                node_states[item.node_state.node_id] = item.node_state
+                node_states[item.node_state.node_id] = copy.deepcopy(item.node_state)
             elif isinstance(item, EdgeItem):
                 src_node_id = item.src_port.parentItem().node_state.node_id
                 src_port_key = item.src_port.port_key
@@ -1640,8 +1640,8 @@ class PipelineEditor(QMainWindow):
     def delete_selected_items(self):
         node_states, connections = self.identify_selected_items()
         if node_states or connections:
-            nodes = [self.scene.node_graph.node(node_id) for node_id in node_states]
-            port_refs = {dst_conn_id: port_ref_data for dst_conn_id, port_ref_data in self.scene.node_graph.port_refs.items() if dst_conn_id[0] in node_states}
+            nodes = [copy.deepcopy(self.scene.node_graph.node(node_id)) for node_id in node_states]
+            port_refs = {dst_conn_id: copy.deepcopy(port_ref_data) for dst_conn_id, port_ref_data in self.scene.node_graph.port_refs.items() if dst_conn_id[0] in node_states}
             self.scene.undo_stack.push(DeleteCmd(self.scene, list(node_states.values()), nodes, connections, port_refs))
 
     def identify_selected_subgraph(self):
