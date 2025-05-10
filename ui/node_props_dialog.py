@@ -479,9 +479,9 @@ class NodePropertiesDialog(QDialog):
                 item.setTextAlignment(Qt.AlignCenter)
                 item.setData(Qt.UserRole, table_entry)
                 item.setText(f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})")
-                # if not elem_ref.is_deletable():
-                #     # Set red background for non-deletable elements
-                #     item.setBackground(QColor(237, 130, 157))
+                if not table_entry[2]:
+                    # Set red background for non-deletable items
+                    item.setBackground(QColor(237, 130, 157))
                 if (row is not None) and (table is not None):
                     table.setItem(row, 0, item)
                 return item
@@ -512,36 +512,34 @@ class NodePropertiesDialog(QDialog):
                 add_item(table_entry, row, table)
 
             # Set up context menu for deletion and duplicating
-            # def show_context_menu(position):
-            #     row = table.rowAt(position.y())
-            #
-            #     if row >= 0:
-            #         item = table.item(row, 0)
-            #         data = item.data(Qt.UserRole)
-            #         menu = QMenu()
-            #         duplicate_action = menu.addAction("Duplicate")
-            #         if elem_ref.is_deletable():
-            #             delete_action = menu.addAction("Delete")
-            #
-            #         action = menu.exec_(table.viewport().mapToGlobal(position))
-            #
-            #         if elem_ref.is_deletable() and action == delete_action:
-            #             table.removeRow(row)
-            #
-            #         if action == duplicate_action:
-            #             # Add a new row below the current one
-            #             table.insertRow(row + 1)
-            #             # Create a new item
-            #             new_item = QTableWidgetItem(item.text())
-            #             # Set the same user data (elem_ref)
-            #             new_elem_ref: ElemRef = copy.deepcopy(elem_ref)
-            #             new_elem_ref.set_deletable(True)
-            #             new_item.setData(Qt.UserRole, new_elem_ref)
-            #             # Add the item to the table
-            #             table.setItem(row + 1, 0, new_item)
-            #
-            # table.setContextMenuPolicy(Qt.CustomContextMenu)
-            # table.customContextMenuRequested.connect(show_context_menu)
+            def show_context_menu(position):
+                row = table.rowAt(position.y())
+
+                if row >= 0:
+                    item = table.item(row, 0)
+                    ref_id, element, deletable = item.data(Qt.UserRole)
+                    menu = QMenu()
+                    duplicate_action = menu.addAction("Duplicate")
+                    if deletable:
+                        delete_action = menu.addAction("Delete")
+
+                    action = menu.exec_(table.viewport().mapToGlobal(position))
+
+                    if deletable and action == delete_action:
+                        table.removeRow(row)
+
+                    if action == duplicate_action:
+                        # Add a new row below the current one
+                        table.insertRow(row + 1)
+                        # Create a new item
+                        new_item = QTableWidgetItem(item.text())
+                        # Set the same user data (elem_ref)
+                        new_item.setData(Qt.UserRole, (ref_id, copy.deepcopy(element), True))
+                        # Add the item to the table
+                        table.setItem(row + 1, 0, new_item)
+
+            table.setContextMenuPolicy(Qt.CustomContextMenu)
+            table.customContextMenuRequested.connect(show_context_menu)
 
             # Create a container for the table and button
             container = QWidget()
