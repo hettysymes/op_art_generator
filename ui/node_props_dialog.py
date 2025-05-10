@@ -11,6 +11,7 @@ from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.node_defs import PropType
 from ui.nodes.port_defs import PortIO
+from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
 
 
@@ -471,94 +472,13 @@ class NodePropertiesDialog(QDialog):
 
             widget = container
         elif prop_entry.prop_type == PropType.PORT_REF_TABLE:
-
-            def add_item(table_entry, row=None, table=None):
-                ref_id = table_entry[0]
-                port_ref = self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id, prop_entry.linked_port_key, ref_id)
-                item = QTableWidgetItem()
-                item.setTextAlignment(Qt.AlignCenter)
-                item.setData(Qt.UserRole, table_entry)
-                item.setText(f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})")
-                if not table_entry[2]:
-                    # Set red background for non-deletable items
-                    item.setBackground(QColor(237, 130, 157))
-                if (row is not None) and (table is not None):
-                    table.setItem(row, 0, item)
-                return item
-
-            # Create our custom table widget
-            table = ReorderableTableWidget(add_item)
-
-            # Set up the basic table structure with single column
-            table.setColumnCount(1)
-            table.setHorizontalHeaderLabels(["Drawing"])
-
-            # Custom delegate to ensure text alignment is centered
-            class CenteredItemDelegate(QStyledItemDelegate):
-                def initStyleOption(self, option, index):
-                    super().initStyleOption(option, index)
-                    option.displayAlignment = Qt.AlignCenter
-
-            # Apply the delegate to the table
-            centered_delegate = CenteredItemDelegate()
-            table.setItemDelegate(centered_delegate)
-            table.verticalHeader().setDefaultSectionSize(40)
-            table.setWordWrap(True)
-
-            # Populate with current data
-            current_entries = current_value or prop_entry.default_value or []
-            table.setRowCount(len(current_entries))
-            for row, table_entry in enumerate(current_entries):
-                add_item(table_entry, row, table)
-
-            # Set up context menu for deletion and duplicating
-            def show_context_menu(position):
-                row = table.rowAt(position.y())
-
-                if row >= 0:
-                    item = table.item(row, 0)
-                    ref_id, element, deletable = item.data(Qt.UserRole)
-                    menu = QMenu()
-                    duplicate_action = menu.addAction("Duplicate")
-                    if deletable:
-                        delete_action = menu.addAction("Delete")
-
-                    action = menu.exec_(table.viewport().mapToGlobal(position))
-
-                    if deletable and action == delete_action:
-                        table.removeRow(row)
-
-                    if action == duplicate_action:
-                        # Add a new row below the current one
-                        table.insertRow(row + 1)
-                        # Create a new item
-                        new_item = QTableWidgetItem(item.text())
-                        # Set the same user data (elem_ref)
-                        new_item.setData(Qt.UserRole, (ref_id, copy.deepcopy(element), True))
-                        # Add the item to the table
-                        table.setItem(row + 1, 0, new_item)
-
-            table.setContextMenuPolicy(Qt.CustomContextMenu)
-            table.customContextMenuRequested.connect(show_context_menu)
-
-            # Create a container for the table and button
-            container = QWidget()
-            layout = QVBoxLayout(container)
-            layout.addWidget(table)
-
-            # Function to get the current value from the table
-            def get_table_value():
-                data = []
-                for row in range(table.rowCount()):
-                    item = table.item(row, 0)
-                    data.append(item.data(Qt.UserRole))
-                return data
-
-            # Store both the getter function and the reference to the table with the container
-            container.get_value = get_table_value
-            container.table_widget = table  # Store a reference to the actual table
-
-            widget = container
+            port_ref_table = PortRefTableWidget(
+                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
+                                                                                  prop_entry.linked_port_key, ref_id),
+                table_heading="Drawing",
+                entries=current_value
+            )
+            widget = port_ref_table
         # elif prop_entry.prop_type == PropType.COLOUR_TABLE:
         #     def add_colour_item(colour, row=None, table=None):
         #         string_col = str((colour.red(), colour.green(), colour.blue(), colour.alpha()))
