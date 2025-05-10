@@ -56,12 +56,6 @@ class Group(Element):
             group.add(element.get(dwg))
         return group
 
-    def get_element_from_id(self, element_id):
-        for elem in self.elements:
-            if elem.uid == element_id:
-                return elem
-        return None
-
     def get_element_index_from_id(self, element_id):
         for i, elem in enumerate(self.elements):
             if elem.uid == element_id:
@@ -71,6 +65,9 @@ class Group(Element):
     def __iter__(self):
         for element in self.elements:
             yield element
+
+    def __getitem__(self, index):
+        return self.elements[index]
 
     def add(self, element):
         assert isinstance(element, Element)

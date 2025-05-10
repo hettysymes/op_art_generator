@@ -26,24 +26,37 @@ class ShapeRepeaterNode(SelectableNode):
             # Ensure elements is a list
             elements = [elements]
         element_it = itertools.cycle(elements)
-        for i in range(1, len(h_line_ys)):
+        for i in range(0, len(h_line_ys)-1):
             # Add row
-            for j in range(1, len(v_line_xs)):
-                x1 = v_line_xs[j - 1]
-                x2 = v_line_xs[j]
-                y1 = h_line_ys[i - 1]
-                y2 = h_line_ys[i]
+            for j in range(0, len(v_line_xs)-1):
+                x1 = v_line_xs[j]
+                x2 = v_line_xs[j+1]
+                y1 = h_line_ys[i]
+                y2 = h_line_ys[i+1]
                 cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({i},{j})")
                 cell_group.add(next(element_it))
                 ret_group.add(cell_group)
         return ret_group
 
-    def compute(self, out_port_key='_main'):
+    def _compute_main(self):
         grid = self._prop_val('grid')
         elements = self._prop_val('elements')
         if grid and elements:
             return ShapeRepeaterNode.helper(grid, elements)
         return None
+
+    def _compute_cell(self, i, j):
+        main_group = self._compute_main()
+        v_line_xs, _ = self._prop_val('grid')
+        number_rows = len(v_line_xs) - 1
+        return main_group[number_rows*i + j]
+
+    def compute(self, out_port_key='_main'):
+        if out_port_key == '_main':
+            return self._compute_main()
+        # Compute cell
+        _, i, j = out_port_key.split('_')
+        return self._compute_cell(int(i), int(j))
 
     def extract_element(self, parent_group, element_id):
         v_line_xs, _ = self._prop_val('grid')
