@@ -16,71 +16,50 @@ DEF_ITERATOR_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Iterator", PT_List(PT_Element()))
     },
     prop_entries={
-        'prop_to_change': PropEntry(PrT_String(),
+        'prop_to_change': PropEntry(PrT_Enum(),
                                     display_name="Property to change",
                                     description="Property of the input shape of which to modify using the value list.",
-                                    default_value=""),
-        'vis_layout': PropEntry(PrT_Enum(),
+                                    default_value=None),
+        'vis_layout': PropEntry(PrT_Enum(["Vertical", "Horizontal"]),
                                 display_name="Visualisation layout",
                                 description="Iterations can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
-                                default_value="Vertical",
-                                options=["Vertical", "Horizontal"])
+                                default_value="Vertical")
     }
 )
-
-
-def normalize_type(t):
-    import numpy as np
-    if isinstance(t, np.generic):
-        t = t.item()
-    return type(t)
-
 
 class IteratorNode(UnitNode):
     NAME = "Iterator"
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
 
+    def _update_prop_change_enum(self):
+        enum_type: PrT_Enum = self.node_info.prop_entries['prop_to_change'].prop_type
+        elem_input = self._prop_val('element', get_refs=True)
+        if not elem_input:
+            enum_type.set_options([])
+            return
+        ref_id, element = next(iter(elem_input.items()))
+        node_id = self._port_ref('element', ref_id).node_id
+        node = self.graph_querier.node(node_id)
+        options = []
+        display_options = []
+        for prop_key, prop_entry in node.get_prop_entries().items():
+            options.append(prop_key)
+            display_options.append(prop_entry.display_name)
+        enum_type.set_options(options, display_options)
+
     def compute(self, out_port_key='_main'):
-        samples = self._prop_val('value_list')
-        shape_node: Node = self._prop_val('element')
-        element = shape_node.compute()
-        if (samples is not None) and element:
-            prop_key = self._prop_val('prop_to_change')
-            if prop_key and (prop_key in shape_node.prop_vals):
-                ret = []
-                for sample in samples:
-                    node_copy = copy.deepcopy(shape_node)
-                    sample_type = normalize_type(sample)
-                    if sample_type != normalize_type(shape_node._prop_val(prop_key)):
-                        raise NodeInputException(
-                            "Type of value list samples are not compatible with the selected property.", self.uid)
-                    # Check the sample is within the min and max range for floats and ints
-                    if sample_type in (int, float):
-                        # TODO: fix
-                        matching_prop = next((p for p in shape_node.prop_type_list() if p.key_name == prop_key), None)
-                        if ((matching_prop.min_value is not None) and sample < matching_prop.min_value) or (
-                                (matching_prop.max_value is not None) and sample > matching_prop.max_value):
-                            raise NodeInputException(
-                                "Value list includes samples not in allowed in the property range.",
-                                self.uid)
-                    node_copy.prop_vals[prop_key] = sample
-                    try:
-                        compute_res = node_copy.compute()
-                    except NodeInputException as e:
-                        raise NodeInputException(e.message, self.uid)
-                    ret.append(compute_res)
-                return ret
-            return None
+        self._update_prop_change_enum()
         return None
 
     def visualise(self):
-        elements = self.compute()
-        if elements:
-            if self._prop_val('vis_layout') == "Vertical":
-                # Draw in vertical grid
-                grid = GridNode.helper(None, None, 1, len(elements))
-            else:
-                # Draw in Horizontal grid
-                grid = GridNode.helper(None, None, len(elements), 1)
-            return ShapeRepeaterNode.helper(grid, elements)
+        self.compute()
+        # elements = self.compute()
+        # if elements:
+        #     if self._prop_val('vis_layout') == "Vertical":
+        #         # Draw in vertical grid
+        #         grid = GridNode.helper(None, None, 1, len(elements))
+        #     else:
+        #         # Draw in Horizontal grid
+        #         grid = GridNode.helper(None, None, len(elements), 1)
+        #     return ShapeRepeaterNode.helper(grid, elements)
         return None

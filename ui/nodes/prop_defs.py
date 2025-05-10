@@ -56,7 +56,26 @@ class PrT_SelectorEnum(PropType):
     pass
 
 class PrT_Enum(PropType):
-    pass
+    def __init__(self, options=None, display_options=None):
+        self.options = None
+        self.display_options = None
+        self.set_options(options, display_options)
+
+    def set_options(self, options=None, display_options=None):
+        if options:
+            self.options = options
+            if display_options:
+                assert len(display_options) == len(options)
+            self.display_options = display_options if display_options else options
+        else:
+            self.options = [None]
+            self.display_options = ["[none]"]
+
+    def get_options(self):
+        return self.options
+
+    def display_data_options(self):
+        return zip(self.display_options, self.options)
 
 class PrT_ColourTable(PropType):
     pass
@@ -72,8 +91,7 @@ class PropEntry:
     """Defines a property for a node"""
 
     def __init__(self, prop_type, display_name=None, description=None, default_value=None, min_value=None,
-                 max_value=None,
-                 auto_format=True, options=None):
+                 max_value=None, auto_format=True):
         self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
         self.display_name = display_name
         self.description = description
@@ -81,4 +99,3 @@ class PropEntry:
         self.min_value = min_value
         self.max_value = max_value
         self.auto_format = auto_format
-        self.options = options  # options for (constant) enum type

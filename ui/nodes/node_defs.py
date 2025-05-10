@@ -19,6 +19,10 @@ class PortRef:
 class GraphQuerier(ABC):
 
     @abstractmethod
+    def node(self, node_id):
+        pass
+
+    @abstractmethod
     def get_port_ref(self, node_id, port_key, ref_id):
         pass
 
@@ -131,6 +135,9 @@ class Node(BaseNode, ABC):
                 # Return the full list
                 return dict(prop_node_vals) if get_refs else prop_node_vals
         return self.prop_vals.get(prop_key)
+
+    def _port_ref(self, port_key, ref_id):
+        return self.graph_querier.get_port_ref(self.uid, port_key, ref_id)
 
     @classmethod
     def name(cls):

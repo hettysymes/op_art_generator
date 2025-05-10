@@ -17,11 +17,10 @@ DEF_DRAWING_GROUP_INFO = NodeInfo(
                                 display_name="Drawing group order",
                                 description="Order of drawings in the drawing group.",
                                 default_value=[]),
-        'vis_layout': PropEntry(PrT_Enum(),
+        'vis_layout': PropEntry(PrT_Enum(["Vertical", "Horizontal"]),
                                 display_name="Visualisation layout",
                                 description="Drawings can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
-                                default_value="Vertical",
-                                options=["Vertical", "Horizontal"])
+                                default_value="Vertical")
     }
 )
 
