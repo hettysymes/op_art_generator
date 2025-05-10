@@ -12,11 +12,10 @@ DEF_FUN_SAMPLER_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_List(PT_Float()))
     },
     prop_entries={
-        'num_samples': PropEntry(PT_Int(),
+        'num_samples': PropEntry(PT_Int(min_value=1),
                                  display_name="Sample number",
                                  description="Number of samples to obtain from the function f(x), i.e. x values (between 0 & 1) to input.",
-                                 default_value=5,
-                                 min_value=1)
+                                 default_value=5)
     }
 )
 

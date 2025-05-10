@@ -23,7 +23,7 @@ DEF_STACKER_NODE_INFO = NodeInfo(
         'wh_diff': PropEntry(PT_Float(),
                              display_name="Height/width distance",
                              description="Distance to place between stacked drawings, proportional to the height or width of one drawing (height for vertical stacking, width for horizontal stacking). E.g. if set to 0.5, the second drawing will be stacked halfway along the first drawing.",
-                             default_value=0.4, min_value=0.1)
+                             default_value=0.4)
     }
 )
 

@@ -13,11 +13,10 @@ DEF_BLAZE_MAKER_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
-        'num_polygons': PropEntry(PT_Int(),
+        'num_polygons': PropEntry(PT_Int(min_value=1),
                                   display_name="Zig-zag number",
                                   description="Number of zig-zags, at most 1.",
-                                  default_value=36,
-                                  min_value=1),
+                                  default_value=36),
         'angle_diff': PropEntry(PT_Float(),
                                 display_name="Zig-zag angle (°)",
                                 description="Angle (in degrees) determining the sharpness and direction of the zig-zags. Angles with a higher magnitude give sharper zig-zags. Negative angles give zig-zags in the reverse direction to positive angles.",

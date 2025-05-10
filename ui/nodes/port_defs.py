@@ -64,10 +64,6 @@ class PT_Polyline(PT_Element):
 
 # Sampling
 
-class PT_Float(PT_Scalar):
-    pass
-
-
 class PT_Point(PT_Scalar):
     pass
 
@@ -117,10 +113,17 @@ class PT_PointRefTable(PT_PortRefTable):
 
 # Other
 
-class PT_Float(PT_Scalar):
-    pass
+class PT_Number(PT_Scalar):
+    def __init__(self, min_value=None, max_value=None):
+        self.min_value = min_value if min_value else -999999
+        self.max_value = max_value if max_value else 999999
 
-class PT_Int(PT_Scalar):
+class PT_Float(PT_Number):
+    def __init__(self, min_value=None, max_value=None, decimals=3):
+        super().__init__(min_value, max_value)
+        self.decimals = decimals
+
+class PT_Int(PT_Number):
     pass
 
 class PT_Bool(PT_Scalar):
@@ -167,14 +170,11 @@ class PT_String(PT_Scalar):
 class PropEntry:
     """Defines a property for a node"""
 
-    def __init__(self, prop_type, display_name=None, description=None, default_value=None, min_value=None,
-                 max_value=None, auto_format=True):
+    def __init__(self, prop_type, display_name=None, description=None, default_value=None, auto_format=True):
         self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
         self.display_name = display_name
         self.description = description
         self.default_value = default_value
-        self.min_value = min_value
-        self.max_value = max_value
         self.auto_format = auto_format
 
 

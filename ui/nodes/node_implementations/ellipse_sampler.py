@@ -16,11 +16,10 @@ DEF_ELLIPSE_SAMPLER_INFO = NodeInfo(
                                  display_name="Angle of first sample (°)",
                                  description="Central angle (in degrees) of the first sample (point along the edge of the ellipse) with the ellipse's right-most point. The angle is measured clockwise. At 0° the first sample is at its right-most point. At 90° the first sample is at the bottom-most point.",
                                  default_value=0),
-        'num_samples': PropEntry(PT_Int(),
+        'num_samples': PropEntry(PT_Int(min_value=1),
                                  display_name="Sample number",
                                  description="Number of samples (points along the edge of the ellipse), at most 1.",
-                                 default_value=5,
-                                 min_value=1)
+                                 default_value=5)
     }
 )
 

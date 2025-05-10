@@ -18,11 +18,10 @@ DEF_SINE_WAVE_INFO = NodeInfo(
                                display_name="Amplitude",
                                description="Amplitude of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                                default_value=0.5),
-        'wavelength': PropEntry(PT_Float(),
+        'wavelength': PropEntry(PT_Float(min_value=0.001),
                                 display_name="Wavelength",
                                 description="Wavelength of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-                                default_value=1.0,
-                                min_value=0.01),
+                                default_value=1),
         'centre_y': PropEntry(PT_Float(),
                               display_name="Equilibrium position",
                               description="Equilibrium position of the sine wave. With 0° rotation, this is the y-coordinate of the equilibrium position. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -30,32 +29,27 @@ DEF_SINE_WAVE_INFO = NodeInfo(
         'phase': PropEntry(PT_Float(),
                            display_name="Phase (°)",
                            description="Phase of the sine wave in degrees.",
-                           default_value=0.0),
+                           default_value=0),
         'x_min': PropEntry(PT_Float(),
                            display_name="Wave start",
                            description="Start position of the sine wave. With 0° rotation, this is the x-coordinate of the start of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-                           default_value=0.0),
+                           default_value=0),
         'x_max': PropEntry(PT_Float(),
                            display_name="Wave stop",
                            description="Stop position of the sine wave. With 0° rotation, this is the x-coordinate of the end of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-                           default_value=1.0),
-        'stroke_width': PropEntry(PT_Float(),
+                           default_value=1),
+        'stroke_width': PropEntry(PT_Float(min_value=0),
                                   display_name="Line thickness",
                                   description="Thickness of the line drawing the sine wave.",
-                                  default_value=1.0,
-                                  min_value=0.0),
+                                  default_value=1.0),
         'orientation': PropEntry(PT_Float(),
                                  display_name="Rotation (°)",
-                                 description="Clockwise rotation applied to the (horizontal) sine wave, set between -180° and +180°.",
-                                 default_value=0.0,
-                                 min_value=-180.0,
-                                 max_value=180.0),
-        'num_points': PropEntry(PT_Int(),
+                                 description="Clockwise rotation applied to the (horizontal) sine wave.",
+                                 default_value=0),
+        'num_points': PropEntry(PT_Int(min_value=2),
                                 display_name="Line resolution",
-                                description="Number of points used to draw the line, set between 2 and 500. The more points used, the more accurate the line is to a sine wave.",
-                                default_value=100,
-                                min_value=2,
-                                max_value=500)
+                                description="Number of points used to draw the line, (at least 2). The more points used, the more accurate the line is to a sine wave.",
+                                default_value=100)
     }
 )
 
@@ -97,11 +91,10 @@ DEF_CUSTOM_LINE_INFO = NodeInfo(
                             display_name="Points",
                             description="Points defining the path of the line (in order).",
                             default_value=[(0, 0), (0.5, 0.5), (1, 0)]),
-        'stroke_width': PropEntry(PT_Float(),
+        'stroke_width': PropEntry(PT_Float(min_value=0),
                                   display_name="Line thickness",
                                   description="Thickness of the line drawing.",
-                                  default_value=1.0,
-                                  min_value=0.0)
+                                  default_value=1)
     }
 )
 
@@ -137,11 +130,10 @@ DEF_STRAIGHT_LINE_NODE_INFO = NodeInfo(
                                 display_name="Stop coordinate",
                                 description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
                                 default_value=(0, 1)),
-        'stroke_width': PropEntry(PT_Float(),
+        'stroke_width': PropEntry(PT_Float(min_value=0),
                                   display_name="Line thickness",
                                   description="Thickness of the straight line.",
-                                  default_value=1,
-                                  min_value=0)
+                                  default_value=1)
     }
 )
 
@@ -177,11 +169,10 @@ DEF_POLYGON_INFO = NodeInfo(
                                     display_name="Fill",
                                     description="Polygon fill colour.",
                                     default_value=(0, 0, 0, 255)),
-                  'stroke_width': PropEntry(PT_Float(),
+                  'stroke_width': PropEntry(PT_Float(min_value=0),
                                             display_name="Border thickness",
                                             description="Thickness of the line drawing the polygon border.",
-                                            default_value=1,
-                                            min_value=0)}
+                                            default_value=1)}
 )
 
 
@@ -262,16 +253,14 @@ DEF_ELLIPSE_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Ellipse())
     },
     prop_entries={
-        'rx': PropEntry(PT_Fill(),
+        'rx': PropEntry(PT_Float(min_value=0),
                         display_name="Horizontal radius (rx)",
                         description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-                        default_value=0.5,
-                        min_value=0.0),
-        'ry': PropEntry(PT_Float(),
+                        default_value=0.5),
+        'ry': PropEntry(PT_Float(min_value=0),
                         display_name="Vertical radius (ry)",
                         description="Vertical semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-                        default_value=0.5,
-                        min_value=0.0),
+                        default_value=0.5),
         'centre': PropEntry(PT_Point(),
                             display_name="Centre coordinate",
                             description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -280,11 +269,10 @@ DEF_ELLIPSE_INFO = NodeInfo(
                           display_name="Colour",
                           description="Ellipse fill colour.",
                           default_value=(0, 0, 0, 255)),
-        'stroke_width': PropEntry(PT_Float(),
+        'stroke_width': PropEntry(PT_Float(min_value=0),
                                   display_name="Border thickness",
                                   description="Thickness of the line drawing the ellipse border.",
-                                  default_value=1.0,
-                                  min_value=0.0)
+                                  default_value=1)
     }
 )
 
@@ -321,11 +309,10 @@ DEF_CIRCLE_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Ellipse())
     },
     prop_entries={
-        'r': PropEntry(PT_Float(),
+        'r': PropEntry(PT_Float(min_value=0),
                        display_name="Radius",
                        description="Radius of the circle. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-                       default_value=0.5,
-                       min_value=0.0),
+                       default_value=0.5),
         'centre': PropEntry(PT_Point(),
                             display_name="Centre coordinate",
                             description="Coordinate of the circle centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -334,11 +321,10 @@ DEF_CIRCLE_INFO = NodeInfo(
                           display_name="Colour",
                           description="Circle fill colour.",
                           default_value=(0, 0, 0, 255)),
-        'stroke_width': PropEntry(PT_Float(),
+        'stroke_width': PropEntry(PT_Float(min_value=0),
                                   display_name="Border thickness",
                                   description="Thickness of the line drawing the circle border.",
-                                  default_value=1.0,
-                                  min_value=0.0)
+                                  default_value=1.0)
     }
 )
 

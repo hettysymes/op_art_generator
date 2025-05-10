@@ -11,16 +11,14 @@ DEF_GRID_INFO = NodeInfo(
     port_defs={(PortIO.INPUT, 'x_warp'): PortDef("X Warp", PT_Warp(), optional=True, description="By default vertical grid lines are spaced equally."),
                (PortIO.INPUT, 'y_warp'): PortDef("Y Warp", PT_Warp(), optional=True, description="By default horizontal grid lines are spaced equally."),
                (PortIO.OUTPUT, '_main'): PortDef("Grid", PT_Grid())},
-    prop_entries={'width': PropEntry(PT_Int(),
+    prop_entries={'width': PropEntry(PT_Int(min_value=1),
                                      display_name="Width",
                                      description="Number of cells in the width of the grid, at most 1.",
-                                     default_value=5,
-                                     min_value=1),
-                  'height': PropEntry(PT_Int(),
+                                     default_value=5),
+                  'height': PropEntry(PT_Int(min_value=1),
                                       display_name="Height",
                                       description="Number of cells in the height of the grid, at most 1.",
-                                      default_value=5,
-                                      min_value=1)}
+                                      default_value=5)}
 )
 
 

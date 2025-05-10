@@ -10,7 +10,7 @@ from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.port_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
-    LineRef, PT_Fill, PT_Hidden
+    LineRef, PT_Fill, PT_Hidden, PT_Number
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
@@ -230,20 +230,18 @@ class NodePropertiesDialog(QDialog):
     def create_property_widget(self, prop_key, prop_entry, current_value, node_item):
         prop_type = prop_entry.prop_type
         """Create an appropriate widget for the property type"""
-        if isinstance(prop_type, PT_Int):
-            widget = QSpinBox()
-            if prop_entry.min_value is not None:
-                widget.setMinimum(prop_entry.min_value)
-            if prop_entry.max_value is not None:
-                widget.setMaximum(prop_entry.max_value)
+        if isinstance(prop_type, PT_Number):
+            if isinstance(prop_type, PT_Int):
+                widget = QSpinBox()
+            else:
+                assert isinstance(prop_type, PT_Float)
+                widget = QDoubleSpinBox()
+                widget.setDecimals(prop_type.decimals)
+            # Set minimum and maximum values
+            widget.setMinimum(prop_type.min_value)
+            widget.setMaximum(prop_type.max_value)
+            # Set value
             widget.setValue(current_value or 0)
-
-        elif isinstance(prop_type, PT_Float):
-            widget = QDoubleSpinBox()
-            widget.setMinimum(prop_entry.min_value if prop_entry.min_value is not None else -999999.0)
-            if prop_entry.max_value is not None:
-                widget.setMaximum(prop_entry.max_value)
-            widget.setValue(current_value or 0.0)
 
         elif isinstance(prop_type, PT_Bool):
             widget = QCheckBox()
