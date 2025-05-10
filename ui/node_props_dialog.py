@@ -12,7 +12,7 @@ from ui.nodes.elem_ref import ElemRef
 from ui.nodes.port_defs import PortIO
 from ui.nodes.prop_defs import PrT_Int, PrT_Float, PrT_Bool, PrT_Point, PrT_Enum, PrT_PortRefTable, PrT_Hidden, \
     PrT_Fill, PrT_ElemRefTable, PrT_PointRefTable, Point
-from ui.point_dialog import show_point_dialog
+from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
 
@@ -477,12 +477,25 @@ class NodePropertiesDialog(QDialog):
                 if isinstance(table_entry, Point):
                     return f"({table_entry.x():.2f}, {table_entry.y():.2f})"
                 return "[ERROR]"
+
+            def edit_context_menu(menu, table_entry):
+                if isinstance(table_entry, Point):
+                    menu.actions_map = {'edit': menu.addAction("Edit")}
+
+            def edit_action(port_ref_table, point_entry, row):
+                point_dialog = PointDialog(point_entry.x(), point_entry.y())
+                if point_dialog.exec_() == QDialog.Accepted:
+                    x, y = point_dialog.get_value()
+                    port_ref_table.set_item(Point(x, y), row)
+
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
                                                                                   prop_entry.prop_type.linked_port_key, ref_id),
                 table_heading="Points (X, Y)",
                 entries=current_value,
-                text_callback=text_callback
+                text_callback=text_callback,
+                context_menu_callback=edit_context_menu,
+                additional_actions={'edit': edit_action}
             )
             widget = port_ref_table
         # elif prop_entry.prop_type == PrT_ColourTable():

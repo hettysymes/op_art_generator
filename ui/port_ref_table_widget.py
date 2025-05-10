@@ -9,13 +9,14 @@ from ui.reorderable_table_widget import ReorderableTableWidget
 
 
 class PortRefTableWidget(QWidget):
-    def __init__(self, port_ref_getter, table_heading, entries=None, text_callback=None, context_menu_callback=None, parent=None):
+    def __init__(self, port_ref_getter, table_heading, entries=None, text_callback=None, context_menu_callback=None, additional_actions=None, parent=None):
         super().__init__(parent)
         self.port_ref_getter = port_ref_getter  # A function to get a port_ref given a ref_id
         self.text_callback = text_callback or self.default_text_callback
         self.context_menu_callback = context_menu_callback
+        self.additional_actions = additional_actions
 
-        self.table = ReorderableTableWidget(self.add_item)
+        self.table = ReorderableTableWidget(self.set_item)
         self.table.setColumnCount(1)
         self.table.setHorizontalHeaderLabels([table_heading])
         self.table.setItemDelegate(self.CenteredItemDelegate())
@@ -32,9 +33,9 @@ class PortRefTableWidget(QWidget):
     def set_entries(self, entries):
         self.table.setRowCount(len(entries))
         for row, entry in enumerate(entries):
-            self.add_item(entry, row)
+            self.set_item(entry, row)
 
-    def add_item(self, table_entry, row=None):
+    def set_item(self, table_entry, row=None):
         port_ref = None
         if table_entry.ref_id:
             port_ref = self.port_ref_getter(table_entry.ref_id)
@@ -68,7 +69,7 @@ class PortRefTableWidget(QWidget):
 
         # Allow external extension of the menu
         if self.context_menu_callback:
-            self.context_menu_callback(menu, item, row)
+            self.context_menu_callback(menu, table_entry)
 
         action = menu.exec_(self.table.viewport().mapToGlobal(position))
 
@@ -82,6 +83,11 @@ class PortRefTableWidget(QWidget):
             new_table_entry.deletable = True
             new_item.setData(Qt.UserRole, new_table_entry)
             self.table.setItem(row + 1, 0, new_item)
+
+        if hasattr(menu, 'actions_map'):
+            for action_key, action_def in menu.actions_map.items():
+                if action == action_def:
+                    self.additional_actions[action_key](self, table_entry, row)
 
     def get_value(self):
         entries = []
