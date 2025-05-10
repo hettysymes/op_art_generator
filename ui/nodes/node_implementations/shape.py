@@ -4,7 +4,7 @@ from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Element, PT_Ellipse, PT_List
-from ui.nodes.prop_defs import PrT_Float, PrT_Int, PrT_PointRefTable, PrT_Point, PrT_Fill, PropEntry, Point
+from ui.nodes.prop_defs import PrT_Float, PrT_Int, PrT_PointRefTable, PrT_Point, PrT_Fill, PropEntry, LineRef
 from ui.nodes.shape_datatypes import Polygon, Group, Polyline, SineWave, Ellipse, Element
 from ui.nodes.utils import process_rgb
 
@@ -172,7 +172,7 @@ DEF_POLYGON_INFO = NodeInfo(
     prop_entries={'points': PropEntry(PrT_PointRefTable('import_points'),
                                       display_name="Points",
                                       description="Points defining the path of the polygon edge (in order).",
-                                      default_value=[Point(0, 0), Point(0, 1), Point(1, 1)]),
+                                      default_value=[(0, 0), (0, 1), (1, 1)]),
                   'fill': PropEntry(PrT_Fill(),
                                     display_name="Fill",
                                     description="Polygon fill colour.",
@@ -200,15 +200,24 @@ class PolygonNode(UnitNode):
     def compute(self, out_port_key='_main'):
         # Process input polylines
         point_refs = self._prop_val('import_points', get_refs=True)
-        handle_port_ref_table(point_refs, self._prop_val('points'))
+        if point_refs:
+            line_ref_data = {}
+            for ref_id, element in point_refs.items():
+                shape, transform_list = element.shape_transformations()[0]
+                line_ref_data[ref_id] = shape.get_points(transform_list)
+        else:
+            line_ref_data = None
+        handle_port_ref_table(line_ref_data, self._prop_val('points'), entry_class=LineRef)
+        # Get points
         points = []
-        for point_ref in self._prop_val('points'):
-            if isinstance(point_ref, Point):
-                points.append((point_ref.x(), point_ref.y()))
-            elif isinstance(point_ref.data, Element):
-                shape, transform_list = point_ref.data.shape_transformations()[0]
-                points += shape.get_points(transform_list)
-        #Return polygon
+        for table_entry in self._prop_val('points'):
+            if isinstance(table_entry, LineRef):
+                points += table_entry.points_w_reversal()
+            else:
+                # Ordinary point
+                x, y = table_entry
+                points.append((x, y))
+        # Return polygon
         return PolygonNode.helper(self._prop_val('fill'), points, 'none',
                                   self._prop_val('stroke_width'))
 

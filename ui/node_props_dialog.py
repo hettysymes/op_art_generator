@@ -11,7 +11,7 @@ from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.port_defs import PortIO
 from ui.nodes.prop_defs import PrT_Int, PrT_Float, PrT_Bool, PrT_Point, PrT_Enum, PrT_PortRefTable, PrT_Hidden, \
-    PrT_Fill, PrT_ElemRefTable, PrT_PointRefTable, Point
+    PrT_Fill, PrT_ElemRefTable, PrT_PointRefTable, LineRef
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
@@ -474,25 +474,32 @@ class NodePropertiesDialog(QDialog):
             widget = port_ref_table
         elif isinstance(prop_entry.prop_type, PrT_PointRefTable):
             def text_callback(port_ref, table_entry):
-                if isinstance(table_entry, Point):
-                    return f"({table_entry.x():.2f}, {table_entry.y():.2f})"
-                shape, transform_list = table_entry.data.shape_transformations()[0]
-                points = shape.get_points(transform_list)
-                start_x, start_y = points[0]
-                stop_x, stop_y = points[-1]
-                #arrow = '←' if point.reversed else '→'
-                arrow = '→'
-                return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
+                if isinstance(table_entry, LineRef):
+                    points = table_entry.points()
+                    start_x, start_y = points[0]
+                    stop_x, stop_y = points[-1]
+                    arrow = '←' if table_entry.reversed() else '→'
+                    return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
+                x, y = table_entry
+                return f"({x:.2f}, {y:.2f})"
 
-            def edit_context_menu(menu, table_entry):
-                if isinstance(table_entry, Point):
+            def custom_context_menu(menu, table_entry):
+                if isinstance(table_entry, LineRef):
+                    menu.actions_map = {'reverse': menu.addAction("Reverse")}
+                else:
+                    # Ordinary point
                     menu.actions_map = {'edit': menu.addAction("Edit")}
 
-            def edit_action(port_ref_table, point_entry, row):
-                point_dialog = PointDialog(point_entry.x(), point_entry.y())
+            def edit_action(port_ref_table, point, row):
+                point_dialog = PointDialog(*point)
                 if point_dialog.exec_() == QDialog.Accepted:
                     x, y = point_dialog.get_value()
-                    port_ref_table.set_item(Point(x, y), row)
+                    port_ref_table.set_item((x, y), row)
+
+            def reverse_action(port_ref_table, line_ref_entry, row):
+                new_line_ref_entry = copy.deepcopy(line_ref_entry)
+                new_line_ref_entry.toggle_reverse()
+                port_ref_table.set_item(new_line_ref_entry, row)
 
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
@@ -500,8 +507,8 @@ class NodePropertiesDialog(QDialog):
                 table_heading="Points (X, Y)",
                 entries=current_value,
                 text_callback=text_callback,
-                context_menu_callback=edit_context_menu,
-                additional_actions={'edit': edit_action}
+                context_menu_callback=custom_context_menu,
+                additional_actions={'edit': edit_action, 'reverse': reverse_action}
             )
             widget = port_ref_table
         # elif prop_entry.prop_type == PrT_ColourTable():

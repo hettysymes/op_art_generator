@@ -1,21 +1,26 @@
 class PortRefTableEntry:
-    def __init__(self, ref_id, deletable, data):
+    def __init__(self, ref_id, deletable, port_data, own_data=None):
         self.ref_id = ref_id
         self.deletable = deletable
-        self.data = data
+        self.port_data = port_data
+        self.own_data = own_data
 
 class PropType:
     pass
 
 # Tables
 
-class Point(PortRefTableEntry):
-    def __init__(self, x, y):
-        super().__init__(None, True, (x, y))
-    def x(self):
-        return self.data[0]
-    def y(self):
-        return self.data[1]
+class LineRef(PortRefTableEntry):
+    def __init__(self, ref_id, deletable, port_data, own_data=False):
+        super().__init__(ref_id, deletable, port_data, own_data)
+    def points(self):
+        return self.port_data
+    def reversed(self):
+        return self.own_data
+    def toggle_reverse(self):
+        self.own_data = not self.reversed()
+    def points_w_reversal(self):
+        return list(reversed(self.points())) if self.reversed() else self.points()
 
 class PrT_PortRefTable(PropType):
     def __init__(self, linked_port_key=None):

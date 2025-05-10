@@ -30,5 +30,5 @@ class OverlayNode(UnitNode):
         # Return final element
         ret_group = Group(debug_info="Overlay")
         for entry in self._prop_val('elem_order'):
-            ret_group.add(entry.data)
+            ret_group.add(entry.port_data)
         return ret_group

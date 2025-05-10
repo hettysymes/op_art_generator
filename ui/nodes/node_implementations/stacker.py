@@ -53,6 +53,6 @@ class StackerNode(UnitNode):
         ref_elements = self._prop_val('elements', get_refs=True)
         handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
         # Compute final element
-        elements = [entry.data for entry in self._prop_val('elem_order')]
+        elements = [entry.port_data for entry in self._prop_val('elem_order')]
         return StackerNode.helper(elements, self._prop_val('wh_diff'),
                                   self._prop_val('stack_layout') == 'Vertical')

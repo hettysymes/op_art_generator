@@ -5,6 +5,7 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyledItemDelegate
 
 from ui.id_generator import shorten_uid
+from ui.nodes.prop_defs import LineRef, PortRefTableEntry
 from ui.reorderable_table_widget import ReorderableTableWidget
 
 
@@ -37,7 +38,7 @@ class PortRefTableWidget(QWidget):
 
     def set_item(self, table_entry, row=None):
         port_ref = None
-        if table_entry.ref_id:
+        if isinstance(table_entry, PortRefTableEntry):
             port_ref = self.port_ref_getter(table_entry.ref_id)
         item = QTableWidgetItem()
         item.setTextAlignment(Qt.AlignCenter)
@@ -46,7 +47,7 @@ class PortRefTableWidget(QWidget):
         # Use text_callback to determine display string
         item.setText(self.text_callback(port_ref, table_entry))
 
-        if not table_entry.deletable:  # non-deletable
+        if isinstance(table_entry, PortRefTableEntry) and not table_entry.deletable:  # non-deletable
             item.setBackground(QColor(237, 130, 157))
 
         if row is not None:
@@ -64,7 +65,7 @@ class PortRefTableWidget(QWidget):
 
         menu = QMenu()
         duplicate_action = menu.addAction("Duplicate")
-        if table_entry.deletable:
+        if not isinstance(table_entry, PortRefTableEntry) or table_entry.deletable:
             delete_action = menu.addAction("Delete")
 
         # Allow external extension of the menu
@@ -73,14 +74,15 @@ class PortRefTableWidget(QWidget):
 
         action = menu.exec_(self.table.viewport().mapToGlobal(position))
 
-        if table_entry.deletable and action == delete_action:
+        if (not isinstance(table_entry, PortRefTableEntry) or table_entry.deletable) and action == delete_action:
             self.table.removeRow(row)
 
         if action == duplicate_action:
             self.table.insertRow(row + 1)
             new_item = QTableWidgetItem(item.text())
             new_table_entry = copy.deepcopy(table_entry)
-            new_table_entry.deletable = True
+            if isinstance(new_table_entry, PortRefTableEntry):
+                new_table_entry.deletable = True
             new_item.setData(Qt.UserRole, new_table_entry)
             self.table.setItem(row + 1, 0, new_item)
 
