@@ -126,7 +126,7 @@ class Node(BaseNode, ABC):
                 assert len(prop_node_vals) == 1
                 if prop_node_vals[0] is not None:
                     # Do not default to property values dictionary
-                    return dict(prop_node_vals[0]) if get_refs else prop_node_vals[0]
+                    return dict(prop_node_vals) if get_refs else prop_node_vals[0]
             else:
                 # Return the full list
                 return dict(prop_node_vals) if get_refs else prop_node_vals

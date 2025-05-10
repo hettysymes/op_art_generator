@@ -476,7 +476,13 @@ class NodePropertiesDialog(QDialog):
             def text_callback(port_ref, table_entry):
                 if isinstance(table_entry, Point):
                     return f"({table_entry.x():.2f}, {table_entry.y():.2f})"
-                return "[ERROR]"
+                shape, transform_list = table_entry.data.shape_transformations()[0]
+                points = shape.get_points(transform_list)
+                start_x, start_y = points[0]
+                stop_x, stop_y = points[-1]
+                #arrow = '←' if point.reversed else '→'
+                arrow = '→'
+                return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
 
             def edit_context_menu(menu, table_entry):
                 if isinstance(table_entry, Point):

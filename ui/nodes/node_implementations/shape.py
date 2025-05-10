@@ -1,10 +1,11 @@
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import NodeInfo
+from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Element, PT_Ellipse
+from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Element, PT_Ellipse, PT_List
 from ui.nodes.prop_defs import PrT_Float, PrT_Int, PrT_PointRefTable, PrT_Point, PrT_Fill, PropEntry, Point
-from ui.nodes.shape_datatypes import Polygon, Group, Polyline, SineWave, Ellipse
+from ui.nodes.shape_datatypes import Polygon, Group, Polyline, SineWave, Ellipse, Element
 from ui.nodes.utils import process_rgb
 
 DEF_SINE_WAVE_INFO = NodeInfo(
@@ -95,7 +96,7 @@ DEF_CUSTOM_LINE_INFO = NodeInfo(
         'points': PropEntry(PrT_PointRefTable(),
                             display_name="Points",
                             description="Points defining the path of the line (in order).",
-                            default_value=[Point(0, 0), Point(0.5, 0.5), Point(1, 0)]),
+                            default_value=[(0, 0), (0.5, 0.5), (1, 0)]),
         'stroke_width': PropEntry(PrT_Float(),
                                   display_name="Line thickness",
                                   description="Thickness of the line drawing.",
@@ -165,10 +166,10 @@ class StraightLineNode(UnitNode):
 
 DEF_POLYGON_INFO = NodeInfo(
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-    port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_Polyline()),
+    port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_List(PT_Polyline())),
                (PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill(), optional=True),
                (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())},
-    prop_entries={'points': PropEntry(PrT_PointRefTable(),
+    prop_entries={'points': PropEntry(PrT_PointRefTable('import_points'),
                                       display_name="Points",
                                       description="Points defining the path of the polygon edge (in order).",
                                       default_value=[Point(0, 0), Point(0, 1), Point(1, 1)]),
@@ -198,8 +199,17 @@ class PolygonNode(UnitNode):
 
     def compute(self, out_port_key='_main'):
         # Process input polylines
-        # handle_multi_inputs(self._input_node('import_points'), self.prop_vals['points'])
-        return PolygonNode.helper(self._prop_val('fill'), self._prop_val('points'), 'none',
+        point_refs = self._prop_val('import_points', get_refs=True)
+        handle_port_ref_table(point_refs, self._prop_val('points'))
+        points = []
+        for point_ref in self._prop_val('points'):
+            if isinstance(point_ref, Point):
+                points.append((point_ref.x(), point_ref.y()))
+            elif isinstance(point_ref.data, Element):
+                shape, transform_list = point_ref.data.shape_transformations()[0]
+                points += shape.get_points(transform_list)
+        #Return polygon
+        return PolygonNode.helper(self._prop_val('fill'), points, 'none',
                                   self._prop_val('stroke_width'))
 
     def visualise(self):
@@ -225,7 +235,7 @@ class RectangleNode(UnitNode):
 
     @staticmethod
     def helper(colour):
-        return PolygonNode.helper(colour, [Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)], 'none', 1)
+        return PolygonNode.helper(colour, [(0, 0), (0, 1), (1, 1), (1, 0)], 'none', 1)
 
     def compute(self, out_port_key='_main'):
         return RectangleNode.helper(self._prop_val('fill'))
