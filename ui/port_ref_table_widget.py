@@ -35,8 +35,7 @@ class PortRefTableWidget(QWidget):
             self.add_item(entry, row)
 
     def add_item(self, table_entry, row=None):
-        ref_id = table_entry[0]
-        port_ref = self.port_ref_getter(ref_id)
+        port_ref = self.port_ref_getter(table_entry.ref_id)
         item = QTableWidgetItem()
         item.setTextAlignment(Qt.AlignCenter)
         item.setData(Qt.UserRole, table_entry)
@@ -44,7 +43,7 @@ class PortRefTableWidget(QWidget):
         # Use text_callback to determine display string
         item.setText(self.text_callback(port_ref, table_entry))
 
-        if not table_entry[2]:  # non-deletable
+        if not table_entry.deletable:  # non-deletable
             item.setBackground(QColor(237, 130, 157))
 
         if row is not None:
@@ -58,11 +57,11 @@ class PortRefTableWidget(QWidget):
             return
 
         item = self.table.item(row, 0)
-        ref_id, data, deletable = item.data(Qt.UserRole)
+        table_entry = item.data(Qt.UserRole)
 
         menu = QMenu()
         duplicate_action = menu.addAction("Duplicate")
-        if deletable:
+        if table_entry.deletable:
             delete_action = menu.addAction("Delete")
 
         # Allow external extension of the menu
@@ -71,21 +70,23 @@ class PortRefTableWidget(QWidget):
 
         action = menu.exec_(self.table.viewport().mapToGlobal(position))
 
-        if deletable and action == delete_action:
+        if table_entry.deletable and action == delete_action:
             self.table.removeRow(row)
 
         if action == duplicate_action:
             self.table.insertRow(row + 1)
             new_item = QTableWidgetItem(item.text())
-            new_item.setData(Qt.UserRole, (ref_id, copy.deepcopy(data), True))
+            new_table_entry = copy.deepcopy(table_entry)
+            new_table_entry.deletable = True
+            new_item.setData(Qt.UserRole, new_table_entry)
             self.table.setItem(row + 1, 0, new_item)
 
     def get_value(self):
-        data = []
+        entries = []
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
-            data.append(item.data(Qt.UserRole))
-        return data
+            entries.append(item.data(Qt.UserRole))
+        return entries
 
     class CenteredItemDelegate(QStyledItemDelegate):
         def initStyleOption(self, option, index):

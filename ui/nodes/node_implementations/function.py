@@ -2,9 +2,10 @@ import numpy as np
 import sympy as sp
 
 from ui.nodes.drawers.draw_graph import create_graph_svg
-from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
+from ui.nodes.node_defs import NodeInfo
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Function
+from ui.nodes.prop_defs import PrT_Float, PropEntry, PrT_String, PrT_PointRefTable
 from ui.nodes.utils import cubic_f
 from ui.nodes.warp_utils import sample_fun
 from ui.vis_types import MatplotlibFig
@@ -15,19 +16,19 @@ DEF_CUBIC_FUN_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function())
     },
     prop_entries={
-        'a_coeff': PropEntry(PropType.FLOAT,
+        'a_coeff': PropEntry(PrT_Float(),
                              display_name="x³ coefficient",
                              description="x³ coefficient (i.e. a in the expression ax³ + bx² + cx + d).",
                              default_value=3.22),
-        'b_coeff': PropEntry(PropType.FLOAT,
+        'b_coeff': PropEntry(PrT_Float(),
                              display_name="x² coefficient",
                              description="x² coefficient (i.e. b in the expression ax³ + bx² + cx + d).",
                              default_value=-5.41),
-        'c_coeff': PropEntry(PropType.FLOAT,
+        'c_coeff': PropEntry(PrT_Float(),
                              display_name="x coefficient",
                              description="x coefficient ( i.e. c in the expression ax³ + bx² + cx + d).",
                              default_value=3.20),
-        'd_coeff': PropEntry(PropType.FLOAT,
+        'd_coeff': PropEntry(PrT_Float(),
                              display_name="Constant",
                              description="Constant (i.e. d in the expression ax³ + bx² + cx + d).",
                              default_value=0)
@@ -53,7 +54,7 @@ DEF_CUSTOM_FUN_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function())
     },
     prop_entries={
-        'fun_def': PropEntry(PropType.STRING,
+        'fun_def': PropEntry(PrT_String(),
                              display_name="f(x) =",
                              description="Custom function f(x) defined in terms of x.",
                              default_value="x",
@@ -81,7 +82,7 @@ DEF_PIECEWISE_FUN_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Function", PT_Function())
     },
     prop_entries={
-        'points': PropEntry(PropType.POINT_TABLE,
+        'points': PropEntry(PrT_PointRefTable(),
                             display_name="Points",
                             description="Points defining where the piecewise linear function passes through.",
                             default_value=[(0, 0), (0.5, 0.5), (1, 1)])

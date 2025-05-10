@@ -5,6 +5,7 @@ from enum import Enum, auto
 from ui.id_generator import shorten_uid
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.port_defs import PortIO, PT_Scalar
+from ui.nodes.prop_defs import PrT_Hidden
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
@@ -28,39 +29,6 @@ class GraphQuerier(ABC):
     @abstractmethod
     def port_input(self, node_id, port_key, get_refs=False):
         pass
-
-
-class PropType(Enum):
-    POINT_TABLE = auto()
-    FILL = auto()
-    FLOAT = auto()
-    INT = auto()
-    BOOL = auto()
-    COORDINATE = auto()
-    PROP_ENUM = auto()
-    SELECTOR_ENUM = auto()
-    ENUM = auto()
-    PORT_REF_TABLE = auto()
-    COLOUR_TABLE = auto()
-    HIDDEN = auto()
-    STRING = auto()
-
-
-class PropEntry:
-    """Defines a property for a node"""
-
-    def __init__(self, prop_type, display_name=None, description=None, default_value=None, min_value=None,
-                 max_value=None,
-                 auto_format=True, options=None, linked_port_key=None):
-        self.prop_type = prop_type  # "int", "float", "string", "bool", "enum"
-        self.display_name = display_name
-        self.description = description
-        self.default_value = default_value
-        self.min_value = min_value
-        self.max_value = max_value
-        self.auto_format = auto_format
-        self.options = options  # options for (constant) enum type
-        self.linked_port_key = linked_port_key
 
 
 class NodeInfo:
@@ -130,7 +98,7 @@ class Node(BaseNode, ABC):
 
     def prop_entries_is_empty(self):
         for prop_entry in self.get_prop_entries().values():
-            if prop_entry.prop_type != PropType.HIDDEN:
+            if not isinstance(prop_entry.prop_type, PrT_Hidden):
                 return False
         return True
 

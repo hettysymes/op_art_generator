@@ -79,7 +79,7 @@ class NodeGraph(GraphQuerier):
         if get_refs:
             result = []
             if (node_id, port_key) not in self.port_refs:
-                self.port_refs[(node_id, port_key)] = {'ref_map': {}, 'next_id': 0} # Create entry
+                self.port_refs[(node_id, port_key)] = {'ref_map': {}, 'next_id': 1} # Create entry
             id_to_port_refs = self.port_refs[(node_id, port_key)]['ref_map']
             port_refs_to_id = {port_ref: ref_id for ref_id, port_ref in id_to_port_refs.items()}
             for src_port_id in found_src_port_ids:

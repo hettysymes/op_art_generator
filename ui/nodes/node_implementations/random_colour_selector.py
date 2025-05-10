@@ -1,10 +1,11 @@
 import random
 
-from ui.nodes.node_defs import NodeInfo, PropType, PropEntry
+from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.shape import RectangleNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PT_List
+from ui.nodes.prop_defs import PropEntry, PrT_Bool, PrT_Int, PrT_Hidden
 from ui.nodes.shape_datatypes import Group
 
 DEF_RANDOM_COLOUR_SELECTOR_INFO = NodeInfo(
@@ -14,15 +15,15 @@ DEF_RANDOM_COLOUR_SELECTOR_INFO = NodeInfo(
         (PortIO.OUTPUT, '_main'): PortDef("Random colour", PT_Colour())
     },
     prop_entries={
-        'use_seed': PropEntry(PropType.BOOL,
+        'use_seed': PropEntry(PrT_Bool(),
                               display_name="Use random seed?",
                               description="If checked, use the provided seed for random selection. Random selections done with the same seed will always be the same.",
                               default_value=False),
-        'user_seed': PropEntry(PropType.INT,
+        'user_seed': PropEntry(PrT_Int(),
                                display_name="Random seed",
                                description="If random seed is used, use this as the random seed.",
                                default_value=42),
-        '_actual_seed': PropEntry(PropType.HIDDEN)
+        '_actual_seed': PropEntry(PrT_Hidden())
     }
 )
 
