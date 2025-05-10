@@ -1,4 +1,5 @@
 from ui.nodes.node_defs import NodeInfo, PropEntry, PropType
+from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortDef, PT_Element, PortIO, PT_List
 from ui.nodes.shape_datatypes import Group, Element
@@ -7,14 +8,15 @@ from ui.nodes.transforms import Translate, Scale
 DEF_STACKER_NODE_INFO = NodeInfo(
     description="Stack multiple drawings together, either vertically or horizontally.",
     port_defs={
-        (PortIO.INPUT, 'repeatables'): PortDef("Input Drawings", PT_List(PT_Element())),
+        (PortIO.INPUT, 'elements'): PortDef("Input Drawings", PT_List(PT_Element())),
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
     prop_entries={
         'elem_order': PropEntry(PropType.PORT_REF_TABLE,
                                 display_name="Drawing order",
                                 description="Order of drawings in which to stack them. Drawings at the top of the list are drawn first (i.e. at the top for vertical stacking, and at the left for horizontal stacking).",
-                                default_value=[]),
+                                default_value=[],
+                                linked_port_key='elements'),
         'stack_layout': PropEntry(PropType.ENUM,
                                   display_name="Stack layout",
                                   description="Stacking of drawings can be done either top-to-bottom (vertical) or left-to-right (horizontal)",
@@ -36,7 +38,7 @@ class StackerNode(UnitNode):
     def helper(elements, wh_diff, vertical_layout):
         n = len(elements)
         size = n + wh_diff * (1 - n)
-        group = Group(debug_info="stacker")
+        group = Group(debug_info="Stacker")
         for i, e in enumerate(elements):
             if vertical_layout:
                 transform = [Scale(1, 1 / size), Translate(0, i * (1 - wh_diff) / size)]
@@ -48,14 +50,9 @@ class StackerNode(UnitNode):
         return group
 
     def compute(self, out_port_key='_main'):
-        # handle_multi_inputs(self.get_input_node('repeatables'), self.prop_vals['elem_order'])
-        elements = []
-        for elem_ref in self._prop_val('elem_order'):
-            ret_elements = elem_ref.compute()
-            if isinstance(ret_elements, Element):
-                ret_elements = [ret_elements]
-            elements += ret_elements
-        if elements:
-            return StackerNode.helper(elements, self._prop_val('wh_diff'),
-                                      self._prop_val('stack_layout') == 'Vertical')
-        return None
+        ref_elements = self._prop_val('elements', get_refs=True)
+        handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
+        # Compute final element
+        elements = [entry[1] for entry in self._prop_val('elem_order')]
+        return StackerNode.helper(elements, self._prop_val('wh_diff'),
+                                  self._prop_val('stack_layout') == 'Vertical')

@@ -312,13 +312,13 @@ class NodePropertiesDialog(QDialog):
         #                       if widget.itemData(i) == current_value), 0)
         #         widget.setCurrentIndex(index)
 
-        # elif prop_entry.prop_type == PropType.ENUM and prop_entry.options:
-        #     widget = QComboBox()
-        #     for option in prop_entry.options:
-        #         widget.addItem(option, userData=option)
-        #     if current_value is not None:
-        #         index = prop_entry.options.index(current_value) if current_value in prop_entry.options else 0
-        #         widget.setCurrentIndex(index)
+        elif prop_entry.prop_type == PropType.ENUM and prop_entry.options:
+            widget = QComboBox()
+            for option in prop_entry.options:
+                widget.addItem(option, userData=option)
+            if current_value is not None:
+                index = prop_entry.options.index(current_value) if current_value in prop_entry.options else 0
+                widget.setCurrentIndex(index)
 
         elif prop_entry.prop_type == PropType.POINT_TABLE:
             def add_point_item(point, row=None, table=None):

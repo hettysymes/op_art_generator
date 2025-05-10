@@ -1,4 +1,5 @@
 from ui.nodes.node_defs import NodeInfo, PropEntry, PropType
+from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List
 from ui.nodes.shape_datatypes import Group
@@ -25,27 +26,8 @@ class OverlayNode(UnitNode):
 
     def compute(self, out_port_key='_main'):
         ref_elements = self._prop_val('elements', get_refs=True)
-        if not ref_elements: return None
-
-        # Update element order list
-        ref_ids_to_add = list(ref_elements.keys())
-        indices_to_remove = []
-        for i, (ref_id, _, deletable) in enumerate(self._prop_val('elem_order')):
-            if ref_id in ref_elements:
-                # Element already exists - do not add again but update element
-                if ref_id in ref_ids_to_add:
-                    ref_ids_to_add.remove(ref_id)
-                self._prop_val('elem_order')[i] = (ref_id, ref_elements[ref_id], deletable)
-            else:
-                # Element has been removed
-                indices_to_remove.append(i)
-        # Remove no longer existing elements
-        for i in reversed(indices_to_remove):
-            del self._prop_val('elem_order')[i]
-        # Add new elements
-        for ref_id in ref_ids_to_add:
-            self._prop_val('elem_order').append((ref_id, ref_elements[ref_id], False))
-
+        handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
+        # Return final element
         ret_group = Group(debug_info="Overlay")
         for entry in self._prop_val('elem_order'):
             if entry[1]:
