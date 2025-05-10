@@ -65,6 +65,7 @@ class Node(BaseNode, ABC):
     def safe_visualise(self):
         # Catch exception if raised
         try:
+            self._update_node()
             vis = self.visualise()
         except NodeInputException as e:
             if e.node_id == self.uid:
@@ -137,6 +138,9 @@ class Node(BaseNode, ABC):
 
     def _port_ref(self, port_key, ref_id):
         return self.graph_querier.get_port_ref(self.uid, port_key, ref_id)
+
+    def _update_node(self):
+        return
 
     @classmethod
     def name(cls):

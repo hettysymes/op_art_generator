@@ -33,6 +33,12 @@ class SelectableNode(UnitNode, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
+    def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
+        self.node_info = self._default_node_info()
+        self._remove_port_callback = add_info
+        self.extracted_port_ids = []
+        super().__init__(uid, graph_querier, prop_vals)
+
     @abstractmethod
     def compute(self, out_port_key='_main'):
         return
@@ -40,6 +46,25 @@ class SelectableNode(UnitNode, ABC):
     @abstractmethod
     def extract_element(self, parent_group, element_id):
         return
+
+    @abstractmethod
+    def _is_port_redundant(self, port_id):
+        pass
+
+    def _add_port(self, port_id, port_def):
+        self.node_info.port_defs[port_id] = port_def
+        self.extracted_port_ids.append(port_id)
+
+    def _remove_redundant_ports(self):
+        indices_to_remove = []
+        for i, port_id in enumerate(self.extracted_port_ids):
+            if self._is_port_redundant(port_id):
+                del self.node_info.port_defs[port_id]
+                self._remove_port_callback(self.uid, port_id)
+                indices_to_remove.append(i)
+        indices_to_remove.reverse()
+        for i in indices_to_remove:
+            del self.extracted_port_ids[i]
 
 
 class CombinationNode(Node, ABC):

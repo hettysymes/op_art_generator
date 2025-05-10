@@ -871,6 +871,18 @@ class ExtractElementCmd(QUndoCommand):
         port_def = self.node_item.node().get_port_defs()[self.port_id]
         self.node_item.add_port(self.port_id, port_def)
 
+class RemoveExtractedElementCmd(QUndoCommand):
+    def __init__(self, node_item: NodeItem, port_id, description="Remove extracted element"):
+        super().__init__(description)
+        self.node_item = node_item
+        self.port_id = port_id
+
+    def undo(self):
+        pass
+
+    def redo(self):
+        self.node_item.remove_port(self.port_id)
+
 class PasteCmd(QUndoCommand):
     def __init__(self, scene, node_states, nodes, connections, port_refs, description="Paste"):
         super().__init__(description)
@@ -1159,7 +1171,8 @@ class PipelineScene(QGraphicsScene):
                         submenu.addAction(change_action)
                 else:
                     action = QAction(node_class.name(), menu)
-                    handler = partial(self.add_new_node, event.scenePos(), node_class)
+                    add_info = self.remove_extracted_element if issubclass(node_class, SelectableNode) else None
+                    handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=add_info)
                     action.triggered.connect(handler)
                     menu.addAction(action)
 
@@ -1265,6 +1278,9 @@ class PipelineScene(QGraphicsScene):
 
     def extract_element(self, node_item, port_id):
         self.undo_stack.push(ExtractElementCmd(node_item, port_id))
+
+    def remove_extracted_element(self, node_id, port_id):
+        self.undo_stack.push(RemoveExtractedElementCmd(self.node_items[node_id], port_id))
 #
 #     def randomise(self, clicked_item: RandomColourSelectorNode):
 #         clicked_item.node.prop_vals['_actual_seed'] = random.random()

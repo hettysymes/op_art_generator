@@ -47,9 +47,12 @@ class ShapeRepeaterNode(SelectableNode):
 
     def _compute_cell(self, i, j):
         main_group = self._compute_main()
-        v_line_xs, _ = self._prop_val('grid')
-        number_rows = len(v_line_xs) - 1
-        return main_group[number_rows*i + j]
+        return main_group[self._grid_dims()[0]*i + j]
+
+    # Returns number of rows, number of cols
+    def _grid_dims(self):
+        v_line_xs, h_line_ys = self._prop_val('grid')
+        return len(h_line_ys)-1, len(v_line_xs)-1
 
     def compute(self, out_port_key='_main'):
         if out_port_key == '_main':
@@ -59,11 +62,19 @@ class ShapeRepeaterNode(SelectableNode):
         return self._compute_cell(int(i), int(j))
 
     def extract_element(self, parent_group, element_id):
-        v_line_xs, _ = self._prop_val('grid')
-        number_rows = len(v_line_xs) - 1
         elem_index = parent_group.get_element_index_from_id(element_id)
-        i, j = divmod(elem_index, number_rows)
+        i, j = divmod(elem_index, self._grid_dims()[0])
         # Add new port definition
         port_id = (PortIO.OUTPUT, f'cell_{i}_{j}')
-        self.node_info.port_defs[port_id] = PortDef(f"Cell ({i}, {j})", PT_Element())
+        port_def = PortDef(f"Cell ({i}, {j})", PT_Element())
+        self._add_port(port_id, port_def)
         return port_id
+
+    def _is_port_redundant(self, port_id):
+        _, port_key = port_id
+        _, i, j = port_key.split('_')
+        height, width = self._grid_dims()
+        return int(i) >= height or int(j) >= width
+
+    def _update_node(self):
+        self._remove_redundant_ports()
