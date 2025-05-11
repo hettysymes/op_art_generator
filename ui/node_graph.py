@@ -8,6 +8,7 @@ class NodeGraph(GraphQuerier):
         self.nodes = nodes if nodes else {} # Map node id to node
         self.connections = connections if connections else []
         self.port_refs = {} # Map (dst_node_id, dst_port_key) to [ref map, next id]
+        self.inactive_port_ids = {}
 
     def add_new_node(self, node_class, add_info=None, node_id=None):
         uid = node_id if node_id else gen_uid()
@@ -97,6 +98,12 @@ class NodeGraph(GraphQuerier):
         else:
             result = [self.nodes[src_node_id].compute(src_port_key) for src_node_id, src_port_key in found_src_port_ids]
         return result
+
+    def mark_inactive_port_id(self, node_id, port_id):
+        self.inactive_port_ids.setdefault(node_id, []).append(port_id)
+
+    def pop_inactive_port_ids(self, node_id):
+        return self.inactive_port_ids.pop(node_id, [])
 
     def __str__(self):
         result = ""

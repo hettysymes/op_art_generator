@@ -316,13 +316,17 @@ class NodeItem(QGraphicsRectItem):
 
         # Get item to draw
         vis = self.visualise()
+        # Remove inactive port ids
+        inactive_port_ids = self.node_graph().pop_inactive_port_ids(self.node_state.node_id)
+        for port_id in inactive_port_ids:
+            self.scene().undo_stack.push(RemoveExtractedElementCmd(self, port_id))
+
         svg_filepath = os.path.join(self.scene().temp_dir, f"{self.node_state.node_id}.svg")
         # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X + NodeItem.LABEL_SVG_DIST
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
         svg_width, svg_height = self.node_state.svg_size
 
-        # TODO: add check for selectable node
         if isinstance(vis, ErrorFig) or not isinstance(self.node(), SelectableNode):
             if isinstance(vis, Group):
                 GroupDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
@@ -1171,8 +1175,7 @@ class PipelineScene(QGraphicsScene):
                         submenu.addAction(change_action)
                 else:
                     action = QAction(node_class.name(), menu)
-                    add_info = self.remove_extracted_element if issubclass(node_class, SelectableNode) else None
-                    handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=add_info)
+                    handler = partial(self.add_new_node, event.scenePos(), node_class)
                     action.triggered.connect(handler)
                     menu.addAction(action)
 
@@ -1278,9 +1281,6 @@ class PipelineScene(QGraphicsScene):
 
     def extract_element(self, node_item, port_id):
         self.undo_stack.push(ExtractElementCmd(node_item, port_id))
-
-    def remove_extracted_element(self, node_id, port_id):
-        self.undo_stack.push(RemoveExtractedElementCmd(self.node_items[node_id], port_id))
 #
 #     def randomise(self, clicked_item: RandomColourSelectorNode):
 #         clicked_item.node.prop_vals['_actual_seed'] = random.random()

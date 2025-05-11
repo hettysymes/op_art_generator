@@ -35,7 +35,6 @@ class SelectableNode(UnitNode, ABC):
 
     def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
         self.node_info = self._default_node_info()
-        self._remove_port_callback = add_info
         self.extracted_port_ids = []
         super().__init__(uid, graph_querier, prop_vals)
 
@@ -60,7 +59,7 @@ class SelectableNode(UnitNode, ABC):
         for i, port_id in enumerate(self.extracted_port_ids):
             if self._is_port_redundant(port_id):
                 del self.node_info.port_defs[port_id]
-                self._remove_port_callback(self.uid, port_id)
+                self._mark_inactive_port_id(port_id)
                 indices_to_remove.append(i)
         indices_to_remove.reverse()
         for i in indices_to_remove:

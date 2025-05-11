@@ -55,6 +55,7 @@ class ShapeRepeaterNode(SelectableNode):
         return len(h_line_ys)-1, len(v_line_xs)-1
 
     def compute(self, out_port_key='_main'):
+        self._remove_redundant_ports()
         if out_port_key == '_main':
             return self._compute_main()
         # Compute cell
@@ -75,6 +76,3 @@ class ShapeRepeaterNode(SelectableNode):
         _, i, j = port_key.split('_')
         height, width = self._grid_dims()
         return int(i) >= height or int(j) >= width
-
-    def _update_node(self):
-        self._remove_redundant_ports()

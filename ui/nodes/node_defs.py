@@ -33,6 +33,10 @@ class GraphQuerier(ABC):
     def port_input(self, node_id, port_key, get_refs=False):
         pass
 
+    @abstractmethod
+    def mark_inactive_port_id(self, node_id, port_id):
+        pass
+
 
 class NodeInfo:
 
@@ -65,7 +69,6 @@ class Node(BaseNode, ABC):
     def safe_visualise(self):
         # Catch exception if raised
         try:
-            self._update_node()
             vis = self.visualise()
         except NodeInputException as e:
             if e.node_id == self.uid:
@@ -139,8 +142,8 @@ class Node(BaseNode, ABC):
     def _port_ref(self, port_key, ref_id):
         return self.graph_querier.get_port_ref(self.uid, port_key, ref_id)
 
-    def _update_node(self):
-        return
+    def _mark_inactive_port_id(self, port_id):
+        self.graph_querier.mark_inactive_port_id(self.uid, port_id)
 
     @classmethod
     def name(cls):
