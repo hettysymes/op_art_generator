@@ -1286,7 +1286,7 @@ class PipelineScene(QGraphicsScene):
         self.view().centerOn(*app_state.view_pos)
         self.view().set_zoom(app_state.zoom)
         self.node_graph = app_state.node_graph
-        self.load_from_node_states(app_state.node_states, self.node_graph.connections)
+        self.load_from_node_states(app_state.node_states, self.node_graph.edges)
         self.undo_stack.clear()
         self.filepath = filepath
 
