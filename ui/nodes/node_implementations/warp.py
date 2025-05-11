@@ -23,18 +23,17 @@ class PosWarpNode(UnitNode):
     def helper(function):
         return PosWarp(function)
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         f = self._prop_val('function')
         if f:
             try:
                 warp = PosWarpNode.helper(f)
             except ValueError as e:
                 raise NodeInputException(str(e), self.uid)
-            return warp
-        return None
+            self.set_compute_result(warp)
 
     def visualise(self):
-        warp = self.compute()
+        warp = self.get_compute_result()
         if warp:
             return MatplotlibFig(create_graph_svg(warp.sample(1000)))
         return None
@@ -57,18 +56,17 @@ class RelWarpNode(UnitNode):
     def helper(function):
         return RelWarp(function)
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         f = self._prop_val('function')
         if f:
             try:
                 warp = RelWarpNode.helper(f)
             except ValueError as e:
                 raise NodeInputException(str(e), self.uid)
-            return warp
-        return None
+            self.set_compute_result(warp)
 
     def visualise(self):
-        warp = self.compute()
+        warp = self.get_compute_result()
         if warp:
             return MatplotlibFig(create_graph_svg(warp.sample(1000)))
         return None

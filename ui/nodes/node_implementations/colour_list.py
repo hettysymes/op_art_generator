@@ -23,11 +23,11 @@ class ColourListNode(UnitNode):
     NAME = "Colour List"
     DEFAULT_NODE_INFO = DEF_COLOUR_LIST_INFO
 
-    def compute(self, out_port_key='_main'):
-        return self._prop_val('colours')
+    def compute(self):
+        self.set_compute_result(self._prop_val('colours'))
 
     def visualise(self):
-        colours = self.compute()
+        colours = self.get_compute_result()
         if colours:
             # Draw in vertical grid
             grid = GridNode.helper(None, None, 1, len(colours))

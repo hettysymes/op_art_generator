@@ -35,7 +35,7 @@ class ColourFillerNode(UnitNode):
             ret_group.add(Polygon(points, fill, fill_opacity))
         return ret_group
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         colours = self._prop_val('colour_list')
         element: Element = self._prop_val('element')
         if (colours is not None) and element:
@@ -45,5 +45,4 @@ class ColourFillerNode(UnitNode):
             for transformed_shape in element.shape_transformations():
                 if not isinstance(transformed_shape[0], Polyline):
                     raise NodeInputException("Input drawing must only consist of lines.", self.uid)
-            return ColourFillerNode.helper(colours, element)
-        return None
+            self.set_compute_result(ColourFillerNode.helper(colours, element))

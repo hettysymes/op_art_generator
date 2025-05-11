@@ -75,6 +75,7 @@ class Node(BaseNode, ABC):
     def safe_visualise(self):
         # Catch exception if raised
         try:
+            self.compute_results.clear()
             self.compute()
             vis = self.visualise()
         except NodeInputException as e:

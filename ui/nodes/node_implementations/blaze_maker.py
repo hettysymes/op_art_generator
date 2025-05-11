@@ -57,8 +57,7 @@ class BlazeMakerNode(UnitNode):
             ret_group.add(Polygon(points, fill, fill_opacity))
         return ret_group
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         if self._prop_val('ellipses'):
-            return BlazeMakerNode.helper(self._prop_val('num_polygons'), self._prop_val('ellipses'),
-                                         self._prop_val('angle_diff'), self._prop_val('fill'))
-        return None
+            self.set_compute_result(BlazeMakerNode.helper(self._prop_val('num_polygons'), self._prop_val('ellipses'),
+                                         self._prop_val('angle_diff'), self._prop_val('fill')))

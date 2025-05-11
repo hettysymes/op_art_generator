@@ -47,9 +47,9 @@ class StackerNode(UnitNode):
             group.add(elem_cell)
         return group
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         ref_elements = self._prop_val('elements', get_refs=True)
         elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
         # Compute final element
-        return StackerNode.helper(elements, self._prop_val('wh_diff'),
-                                  self._prop_val('stack_layout') == 'Vertical')
+        self.set_compute_result(StackerNode.helper(elements, self._prop_val('wh_diff'),
+                                  self._prop_val('stack_layout') == 'Vertical'))

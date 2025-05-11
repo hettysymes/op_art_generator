@@ -19,10 +19,10 @@ class ColourNode(UnitNode):
     NAME = "Colour"
     DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO
 
-    def compute(self, out_port_key='_main'):
-        return self._prop_val('colour')
+    def compute(self):
+        self.set_compute_result(self._prop_val('colour'))
 
     def visualise(self):
         group = Group(debug_info="Colour")
-        group.add(RectangleNode.helper(self.compute()))
+        group.add(RectangleNode.helper(self.get_compute_result()))
         return group

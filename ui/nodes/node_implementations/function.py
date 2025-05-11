@@ -39,12 +39,12 @@ class CubicFunNode(UnitNode):
     NAME = "Cubic Function"
     DEFAULT_NODE_INFO = DEF_CUBIC_FUN_INFO
 
-    def compute(self, out_port_key='_main'):
-        return cubic_f(self._prop_val('a_coeff'), self._prop_val('b_coeff'), self._prop_val('c_coeff'),
-                       self._prop_val('d_coeff'))
+    def compute(self):
+        self.set_compute_result(cubic_f(self._prop_val('a_coeff'), self._prop_val('b_coeff'), self._prop_val('c_coeff'),
+                       self._prop_val('d_coeff')))
 
     def visualise(self):
-        return MatplotlibFig(create_graph_svg(sample_fun(self.compute(), 1000)))
+        return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))
 
 
 DEF_CUSTOM_FUN_INFO = NodeInfo(
@@ -66,13 +66,13 @@ class CustomFunNode(UnitNode):
     NAME = "Custom Function"
     DEFAULT_NODE_INFO = DEF_CUSTOM_FUN_INFO
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         x = sp.symbols('x')
         parsed_expr = sp.sympify(self._prop_val('fun_def'))
-        return sp.lambdify(x, parsed_expr)
+        self.set_compute_result(sp.lambdify(x, parsed_expr))
 
     def visualise(self):
-        return MatplotlibFig(create_graph_svg(sample_fun(self.compute(), 1000)))
+        return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))
 
 
 DEF_PIECEWISE_FUN_INFO = NodeInfo(
@@ -97,12 +97,12 @@ class PiecewiseFunNode(UnitNode):
     def helper(xs, ys):
         return lambda i: np.interp(i, xs, ys)
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         xs, ys = zip(*self._prop_val('points'))
-        return PiecewiseFunNode.helper(xs, ys)
+        self.set_compute_result(PiecewiseFunNode.helper(xs, ys))
 
     def visualise(self):
-        return MatplotlibFig(create_graph_svg(sample_fun(self.compute(), 1000)))
+        return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))
 
 
 class FunctionNode(CombinationNode):

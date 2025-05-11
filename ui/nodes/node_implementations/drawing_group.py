@@ -28,13 +28,13 @@ class DrawingGroupNode(UnitNode):
     NAME = "Drawing Group"
     DEFAULT_NODE_INFO = DEF_DRAWING_GROUP_INFO
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         ref_elements = self._prop_val('elements', get_refs=True)
         elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
-        return elements
+        self.set_compute_result(elements)
 
     def visualise(self):
-        elements = self.compute()
+        elements = self.get_compute_result()
         if elements:
             if self._prop_val('vis_layout') == "Vertical":
                 # Draw in vertical grid

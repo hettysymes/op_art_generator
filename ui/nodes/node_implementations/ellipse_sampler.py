@@ -45,15 +45,14 @@ class EllipseSamplerNode(UnitNode):
             angle += step
         return samples
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         ellipse = self._prop_val('ellipse')
         if ellipse:
-            return EllipseSamplerNode.helper(ellipse, self._prop_val('start_angle'),
-                                             self._prop_val('num_samples'))
-        return None
+            self.set_compute_result(EllipseSamplerNode.helper(ellipse, self._prop_val('start_angle'),
+                                             self._prop_val('num_samples')))
 
     def visualise(self):
-        points = self.compute()
+        points = self.get_compute_result()
         if points:
             ret_group = Group(debug_info="Ellipse Sampler")
             for p in points:

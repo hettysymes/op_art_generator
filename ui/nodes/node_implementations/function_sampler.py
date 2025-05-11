@@ -28,14 +28,13 @@ class FunSamplerNode(UnitNode):
     def helper(function, num_samples):
         return sample_fun(function, num_samples)
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         function = self._prop_val('function')
         if function:
-            return FunSamplerNode.helper(function, self._prop_val('num_samples'))
-        return None
+            self.set_compute_result(FunSamplerNode.helper(function, self._prop_val('num_samples')))
 
     def visualise(self):
-        samples = self.compute()
+        samples = self.get_compute_result()
         if samples is not None:
             return MatplotlibFig(create_graph_svg(samples, scatter=True))
         return None

@@ -65,25 +65,25 @@ class IteratorNode(UnitNode):
         assert isinstance(prop_type, PT_Scalar)
         return values if value_type.is_compatible_with(prop_type) else None
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         ret = self._update_prop_change_enum()
         if not ret:
-            return None
+            return
         element_node, prop_change_key, prop_change_type, src_port_key = ret
         values = self._validate_values(prop_change_type)
         if values is None:
             print("Values not compatible")
-            return None
+            return
         new_elements = []
         for value in values:
             new_element_node = copy.deepcopy(element_node)
             new_element_node.set_property(prop_change_key, value)
             new_elements.append(new_element_node.compute(src_port_key))
-        return new_elements
+        self.set_compute_result(new_elements)
 
 
     def visualise(self):
-        elements = self.compute()
+        elements = self.get_compute_result()
         if elements:
             if self._prop_val('vis_layout') == "Vertical":
                 # Draw in vertical grid

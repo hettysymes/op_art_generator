@@ -31,7 +31,7 @@ class RandomColourSelectorNode(UnitNode):
     NAME = "Random Colour Selector"
     DEFAULT_NODE_INFO = DEF_RANDOM_COLOUR_SELECTOR_INFO
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         colours = self._prop_val('colour_list')
         if colours is not None:
             if not colours:
@@ -42,11 +42,10 @@ class RandomColourSelectorNode(UnitNode):
                 if not self._prop_val('_actual_seed'):
                     self.prop_vals['_actual_seed'] = random.random()
                 rng = random.Random(self._prop_val('_actual_seed'))
-            return rng.choice(colours)
-        return None
+            self.set_compute_result(rng.choice(colours))
 
     def visualise(self):
-        colour = self.compute()
+        colour = self.get_compute_result()
         if colour:
             group = Group(debug_info="Random Colour Selector")
             group.add(RectangleNode.helper(colour))

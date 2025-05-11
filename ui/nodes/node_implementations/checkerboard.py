@@ -42,10 +42,9 @@ class CheckerboardNode(UnitNode):
             element1_starts = not element1_starts
         return ret_group
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         grid = self._prop_val('grid')
         element1 = self._prop_val('elem1')
         element2 = self._prop_val('elem2')
         if grid and (element1 or element2):
-            return CheckerboardNode.helper(grid, element1, element2)
-        return None
+            self.set_compute_result(CheckerboardNode.helper(grid, element1, element2))
