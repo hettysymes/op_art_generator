@@ -572,10 +572,10 @@ class NodeItem(QGraphicsRectItem):
         width, height = self.node_size_from_svg_size(*self.node_state.svg_size)
         self.resize(width, height)
 
-    def remove_from_scene(self):
+    def remove_from_scene(self, update_vis=True):
         # Remove all connected edges
         for port_item in self.port_items.values():
-            port_item.remove_edges()
+            port_item.remove_edges(update_vis=update_vis)
         # Remove tooltip
         if self._help_tooltip:
             self.scene().removeItem(self._help_tooltip)
@@ -693,10 +693,10 @@ class PortItem(QGraphicsPathItem):
         for edge in self.edge_items.values():
             edge.update_position()
 
-    def remove_edges(self):
+    def remove_edges(self, update_vis=True):
         other_edge_ids = list(self.edge_items.keys())
         for other_edge_id in other_edge_ids:
-            self.edge_items[other_edge_id].remove_from_scene()
+            self.edge_items[other_edge_id].remove_from_scene(update_vis=update_vis)
 
 
 class EdgeItem(QGraphicsLineItem):
@@ -717,7 +717,7 @@ class EdgeItem(QGraphicsLineItem):
         dest_pos = self.dst_port.get_center_scene_pos()
         self.setLine(QLineF(source_pos, dest_pos))
 
-    def remove_from_scene(self):
+    def remove_from_scene(self, update_vis=True):
         src_node_id = self.src_port.parentItem().node_state.node_id
         dst_node_id = self.dst_port.parentItem().node_state.node_id
         del self.src_port.edge_items[(dst_node_id, self.dst_port.port_key)]
@@ -725,7 +725,8 @@ class EdgeItem(QGraphicsLineItem):
         # Remove from node graph
         self.scene().node_graph.remove_edge((src_node_id, self.src_port.port_key), (dst_node_id, self.dst_port.port_key))
         # Update dest node visualisations
-        self.dst_port.parentItem().update_visualisations()
+        if update_vis:
+            self.dst_port.parentItem().update_visualisations()
         # Remove from scene
         self.scene().removeItem(self)
 
@@ -1197,7 +1198,7 @@ class PipelineScene(QGraphicsScene):
                                  node_states=[node_item.node_state for node_item in self.node_items.values()],
                                  node_graph=self.node_graph), f)
 
-    def add_edge(self, src_conn_id, dst_conn_id):
+    def add_edge(self, src_conn_id, dst_conn_id, update_vis=True):
         src_node_id, src_port_key = src_conn_id
         dst_node_id, dst_port_key = dst_conn_id
         src_node_item = self.node_items[src_node_id]
@@ -1207,19 +1208,20 @@ class PipelineScene(QGraphicsScene):
         edge = EdgeItem(src_port_item, dst_port_item)
         self.addItem(edge)
         edge.update_position()
-        dst_node_item.update_visualisations()
+        if update_vis:
+            dst_node_item.update_visualisations()
         # Update port edge_items
         src_port_item.edge_items[dst_conn_id] = edge
         dst_port_item.edge_items[src_conn_id] = edge
 
-    def remove_edge(self, src_conn_id, dst_conn_id):
+    def remove_edge(self, src_conn_id, dst_conn_id, update_vis=True):
         # Obtain edge via source port
         src_node_id, src_port_key = src_conn_id
         src_node_item = self.node_items[src_node_id]
         src_port_item = src_node_item.port_items[(PortIO.OUTPUT, src_port_key)]
         # Remove edge item
         edge_item = src_port_item.edge_items[dst_conn_id]
-        edge_item.remove_from_scene()
+        edge_item.remove_from_scene(update_vis=update_vis)
 
     def add_node(self, node_state):
         node = self.node_graph.node(node_state.node_id)
@@ -1227,7 +1229,6 @@ class PipelineScene(QGraphicsScene):
         self.node_items[node_state.node_id] = node_item
         self.addItem(node_item)
         node_item.create_ports()
-        node_item.update_vis_image()
 
     def load_from_node_states(self, node_states, connections):
         # Add node items
@@ -1235,7 +1236,10 @@ class PipelineScene(QGraphicsScene):
             self.add_node(node_state)
         # Add edge items
         for connection in connections:
-            self.add_edge(*connection)
+            self.add_edge(*connection, update_vis=False)
+        # Update visualisations in order
+        for node_id in self.node_graph.get_topo_order_subgraph([node_state.node_id for node_state in node_states]):
+            self.node_items[node_id].update_vis_image()
 
     def add_to_graph_and_scene(self, node_states, nodes, connections, port_refs):
         # Add to node graph
@@ -1248,20 +1252,30 @@ class PipelineScene(QGraphicsScene):
         self.load_from_node_states(node_states, connections)
 
     def remove_from_graph_and_scene(self, node_states, connections):
+        removed_node_ids = {node_state.node_id for node_state in node_states}
+        affected_node_ids = {
+            dst_node_id for (_, _), (dst_node_id, _) in connections
+            if dst_node_id not in removed_node_ids
+        }
+
         # Remove nodes
         for node_state in node_states:
             node_item = self.node_items[node_state.node_id]
-            node_item.remove_from_scene()
+            node_item.remove_from_scene(update_vis=False)
         # Remove edges
         for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in connections:
             if src_node_id in self.node_items and dst_node_id in self.node_items:
                 # Connection still exists, remove now
-                self.remove_edge((src_node_id, src_port_key), (dst_node_id, dst_port_key))
+                self.remove_edge((src_node_id, src_port_key), (dst_node_id, dst_port_key), update_vis=False)
+        # Update affected nodes in topological order
+        for affected_node_id in self.node_graph.get_topo_order_subgraph(affected_node_ids):
+            affected_node_item = self.node_items[affected_node_id]
+            affected_node_item.update_vis_image()
 
     def clear_scene(self):
         node_ids = list(self.node_items.keys())
         for node_id in node_ids:
-            self.node_items[node_id].remove_from_scene()
+            self.node_items[node_id].remove_from_scene(update_vis=False)
 
     def load_scene(self, filepath):
         self.clear_scene()
