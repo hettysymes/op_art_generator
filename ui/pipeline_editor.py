@@ -723,7 +723,7 @@ class EdgeItem(QGraphicsLineItem):
         del self.src_port.edge_items[(dst_node_id, self.dst_port.port_key)]
         del self.dst_port.edge_items[(src_node_id, self.src_port.port_key)]
         # Remove from node graph
-        self.scene().node_graph.remove_connection((src_node_id, self.src_port.port_key), (dst_node_id, self.dst_port.port_key))
+        self.scene().node_graph.remove_edge((src_node_id, self.src_port.port_key), (dst_node_id, self.dst_port.port_key))
         # Update dest node visualisations
         self.dst_port.parentItem().update_visualisations()
         # Remove from scene
@@ -808,7 +808,7 @@ class AddNewEdgeCmd(QUndoCommand):
         self.scene.remove_edge(self.src_conn_id, self.dst_conn_id)
 
     def redo(self):
-        self.node_graph.add_connection(self.src_conn_id, self.dst_conn_id)
+        self.node_graph.add_edge(self.src_conn_id, self.dst_conn_id)
         self.scene.add_edge(self.src_conn_id, self.dst_conn_id)
 
 class ChangePropertiesCmd(QUndoCommand):
@@ -1242,7 +1242,7 @@ class PipelineScene(QGraphicsScene):
         for node in nodes:
             self.node_graph.add_existing_node(node)
         for connection in connections:
-            self.node_graph.add_connection(*connection)
+            self.node_graph.add_edge(*connection)
         self.node_graph.extend_port_refs(port_refs)
         # Load items
         self.load_from_node_states(node_states, connections)

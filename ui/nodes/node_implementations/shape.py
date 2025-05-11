@@ -188,7 +188,7 @@ class PolygonNode(UnitNode):
             fill, fill_opacity = process_rgb(fill)
         return Polygon(points, fill, fill_opacity, stroke, stroke_width)
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         # Process input polylines
         point_refs = self._prop_val('import_points', get_refs=True)
         if point_refs:
@@ -209,12 +209,12 @@ class PolygonNode(UnitNode):
                 x, y = table_entry
                 points.append((x, y))
         # Return polygon
-        return PolygonNode.helper(self._prop_val('fill'), points, 'none',
-                                  self._prop_val('stroke_width'))
+        self.set_compute_result(PolygonNode.helper(self._prop_val('fill'), points, 'none',
+                                  self._prop_val('stroke_width')))
 
     def visualise(self):
         group = Group(debug_info="Polygon")
-        group.add(self.compute())
+        group.add(self.get_compute_result())
         return group
 
 

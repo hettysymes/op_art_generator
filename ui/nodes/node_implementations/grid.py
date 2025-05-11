@@ -42,14 +42,14 @@ class GridNode(UnitNode):
         h_line_ys = y_warp.sample(height + 1)
         return v_line_xs, h_line_ys
 
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         # Get warp functions
         x_warp = self._prop_val('x_warp')
         y_warp = self._prop_val('y_warp')
-        return GridNode.helper(x_warp, y_warp, self._prop_val('width'), self._prop_val('height'))
+        self.set_compute_result(GridNode.helper(x_warp, y_warp, self._prop_val('width'), self._prop_val('height')))
 
     def visualise(self):
-        v_line_xs, h_line_ys = self.compute()
+        v_line_xs, h_line_ys = self.get_compute_result()
         grid_group = Group(debug_info="Grid")
         for x in v_line_xs:
             # Draw horizontal lines

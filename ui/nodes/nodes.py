@@ -18,7 +18,7 @@ class UnitNode(Node, ABC):
         return self.node_info
 
     def visualise(self):
-        return self.compute()
+        return self.get_compute_result('_main')
 
     @classmethod
     def _default_node_info(cls):
@@ -26,7 +26,7 @@ class UnitNode(Node, ABC):
 
     # Functions to implement
     @abstractmethod
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         return
 
 class SelectableNode(UnitNode, ABC):
@@ -39,7 +39,7 @@ class SelectableNode(UnitNode, ABC):
         super().__init__(uid, graph_querier, prop_vals)
 
     @abstractmethod
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         return
 
     @abstractmethod
@@ -70,11 +70,16 @@ class CombinationNode(Node, ABC):
     NAME = None
     SELECTIONS = []  # To override
 
-    # Additional info (add_info) is the selection index
     def __init__(self, uid, graph_querier, prop_vals=None, add_info=0):
         self._selection_index = add_info
         self._node = self.selections()[add_info](uid, graph_querier, prop_vals)
+
+        # Call base init with resolved props
         super().__init__(self._node.uid, self._node.graph_querier, self._node.prop_vals)
+
+        # Re-sync overwritten attributes
+        self.compute_results = self._node.compute_results
+        self.prop_vals = self._node.prop_vals
 
     @classmethod
     def selections(cls):
@@ -85,23 +90,27 @@ class CombinationNode(Node, ABC):
 
     def set_selection(self, index):
         self._selection_index = index
-        # Set new node with default properties
         self._node = self.selections()[index](self.uid, self.graph_querier, prop_vals=None)
-        # Keep shared properties e.g. fill colour
+
+        # Copy over matching existing properties
         for prop_key, old_value in self.prop_vals.items():
             if prop_key in self._node.prop_vals:
                 self._node.set_property(prop_key, old_value)
-        # Set reference to node prop vals in this node
-        self.prop_vals = self._node.prop_vals
 
+        # Redirect to inner node again
+        self.prop_vals = self._node.prop_vals
+        self.compute_results = self._node.compute_results
+
+    # Forwarded interface
     def base_node_name(self):
         return self._node.base_node_name()
 
     def get_node_info(self):
         return self._node.get_node_info()
 
-    def compute(self, out_port_key='_main'):
-        return self._node.compute(out_port_key)
+    def compute(self):
+        return self._node.compute()
 
     def visualise(self):
         return self._node.visualise()
+

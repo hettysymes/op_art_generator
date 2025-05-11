@@ -37,8 +37,8 @@ class CanvasNode(UnitNode):
             group.add(element)
         return group
 
-    def compute(self, out_port_key='_main'):
-        return self._prop_val('element')
+    def compute(self):
+        self.set_compute_result(self._prop_val('element'))
 
     def visualise(self):
-        return CanvasNode.helper(self._prop_val('bg_fill'), self.compute())
+        return CanvasNode.helper(self._prop_val('bg_fill'), self.get_compute_result())

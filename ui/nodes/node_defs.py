@@ -60,6 +60,7 @@ class Node(BaseNode, ABC):
         self.uid = uid
         self.graph_querier = graph_querier
         self.prop_vals = prop_vals if prop_vals else self._default_prop_vals()
+        self.compute_results = {}
 
     def _default_prop_vals(self):
         default_prop_vals = {}
@@ -70,7 +71,7 @@ class Node(BaseNode, ABC):
     def safe_visualise(self):
         # Catch exception if raised
         try:
-            self._update_node()
+            self.compute()
             vis = self.visualise()
         except NodeInputException as e:
             if e.node_id == self.uid:
@@ -118,6 +119,12 @@ class Node(BaseNode, ABC):
                 compulsory_ports.append(port_id)
         return compulsory_ports
 
+    def get_compute_result(self, port_key='_main'):
+        return self.compute_results.get(port_key)
+
+    def set_compute_result(self, value, port_key='_main'):
+        self.compute_results[port_key] = value
+
     # Private functions
     def _active_input_ports(self):
         return self.graph_querier.active_input_ports(self.uid)
@@ -148,9 +155,6 @@ class Node(BaseNode, ABC):
     def _mark_inactive_port_id(self, port_id):
         self.graph_querier.mark_inactive_port_id(self.uid, port_id)
 
-    def _update_node(self):
-        return
-
     @classmethod
     def name(cls):
         return cls.NAME
@@ -165,7 +169,7 @@ class Node(BaseNode, ABC):
         pass
 
     @abstractmethod
-    def compute(self, out_port_key='_main'):
+    def compute(self):
         pass
 
     @abstractmethod

@@ -1,58 +1,78 @@
+from collections import defaultdict, deque
+
 from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.node_defs import GraphQuerier, PortRef
 from ui.nodes.port_defs import PortType, PortIO
 
 
 class NodeGraph(GraphQuerier):
-    def __init__(self, nodes=None, connections=None):
-        self.nodes = nodes if nodes else {} # Map node id to node
-        self.connections = connections if connections else []
+    def __init__(self, node_ids=None, node_map=None, adj_list=None, in_degree=None):
+        self.edges = set()  # edges are ((src_node, src_port), (dst_node, dst_port))
+        self.node_map = {}
+        self.node_inputs = defaultdict(set)  # dst_node → set of src_nodes
+        self.node_outputs = defaultdict(set)  # src_node → set of dst_nodes
+
         self.port_refs = {} # Map (dst_node_id, dst_port_key) to [ref map, next id]
         self.inactive_port_ids = {}
 
     def add_new_node(self, node_class, add_info=None, node_id=None):
-        uid = node_id if node_id else gen_uid()
-        self.nodes[uid] = node_class(uid, self, add_info=add_info)
+        uid = node_id or gen_uid()
+        self.node_map[uid] = node_class(uid, self, add_info=add_info)
         return uid
 
     def add_existing_node(self, node):
-        self.nodes[node.uid] = node
+        self.node_map[node.uid] = node
 
     def remove_node(self, node_id):
         # Assumes related node connections have been removed
-        del self.nodes[node_id]
+        del self.node_map[node_id]
 
     def node(self, node_id):
-        return self.nodes[node_id]
+        return self.node_map[node_id]
 
     def output_node_ids(self, node_id):
-        output_node_ids = []
-        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.connections:
-            if src_node_id == node_id:
-                output_node_ids.append(dst_node_id)
-        return output_node_ids
+        return self.node_outputs.get(node_id, set())
 
-    def add_connection(self, src_conn_id, dst_conn_id):
-        self.connections.append((src_conn_id, dst_conn_id))
+    def add_edge(self, src_conn_id, dst_conn_id):
+        src_node_id, src_port_key = src_conn_id
+        dst_node_id, dst_port_key = dst_conn_id
+        self.edges.add((src_conn_id, dst_conn_id))
+        self.node_outputs[src_node_id].add(dst_node_id)
+        self.node_inputs[dst_node_id].add(src_node_id)
 
-    def remove_connection(self, src_conn_id, dst_conn_id):
-        self.connections.remove((src_conn_id, dst_conn_id))
+    def remove_edge(self, src_conn_id, dst_conn_id):
+        src_node_id, src_port_key = src_conn_id
+        dst_node_id, dst_port_key = dst_conn_id
+        self.edges.discard((src_conn_id, dst_conn_id))
+        # Check if any other edges exist from src to dst
+        still_connected = any(
+            s == src_node_id and d == dst_node_id
+            for (s, _), (d, _) in self.edges
+        )
+        if not still_connected:
+            self.node_outputs[src_node_id].discard(dst_node_id)
+            self.node_inputs[dst_node_id].discard(src_node_id)
         # Remove port ref if it exists
         if dst_conn_id in self.port_refs:
             id_to_port_refs = self.port_refs[dst_conn_id]['ref_map']
-            id_to_delete = None
             for ref_id, conn_id in id_to_port_refs.items():
                 if conn_id == src_conn_id:
-                    id_to_delete = ref_id
+                    del id_to_port_refs[ref_id]
                     break
-            if id_to_delete:
-                del id_to_port_refs[id_to_delete]
 
     def get_port_refs_for_port(self, node_id, port_key):
         return self.port_refs.get((node_id, port_key))
 
     def extend_port_refs(self, new_port_refs):
         self.port_refs.update(new_port_refs)
+
+    def _input_sources(self, node_id, port_key):
+        """Return a list of (src_node_id, src_port_key) that are connected to the given input port."""
+        return [
+            (src_node_id, src_port_key)
+            for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.edges
+            if dst_node_id == node_id and dst_port_key == port_key
+        ]
 
     def get_port_ref(self, node_id, port_key, ref_id):
         src_node_id, src_port_key = self.port_refs[(node_id, port_key)]['ref_map'][ref_id]
@@ -61,19 +81,16 @@ class NodeGraph(GraphQuerier):
         return PortRef(src_node_id, src_port_key, src_base_node_name, src_port_def)
 
     def active_input_ports(self, node_id):
+        """Return a list of input port keys on the given node that have something connected."""
         return [
-                    dst_port_key
-                    for (_, (dst_node, dst_port_key)) in self.connections
-                    if dst_node == node_id
-                ]
+            dst_port
+            for (_, (dst_node, dst_port)) in self.edges
+            if dst_node == node_id
+        ]
 
     def port_input(self, node_id, port_key, get_refs=False):
         # Get node input at specified port, returns a list as multiple nodes may be connected
-        found_src_port_ids = [
-            src_port_id
-            for src_port_id, (dst_node_id, dst_port_key) in self.connections
-            if dst_node_id == node_id and dst_port_key == port_key
-        ]
+        found_src_port_ids = self._input_sources(node_id, port_key)
         if not found_src_port_ids:
             raise KeyError("Input node not found for given port.")
         # Return node computes
@@ -94,9 +111,9 @@ class NodeGraph(GraphQuerier):
                     id_to_port_refs[ref_id] = src_port_id
                 # Add compute to result
                 src_node_id, src_port_key = src_port_id
-                result.append((ref_id, self.nodes[src_node_id].compute(src_port_key)))
+                result.append((ref_id, self.node(src_node_id).get_compute_result(src_port_key)))
         else:
-            result = [self.nodes[src_node_id].compute(src_port_key) for src_node_id, src_port_key in found_src_port_ids]
+            result = [self.node(src_node_id).get_compute_result(src_port_key) for src_node_id, src_port_key in found_src_port_ids]
         return result
 
     def mark_inactive_port_id(self, node_id, port_id):
@@ -104,6 +121,24 @@ class NodeGraph(GraphQuerier):
 
     def pop_inactive_port_ids(self, node_id):
         return self.inactive_port_ids.pop(node_id, [])
+
+    def get_topo_order(self):
+        # Kahn's algorithm on node-level dependencies
+        in_degree = {n: len(self.node_inputs[n]) for n in self.node_map}
+        queue = deque([n for n in self.node_map if in_degree[n] == 0])
+        order = []
+
+        while queue:
+            node_id = queue.popleft()
+            order.append(node_id)
+            for neighbor in self.node_outputs[node_id]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    queue.append(neighbor)
+
+        if len(order) != len(self.node_map):
+            raise ValueError("Graph has cycles!")
+        return order # order of node ids
 
     def __str__(self):
         result = ""
