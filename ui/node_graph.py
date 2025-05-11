@@ -83,9 +83,17 @@ class NodeGraph(GraphQuerier):
     def active_input_ports(self, node_id):
         """Return a list of input port keys on the given node that have something connected."""
         return [
-            dst_port
-            for (_, (dst_node, dst_port)) in self.edges
-            if dst_node == node_id
+            dst_port_key
+            for (_, (dst_node_id, dst_port_key)) in self.edges
+            if dst_node_id == node_id
+        ]
+
+    def active_output_ports(self, node_id):
+        """Return a list of output port keys on the given node that have something connected."""
+        return [
+            src_port_key
+            for ((src_node_id, src_port_key), _) in self.edges
+            if src_node_id == node_id
         ]
 
     def port_input(self, node_id, port_key, get_refs=False):

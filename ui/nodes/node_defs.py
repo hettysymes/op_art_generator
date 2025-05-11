@@ -31,6 +31,10 @@ class GraphQuerier(ABC):
         pass
 
     @abstractmethod
+    def active_output_ports(self, node_id):  # Return output port keys connected to a node
+        pass
+
+    @abstractmethod
     def port_input(self, node_id, port_key, get_refs=False):
         pass
 
@@ -128,6 +132,9 @@ class Node(BaseNode, ABC):
     # Private functions
     def _active_input_ports(self):
         return self.graph_querier.active_input_ports(self.uid)
+
+    def _active_output_ports(self):
+        return self.graph_querier.active_output_ports(self.uid)
 
     def _port_input(self, port_key, get_refs=False):
         return self.graph_querier.port_input(self.uid, port_key, get_refs)

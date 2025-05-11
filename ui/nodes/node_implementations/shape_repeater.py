@@ -39,14 +39,6 @@ class ShapeRepeaterNode(SelectableNode):
                 ret_group.add(cell_group)
         return ret_group
 
-    def _update_node(self):
-        self._remove_redundant_ports()
-        # Update extracted output port definitions
-        for port_id in self.extracted_port_ids:
-            _, port_key = port_id
-            cell_group = self.compute(out_port_key=port_key)
-            self.get_port_defs()[port_id].port_type = PT_Element(cell_group.get_output_type())
-
     def _compute_main(self):
         grid = self._prop_val('grid')
         elem_lists_input = self._prop_val('elements')
@@ -55,8 +47,7 @@ class ShapeRepeaterNode(SelectableNode):
             return ShapeRepeaterNode.helper(grid, elements)
         return None
 
-    def _compute_cell(self, i, j):
-        main_group = self._compute_main()
+    def _compute_cell(self, i, j, main_group):
         return main_group[self._grid_dims()[1]*i + j]
 
     # Returns number of rows, number of cols
@@ -64,12 +55,18 @@ class ShapeRepeaterNode(SelectableNode):
         v_line_xs, h_line_ys = self._prop_val('grid')
         return len(h_line_ys)-1, len(v_line_xs)-1
 
-    def compute(self, out_port_key='_main'):
-        if out_port_key == '_main':
-            return self._compute_main()
-        # Compute cell
-        _, i, j = out_port_key.split('_')
-        return self._compute_cell(int(i), int(j))
+    def compute(self):
+        self._remove_redundant_ports()
+        main_group = self._compute_main()
+        self.set_compute_result(main_group)
+        for port_id in self.extracted_port_ids:
+            _, port_key = port_id
+            # Compute cell
+            _, i, j = port_key.split('_')
+            cell_group = self._compute_cell(int(i), int(j), main_group)
+            # Update port output type
+            self.get_port_defs()[port_id].port_type = PT_Element(cell_group.get_output_type())
+            self.set_compute_result(cell_group, port_key=port_key)
 
     def extract_element(self, parent_group, element_id):
         elem_index = parent_group.get_element_index_from_id(element_id)
