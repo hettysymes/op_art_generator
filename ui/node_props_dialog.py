@@ -356,6 +356,14 @@ class NodePropertiesDialog(QDialog):
                 new_line_ref_entry.toggle_reverse()
                 port_ref_table.set_item(new_line_ref_entry, row)
 
+            def add_action(port_ref_table):
+                point_dialog = PointDialog()
+                if point_dialog.exec_() == QDialog.Accepted:
+                    x, y = point_dialog.get_value()
+                    row = port_ref_table.row_count()
+                    port_ref_table.set_row_count(row + 1)
+                    port_ref_table.set_item((x, y), row)
+
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
                                                                                   prop_entry.prop_type.linked_port_key, ref_id),
@@ -363,7 +371,7 @@ class NodePropertiesDialog(QDialog):
                 entries=current_value,
                 text_callback=text_callback,
                 context_menu_callback=custom_context_menu,
-                additional_actions={'edit': edit_action, 'reverse': reverse_action}
+                additional_actions={'edit': edit_action, 'reverse': reverse_action, 'add': add_action}
             )
             widget = port_ref_table
         # elif prop_entry.prop_type == PrT_ColourTable():

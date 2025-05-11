@@ -50,25 +50,22 @@ class PT_Element(PT_Scalar):
     def __init__(self, element_type=None):
         if element_type is None:
             self.element_type = PT_Group()
-        elif not isinstance(element_type, PT_ElementBaseType):
-            raise TypeError("element_type must be an instance of PT_ElementBaseType or its subclass")
+        elif not isinstance(element_type, PT_Group):
+            raise TypeError("element_type must be an instance of PT_Group or its subclass")
         else:
             self.element_type = element_type
 
     def is_compatible_with(self, dest_type):
         if isinstance(dest_type, PT_List):
-            return self.element_type.is_compatible_with(dest_type.item_type)
+            return self.is_compatible_with(dest_type.item_type)
         if isinstance(dest_type, PT_Element):
-            return self.element_type.is_compatible_with(dest_type.element_type)
+            return isinstance(self.element_type, type(dest_type.element_type))
         return False
 
-class PT_ElementBaseType(PT_Scalar):
+class PT_Group(PT_Scalar):
     pass
 
-class PT_Group(PT_ElementBaseType):
-    pass
-
-class PT_Shape(PT_ElementBaseType):
+class PT_Shape(PT_Group):
     pass
 
 class PT_Polyline(PT_Shape):

@@ -2,7 +2,7 @@ import copy
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyledItemDelegate
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyledItemDelegate, QHBoxLayout, QPushButton
 
 from ui.id_generator import shorten_uid
 from ui.nodes.port_defs import PortRefTableEntry
@@ -29,7 +29,24 @@ class PortRefTableWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.addWidget(self.table)
 
+        if additional_actions and 'add' in additional_actions:
+            # Set up button
+            button_widget = QWidget()
+            button_layout = QHBoxLayout(button_widget)
+            button_layout.setContentsMargins(0, 0, 0, 0)
+            add_button = QPushButton("+")
+            add_button.clicked.connect(lambda: additional_actions['add'](self))
+            button_layout.addWidget(add_button)
+            # Add to layout
+            layout.addWidget(button_widget)
+
         self.set_entries(entries or [])
+
+    def row_count(self):
+        return self.table.rowCount()
+
+    def set_row_count(self, row):
+        return self.table.setRowCount(row)
 
     def set_entries(self, entries):
         self.table.setRowCount(len(entries))
