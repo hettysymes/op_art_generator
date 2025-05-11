@@ -10,17 +10,18 @@ from ui.reorderable_table_widget import ReorderableTableWidget
 
 
 class PortRefTableWidget(QWidget):
-    def __init__(self, port_ref_getter, table_heading, entries=None, text_callback=None, context_menu_callback=None, additional_actions=None, parent=None):
+    def __init__(self, port_ref_getter=None, table_heading=None, entries=None, text_callback=None, context_menu_callback=None, additional_actions=None, item_delegate=None, parent=None):
         super().__init__(parent)
         self.port_ref_getter = port_ref_getter  # A function to get a port_ref given a ref_id
         self.text_callback = text_callback or self.default_text_callback
         self.context_menu_callback = context_menu_callback
         self.additional_actions = additional_actions
+        self.item_delegate = item_delegate or self.CenteredItemDelegate()
 
         self.table = ReorderableTableWidget(self.set_item)
         self.table.setColumnCount(1)
         self.table.setHorizontalHeaderLabels([table_heading])
-        self.table.setItemDelegate(self.CenteredItemDelegate())
+        self.table.setItemDelegate(self.item_delegate)
         self.table.verticalHeader().setDefaultSectionSize(40)
         self.table.setWordWrap(True)
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -81,13 +82,14 @@ class PortRefTableWidget(QWidget):
         table_entry = item.data(Qt.UserRole)
 
         menu = QMenu()
-        duplicate_action = menu.addAction("Duplicate")
-        if not isinstance(table_entry, PortRefTableEntry) or table_entry.deletable:
-            delete_action = menu.addAction("Delete")
 
         # Allow external extension of the menu
         if self.context_menu_callback:
             self.context_menu_callback(menu, table_entry)
+
+        duplicate_action = menu.addAction("Duplicate")
+        if not isinstance(table_entry, PortRefTableEntry) or table_entry.deletable:
+            delete_action = menu.addAction("Delete")
 
         action = menu.exec_(self.table.viewport().mapToGlobal(position))
 
@@ -122,4 +124,6 @@ class PortRefTableWidget(QWidget):
 
     @staticmethod
     def default_text_callback(port_ref, table_entry):
-        return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})"
+        if port_ref:
+            return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})"
+        return ""

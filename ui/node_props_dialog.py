@@ -1,7 +1,7 @@
 import copy
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QTableWidgetItem, QHBoxLayout, QWidget, QVBoxLayout, \
     QFormLayout, QDoubleSpinBox, QDialogButtonBox, QMenu, QStyledItemDelegate, QColorDialog, QSpinBox, QCheckBox, \
     QGroupBox, QLabel, QLineEdit
@@ -10,7 +10,7 @@ from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.port_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
-    LineRef, PT_Fill, PT_Hidden, PT_Number
+    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourTable
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
@@ -374,130 +374,46 @@ class NodePropertiesDialog(QDialog):
                 additional_actions={'edit': edit_action, 'reverse': reverse_action, 'add': add_action}
             )
             widget = port_ref_table
-        # elif prop_entry.prop_type == PrT_ColourTable():
-        #     def add_colour_item(colour, row=None, table=None):
-        #         string_col = str((colour.red(), colour.green(), colour.blue(), colour.alpha()))
-        #         item = QTableWidgetItem(string_col)
-        #         item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-        #         item.setData(Qt.UserRole, colour)
-        #         if (row is not None) and (table is not None):
-        #             table.setItem(row, 0, item)
-        #         return item
-        #
-        #     # Create a table widget
-        #     table = ReorderableTableWidget(add_colour_item)
-        #
-        #     # Set up the basic table structure
-        #     table.setColumnCount(1)
-        #     table.setHorizontalHeaderLabels(["Colour"])
-        #
-        #     # Custom delegate to display color swatches
-        #     class ColorDelegate(QStyledItemDelegate):
-        #         def paint(self, painter, option, index):
-        #             if index.column() == 0:
-        #                 color_str = index.data()
-        #                 if color_str:
-        #                     color = QColor(*ast.literal_eval(color_str))
-        #                     # Fill the entire cell with the color
-        #                     painter.fillRect(option.rect, color)
-        #
-        #                     # Add a border around the color swatch
-        #                     painter.setPen(QPen(Qt.black, 1))
-        #                     painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
-        #
-        #                     # The key part: prevent default text drawing
-        #                     return
-        #             # Only call the base implementation if we didn't handle it above
-        #             super().paint(painter, option, index)
-        #
-        #         def displayText(self, value, locale):
-        #             # Return empty string to prevent text display
-        #             return ""
-        #
-        #     # Apply the delegate to the table
-        #     table.setItemDelegate(ColorDelegate())
-        #
-        #     # Make rows a bit taller to better display the color swatches
-        #     table.verticalHeader().setDefaultSectionSize(30)
-        #
-        #     # Populate with current data
-        #     colours = current_value or prop_entry.default_value or []
-        #     table.setRowCount(len(colours))
-        #     for row, colour in enumerate(colours):
-        #         add_colour_item(QColor(*colour), row, table)
-        #
-        #     # Add buttons to add/remove rows
-        #     button_widget = QWidget()
-        #     button_layout = QHBoxLayout(button_widget)
-        #     button_layout.setContentsMargins(0, 0, 0, 0)
-        #
-        #     add_button = QPushButton("+")
-        #
-        #     # Add row function
-        #     def add_row():
-        #         # Open color dialog directly when adding a new row
-        #         color_dialog = QColorDialog()
-        #         color_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
-        #         if color_dialog.exec_():
-        #             sel_col = color_dialog.selectedColor()
-        #             row = table.rowCount()
-        #             table.setRowCount(row + 1)
-        #             add_colour_item(sel_col, row, table)
-        #
-        #     # Double-click to edit/select color for existing rows
-        #     def on_cell_clicked(row, column):
-        #         if column == 0:
-        #             color_dialog = QColorDialog()
-        #             color_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
-        #             current_item = table.item(row, column)
-        #             current_color = current_item.data(Qt.UserRole)
-        #             color_dialog.setCurrentColor(current_color)
-        #             if color_dialog.exec_():
-        #                 sel_col = color_dialog.selectedColor()
-        #                 add_colour_item(sel_col, row, table)
-        #
-        #     # Connect to cellDoubleClicked signal
-        #     table.cellDoubleClicked.connect(on_cell_clicked)
-        #     add_button.clicked.connect(add_row)
-        #     button_layout.addWidget(add_button)
-        #
-        #     # Set up context menu for deletion
-        #     def show_context_menu(position):
-        #         row = table.rowAt(position.y())
-        #         if row >= 0:
-        #             menu = QMenu()
-        #             delete_action = menu.addAction("Delete")
-        #             action = menu.exec_(table.viewport().mapToGlobal(position))
-        #             if action == delete_action:
-        #                 table.removeRow(row)
-        #
-        #     table.setContextMenuPolicy(Qt.CustomContextMenu)
-        #     table.customContextMenuRequested.connect(show_context_menu)
-        #
-        #     # Create a container for the table and buttons
-        #     container = QWidget()
-        #     layout = QVBoxLayout(container)
-        #     layout.addWidget(table)
-        #     layout.addWidget(button_widget)
-        #
-        #     # Function to get the current value from the table
-        #     def get_table_value():
-        #         colours = []
-        #         for row in range(table.rowCount()):
-        #             try:
-        #                 colour = table.item(row, 0).text()
-        #                 colours.append(ast.literal_eval(colour))
-        #             except (ValueError, AttributeError):
-        #                 # Handle empty or invalid cells
-        #                 pass
-        #         return colours
-        #
-        #     # Store both the getter function and the reference to the table with the container
-        #     container.get_value = get_table_value
-        #     container.table_widget = table  # Store a reference to the actual table
-        #
-        #     widget = container
+        elif isinstance(prop_type, PT_ColourTable):
+            # Custom delegate to display colour swatches
+            class ColourDelegate(QStyledItemDelegate):
+                def paint(self, painter, option, index):
+                    colour = index.data(Qt.UserRole)
+                    q_colour = QColor(*colour)
+                    # Fill the entire cell with the color
+                    painter.fillRect(option.rect, q_colour)
 
+                    # Add a border around the color swatch
+                    painter.setPen(QPen(Qt.black, 1))
+                    painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+
+            def custom_context_menu(menu, _):
+                menu.actions_map = {'edit': menu.addAction("Edit")}
+
+            def edit_action(port_ref_table, _, row):
+                colour_dialog = QColorDialog()
+                colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+                if colour_dialog.exec_() == QDialog.Accepted:
+                    sel_col = colour_dialog.selectedColor().getRgb()
+                    port_ref_table.set_item(sel_col, row)
+
+            def add_action(port_ref_table):
+                colour_dialog = QColorDialog()
+                colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+                if colour_dialog.exec_() == QDialog.Accepted:
+                    sel_col = colour_dialog.selectedColor().getRgb()
+                    row = port_ref_table.row_count()
+                    port_ref_table.set_row_count(row + 1)
+                    port_ref_table.set_item(sel_col, row)
+
+            port_ref_table = PortRefTableWidget(
+                table_heading="Colour",
+                entries=current_value,
+                context_menu_callback=custom_context_menu,
+                additional_actions={'edit': edit_action, 'add': add_action},
+                item_delegate=ColourDelegate()
+            )
+            widget = port_ref_table
         elif isinstance(prop_type, PT_Fill):
             r, g, b, a = current_value
             widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
