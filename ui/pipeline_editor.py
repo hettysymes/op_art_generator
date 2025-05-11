@@ -1566,17 +1566,15 @@ class PipelineEditor(QMainWindow):
         )
 
         if filepath:
-            self.scene.save_scene(filepath)
+            self.scene.filepath = filepath
+            self.save_scene()
 
-    def save_scene(self, filepath=None):
-        if filepath:
-            save_filepath = filepath
-        elif self.scene.filepath:
-            save_filepath = self.scene.filepath
+    def save_scene(self):
+        if self.scene.filepath:
+            self.scene.save_scene(self.scene.filepath)
+            self.statusBar().showMessage(f"Scene saved to {self.scene.filepath}", 3000)
         else:
-            return self.save_as_scene()
-        self.scene.save_scene(save_filepath)
-        self.statusBar().showMessage(f"Scene saved to {save_filepath}", 3000)
+            self.save_as_scene()
 
     def load_scene(self):
         file_path, _ = QFileDialog.getOpenFileName(

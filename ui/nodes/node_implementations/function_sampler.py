@@ -14,7 +14,7 @@ DEF_FUN_SAMPLER_INFO = NodeInfo(
     prop_entries={
         'num_samples': PropEntry(PT_Int(min_value=1),
                                  display_name="Sample number",
-                                 description="Number of samples to obtain from the function f(x), i.e. x values (between 0 & 1) to input.",
+                                 description="Number of samples (at least 1) to obtain from the function f(x), i.e. x values (between 0 & 1) to input.",
                                  default_value=5)
     }
 )

@@ -1,6 +1,7 @@
 import itertools
 
 from ui.nodes.node_defs import NodeInfo
+from ui.nodes.node_implementations.port_ref_table_handler import flatten_list
 from ui.nodes.nodes import UnitNode, SelectableNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Element, PT_List
 from ui.nodes.shape_datatypes import Group, Element
@@ -40,8 +41,9 @@ class ShapeRepeaterNode(SelectableNode):
 
     def _compute_main(self):
         grid = self._prop_val('grid')
-        elements = self._prop_val('elements')
-        if grid and elements:
+        elem_lists_input = self._prop_val('elements')
+        if grid and elem_lists_input:
+            elements = flatten_list(elem_lists_input)
             return ShapeRepeaterNode.helper(grid, elements)
         return None
 
