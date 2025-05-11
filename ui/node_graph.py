@@ -6,7 +6,7 @@ from ui.nodes.port_defs import PortType, PortIO
 
 
 class NodeGraph(GraphQuerier):
-    def __init__(self, node_ids=None, node_map=None, adj_list=None, in_degree=None):
+    def __init__(self):
         self.edges = set()  # edges are ((src_node, src_port), (dst_node, dst_port))
         self.node_map = {}
         self.node_inputs = defaultdict(set)  # dst_node → set of src_nodes
@@ -130,34 +130,29 @@ class NodeGraph(GraphQuerier):
     def pop_inactive_port_ids(self, node_id):
         return self.inactive_port_ids.pop(node_id, [])
 
-    def get_topo_order(self):
-        # Kahn's algorithm on node-level dependencies
-        in_degree = {n: len(self.node_inputs[n]) for n in self.node_map}
-        queue = deque([n for n in self.node_map if in_degree[n] == 0])
+    def get_topo_order_subgraph(self, subset=None):
+        subset = set(subset) if subset is not None else set(self.node_map.keys())
+
+        # Compute in-degrees only for nodes in the subset
+        in_degree = {
+            n: sum(1 for src in self.node_inputs[n] if src in subset)
+            for n in subset
+        }
+
+        # Start with nodes in subset that have zero in-degree within the subset
+        queue = deque([n for n in subset if in_degree[n] == 0])
         order = []
 
         while queue:
             node_id = queue.popleft()
             order.append(node_id)
             for neighbor in self.node_outputs[node_id]:
-                in_degree[neighbor] -= 1
-                if in_degree[neighbor] == 0:
-                    queue.append(neighbor)
+                if neighbor in subset:
+                    in_degree[neighbor] -= 1
+                    if in_degree[neighbor] == 0:
+                        queue.append(neighbor)
 
-        if len(order) != len(self.node_map):
-            raise ValueError("Graph has cycles!")
-        return order # order of node ids
+        if len(order) != len(subset):
+            raise ValueError("Subgraph has cycles or disconnected dependencies.")
 
-    def __str__(self):
-        result = ""
-        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.connections:
-            src_node_name = self.node(src_node_id).name()
-            dst_node_name = self.node(dst_node_id).name()
-            src_port_display_name = self.node(src_node_id).get_port_defs()[(PortIO.OUTPUT, src_port_key)].display_name
-            dst_port_display_name = self.node(dst_node_id).get_port_defs()[(PortIO.INPUT, dst_port_key)].display_name
-            first_string = f"{src_node_name} [#{shorten_uid(src_node_id)}] (port \"{src_port_display_name}\")".ljust(40)
-            second_string = f"{dst_node_name} [#{shorten_uid(dst_node_id)}] (port \"{dst_port_display_name}\")"
-            result += f"{first_string} -> {second_string}\n"
-        if not result:
-            result = "[no connections]\n"
-        return result
+        return order

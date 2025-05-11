@@ -75,8 +75,10 @@ class Node(BaseNode, ABC):
     def safe_visualise(self):
         # Catch exception if raised
         try:
+            # Recompute results
             self.compute_results.clear()
             self.compute()
+            # Obtain visualisation
             vis = self.visualise()
         except NodeInputException as e:
             if e.node_id == self.uid:
