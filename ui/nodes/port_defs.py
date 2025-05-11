@@ -10,8 +10,9 @@ class PortType(ABC):
 
 # List
 class PT_List(PortType):
-    def __init__(self, item_type: PortType):
+    def __init__(self, item_type: PortType, input_multiple=True):
         self.item_type = item_type
+        self.input_multiple = input_multiple
 
     def is_compatible_with(self, dest_type) -> bool:
         if isinstance(dest_type, PT_List):

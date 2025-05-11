@@ -1061,7 +1061,8 @@ class PipelineScene(QGraphicsScene):
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.edge_items) > 0
                 if not connection_exists and source_port.port_type().is_compatible_with(dest_port.port_type()) and\
-                    (not target_has_connection or isinstance(dest_port.port_type(), PT_List)):
+                    (not target_has_connection or (isinstance(dest_port.port_type(), PT_List) and dest_port.port_type().input_multiple)):
+                    # Add the connection
                     self.undo_stack.push(AddNewEdgeCmd(self, (src_node_id, source_port.port_key), (dst_node_id, dest_port.port_key)))
 
         # Clean up temporary line

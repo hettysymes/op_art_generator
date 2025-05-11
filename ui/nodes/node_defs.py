@@ -3,8 +3,9 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 
 from ui.id_generator import shorten_uid
+from ui.nodes.node_implementations.port_ref_table_handler import flatten_list
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.port_defs import PortIO, PT_Scalar, PT_Hidden
+from ui.nodes.port_defs import PortIO, PT_Scalar, PT_Hidden, PT_List
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
@@ -130,14 +131,15 @@ class Node(BaseNode, ABC):
             # Get port type
             port_type = self.port_defs_filter_by_io(PortIO.INPUT)[prop_key].port_type
             if isinstance(port_type, PT_Scalar):
-                # Return only the item in the list
-                assert len(prop_node_vals) == 1
                 if prop_node_vals[0] is not None:
                     # Do not default to property values dictionary
-                    return dict(prop_node_vals) if get_refs else prop_node_vals[0]
+                    return prop_node_vals[0]
             else:
-                # Return the full list
+                assert isinstance(port_type, PT_List)
+                if not port_type.input_multiple:
+                    return prop_node_vals[0]
                 return dict(prop_node_vals) if get_refs else prop_node_vals
+
         return self.prop_vals.get(prop_key)
 
     def _port_ref(self, port_key, ref_id):

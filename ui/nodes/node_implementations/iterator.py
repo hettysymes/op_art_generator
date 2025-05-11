@@ -9,7 +9,7 @@ from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_Scalar, 
 DEF_ITERATOR_INFO = NodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",
     port_defs={
-        (PortIO.INPUT, 'value_list'): PortDef("Value list", PT_List(PT_Scalar())),
+        (PortIO.INPUT, 'value_list'): PortDef("Value list", PT_List(PT_Scalar(), input_multiple=False)),
         (PortIO.INPUT, 'element'): PortDef("Shape", PT_Element()),
         (PortIO.OUTPUT, '_main'): PortDef("Iterator", PT_List(PT_Element()))
     },
@@ -33,9 +33,9 @@ class IteratorNode(UnitNode):
         enum_type: PT_Enum = self.node_info.prop_entries['prop_to_change'].prop_type
         elem_input = self._prop_val('element', get_refs=True)
         if not elem_input:
-            enum_type.set_options([])
+            enum_type.set_options()
             return None
-        ref_id, element = next(iter(elem_input.items()))
+        ref_id, element = elem_input
         port_ref = self._port_ref('element', ref_id)
         node = self.graph_querier.node(port_ref.node_id)
         options = []
@@ -56,8 +56,7 @@ class IteratorNode(UnitNode):
         values_input = self._prop_val('value_list', get_refs=True)
         if not values_input:
             return None
-        # TODO: for now assumes one input edge
-        ref_id, values = next(iter(values_input.items()))
+        ref_id, values = values_input
         port_type = self._port_ref('value_list', ref_id).port_def.port_type
         assert isinstance(port_type, PT_List)
         value_type = port_type.item_type

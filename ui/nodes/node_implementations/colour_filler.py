@@ -10,7 +10,7 @@ from ui.nodes.utils import process_rgb
 DEF_COLOUR_FILLER_INFO = NodeInfo(
     description="Given a colour list and a drawing consisting of lines, cycle through the colours and use them to fill the gaps between the lines.",
     port_defs={
-        (PortIO.INPUT, 'colour_list'): PortDef("Colours", PT_List(PT_Colour())),
+        (PortIO.INPUT, 'colour_list'): PortDef("Colours", PT_List(PT_Colour(), input_multiple=False)),
         (PortIO.INPUT, 'element'): PortDef("Drawing", PT_Element()),
         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
     },
