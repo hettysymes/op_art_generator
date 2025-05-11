@@ -47,7 +47,7 @@ class ShapeRepeaterNode(SelectableNode):
 
     def _compute_cell(self, i, j):
         main_group = self._compute_main()
-        return main_group[self._grid_dims()[0]*i + j]
+        return main_group[self._grid_dims()[1]*i + j]
 
     # Returns number of rows, number of cols
     def _grid_dims(self):
