@@ -64,7 +64,7 @@ class ShapeRepeaterNode(SelectableNode):
 
     def extract_element(self, parent_group, element_id):
         elem_index = parent_group.get_element_index_from_id(element_id)
-        i, j = divmod(elem_index, self._grid_dims()[0])
+        i, j = divmod(elem_index, self._grid_dims()[1])
         # Add new port definition
         port_id = (PortIO.OUTPUT, f'cell_{i}_{j}')
         port_def = PortDef(f"Cell ({i}, {j})", PT_Element())
