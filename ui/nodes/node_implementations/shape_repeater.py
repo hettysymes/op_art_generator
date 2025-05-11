@@ -39,6 +39,14 @@ class ShapeRepeaterNode(SelectableNode):
                 ret_group.add(cell_group)
         return ret_group
 
+    def _update_node(self):
+        self._remove_redundant_ports()
+        # Update extracted output port definitions
+        for port_id in self.extracted_port_ids:
+            _, port_key = port_id
+            cell_group = self.compute(out_port_key=port_key)
+            self.get_port_defs()[port_id].port_type = PT_Element(cell_group.get_output_type())
+
     def _compute_main(self):
         grid = self._prop_val('grid')
         elem_lists_input = self._prop_val('elements')
@@ -57,7 +65,6 @@ class ShapeRepeaterNode(SelectableNode):
         return len(h_line_ys)-1, len(v_line_xs)-1
 
     def compute(self, out_port_key='_main'):
-        self._remove_redundant_ports()
         if out_port_key == '_main':
             return self._compute_main()
         # Compute cell

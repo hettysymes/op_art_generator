@@ -432,7 +432,6 @@ class NodeItem(QGraphicsRectItem):
         is_input = port_io == PortIO.INPUT
         # Add port to scene
         port = PortItem(port_key=port_key,
-                        port_type=port_def.port_type,
                         is_input=is_input,
                         parent=self)
         self.port_items[port_id] = port # Add reference to port
@@ -592,10 +591,9 @@ class NodeItem(QGraphicsRectItem):
 class PortItem(QGraphicsPathItem):
     """Represents connection points on nodes with shapes based on port_type"""
 
-    def __init__(self, port_key, port_type, is_input, parent: NodeItem):
+    def __init__(self, port_key, is_input, parent: NodeItem):
         super().__init__(parent)
         self.port_key = port_key
-        self.port_type = port_type
         self.is_input = is_input
         self.edge_items = {} # Key is port (node id, port key) connected to by edge, value is edge item
 
@@ -617,16 +615,23 @@ class PortItem(QGraphicsPathItem):
 
         self.setPen(QPen(Qt.black, 1))
 
+    def port_type(self):
+        node = self.parentItem().node()
+        port_io = PortIO.INPUT if self.is_input else PortIO.OUTPUT
+        port_def = node.get_port_defs()[(port_io, self.port_key)]
+        return port_def.port_type
+
     def create_shape_for_port_type(self):
         path = QPainterPath()
         half_size = self.size / 2
-        if self.port_type.is_compatible_with(PT_Element()):
+        port_type = self.port_type()
+        if port_type.is_compatible_with(PT_Element()):
             # Circle for number type
             path.addEllipse(-half_size, -half_size, self.size, self.size)
-        elif self.port_type.is_compatible_with(PT_Grid()):
+        elif port_type.is_compatible_with(PT_Grid()):
             # Rounded rectangle for string type
             path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
-        elif self.port_type.is_compatible_with(PT_Function()):
+        elif port_type.is_compatible_with(PT_Function()):
             # Diamond for boolean type
             points = [
                 QPointF(0, -half_size),  # Top
@@ -639,11 +644,11 @@ class PortItem(QGraphicsPathItem):
                 path.lineTo(points[i])
             path.closeSubpath()
 
-        elif self.port_type.is_compatible_with(PT_Warp()):
+        elif port_type.is_compatible_with(PT_Warp()):
             # Square for array type
             path.addRect(-half_size, -half_size, self.size, self.size)
 
-        elif self.port_type.is_compatible_with(PT_List(PT_Scalar())):
+        elif port_type.is_compatible_with(PT_List(PT_Scalar())):
             # Hexagon for object type
             points = []
             for i in range(6):
@@ -1055,8 +1060,8 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port.edge_items) > 0
-                if not connection_exists and source_port.port_type.is_compatible_with(dest_port.port_type) and\
-                    (not target_has_connection or isinstance(dest_port.port_type, PT_List)):
+                if not connection_exists and source_port.port_type().is_compatible_with(dest_port.port_type()) and\
+                    (not target_has_connection or isinstance(dest_port.port_type(), PT_List)):
                     self.undo_stack.push(AddNewEdgeCmd(self, (src_node_id, source_port.port_key), (dst_node_id, dest_port.port_key)))
 
         # Clean up temporary line

@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum, auto
 
 
@@ -47,20 +47,38 @@ class PT_Grid(PT_Scalar):
 # Elements
 
 class PT_Element(PT_Scalar):
+    def __init__(self, element_type=None):
+        if element_type is None:
+            self.element_type = PT_Group()
+        elif not isinstance(element_type, PT_ElementBaseType):
+            raise TypeError("element_type must be an instance of PT_ElementBaseType or its subclass")
+        else:
+            self.element_type = element_type
+
+    def is_compatible_with(self, dest_type):
+        if isinstance(dest_type, PT_List):
+            return self.element_type.is_compatible_with(dest_type.item_type)
+        if isinstance(dest_type, PT_Element):
+            return self.element_type.is_compatible_with(dest_type.element_type)
+        return False
+
+class PT_ElementBaseType(PT_Scalar):
     pass
 
-
-class PT_Shape(PT_Element):
+class PT_Group(PT_ElementBaseType):
     pass
 
+class PT_Shape(PT_ElementBaseType):
+    pass
+
+class PT_Polyline(PT_Shape):
+    pass
+
+class PT_Polygon(PT_Shape):
+    pass
 
 class PT_Ellipse(PT_Shape):
     pass
-
-
-class PT_Polyline(PT_Element):
-    pass
-
 
 # Sampling
 

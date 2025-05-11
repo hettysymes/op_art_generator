@@ -69,6 +69,7 @@ class Node(BaseNode, ABC):
     def safe_visualise(self):
         # Catch exception if raised
         try:
+            self._update_node()
             vis = self.visualise()
         except NodeInputException as e:
             if e.node_id == self.uid:
@@ -144,6 +145,9 @@ class Node(BaseNode, ABC):
 
     def _mark_inactive_port_id(self, port_id):
         self.graph_querier.mark_inactive_port_id(self.uid, port_id)
+
+    def _update_node(self):
+        return
 
     @classmethod
     def name(cls):
