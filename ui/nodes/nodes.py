@@ -128,17 +128,18 @@ class CombinationNode(Node, ABC):
 class CustomNode(Node):
     NAME = "Custom"
 
-    def __init__(self, uid, graph_querier, subgraph_querier: GraphQuerier, inp_node_id, out_node_id):
+    def __init__(self, uid, graph_querier, add_info):
         super().__init__(uid, graph_querier, {})
-        self.subgraph_querier = subgraph_querier
+        self.subgraph_querier, inp_node_id, out_node_id = add_info
         # Set up node info
         inp_node: Node = self.subgraph_querier.node(inp_node_id)
         out_node: Node = self.subgraph_querier.node(out_node_id)
         inp_node_port_defs = {(io, port_key): port_def for (io, port_key), port_def in inp_node.get_port_defs().items() if io == PortIO.INPUT}
         out_node_port_defs = {(io, port_key): port_def for (io, port_key), port_def in out_node.get_port_defs().items() if io == PortIO.OUTPUT}
+        port_defs = {**inp_node_port_defs, **out_node_port_defs}
         self._node_info = NodeInfo(
             description="[custom description]",
-            port_defs={**inp_node_port_defs, **out_node_port_defs}
+            port_defs=port_defs
         )
 
     @property

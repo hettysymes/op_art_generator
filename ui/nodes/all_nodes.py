@@ -54,6 +54,8 @@ def node_classes():
 
 
 def node_setting(name):
+    if name == "Custom":
+        return NodeSettings()
     for node_setting in node_settings:
         node, setting = node_setting
         if node.name() == name:

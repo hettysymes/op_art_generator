@@ -31,7 +31,7 @@ from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
-from ui.nodes.nodes import CombinationNode, SelectableNode
+from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
 from ui.nodes.shape_datatypes import Group
 from ui.selectable_renderer import SelectableSvgElement
@@ -925,18 +925,30 @@ class DeleteCmd(QUndoCommand):
         self.scene.remove_from_graph_and_scene(self.node_states, self.connections)
 
 class AddCustomNodeCmd(QUndoCommand):
-    def __init__(self, scene, subgraph_querier, inp_node_id, out_node_id, description="Make Custom Node"):
+    def __init__(self, scene, subgraph_querier, inp_node_id, out_node_id, open_ports, description="Make Custom Node"):
         super().__init__(description)
         self.scene = scene
+        self.node_graph: NodeGraph = scene.node_graph
         self.subgraph_querier = subgraph_querier
         self.inp_node_id = inp_node_id
         self.out_node_id = out_node_id
+        self.open_ports = open_ports
+        self.node_state = None
 
     def undo(self):
         pass
 
     def redo(self):
         print("Making custom node")
+        node_id = self.node_state.node_id if self.node_state else None
+        node_id = self.node_graph.add_new_node(CustomNode, add_info=(self.subgraph_querier, self.inp_node_id, self.out_node_id), node_id=node_id)
+        if not self.node_state:
+            node = self.node_graph.node(node_id)
+            self.node_state = NodeState(node_id=node_id,
+                                        ports_open=self.open_ports,
+                                        pos=(0, 0),
+                                        svg_size=(150, 150))  # TODO: save as constant somewhere
+        self.scene.add_node(self.node_state)
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -1614,7 +1626,7 @@ class PipelineEditor(QMainWindow):
         if dialog.exec_():
             node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
             subgraph_querier = NodeGraph()
-            _, nodes, connections, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, nodes, connections, port_refs, graph_querier=subgraph_querier)
+            node_states, nodes, connections, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, nodes, connections, port_refs, graph_querier=subgraph_querier)
             # Set up subgraph querier
             subgraph_querier.node_map = nodes
             subgraph_querier.port_refs = port_refs
@@ -1633,7 +1645,12 @@ class PipelineEditor(QMainWindow):
                 elif short_id == string2:
                     out_node_id = new_key
             if inp_node_id and out_node_id:
-                self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, subgraph_querier, inp_node_id, out_node_id))
+                # Get open ports
+                input_open_ports = [(io, port_key) for (io, port_key) in node_states[inp_node_id].ports_open if io == PortIO.INPUT]
+                output_open_ports = [(io, port_key) for (io, port_key) in node_states[out_node_id].ports_open if
+                                    io == PortIO.OUTPUT]
+                total_open_ports = input_open_ports + output_open_ports
+                self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, subgraph_querier, inp_node_id, out_node_id, total_open_ports))
 #
     def identify_selected_items(self):
         node_states = {}
@@ -1688,14 +1705,14 @@ class PipelineEditor(QMainWindow):
         graph_querier = graph_querier or self.scene.node_graph
         old_to_new_id_map = {}
         # Copy nodes
-        new_node_states = []
+        new_node_states = {}
         new_nodes = {}
         for node_state in node_states:
             new_uid = gen_uid()
             # Copy node state
             new_node_state = copy.deepcopy(node_state)
             new_node_state.node_id = new_uid
-            new_node_states.append(new_node_state)
+            new_node_states[new_uid] = new_node_state
             # Copy node
             node = nodes[node_state.node_id]
             new_node = copy.deepcopy(node)
@@ -1752,7 +1769,7 @@ class PipelineEditor(QMainWindow):
             for node_state in node_states:
                 node_state.pos = (node_state.pos[0] + offset.x(), node_state.pos[1] + offset.y())
             # Perform paste
-            self.scene.undo_stack.push(PasteCmd(self.scene, node_states, nodes.values(), connections, port_refs))
+            self.scene.undo_stack.push(PasteCmd(self.scene, node_states.values(), nodes.values(), connections, port_refs))
 
 
 if __name__ == "__main__":
