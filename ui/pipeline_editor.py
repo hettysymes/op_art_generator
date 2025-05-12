@@ -160,7 +160,7 @@ class NodeItem(QGraphicsRectItem):
         self.setAcceptHoverEvents(True)
 
         # Set the help text for this node
-        self._help_text = f"{node.name()} Help:\n{node.get_description()}"
+        self._help_text = f"{node.base_node_name()} Help:\n{node.get_description()}"
 
         self.resize_handle = None
         if node_setting(node.name()).resizable:

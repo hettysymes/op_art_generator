@@ -1,9 +1,9 @@
 import itertools
 
 from ui.nodes.node_defs import NodeInfo
-from ui.nodes.node_implementations.port_ref_table_handler import flatten_list
+from ui.nodes.node_implementations.port_ref_table_handler import flatten_list, handle_port_ref_table
 from ui.nodes.nodes import SelectableNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Element, PT_List
+from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Element, PT_List, PropEntry, PT_ElemRefTable
 from ui.nodes.shape_datatypes import Group, Element
 from ui.nodes.transforms import Scale, Translate
 
@@ -11,7 +11,13 @@ DEF_SHAPE_REPEATER_NODE_INFO = NodeInfo(
     description="Repeat a drawing in a grid-like structure.",
     port_defs={(PortIO.INPUT, 'grid'): PortDef("Grid", PT_Grid()),
                (PortIO.INPUT, 'elements'): PortDef("Drawing", PT_List(PT_Element())),
-               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())}
+               (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())},
+    prop_entries={
+        'elem_order': PropEntry(PT_ElemRefTable('elements'),
+                                display_name="Drawing repeat order",
+                                description="Order of drawings in which to repeat them within the grid. Drawings are cycled through the grid cells row by row.",
+                                default_value=[])
+    }
 )
 
 
@@ -40,11 +46,6 @@ class ShapeRepeaterNode(SelectableNode):
         return ret_group
 
     @staticmethod
-    def _compute_main(grid, elem_lists_input):
-        elements = flatten_list(elem_lists_input)
-        return ShapeRepeaterNode.helper(grid, elements)
-
-    @staticmethod
     def _compute_cell(i, j, main_group, grid):
         return main_group[ShapeRepeaterNode._grid_dims(grid)[1] * i + j]
 
@@ -56,10 +57,11 @@ class ShapeRepeaterNode(SelectableNode):
 
     def compute(self):
         grid = self._prop_val('grid')
-        elem_lists_input = self._prop_val('elements')
-        if not grid or not elem_lists_input:
+        ref_elements = self._prop_val('elements', get_refs=True)
+        elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
+        if not grid or not elements:
             return
-        main_group = ShapeRepeaterNode._compute_main(grid, elem_lists_input)
+        main_group = ShapeRepeaterNode.helper(grid, elements)
         self.set_compute_result(main_group)
         for port_id in self.extracted_port_ids:
             _, port_key = port_id

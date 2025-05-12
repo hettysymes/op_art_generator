@@ -1,6 +1,5 @@
 from ui.nodes.node_implementations.blaze_maker import BlazeMakerNode
 from ui.nodes.node_implementations.canvas import CanvasNode
-from ui.nodes.node_implementations.checkerboard import CheckerboardNode
 from ui.nodes.node_implementations.colour import ColourNode
 from ui.nodes.node_implementations.colour_filler import ColourFillerNode
 from ui.nodes.node_implementations.colour_list import ColourListNode
@@ -28,7 +27,6 @@ node_settings = [
     (GridNode, NodeSettings()),
     (ShapeNode, NodeSettings()),
     (ShapeRepeaterNode, NodeSettings()),
-    (CheckerboardNode, NodeSettings()),
     (WarpNode, NodeSettings()),
     (FunctionNode, NodeSettings()),
     (CanvasNode, NodeSettings(resizable=False)),
