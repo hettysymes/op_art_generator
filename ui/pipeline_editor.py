@@ -924,73 +924,20 @@ class DeleteCmd(QUndoCommand):
     def redo(self):
         self.scene.remove_from_graph_and_scene(self.node_states, self.connections)
 
-#
-# class AddCustomNodeCmd(QUndoCommand):
-#     def __init__(self, pipeline_scene, save_states, inp_node_id, out_node_id, description="Make Custom Node"):
-#         super().__init__(description)
-#         self.pipeline_scene = pipeline_scene
-#         self.scene: Scene = pipeline_scene.scene
-#         self.save_states = save_states
-#         self.inp_node_id = inp_node_id
-#         self.out_node_id = out_node_id
-#         self.custom_node_states = None
-#         print("Creating custom node: ", inp_node_id, out_node_id)
-#
-#     def undo(self):
-#         assert self.custom_node_states
-#         for uid, item in self.custom_node_states.items() + self.save_states.items():
-#             self.scene.remove(uid)
-#             self.pipeline_scene.removeItem(item)
-#
-#     def redo(self):
-#         if not self.custom_node_states:
-#             for state in self.save_states.values():
-#                 if isinstance(state, NodeState) or isinstance(state, EdgeState):
-#                     state.invisible = True
-#                 if isinstance(state, NodeState) or isinstance(state, PortState):
-#                     state.x = None
-#                     state.y = None
-#         self.pipeline_scene.load_from_save_states(self.save_states)
-#         if self.custom_node_states:
-#             self.pipeline_scene.load_from_save_states(self.custom_node_states)
-#         else:
-#             unit_node_info = UnitNodeInfo(
-#                 name="Custom node",
-#                 description="Custom node.",
-#                 in_port_defs=self.save_states[self.inp_node_id].node.in_port_defs(),
-#                 out_port_defs=self.save_states[self.out_node_id].node.out_port_defs(),
-#                 prop_port_defs=self.save_states[self.inp_node_id].node.prop_port_defs()
-#             )
-#             involved_ids = []
-#             for uid, state in self.save_states.items():
-#                 if isinstance(state, NodeState) or isinstance(state, EdgeState):
-#                     involved_ids.append(uid)
-#             custom_node = CustomNode(node_id=gen_uid(), unit_node_info=unit_node_info, final_node=self.save_states[self.out_node_id].node, involved_ids=involved_ids, first_id=self.inp_node_id, end_id=self.out_node_id)
-#             # TODO: change where the node item is created
-#             node_item = NodeItem(NodeState(custom_node.node_id, 0, 0, [], [], custom_node, 150, 150, nodes_to_update=[self.inp_node_id]))
-#             self.scene.add(node_item)
-#             self.pipeline_scene.addItem(node_item)
-#             node_item.create_ports()
-#             node_item.update_vis_image()
-#             # Add property ports
-#             port_defs = {}
-#             for port_def in self.save_states[self.inp_node_id].node.prop_port_defs():
-#                 port_defs[port_def.key_name] = port_def
-#             for prop_port in self.save_states[self.inp_node_id].prop_ports:
-#                 node_item.add_port(port_defs[prop_port])
-#             # Save states for further redos
-#             self.custom_node_states = {node_item.uid: node_item.backend}
-#             for port_id in node_item.backend.input_port_ids + node_item.backend.output_port_ids:
-#                 port = self.scene.get(port_id)
-#                 self.custom_node_states[port.uid] = port.backend
-#             # Replace input port and output port ids
-#             for port_id in self.save_states[self.inp_node_id].input_port_ids + self.save_states[self.out_node_id].output_port_ids:
-#                 del self.save_states[port_id]
-#             self.save_states[self.inp_node_id].input_port_ids = []
-#             self.save_states[self.out_node_id].output_port_ids = []
-#             self.save_states[self.inp_node_id].ignore_inputs = True
-#             self.save_states[self.out_node_id].nodes_to_update = [node_item.uid]
-#
+class AddCustomNodeCmd(QUndoCommand):
+    def __init__(self, scene, subgraph_querier, inp_node_id, out_node_id, description="Make Custom Node"):
+        super().__init__(description)
+        self.scene = scene
+        self.subgraph_querier = subgraph_querier
+        self.inp_node_id = inp_node_id
+        self.out_node_id = out_node_id
+
+    def undo(self):
+        pass
+
+    def redo(self):
+        print("Making custom node")
+
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
@@ -1535,12 +1482,12 @@ class PipelineEditor(QMainWindow):
         select_all.triggered.connect(self.select_all)
         select_all.setMenuRole(QAction.NoRole)
         scene_menu.addAction(select_all)
-#
-#         create_custom = QAction("Group Nodes to Custom", self)
-#         create_custom.setShortcut("Ctrl+G")
-#         create_custom.triggered.connect(self.create_custom_node)
-#         scene_menu.addAction(create_custom)
-#
+
+        create_custom = QAction("Group Nodes to Custom", self)
+        create_custom.setShortcut("Ctrl+G")
+        create_custom.triggered.connect(self.create_custom_node)
+        scene_menu.addAction(create_custom)
+
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
@@ -1618,68 +1565,75 @@ class PipelineEditor(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
                 item.setSelected(True)
-#
-#     class TwoInputDialog(QDialog):
-#         def __init__(self):
-#             super().__init__()
-#             self.setWindowTitle("Create custom node")
-#
-#             self.layout = QVBoxLayout()
-#
-#             self.label1 = QLabel("Input node ID:")
-#             self.input1 = QLineEdit()
-#             self.hash_label = QLabel("#")
-#
-#             # Create a horizontal layout for the # and input field
-#             self.input_layout1 = QHBoxLayout()
-#             self.input_layout1.addWidget(self.hash_label)
-#             self.input_layout1.addWidget(self.input1)
-#
-#             # Add to the main layout
-#             self.layout.addWidget(self.label1)
-#             self.layout.addLayout(self.input_layout1)
-#
-#             self.label2 = QLabel("Output node ID:")
-#             self.input2 = QLineEdit()
-#             self.hash_label = QLabel("#")
-#
-#             # Create a horizontal layout for the # and input field
-#             self.input_layout2 = QHBoxLayout()
-#             self.input_layout2.addWidget(self.hash_label)
-#             self.input_layout2.addWidget(self.input2)
-#
-#             # Add to the main layout
-#             self.layout.addWidget(self.label2)
-#             self.layout.addLayout(self.input_layout2)
-#
-#             self.ok_button = QPushButton("OK")
-#             self.ok_button.clicked.connect(self.accept)
-#             self.layout.addWidget(self.ok_button)
-#
-#             self.setLayout(self.layout)
-#
-#         def get_inputs(self):
-#             return self.input1.text(), self.input2.text()
-#
-#     def create_custom_node(self):
-#         # Simple dialog for testing
-#         dialog = PipelineEditor.TwoInputDialog()
-#         if dialog.exec_():
-#             node_states, port_states, edge_states = self.identify_selected_items()
-#             save_states, old_to_new_id_map = self.deep_copy_items(node_states, port_states, edge_states)
-#             inp_node_id = None
-#             out_node_id = None
-#             string1, string2 = dialog.get_inputs()
-#             print("First:", string1)
-#             print("Second:", string2)
-#             for old_key, new_key in old_to_new_id_map.items():
-#                 short_id = shorten_uid(old_key)
-#                 if short_id == string1:
-#                     inp_node_id = new_key
-#                 elif short_id == string2:
-#                     out_node_id = new_key
-#             if inp_node_id and out_node_id:
-#                 self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, save_states, inp_node_id, out_node_id))
+
+    class TwoInputDialog(QDialog):
+        def __init__(self):
+            super().__init__()
+            self.setWindowTitle("Create custom node")
+
+            self.layout = QVBoxLayout()
+
+            self.label1 = QLabel("Input node ID:")
+            self.input1 = QLineEdit()
+            self.hash_label = QLabel("#")
+
+            # Create a horizontal layout for the # and input field
+            self.input_layout1 = QHBoxLayout()
+            self.input_layout1.addWidget(self.hash_label)
+            self.input_layout1.addWidget(self.input1)
+
+            # Add to the main layout
+            self.layout.addWidget(self.label1)
+            self.layout.addLayout(self.input_layout1)
+
+            self.label2 = QLabel("Output node ID:")
+            self.input2 = QLineEdit()
+            self.hash_label = QLabel("#")
+
+            # Create a horizontal layout for the # and input field
+            self.input_layout2 = QHBoxLayout()
+            self.input_layout2.addWidget(self.hash_label)
+            self.input_layout2.addWidget(self.input2)
+
+            # Add to the main layout
+            self.layout.addWidget(self.label2)
+            self.layout.addLayout(self.input_layout2)
+
+            self.ok_button = QPushButton("OK")
+            self.ok_button.clicked.connect(self.accept)
+            self.layout.addWidget(self.ok_button)
+
+            self.setLayout(self.layout)
+
+        def get_inputs(self):
+            return self.input1.text(), self.input2.text()
+
+    def create_custom_node(self):
+        # Simple dialog for testing
+        dialog = PipelineEditor.TwoInputDialog()
+        if dialog.exec_():
+            node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
+            subgraph_querier = NodeGraph()
+            _, nodes, connections, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, nodes, connections, port_refs, graph_querier=subgraph_querier)
+            # Set up subgraph querier
+            subgraph_querier.node_map = nodes
+            subgraph_querier.port_refs = port_refs
+            for connection in connections:
+                subgraph_querier.add_edge(*connection)
+            # Get input and output node ids
+            inp_node_id = None
+            out_node_id = None
+            string1, string2 = dialog.get_inputs()
+            print("First:", string1)
+            print("Second:", string2)
+            for old_key, new_key in old_to_new_id_map.items():
+                short_id = shorten_uid(old_key)
+                if short_id == string1:
+                    inp_node_id = new_key
+                elif short_id == string2:
+                    out_node_id = new_key
+            if inp_node_id and out_node_id:
+                self.scene.undo_stack.push(AddCustomNodeCmd(self.scene, subgraph_querier, inp_node_id, out_node_id))
 #
     def identify_selected_items(self):
         node_states = {}
@@ -1730,11 +1684,12 @@ class PipelineEditor(QMainWindow):
         # Return node states and connections between them
         return list(node_states.values()), nodes, connections, port_refs
 
-    def deep_copy_subgraph(self, node_states, nodes, connections, port_refs):
+    def deep_copy_subgraph(self, node_states, nodes, connections, port_refs, graph_querier=None):
+        graph_querier = graph_querier or self.scene.node_graph
         old_to_new_id_map = {}
         # Copy nodes
         new_node_states = []
-        new_nodes = []
+        new_nodes = {}
         for node_state in node_states:
             new_uid = gen_uid()
             # Copy node state
@@ -1745,8 +1700,8 @@ class PipelineEditor(QMainWindow):
             node = nodes[node_state.node_id]
             new_node = copy.deepcopy(node)
             new_node.uid = new_uid
-            new_node.graph_querier = self.scene.node_graph # Keep original graph querier
-            new_nodes.append(new_node)
+            new_node.graph_querier = graph_querier # Set graph querier
+            new_nodes[new_uid] = new_node
             # Add id to conversion map
             old_to_new_id_map[node_state.node_id] = new_uid
         # Update ids in connections
@@ -1762,8 +1717,8 @@ class PipelineEditor(QMainWindow):
             for ref_id, (src_node_id, src_port_key) in new_entry['ref_map'].items():
                 new_entry['ref_map'][ref_id] = (old_to_new_id_map[src_node_id], src_port_key)
             new_port_refs[(old_to_new_id_map[dst_node_id], dst_port_key)] = new_entry
-        # Return new node states, nodes, connections, and port defs
-        return new_node_states, new_nodes, new_connections, new_port_refs
+        # Return results
+        return new_node_states, new_nodes, new_connections, new_port_refs, old_to_new_id_map
 
     def copy_selected_subgraph(self):
         node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
@@ -1791,13 +1746,13 @@ class PipelineEditor(QMainWindow):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
             node_states, nodes, connections, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
-            node_states, nodes, connections, port_refs = self.deep_copy_subgraph(node_states, nodes, connections, port_refs)
+            node_states, nodes, connections, port_refs, _ = self.deep_copy_subgraph(node_states, nodes, connections, port_refs)
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for node_state in node_states:
                 node_state.pos = (node_state.pos[0] + offset.x(), node_state.pos[1] + offset.y())
             # Perform paste
-            self.scene.undo_stack.push(PasteCmd(self.scene, node_states, nodes, connections, port_refs))
+            self.scene.undo_stack.push(PasteCmd(self.scene, node_states, nodes.values(), connections, port_refs))
 
 
 if __name__ == "__main__":

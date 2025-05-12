@@ -1,7 +1,8 @@
 import copy
 from abc import ABC, abstractmethod
 
-from ui.nodes.node_defs import Node
+from ui.nodes.node_defs import Node, GraphQuerier, NodeInfo
+from ui.nodes.port_defs import PortIO
 
 
 class UnitNode(Node, ABC):
@@ -127,14 +128,22 @@ class CombinationNode(Node, ABC):
 class CustomNode(Node):
     NAME = "Custom"
 
-    def __init__(self, uid, graph_querier, subgraph_querier):
+    def __init__(self, uid, graph_querier, subgraph_querier: GraphQuerier, inp_node_id, out_node_id):
         super().__init__(uid, graph_querier, {})
+        self.subgraph_querier = subgraph_querier
+        # Set up node info
+        inp_node: Node = self.subgraph_querier.node(inp_node_id)
+        out_node: Node = self.subgraph_querier.node(out_node_id)
+        inp_node_port_defs = {(io, port_key): port_def for (io, port_key), port_def in inp_node.get_port_defs().items() if io == PortIO.INPUT}
+        out_node_port_defs = {(io, port_key): port_def for (io, port_key), port_def in out_node.get_port_defs().items() if io == PortIO.OUTPUT}
+        self._node_info = NodeInfo(
+            description="[custom description]",
+            port_defs={**inp_node_port_defs, **out_node_port_defs}
+        )
 
-    def base_node_name(self):
-        return "Custom"
-
+    @property
     def node_info(self):
-        pass
+        return self._node_info
 
     def compute(self):
         pass
