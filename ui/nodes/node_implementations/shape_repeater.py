@@ -80,5 +80,7 @@ class ShapeRepeaterNode(SelectableNode):
     def _is_port_redundant(self, port_id):
         _, port_key = port_id
         _, i, j = port_key.split('_')
+        if not self._prop_val('grid'):
+            return True
         height, width = self._grid_dims()
         return int(i) >= height or int(j) >= width

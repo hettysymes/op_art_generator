@@ -51,13 +51,7 @@ class NodeInfo:
         self.prop_entries = prop_entries if prop_entries else {}
 
 
-class BaseNode:
-
-    def compute(self):
-        return
-
-
-class Node(BaseNode, ABC):
+class Node(ABC):
     NAME = None  # To override
 
     def __init__(self, uid, graph_querier, prop_vals=None):
@@ -96,6 +90,7 @@ class Node(BaseNode, ABC):
 
     def clear_compute_results(self):
         self.compute_results.clear()
+        return self
 
     # Getter functions for node info
     def get_description(self):

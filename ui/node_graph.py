@@ -15,6 +15,11 @@ class NodeGraph(GraphQuerier):
         self.port_refs = {} # Map (dst_node_id, dst_port_key) to [ref map, next id]
         self.inactive_port_ids = {}
 
+    def clear_compute_results(self):
+        for node in self.node_map.values():
+            node.clear_compute_results()
+        return self
+
     def add_new_node(self, node_class, add_info=None, node_id=None):
         uid = node_id or gen_uid()
         self.node_map[uid] = node_class(uid, self, add_info=add_info)

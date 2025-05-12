@@ -269,7 +269,7 @@ class NodeItem(QGraphicsRectItem):
         self._help_tooltip.setPos(self.mapToScene(tooltip_pos_local))
         self._help_tooltip.show()
 
-    def resize(self, width, height):
+    def resize(self, width, height, update_vis=True):
         """Resize the node to the specified dimensions"""
         self.setRect(0, 0, width, height)
         if self.resize_handle:
@@ -279,7 +279,8 @@ class NodeItem(QGraphicsRectItem):
         self.node_state.svg_size = self.svg_size_from_node_size(width, height)
 
         # Update vis image
-        self.update_vis_image()
+        if update_vis:
+            self.update_vis_image()
 
         # Update port positions to match the new dimensions
         self.update_all_port_positions()
@@ -403,11 +404,11 @@ class NodeItem(QGraphicsRectItem):
             output_node_item = self.scene().node_items[output_node_id]
             output_node_item.update_visualisations()
 
-    def create_ports(self):
+    def create_ports(self, update_vis=True):
         for port_id in self.node_state.ports_open:
             # Update layout at the end for efficiency
             self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
-        self.update_label_port_positions()
+        self.update_label_port_positions(update_vis=update_vis)
 
     def reset_ports_open(self, new_ports_open):
         # Remove ports no longer in use
@@ -550,7 +551,7 @@ class NodeItem(QGraphicsRectItem):
         self.update_port_positions(PortIO.INPUT)
         self.update_port_positions(PortIO.OUTPUT)
 
-    def update_label_port_positions(self):
+    def update_label_port_positions(self, update_vis=True):
         # Calculate the maximum width needed for each side
         font_metrics = QFontMetricsF(NodeItem.LABEL_FONT)
         self.left_max_width = 0
@@ -570,7 +571,7 @@ class NodeItem(QGraphicsRectItem):
             self.right_max_width = NodeItem.LABEL_SVG_DIST
 
         width, height = self.node_size_from_svg_size(*self.node_state.svg_size)
-        self.resize(width, height)
+        self.resize(width, height, update_vis=update_vis)
 
     def remove_from_scene(self, update_vis=True):
         # Remove all connected edges
@@ -1196,7 +1197,7 @@ class PipelineScene(QGraphicsScene):
             pickle.dump(AppState(view_pos=(center.x(), center.y()),
                                  zoom=zoom,
                                  node_states=[node_item.node_state for node_item in self.node_items.values()],
-                                 node_graph=self.node_graph), f)
+                                 node_graph=copy.deepcopy(self.node_graph).clear_compute_results()), f)
 
     def add_edge(self, src_conn_id, dst_conn_id, update_vis=True):
         src_node_id, src_port_key = src_conn_id
@@ -1223,17 +1224,17 @@ class PipelineScene(QGraphicsScene):
         edge_item = src_port_item.edge_items[dst_conn_id]
         edge_item.remove_from_scene(update_vis=update_vis)
 
-    def add_node(self, node_state):
+    def add_node(self, node_state, update_vis=True):
         node = self.node_graph.node(node_state.node_id)
         node_item = NodeItem(node_state, node)
         self.node_items[node_state.node_id] = node_item
         self.addItem(node_item)
-        node_item.create_ports()
+        node_item.create_ports(update_vis=update_vis)
 
     def load_from_node_states(self, node_states, connections):
         # Add node items
         for node_state in node_states:
-            self.add_node(node_state)
+            self.add_node(node_state, update_vis=False)
         # Add edge items
         for connection in connections:
             self.add_edge(*connection, update_vis=False)
@@ -1697,13 +1698,13 @@ class PipelineEditor(QMainWindow):
     def delete_selected_items(self):
         node_states, connections = self.identify_selected_items()
         if node_states or connections:
-            nodes = [copy.deepcopy(self.scene.node_graph.node(node_id)) for node_id in node_states]
+            nodes = [copy.deepcopy(self.scene.node_graph.node(node_id)).clear_compute_results() for node_id in node_states]
             port_refs = {dst_conn_id: copy.deepcopy(port_ref_data) for dst_conn_id, port_ref_data in self.scene.node_graph.port_refs.items() if dst_conn_id[0] in node_states}
             self.scene.undo_stack.push(DeleteCmd(self.scene, list(node_states.values()), nodes, connections, port_refs))
 
     def identify_selected_subgraph(self):
         node_states, connections = self.identify_selected_items()
-        nodes = {node_id: copy.deepcopy(self.scene.node_graph.node(node_id)) for node_id in node_states}
+        nodes = {node_id: copy.deepcopy(self.scene.node_graph.node(node_id)).clear_compute_results() for node_id in node_states}
         # Remove edges which are not connected at both ends to selected nodes
         connection_indices_to_remove = []
         for i, ((src_node_id, src_port_key), (dst_node_id, dst_port_key)) in enumerate(connections):
