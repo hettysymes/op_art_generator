@@ -942,7 +942,6 @@ class AddCustomNodeCmd(QUndoCommand):
         node_id = self.node_state.node_id if self.node_state else None
         node_id = self.node_graph.add_new_node(CustomNode, add_info=(self.subgraph_querier, self.inp_node_id, self.out_node_id, self.open_ports), node_id=node_id)
         if not self.node_state:
-            node = self.node_graph.node(node_id)
             self.node_state = NodeState(node_id=node_id,
                                         ports_open=self.open_ports,
                                         pos=(0, 0),
@@ -1761,12 +1760,13 @@ class PipelineEditor(QMainWindow):
             # Deserialize with pickle
             node_states, nodes, connections, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
             node_states, nodes, connections, port_refs, _ = self.deep_copy_subgraph(node_states, nodes, connections, port_refs)
+            node_states = node_states.values()
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for node_state in node_states:
                 node_state.pos = (node_state.pos[0] + offset.x(), node_state.pos[1] + offset.y())
             # Perform paste
-            self.scene.undo_stack.push(PasteCmd(self.scene, node_states.values(), nodes.values(), connections, port_refs))
+            self.scene.undo_stack.push(PasteCmd(self.scene, node_states, nodes.values(), connections, port_refs))
 
 
 if __name__ == "__main__":
