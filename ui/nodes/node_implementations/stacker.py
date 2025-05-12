@@ -1,8 +1,8 @@
 from ui.nodes.node_defs import NodeInfo
-from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table, flatten_list
+from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortDef, PT_Element, PortIO, PT_List, PT_ElemRefTable, PT_Enum, PT_Float, PropEntry
-from ui.nodes.shape_datatypes import Group, Element
+from ui.nodes.shape_datatypes import Group
 from ui.nodes.transforms import Translate, Scale
 
 DEF_STACKER_NODE_INFO = NodeInfo(
@@ -52,4 +52,4 @@ class StackerNode(UnitNode):
         elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
         # Compute final element
         self.set_compute_result(StackerNode.helper(elements, self._prop_val('wh_diff'),
-                                  self._prop_val('stack_layout') == 'Vertical'))
+                                                   self._prop_val('stack_layout') == 'Vertical'))

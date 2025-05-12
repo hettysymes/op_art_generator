@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.port_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Group, PT_Element
+from ui.nodes.port_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 
 
@@ -107,7 +107,7 @@ class Group(Element):
         shapes, _ = zip(*self.shape_transformations())
         if len(shapes) == 1:
             return shapes[0].get_output_type()
-        return PT_Group()
+        return PT_Element()
 
     def __repr__(self):
         debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""

@@ -41,7 +41,7 @@ class CubicFunNode(UnitNode):
 
     def compute(self):
         self.set_compute_result(cubic_f(self._prop_val('a_coeff'), self._prop_val('b_coeff'), self._prop_val('c_coeff'),
-                       self._prop_val('d_coeff')))
+                                        self._prop_val('d_coeff')))
 
     def visualise(self):
         return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))

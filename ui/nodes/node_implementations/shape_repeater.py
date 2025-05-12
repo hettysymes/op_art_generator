@@ -2,7 +2,7 @@ import itertools
 
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.port_ref_table_handler import flatten_list
-from ui.nodes.nodes import UnitNode, SelectableNode
+from ui.nodes.nodes import SelectableNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Element, PT_List
 from ui.nodes.shape_datatypes import Group, Element
 from ui.nodes.transforms import Scale, Translate
@@ -27,13 +27,13 @@ class ShapeRepeaterNode(SelectableNode):
             # Ensure elements is a list
             elements = [elements]
         element_it = itertools.cycle(elements)
-        for i in range(0, len(h_line_ys)-1):
+        for i in range(0, len(h_line_ys) - 1):
             # Add row
-            for j in range(0, len(v_line_xs)-1):
+            for j in range(0, len(v_line_xs) - 1):
                 x1 = v_line_xs[j]
-                x2 = v_line_xs[j+1]
+                x2 = v_line_xs[j + 1]
                 y1 = h_line_ys[i]
-                y2 = h_line_ys[i+1]
+                y2 = h_line_ys[i + 1]
                 cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({i},{j})")
                 cell_group.add(next(element_it))
                 ret_group.add(cell_group)
@@ -48,12 +48,12 @@ class ShapeRepeaterNode(SelectableNode):
         return None
 
     def _compute_cell(self, i, j, main_group):
-        return main_group[self._grid_dims()[1]*i + j]
+        return main_group[self._grid_dims()[1] * i + j]
 
     # Returns number of rows, number of cols
     def _grid_dims(self):
         v_line_xs, h_line_ys = self._prop_val('grid')
-        return len(h_line_ys)-1, len(v_line_xs)-1
+        return len(h_line_ys) - 1, len(v_line_xs) - 1
 
     def compute(self):
         self._remove_redundant_ports()

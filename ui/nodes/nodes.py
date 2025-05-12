@@ -29,6 +29,7 @@ class UnitNode(Node, ABC):
     def compute(self):
         return
 
+
 class SelectableNode(UnitNode, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
@@ -113,4 +114,3 @@ class CombinationNode(Node, ABC):
 
     def visualise(self):
         return self._node.visualise()
-

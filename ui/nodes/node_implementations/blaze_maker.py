@@ -1,6 +1,5 @@
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
-from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_Ellipse, PT_List, PT_Fill, PT_Float, PT_Int, PropEntry
 from ui.nodes.shape_datatypes import Group, Polygon
@@ -60,4 +59,4 @@ class BlazeMakerNode(UnitNode):
     def compute(self):
         if self._prop_val('ellipses'):
             self.set_compute_result(BlazeMakerNode.helper(self._prop_val('num_polygons'), self._prop_val('ellipses'),
-                                         self._prop_val('angle_diff'), self._prop_val('fill')))
+                                                          self._prop_val('angle_diff'), self._prop_val('fill')))

@@ -8,8 +8,10 @@ from ui.nodes.warp_utils import PosWarp, RelWarp
 
 DEF_GRID_INFO = NodeInfo(
     description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively.",
-    port_defs={(PortIO.INPUT, 'x_warp'): PortDef("X Warp", PT_Warp(), optional=True, description="By default vertical grid lines are spaced equally."),
-               (PortIO.INPUT, 'y_warp'): PortDef("Y Warp", PT_Warp(), optional=True, description="By default horizontal grid lines are spaced equally."),
+    port_defs={(PortIO.INPUT, 'x_warp'): PortDef("X Warp", PT_Warp(), optional=True,
+                                                 description="By default vertical grid lines are spaced equally."),
+               (PortIO.INPUT, 'y_warp'): PortDef("Y Warp", PT_Warp(), optional=True,
+                                                 description="By default horizontal grid lines are spaced equally."),
                (PortIO.OUTPUT, '_main'): PortDef("Grid", PT_Grid())},
     prop_entries={'width': PropEntry(PT_Int(min_value=1),
                                      display_name="Width",

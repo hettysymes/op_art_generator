@@ -25,6 +25,7 @@ DEF_ITERATOR_INFO = NodeInfo(
     }
 )
 
+
 class IteratorNode(UnitNode):
     NAME = "Iterator"
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
@@ -80,7 +81,6 @@ class IteratorNode(UnitNode):
             new_element_node.set_property(prop_change_key, value)
             new_elements.append(new_element_node.compute(src_port_key))
         self.set_compute_result(new_elements)
-
 
     def visualise(self):
         elements = self.get_compute_result()

@@ -1,13 +1,12 @@
 import traceback
 from abc import ABC, abstractmethod
-from enum import Enum, auto
 
 from ui.id_generator import shorten_uid
-from ui.nodes.node_implementations.port_ref_table_handler import flatten_list
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.port_defs import PortIO, PT_Scalar, PT_Hidden, PT_List
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
+
 
 class PortRef:
     def __init__(self, node_id, port_key, base_node_name, port_def):
@@ -15,6 +14,7 @@ class PortRef:
         self.port_key = port_key
         self.base_node_name = base_node_name
         self.port_def = port_def
+
 
 class GraphQuerier(ABC):
 
