@@ -65,7 +65,7 @@ class ShapeRepeaterNode(SelectableNode):
             _, i, j = port_key.split('_')
             cell_group = self._compute_cell(int(i), int(j), main_group)
             # Update port output type
-            self.get_port_defs()[port_id].port_type = PT_Element(cell_group.get_output_type())
+            self.get_port_defs()[port_id].port_type = cell_group.get_output_type()
             self.set_compute_result(cell_group, port_key=port_key)
 
     def extract_element(self, parent_group, element_id):

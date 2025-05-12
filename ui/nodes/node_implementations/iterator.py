@@ -79,7 +79,8 @@ class IteratorNode(UnitNode):
         for value in values:
             new_element_node = copy.deepcopy(element_node)
             new_element_node.set_property(prop_change_key, value)
-            new_elements.append(new_element_node.compute(src_port_key))
+            new_element_node.compute()
+            new_elements.append(new_element_node.get_compute_result(src_port_key))
         self.set_compute_result(new_elements)
 
     def visualise(self):

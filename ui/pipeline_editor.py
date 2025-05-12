@@ -1253,10 +1253,13 @@ class PipelineScene(QGraphicsScene):
 
     def remove_from_graph_and_scene(self, node_states, connections):
         removed_node_ids = {node_state.node_id for node_state in node_states}
-        affected_node_ids = {
-            dst_node_id for (_, _), (dst_node_id, _) in connections
-            if dst_node_id not in removed_node_ids
-        }
+        # Get affected node ids
+        affected_node_ids = set()
+        for node_id in removed_node_ids:
+            affected_node_ids.update(self.node_graph.output_node_ids(node_id))
+        for _, (dst_node_id, _) in connections:
+            affected_node_ids.add(dst_node_id)
+        affected_node_ids.difference_update(removed_node_ids)
 
         # Remove nodes
         for node_state in node_states:
