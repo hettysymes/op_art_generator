@@ -1,12 +1,11 @@
-import numpy as np
 import sympy as sp
 
 from ui.nodes.drawers.draw_graph import create_graph_svg
+from ui.nodes.function_datatypes import PiecewiseFun, CustomFun, CubicFun
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Function, PropEntry, PT_Float, PT_String, PT_PointRefTable
-from ui.nodes.utils import cubic_f
-from ui.nodes.warp_utils import sample_fun
+from ui.nodes.warp_datatypes import sample_fun
 from ui.vis_types import MatplotlibFig
 
 DEF_CUBIC_FUN_INFO = NodeInfo(
@@ -40,8 +39,9 @@ class CubicFunNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_CUBIC_FUN_INFO
 
     def compute(self):
-        self.set_compute_result(cubic_f(self._prop_val('a_coeff'), self._prop_val('b_coeff'), self._prop_val('c_coeff'),
-                                        self._prop_val('d_coeff')))
+        self.set_compute_result(
+            CubicFun(self._prop_val('a_coeff'), self._prop_val('b_coeff'), self._prop_val('c_coeff'),
+                     self._prop_val('d_coeff')))
 
     def visualise(self):
         return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))
@@ -69,7 +69,7 @@ class CustomFunNode(UnitNode):
     def compute(self):
         x = sp.symbols('x')
         parsed_expr = sp.sympify(self._prop_val('fun_def'))
-        self.set_compute_result(sp.lambdify(x, parsed_expr))
+        self.set_compute_result(CustomFun(x, parsed_expr))
 
     def visualise(self):
         return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))
@@ -93,13 +93,9 @@ class PiecewiseFunNode(UnitNode):
     NAME = "Piecewise Linear Function"
     DEFAULT_NODE_INFO = DEF_PIECEWISE_FUN_INFO
 
-    @staticmethod
-    def helper(xs, ys):
-        return lambda i: np.interp(i, xs, ys)
-
     def compute(self):
         xs, ys = zip(*self._prop_val('points'))
-        self.set_compute_result(PiecewiseFunNode.helper(xs, ys))
+        self.set_compute_result(PiecewiseFun(xs, ys))
 
     def visualise(self):
         return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))

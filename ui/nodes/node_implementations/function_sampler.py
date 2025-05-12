@@ -2,7 +2,7 @@ from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Function, PT_Float, PT_List, PT_Int, PropEntry
-from ui.nodes.warp_utils import sample_fun
+from ui.nodes.warp_datatypes import sample_fun
 from ui.vis_types import MatplotlibFig
 
 DEF_FUN_SAMPLER_INFO = NodeInfo(

@@ -3,7 +3,7 @@ from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.port_defs import PortDef, PortIO, PT_Warp, PT_Function
-from ui.nodes.warp_utils import PosWarp, RelWarp
+from ui.nodes.warp_datatypes import PosWarp, RelWarp
 from ui.vis_types import MatplotlibFig
 
 DEF_POS_WARP_NODE_INFO = NodeInfo(

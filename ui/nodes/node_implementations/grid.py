@@ -1,10 +1,11 @@
+from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.shape import StraightLineNode
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Warp, PT_Grid, PT_Int, PropEntry
 from ui.nodes.shape_datatypes import Group
-from ui.nodes.warp_utils import PosWarp, RelWarp
+from ui.nodes.warp_datatypes import PosWarp, RelWarp
 
 DEF_GRID_INFO = NodeInfo(
     description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively.",
@@ -31,12 +32,12 @@ class GridNode(UnitNode):
     @staticmethod
     def helper(x_warp, y_warp, width, height):
         if x_warp is None:
-            x_warp = PosWarp(lambda i: i)
+            x_warp = PosWarp(IdentityFun())
         else:
             assert isinstance(x_warp, PosWarp) or isinstance(x_warp, RelWarp)
 
         if y_warp is None:
-            y_warp = PosWarp(lambda i: i)
+            y_warp = PosWarp(IdentityFun())
         else:
             assert isinstance(y_warp, PosWarp) or isinstance(y_warp, RelWarp)
 

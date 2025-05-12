@@ -76,7 +76,7 @@ class Node(BaseNode, ABC):
         # Catch exception if raised
         try:
             # Recompute results
-            self.compute_results.clear()
+            self.clear_compute_results()
             self.compute()
             # Obtain visualisation
             vis = self.visualise()
@@ -93,6 +93,9 @@ class Node(BaseNode, ABC):
             # No visualisation, return blank canvas
             vis = Group(debug_info="Blank Canvas")
         return vis
+
+    def clear_compute_results(self):
+        self.compute_results.clear()
 
     # Getter functions for node info
     def get_description(self):
