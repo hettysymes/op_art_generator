@@ -71,7 +71,7 @@ class Node(ABC):
         try:
             # Recompute results
             self.clear_compute_results()
-            self.compute()
+            self.final_compute()
             # Obtain visualisation
             vis = self.visualise()
         except NodeInputException as e:
@@ -142,19 +142,18 @@ class Node(ABC):
 
     def _prop_val(self, prop_key, get_refs=False):
         if prop_key in self._active_input_ports():
+            # Property given by port
             prop_node_vals = self._port_input(prop_key, get_refs)
             # Get port type
             port_type = self.port_defs_filter_by_io(PortIO.INPUT)[prop_key].port_type
             if isinstance(port_type, PT_Scalar):
-                if prop_node_vals[0] is not None:
-                    # Do not default to property values dictionary
-                    return prop_node_vals[0]
+                return prop_node_vals[0]
             else:
                 assert isinstance(port_type, PT_List)
                 if not port_type.input_multiple:
                     return prop_node_vals[0]
                 return dict(prop_node_vals) if get_refs else prop_node_vals
-
+        # No overriding from port, default to stored property value entry
         return self.prop_vals.get(prop_key)
 
     def _port_ref(self, port_key, ref_id):
@@ -162,6 +161,9 @@ class Node(ABC):
 
     def _mark_inactive_port_id(self, port_id):
         self.graph_querier.mark_inactive_port_id(self.uid, port_id)
+
+    def final_compute(self):
+        return self.compute()
 
     @classmethod
     def name(cls):

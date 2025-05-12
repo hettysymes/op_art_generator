@@ -39,9 +39,13 @@ class SelectableNode(UnitNode, ABC):
         self.extracted_port_ids = []
         super().__init__(uid, graph_querier, prop_vals)
 
+    def final_compute(self):
+        self._remove_redundant_ports()
+        self.compute()
+
     @abstractmethod
     def compute(self):
-        return
+        pass
 
     @abstractmethod
     def extract_element(self, parent_group, element_id):
