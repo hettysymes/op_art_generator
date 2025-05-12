@@ -131,7 +131,13 @@ class CustomNode(Node):
 
     def __init__(self, uid, graph_querier, add_info):
         super().__init__(uid, graph_querier, {})
-        self.subgraph, self.inp_node_id, out_node_id, ports_open = add_info
+        # Extract given information
+        self._name, custom_node_def = add_info
+        self.subgraph = custom_node_def.subgraph
+        self.inp_node_id = custom_node_def.inp_node_id
+        out_node_id = custom_node_def.out_node_id
+        ports_open = custom_node_def.ports_open
+        # Perform set up
         self.node_topo_order = self.subgraph.get_topo_order_subgraph()
         self.input_port_keys = [port_key for (io, port_key) in ports_open if io == PortIO.INPUT]
         # Set up node info
@@ -142,6 +148,10 @@ class CustomNode(Node):
             description="[custom description]",
             port_defs=port_defs
         )
+
+    @property
+    def base_node_name(self):
+        return self._name
 
     def _replace_input_nodes(self):
         # Remove existing connections
