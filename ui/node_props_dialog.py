@@ -283,35 +283,6 @@ class NodePropertiesDialog(QDialog):
 
             widget.get_value = get_coord_value
 
-        # elif prop_entry.prop_type == PropType.PROP_ENUM:
-        #     widget = QComboBox()
-        #     input_node_props = node_item.node()._input_node('element').prop_type_list()
-        #     # Populate the widget
-        #     widget.addItem("[none]", userData=None)
-        #     for inp_prop in input_node_props:
-        #         widget.addItem(inp_prop.name, userData=inp_prop.key_name)
-        #     # Set the current value if available
-        #     if current_value is not None:
-        #         # Find the index where the key_name matches current_value
-        #         index = next((i for i in range(widget.count())
-        #                       if widget.itemData(i) == current_value), 0)
-        #         widget.setCurrentIndex(index)
-
-        # elif prop_entry.prop_type == PropType.SELECTOR_ENUM:
-        #     widget = QComboBox()
-        #     input_prop_compute = node_item.node._input_node('iterator').compute()
-        #     # Populate the widget
-        #     widget.addItem("[none]", userData=None)
-        #     if input_prop_compute:
-        #         for i in range(len(input_prop_compute)):
-        #             widget.addItem(str(i + 1), userData=i)
-        #     # Set the current value if available
-        #     if current_value is not None:
-        #         # Find the index where the key_name matches current_value
-        #         index = next((i for i in range(widget.count())
-        #                       if widget.itemData(i) == current_value), 0)
-        #         widget.setCurrentIndex(index)
-
         elif isinstance(prop_type, PT_Enum):
             widget = QComboBox()
             for display, data in prop_type.display_data_options():
@@ -319,6 +290,7 @@ class NodePropertiesDialog(QDialog):
             if current_value is not None:
                 index = prop_type.get_options().index(current_value) if current_value in prop_type.get_options() else 0
                 widget.setCurrentIndex(index)
+
         elif isinstance(prop_type, PT_ElemRefTable):
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
@@ -327,6 +299,7 @@ class NodePropertiesDialog(QDialog):
                 entries=current_value
             )
             widget = port_ref_table
+
         elif isinstance(prop_type, PT_PointRefTable):
             def text_callback(port_ref, table_entry):
                 if isinstance(table_entry, LineRef):
@@ -374,6 +347,7 @@ class NodePropertiesDialog(QDialog):
                 additional_actions={'edit': edit_action, 'reverse': reverse_action, 'add': add_action}
             )
             widget = port_ref_table
+
         elif isinstance(prop_type, PT_ColourTable):
             # Custom delegate to display colour swatches
             class ColourDelegate(QStyledItemDelegate):

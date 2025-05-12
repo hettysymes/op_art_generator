@@ -72,34 +72,39 @@ class NodeGraph(GraphQuerier):
         self.port_refs.update(new_port_refs)
 
     def _input_sources(self, node_id, port_key):
-        """Return a list of (src_node_id, src_port_key) that are connected to the given input port."""
-        return [
-            (src_node_id, src_port_key)
-            for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.edges
+        """Return a set of (src_node_id, src_port_key) that are connected to the given input port."""
+        return {
+            src_port_id
+            for src_port_id, (dst_node_id, dst_port_key) in self.edges
             if dst_node_id == node_id and dst_port_key == port_key
-        ]
+        }
 
     def get_port_ref(self, node_id, port_key, ref_id):
         src_node_id, src_port_key = self.port_refs[(node_id, port_key)]['ref_map'][ref_id]
-        src_base_node_name = self.node(src_node_id).base_node_name()
+        src_base_node_name = self.node(src_node_id).base_node_name
         src_port_def = self.node(src_node_id).get_port_defs()[(PortIO.OUTPUT, src_port_key)]
         return PortRef(src_node_id, src_port_key, src_base_node_name, src_port_def)
 
     def active_input_ports(self, node_id):
-        """Return a list of input port keys on the given node that have something connected."""
-        return [
-            dst_port_key
-            for (_, (dst_node_id, dst_port_key)) in self.edges
-            if dst_node_id == node_id
-        ]
+        """Return a set of input port keys on the given node that have something connected."""
+        # Only return port keys where the input is not None
+        active_ports = set()
+        for ((src_node_id, src_port_key), (dst_node_id, dst_port_key)) in self.edges:
+            if dst_node_id != node_id: continue
+            if self.node(src_node_id).get_compute_result(src_port_key) is not None:
+                active_ports.add(dst_port_key)
+        return active_ports
 
     def active_output_ports(self, node_id):
-        """Return a list of output port keys on the given node that have something connected."""
-        return [
+        """Return a set of output port keys on the given node that have something connected."""
+        return {
             src_port_key
             for ((src_node_id, src_port_key), _) in self.edges
             if src_node_id == node_id
-        ]
+        }
+
+    def edges_to_node(self, node_id):
+        return [edge for edge in self.edges if edge[1][0] == node_id]
 
     def port_input(self, node_id, port_key, get_refs=False):
         # Get node input at specified port, returns a list as multiple nodes may be connected
@@ -107,13 +112,22 @@ class NodeGraph(GraphQuerier):
         if not found_src_port_ids:
             raise KeyError("Input node not found for given port.")
         # Return node computes
+        result = []
+        id_to_port_refs = None
+        port_refs_to_id = None
+        # Set up for references if needed
         if get_refs:
-            result = []
             if (node_id, port_key) not in self.port_refs:
                 self.port_refs[(node_id, port_key)] = {'ref_map': {}, 'next_id': 1} # Create entry
             id_to_port_refs = self.port_refs[(node_id, port_key)]['ref_map']
             port_refs_to_id = {port_ref: ref_id for ref_id, port_ref in id_to_port_refs.items()}
-            for src_port_id in found_src_port_ids:
+        for src_port_id in found_src_port_ids:
+            # Check if compute result is None, otherwise skip
+            src_node_id, src_port_key = src_port_id
+            compute_result = self.node(src_node_id).get_compute_result(src_port_key)
+            if compute_result is None: continue
+            # The compute result is not None
+            if get_refs:
                 # Get ref id
                 if src_port_id in port_refs_to_id:
                     ref_id = port_refs_to_id[src_port_id]
@@ -122,11 +136,11 @@ class NodeGraph(GraphQuerier):
                     # Update internal state
                     self.port_refs[(node_id, port_key)]['next_id'] += 1
                     id_to_port_refs[ref_id] = src_port_id
-                # Add compute to result
-                src_node_id, src_port_key = src_port_id
-                result.append((ref_id, self.node(src_node_id).get_compute_result(src_port_key)))
-        else:
-            result = [self.node(src_node_id).get_compute_result(src_port_key) for src_node_id, src_port_key in found_src_port_ids]
+                # Add compute result
+                result.append((ref_id, compute_result))
+            else:
+                # Simply add the compute result
+                result.append(compute_result)
         return result
 
     def mark_inactive_port_id(self, node_id, port_id):

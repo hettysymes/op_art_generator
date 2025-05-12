@@ -42,6 +42,10 @@ class GraphQuerier(ABC):
     def mark_inactive_port_id(self, node_id, port_id):
         pass
 
+    @abstractmethod
+    def get_topo_order_subgraph(self, subset=None):
+        pass
+
 
 class NodeInfo:
 
@@ -50,14 +54,19 @@ class NodeInfo:
         self.port_defs = port_defs if port_defs else {}
         self.prop_entries = prop_entries if prop_entries else {}
 
+class BaseNode:
 
-class Node(ABC):
+    @abstractmethod
+    def get_compute_result(self, port_key='_main'):
+        pass
+
+class Node(BaseNode, ABC):
     NAME = None  # To override
 
     def __init__(self, uid, graph_querier, prop_vals=None):
         self.uid = uid
         self.graph_querier = graph_querier
-        self.prop_vals = prop_vals if prop_vals else self._default_prop_vals()
+        self.prop_vals = prop_vals if prop_vals is not None else self._default_prop_vals()
         self.compute_results = {}
 
     def _default_prop_vals(self):
@@ -71,7 +80,7 @@ class Node(ABC):
         try:
             # Recompute results
             self.clear_compute_results()
-            self.compute()
+            self.final_compute()
             # Obtain visualisation
             vis = self.visualise()
         except NodeInputException as e:
@@ -94,16 +103,16 @@ class Node(ABC):
 
     # Getter functions for node info
     def get_description(self):
-        return self.get_node_info().description
+        return self.node_info.description
 
     def get_port_defs(self):
-        return self.get_node_info().port_defs
+        return self.node_info.port_defs
 
     def port_defs_filter_by_io(self, port_io):
         return {port_key: port_def for (io, port_key), port_def in self.get_port_defs().items() if io == port_io}
 
     def get_prop_entries(self):
-        return self.get_node_info().prop_entries
+        return self.node_info.prop_entries
 
     def set_property(self, prop_key, value):
         self.prop_vals[prop_key] = value
@@ -142,19 +151,18 @@ class Node(ABC):
 
     def _prop_val(self, prop_key, get_refs=False):
         if prop_key in self._active_input_ports():
+            # Property given by port
             prop_node_vals = self._port_input(prop_key, get_refs)
             # Get port type
             port_type = self.port_defs_filter_by_io(PortIO.INPUT)[prop_key].port_type
             if isinstance(port_type, PT_Scalar):
-                if prop_node_vals[0] is not None:
-                    # Do not default to property values dictionary
-                    return prop_node_vals[0]
+                return prop_node_vals[0]
             else:
                 assert isinstance(port_type, PT_List)
                 if not port_type.input_multiple:
                     return prop_node_vals[0]
                 return dict(prop_node_vals) if get_refs else prop_node_vals
-
+        # No overriding from port, default to stored property value entry
         return self.prop_vals.get(prop_key)
 
     def _port_ref(self, port_key, ref_id):
@@ -163,17 +171,22 @@ class Node(ABC):
     def _mark_inactive_port_id(self, port_id):
         self.graph_querier.mark_inactive_port_id(self.uid, port_id)
 
+    def final_compute(self):
+        return self.compute()
+
     @classmethod
     def name(cls):
         return cls.NAME
 
-    # Functions to implement
-    @abstractmethod
+    @property
     def base_node_name(self):
-        pass
+        return self.name()
 
+    # Functions to implement
+
+    @property
     @abstractmethod
-    def get_node_info(self):
+    def node_info(self):
         pass
 
     @abstractmethod
