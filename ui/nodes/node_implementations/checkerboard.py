@@ -1,22 +1,24 @@
-from ui.nodes.nodes import UnitNode, UnitNodeInfo
+from ui.nodes.node_defs import NodeInfo
+from ui.nodes.nodes import UnitNode
+from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Element
 from ui.nodes.shape_datatypes import Group
 from ui.nodes.transforms import Scale, Translate
-from ui.port_defs import PortDef, PT_Grid, PT_Element
 
-CHECKERBOARD_NODE_INFO = UnitNodeInfo(
-    name="Checkerboard",
-    in_port_defs=[
-        PortDef("Grid", PT_Grid, key_name='grid'),
-        PortDef("Drawing 1", PT_Element, key_name='elem1'),
-        PortDef("Drawing 2", PT_Element, key_name='elem2')
-    ],
-    out_port_defs=[PortDef("Drawing", PT_Element)],
-    description="Create a checkerboard pattern from a grid and two drawings. The two drawings are placed alternately in a checkerboard pattern on the grid."
+DEF_CHECKERBOARD_INFO = NodeInfo(
+    description="Create a checkerboard pattern from a grid and two drawings. The two drawings are placed alternately in a checkerboard pattern on the grid.",
+    port_defs={
+        (PortIO.INPUT, 'grid'): PortDef("Grid", PT_Grid()),
+        (PortIO.INPUT, 'elem1'): PortDef("Drawing 1", PT_Element()),
+        (PortIO.INPUT, 'elem2'): PortDef("Drawing 2", PT_Element()),
+        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
+    },
+    prop_entries={}
 )
 
 
 class CheckerboardNode(UnitNode):
-    UNIT_NODE_INFO = CHECKERBOARD_NODE_INFO
+    NAME = "Checkerboard"
+    DEFAULT_NODE_INFO = DEF_CHECKERBOARD_INFO
 
     @staticmethod
     def helper(grid, element1=None, element2=None):
@@ -41,9 +43,8 @@ class CheckerboardNode(UnitNode):
         return ret_group
 
     def compute(self):
-        grid = self.get_input_node('grid').compute()
-        element1 = self.get_input_node('elem1').compute()
-        element2 = self.get_input_node('elem2').compute()
+        grid = self._prop_val('grid')
+        element1 = self._prop_val('elem1')
+        element2 = self._prop_val('elem2')
         if grid and (element1 or element2):
-            return CheckerboardNode.helper(grid, element1, element2)
-        return None
+            self.set_compute_result(CheckerboardNode.helper(grid, element1, element2))

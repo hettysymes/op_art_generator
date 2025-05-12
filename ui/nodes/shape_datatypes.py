@@ -2,10 +2,9 @@ import math
 from abc import ABC, abstractmethod
 
 from ui.id_generator import gen_uid, shorten_uid
-from ui.nodes.elem_ref import ElemRef
 from ui.nodes.gradient_datatype import Gradient
+from ui.nodes.port_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
-from ui.port_defs import PT_Element, PT_Shape, PT_Polyline, PT_Ellipse
 
 
 class Element(ABC):
@@ -56,15 +55,18 @@ class Group(Element):
             group.add(element.get(dwg))
         return group
 
-    def get_element_from_id(self, element_id):
-        for elem in self.elements:
+    def get_element_index_from_id(self, element_id):
+        for i, elem in enumerate(self.elements):
             if elem.uid == element_id:
-                return elem
+                return i
         return None
 
     def __iter__(self):
         for element in self.elements:
             yield element
+
+    def __getitem__(self, index):
+        return self.elements[index]
 
     def add(self, element):
         assert isinstance(element, Element)
@@ -105,7 +107,7 @@ class Group(Element):
         shapes, _ = zip(*self.shape_transformations())
         if len(shapes) == 1:
             return shapes[0].get_output_type()
-        return PT_Element
+        return PT_Element()
 
     def __repr__(self):
         debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""
@@ -140,7 +142,7 @@ class Shape(Element, ABC):
         return [(self, TransformList())]
 
     def get_output_type(self):
-        return PT_Shape
+        return PT_Shape()
 
     def __repr__(self):
         return f"Shape (#{shorten_uid(self.uid)}) {self.__class__.__name__.upper()}"
@@ -168,7 +170,7 @@ class Polyline(Shape):
         return self.points
 
     def get_output_type(self):
-        return PT_Polyline
+        return PT_Polyline()
 
 
 class Polygon(Shape):
@@ -182,21 +184,17 @@ class Polygon(Shape):
         self.stroke_width = stroke_width
 
     def get(self, dwg):
-        if isinstance(self.fill, Gradient):
-            self.fill = self.fill.get(dwg)
-        points = []
-        for p in self.points:
-            if isinstance(p, ElemRef):
-                points += p.get_points()
-            else:
-                points.append(p)
-        return dwg.polygon(points=points,
-                           fill=self.fill,
+        fill = self.fill.get(dwg) if isinstance(self.fill, Gradient) else self.fill
+        return dwg.polygon(points=self.points,
+                           fill=fill,
                            fill_opacity=self.fill_opacity,
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
                            id=self.uid)
+
+    def get_output_type(self):
+        return PT_Polygon()
 
 
 class Ellipse(Shape):
@@ -211,11 +209,10 @@ class Ellipse(Shape):
         self.stroke_width = stroke_width
 
     def get(self, dwg):
-        if isinstance(self.fill, Gradient):
-            self.fill = self.fill.get(dwg)
+        fill = self.fill.get(dwg) if isinstance(self.fill, Gradient) else self.fill
         return dwg.ellipse(center=self.center,
                            r=self.r,
-                           fill=self.fill,
+                           fill=fill,
                            fill_opacity=self.fill_opacity,
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
@@ -223,7 +220,7 @@ class Ellipse(Shape):
                            id=self.uid)
 
     def get_output_type(self):
-        return PT_Ellipse
+        return PT_Ellipse()
 
 
 class SineWave(Polyline):

@@ -1,5 +1,7 @@
 import numpy as np
 
+from ui.nodes.function_datatypes import Function
+
 
 def normalise(l: np.ndarray):
     if l[0] != 0:
@@ -9,31 +11,33 @@ def normalise(l: np.ndarray):
     return l / l[-1]
 
 
-def sample_fun(f, num_samples):
+def sample_fun(function: Function, num_samples):
+    f = function.get()
     indices = np.linspace(0, 1, num_samples)
     return np.array([f(i) for i in indices])
 
 
 class PosWarp:
 
-    def __init__(self, pos_f):
-        self.pos_f = pos_f
+    def __init__(self, pos_function):
+        self.pos_function = pos_function
         self.sample(1000)  # Validation
 
     def sample(self, num_samples):
-        unnorm_pos = sample_fun(self.pos_f, num_samples)
+        unnorm_pos = sample_fun(self.pos_function, num_samples)
         return normalise(unnorm_pos)
 
 
 class RelWarp:
 
-    def __init__(self, rel_f):
-        self.rel_f = rel_f
+    def __init__(self, rel_function):
+        self.rel_function = rel_function
         self.sample(1000)  # Validation
 
     def sample(self, num_samples):
+        rel_f = self.rel_function.get()
         indices = np.linspace(0, 1, num_samples)
         unnorm_pos = np.zeros(num_samples)
         for i in range(1, num_samples):
-            unnorm_pos[i] = unnorm_pos[i - 1] + self.rel_f(indices[i])
+            unnorm_pos[i] = unnorm_pos[i - 1] + rel_f(indices[i])
         return normalise(unnorm_pos)
