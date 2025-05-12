@@ -57,7 +57,7 @@ class Node(ABC):
     def __init__(self, uid, graph_querier, prop_vals=None):
         self.uid = uid
         self.graph_querier = graph_querier
-        self.prop_vals = prop_vals if prop_vals else self._default_prop_vals()
+        self.prop_vals = prop_vals if prop_vals is not None else self._default_prop_vals()
         self.compute_results = {}
 
     def _default_prop_vals(self):
@@ -94,16 +94,16 @@ class Node(ABC):
 
     # Getter functions for node info
     def get_description(self):
-        return self.get_node_info().description
+        return self.node_info.description
 
     def get_port_defs(self):
-        return self.get_node_info().port_defs
+        return self.node_info.port_defs
 
     def port_defs_filter_by_io(self, port_io):
         return {port_key: port_def for (io, port_key), port_def in self.get_port_defs().items() if io == port_io}
 
     def get_prop_entries(self):
-        return self.get_node_info().prop_entries
+        return self.node_info.prop_entries
 
     def set_property(self, prop_key, value):
         self.prop_vals[prop_key] = value
@@ -169,13 +169,15 @@ class Node(ABC):
     def name(cls):
         return cls.NAME
 
-    # Functions to implement
-    @abstractmethod
+    @property
     def base_node_name(self):
-        pass
+        return self.name()
 
+    # Functions to implement
+
+    @property
     @abstractmethod
-    def get_node_info(self):
+    def node_info(self):
         pass
 
     @abstractmethod

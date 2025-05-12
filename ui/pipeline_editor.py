@@ -160,7 +160,7 @@ class NodeItem(QGraphicsRectItem):
         self.setAcceptHoverEvents(True)
 
         # Set the help text for this node
-        self._help_text = f"{node.base_node_name()} Help:\n{node.get_description()}"
+        self._help_text = f"{node.base_node_name} Help:\n{node.get_description()}"
 
         self.resize_handle = None
         if node_setting(node.name()).resizable:
@@ -463,7 +463,7 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(title_font)
         painter.setPen(QColor("black"))
         metrics = QFontMetrics(title_font)
-        title_text = self.node().base_node_name()
+        title_text = self.node().base_node_name
         text_width = metrics.horizontalAdvance(title_text)
         text_height = metrics.height()
         node_rect = self.rect()

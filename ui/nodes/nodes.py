@@ -1,3 +1,4 @@
+import copy
 from abc import ABC, abstractmethod
 
 from ui.nodes.node_defs import Node
@@ -8,14 +9,12 @@ class UnitNode(Node, ABC):
     DEFAULT_NODE_INFO = None
 
     def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
-        self.node_info = self._default_node_info()
+        self._node_info = self._default_node_info()
         super().__init__(uid, graph_querier, prop_vals)
 
-    def base_node_name(self):
-        return self.name()
-
-    def get_node_info(self):
-        return self.node_info
+    @property
+    def node_info(self):
+        return self._node_info
 
     def visualise(self):
         return self.get_compute_result('_main')
@@ -35,7 +34,7 @@ class SelectableNode(UnitNode, ABC):
     DEFAULT_NODE_INFO = None
 
     def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
-        self.node_info = self._default_node_info()
+        self._node_info = self._default_node_info()
         self.extracted_port_ids = []
         super().__init__(uid, graph_querier, prop_vals)
 
@@ -79,12 +78,19 @@ class CombinationNode(Node, ABC):
         self._selection_index = add_info
         self._node = self.selections()[add_info](uid, graph_querier, prop_vals)
 
-        # Call base init with resolved props
-        super().__init__(self._node.uid, self._node.graph_querier, self._node.prop_vals)
+    def __getattr__(self, attr):
+        _node = object.__getattribute__(self, "_node")
+        return getattr(_node, attr)
 
-        # Re-sync overwritten attributes
-        self.compute_results = self._node.compute_results
-        self.prop_vals = self._node.prop_vals
+    def __setattr__(self, name, value):
+        if name in ["_node", "_selection_index"]:
+            object.__setattr__(self, name, value)
+        elif hasattr(type(self), name):
+            # Let properties handle it
+            object.__setattr__(self, name, value)
+        else:
+            _node = object.__getattribute__(self, "_node")
+            setattr(_node, name, value)
 
     @classmethod
     def selections(cls):
@@ -95,26 +101,43 @@ class CombinationNode(Node, ABC):
 
     def set_selection(self, index):
         self._selection_index = index
+        old_prop_vals = copy.deepcopy(self._node.prop_vals)
         self._node = self.selections()[index](self.uid, self.graph_querier, prop_vals=None)
 
         # Copy over matching existing properties
-        for prop_key, old_value in self.prop_vals.items():
-            if prop_key in self._node.prop_vals:
-                self._node.set_property(prop_key, old_value)
-
-        # Redirect to inner node again
-        self.prop_vals = self._node.prop_vals
-        self.compute_results = self._node.compute_results
+        for prop_key, old_value in old_prop_vals.items():
+            if prop_key in self.prop_vals:
+                self.set_property(prop_key, old_value)
 
     # Forwarded interface
+    @property
     def base_node_name(self):
-        return self._node.base_node_name()
+        return self._node.base_node_name
 
-    def get_node_info(self):
-        return self._node.get_node_info()
+    @property
+    def node_info(self):
+        return self._node.node_info
 
     def compute(self):
         return self._node.compute()
 
     def visualise(self):
         return self._node.visualise()
+
+class CustomNode(Node):
+    NAME = "Custom"
+
+    def __init__(self, uid, graph_querier, subgraph_querier):
+        super().__init__(uid, graph_querier, {})
+
+    def base_node_name(self):
+        return "Custom"
+
+    def node_info(self):
+        pass
+
+    def compute(self):
+        pass
+
+    def visualise(self):
+        pass
