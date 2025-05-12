@@ -1,29 +1,20 @@
-import ast
 import copy
-import json
 import math
 import os
 import pickle
-import random
 import sys
 import tempfile
-import traceback
 from functools import partial
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QEvent, QMimeData
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QFocusEvent, QKeySequence, \
+from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QKeySequence, \
     QFontMetrics
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
-                             QGraphicsLineItem, QMenu, QAction, QDialog, QVBoxLayout, QFormLayout, QLineEdit,
-                             QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
-                             QDialogButtonBox, QGroupBox, QTableWidgetItem, QWidget,
-                             QHBoxLayout, QFileDialog, QStyledItemDelegate, QColorDialog,
-                             QGraphicsTextItem, QLabel, QUndoStack, QUndoCommand, QGraphicsProxyWidget, QTextEdit)
+                             QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack, QUndoCommand, QGraphicsProxyWidget)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
-from sympy.physics.quantum.cartesian import PositionState3D
 
 from ui.app_state import NodeState, AppState, CustomNodeDef
 from ui.id_generator import shorten_uid, gen_uid
@@ -33,7 +24,7 @@ from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
-from ui.nodes.reg_custom_dialog import RegCustomDialog
+from ui.reg_custom_dialog import RegCustomDialog
 from ui.nodes.shape_datatypes import Group
 from ui.selectable_renderer import SelectableSvgElement
 from ui.vis_types import ErrorFig, Visualisable
@@ -1584,34 +1575,34 @@ class PipelineEditor(QMainWindow):
                 item.setSelected(True)
 
     def register_custom_node(self):
-        # Simple dialog for testing
-        dialog = RegCustomDialog()
+        node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
+        subgraph_querier = NodeGraph()
+        node_states, nodes, connections, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, nodes,
+                                                                                                connections, port_refs,
+                                                                                                graph_querier=subgraph_querier)
+        # Set up subgraph querier
+        subgraph_querier.node_map = nodes
+        subgraph_querier.port_refs = port_refs
+        for connection in connections:
+            subgraph_querier.add_edge(*connection)
+
+        # Get node information from user
+        new_ids_topo_order = subgraph_querier.get_topo_order_subgraph()
+        new_id_to_names = {new_id: subgraph_querier.node(new_id).base_node_name for new_id in new_ids_topo_order}
+        new_to_old_id_map = {v: k for k, v in old_to_new_id_map.items()}
+        old_id_to_names = {new_to_old_id_map[k]: v for k,v in new_id_to_names.items()}
+        dialog = RegCustomDialog(old_id_to_names, self.scene.custom_node_defs.keys())
         if dialog.exec_():
-            node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
-            subgraph_querier = NodeGraph()
-            node_states, nodes, connections, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, nodes, connections, port_refs, graph_querier=subgraph_querier)
-            # Set up subgraph querier
-            subgraph_querier.node_map = nodes
-            subgraph_querier.port_refs = port_refs
-            for connection in connections:
-                subgraph_querier.add_edge(*connection)
             # Get input and output node ids
-            inp_node_id = None
-            out_node_id = None
-            name, description, string1, string2 = dialog.get_inputs()
-            for old_key, new_key in old_to_new_id_map.items():
-                short_id = shorten_uid(old_key)
-                if short_id == string1:
-                    inp_node_id = new_key
-                elif short_id == string2:
-                    out_node_id = new_key
-            if inp_node_id and out_node_id:
-                # Get open ports
-                input_open_ports = [(io, port_key) for (io, port_key) in node_states[inp_node_id].ports_open if io == PortIO.INPUT]
-                output_open_ports = [(io, port_key) for (io, port_key) in node_states[out_node_id].ports_open if
-                                    io == PortIO.OUTPUT]
-                total_open_ports = input_open_ports + output_open_ports
-                self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, inp_node_id, out_node_id, total_open_ports, description=description)))
+            name, description, start_id, stop_id = dialog.get_inputs()
+            inp_node_id = old_to_new_id_map[start_id]
+            out_node_id = old_to_new_id_map[stop_id]
+            # Get open ports
+            input_open_ports = [(io, port_key) for (io, port_key) in node_states[inp_node_id].ports_open if io == PortIO.INPUT]
+            output_open_ports = [(io, port_key) for (io, port_key) in node_states[out_node_id].ports_open if
+                                io == PortIO.OUTPUT]
+            total_open_ports = input_open_ports + output_open_ports
+            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, inp_node_id, out_node_id, total_open_ports, description=description)))
 
     def identify_selected_items(self):
         node_states = {}
