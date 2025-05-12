@@ -184,10 +184,9 @@ class Polygon(Shape):
         self.stroke_width = stroke_width
 
     def get(self, dwg):
-        if isinstance(self.fill, Gradient):
-            self.fill = self.fill.get(dwg)
+        fill = self.fill.get(dwg) if isinstance(self.fill, Gradient) else self.fill
         return dwg.polygon(points=self.points,
-                           fill=self.fill,
+                           fill=fill,
                            fill_opacity=self.fill_opacity,
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
@@ -210,11 +209,10 @@ class Ellipse(Shape):
         self.stroke_width = stroke_width
 
     def get(self, dwg):
-        if isinstance(self.fill, Gradient):
-            self.fill = self.fill.get(dwg)
+        fill = self.fill.get(dwg) if isinstance(self.fill, Gradient) else self.fill
         return dwg.ellipse(center=self.center,
                            r=self.r,
-                           fill=self.fill,
+                           fill=fill,
                            fill_opacity=self.fill_opacity,
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
