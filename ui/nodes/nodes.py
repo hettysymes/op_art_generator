@@ -137,6 +137,7 @@ class CustomNode(Node):
         self.inp_node_id = custom_node_def.inp_node_id
         out_node_id = custom_node_def.out_node_id
         ports_open = custom_node_def.ports_open
+        description = custom_node_def.description or "(No help provided)"
         # Perform set up
         self.node_topo_order = self.subgraph.get_topo_order_subgraph()
         self.input_port_keys = [port_key for (io, port_key) in ports_open if io == PortIO.INPUT]
@@ -145,7 +146,7 @@ class CustomNode(Node):
         self.out_node: Node = self.subgraph.node(out_node_id)
         port_defs = {port_id: port_def for port_id, port_def in {**inp_node.get_port_defs(), **self.out_node.get_port_defs()}.items() if port_id in ports_open}
         self._node_info = NodeInfo(
-            description="[custom description]",
+            description=description,
             port_defs=port_defs
         )
 

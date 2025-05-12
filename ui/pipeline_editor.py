@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QSpinBox, QDoubleSpinBox, QComboBox, QPushButton, QCheckBox,
                              QDialogButtonBox, QGroupBox, QTableWidgetItem, QWidget,
                              QHBoxLayout, QFileDialog, QStyledItemDelegate, QColorDialog,
-                             QGraphicsTextItem, QLabel, QUndoStack, QUndoCommand, QGraphicsProxyWidget)
+                             QGraphicsTextItem, QLabel, QUndoStack, QUndoCommand, QGraphicsProxyWidget, QTextEdit)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 from sympy.physics.quantum.cartesian import PositionState3D
@@ -33,6 +33,7 @@ from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.group_drawer import GroupDrawer
 from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
+from ui.nodes.reg_custom_dialog import RegCustomDialog
 from ui.nodes.shape_datatypes import Group
 from ui.selectable_renderer import SelectableSvgElement
 from ui.vis_types import ErrorFig, Visualisable
@@ -925,7 +926,7 @@ class DeleteCmd(QUndoCommand):
         self.scene.remove_from_graph_and_scene(self.node_states, self.connections)
 
 class RegisterCustomNodeCmd(QUndoCommand):
-    def __init__(self, scene, name, custom_node_def, description="Make Custom Node"):
+    def __init__(self, scene, name, custom_node_def, description="Register Custom Node"):
         super().__init__(description)
         self.scene = scene
         self.node_graph: NodeGraph = scene.node_graph
@@ -1498,7 +1499,7 @@ class PipelineEditor(QMainWindow):
         select_all.setMenuRole(QAction.NoRole)
         scene_menu.addAction(select_all)
 
-        create_custom = QAction("Group Nodes to Custom", self)
+        create_custom = QAction("Group Nodes to Custom Node", self)
         create_custom.setShortcut("Ctrl+G")
         create_custom.triggered.connect(self.register_custom_node)
         scene_menu.addAction(create_custom)
@@ -1582,56 +1583,9 @@ class PipelineEditor(QMainWindow):
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
                 item.setSelected(True)
 
-    class TwoInputDialog(QDialog):
-        def __init__(self):
-            super().__init__()
-            self.setWindowTitle("Create custom node")
-
-            self.layout = QVBoxLayout()
-
-            self.name_label = QLabel("Name of custom node:")
-            self.name_input = QLineEdit()
-            self.layout.addWidget(self.name_label)
-            self.layout.addWidget(self.name_input)
-
-            self.label1 = QLabel("Input node ID:")
-            self.input1 = QLineEdit()
-            self.hash_label = QLabel("#")
-
-            # Create a horizontal layout for the # and input field
-            self.input_layout1 = QHBoxLayout()
-            self.input_layout1.addWidget(self.hash_label)
-            self.input_layout1.addWidget(self.input1)
-
-            # Add to the main layout
-            self.layout.addWidget(self.label1)
-            self.layout.addLayout(self.input_layout1)
-
-            self.label2 = QLabel("Output node ID:")
-            self.input2 = QLineEdit()
-            self.hash_label = QLabel("#")
-
-            # Create a horizontal layout for the # and input field
-            self.input_layout2 = QHBoxLayout()
-            self.input_layout2.addWidget(self.hash_label)
-            self.input_layout2.addWidget(self.input2)
-
-            # Add to the main layout
-            self.layout.addWidget(self.label2)
-            self.layout.addLayout(self.input_layout2)
-
-            self.ok_button = QPushButton("OK")
-            self.ok_button.clicked.connect(self.accept)
-            self.layout.addWidget(self.ok_button)
-
-            self.setLayout(self.layout)
-
-        def get_inputs(self):
-            return self.name_input.text(), self.input1.text(), self.input2.text()
-
     def register_custom_node(self):
         # Simple dialog for testing
-        dialog = PipelineEditor.TwoInputDialog()
+        dialog = RegCustomDialog()
         if dialog.exec_():
             node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
             subgraph_querier = NodeGraph()
@@ -1644,7 +1598,7 @@ class PipelineEditor(QMainWindow):
             # Get input and output node ids
             inp_node_id = None
             out_node_id = None
-            name, string1, string2 = dialog.get_inputs()
+            name, description, string1, string2 = dialog.get_inputs()
             for old_key, new_key in old_to_new_id_map.items():
                 short_id = shorten_uid(old_key)
                 if short_id == string1:
@@ -1657,7 +1611,7 @@ class PipelineEditor(QMainWindow):
                 output_open_ports = [(io, port_key) for (io, port_key) in node_states[out_node_id].ports_open if
                                     io == PortIO.OUTPUT]
                 total_open_ports = input_open_ports + output_open_ports
-                self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, inp_node_id, out_node_id, total_open_ports)))
+                self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, inp_node_id, out_node_id, total_open_ports, description=description)))
 
     def identify_selected_items(self):
         node_states = {}
