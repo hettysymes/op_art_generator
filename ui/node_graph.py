@@ -103,6 +103,9 @@ class NodeGraph(GraphQuerier):
             if src_node_id == node_id
         }
 
+    def edges_to_node(self, node_id):
+        return [edge for edge in self.edges if edge[1][0] == node_id]
+
     def port_input(self, node_id, port_key, get_refs=False):
         # Get node input at specified port, returns a list as multiple nodes may be connected
         found_src_port_ids = self._input_sources(node_id, port_key)

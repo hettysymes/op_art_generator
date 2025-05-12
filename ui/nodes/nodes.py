@@ -1,7 +1,8 @@
 import copy
 from abc import ABC, abstractmethod
 
-from ui.nodes.node_defs import Node, GraphQuerier, NodeInfo
+from ui.id_generator import gen_uid
+from ui.nodes.node_defs import Node, GraphQuerier, NodeInfo, BaseNode
 from ui.nodes.port_defs import PortIO
 
 
@@ -130,24 +131,43 @@ class CustomNode(Node):
 
     def __init__(self, uid, graph_querier, add_info):
         super().__init__(uid, graph_querier, {})
-        self.subgraph_querier, inp_node_id, out_node_id = add_info
+        self.subgraph, self.inp_node_id, out_node_id, ports_open = add_info
+        self.node_topo_order = self.subgraph.get_topo_order_subgraph()
+        self.input_port_keys = [port_key for (io, port_key) in ports_open if io == PortIO.INPUT]
         # Set up node info
-        inp_node: Node = self.subgraph_querier.node(inp_node_id)
-        out_node: Node = self.subgraph_querier.node(out_node_id)
-        inp_node_port_defs = {(io, port_key): port_def for (io, port_key), port_def in inp_node.get_port_defs().items() if io == PortIO.INPUT}
-        out_node_port_defs = {(io, port_key): port_def for (io, port_key), port_def in out_node.get_port_defs().items() if io == PortIO.OUTPUT}
-        port_defs = {**inp_node_port_defs, **out_node_port_defs}
+        inp_node: Node = self.subgraph.node(self.inp_node_id)
+        self.out_node: Node = self.subgraph.node(out_node_id)
+        port_defs = {port_id: port_def for port_id, port_def in {**inp_node.get_port_defs(), **self.out_node.get_port_defs()}.items() if port_id in ports_open}
         self._node_info = NodeInfo(
             description="[custom description]",
             port_defs=port_defs
         )
+
+    def _replace_input_nodes(self):
+        # Remove existing connections
+        for edge in list(self.subgraph.edges):
+            _, (dst_node_id, _) = edge
+            if dst_node_id == self.inp_node_id:
+                self.subgraph.remove_edge(*edge)
+        # Get edges input to this node
+        edges = self.graph_querier.edges_to_node(self.uid)
+        # Get participating nodes
+        source_nodes = {edge[0][0] for edge in edges}
+        # Add these nodes and edges to the subgraph
+        for src_node_id in source_nodes:
+            self.subgraph.add_existing_node(self.graph_querier.node(src_node_id))
+        for src_port_id, (_, dst_port_key) in edges:
+            self.subgraph.add_edge(src_port_id, (self.inp_node_id, dst_port_key))
 
     @property
     def node_info(self):
         return self._node_info
 
     def compute(self):
-        pass
+        self._replace_input_nodes()
+        for node_id in self.node_topo_order:
+            self.subgraph.node(node_id).compute()
+        self.compute_results = self.out_node.compute_results
 
     def visualise(self):
-        pass
+        return self.out_node.visualise()

@@ -939,9 +939,8 @@ class AddCustomNodeCmd(QUndoCommand):
         pass
 
     def redo(self):
-        print("Making custom node")
         node_id = self.node_state.node_id if self.node_state else None
-        node_id = self.node_graph.add_new_node(CustomNode, add_info=(self.subgraph_querier, self.inp_node_id, self.out_node_id), node_id=node_id)
+        node_id = self.node_graph.add_new_node(CustomNode, add_info=(self.subgraph_querier, self.inp_node_id, self.out_node_id, self.open_ports), node_id=node_id)
         if not self.node_state:
             node = self.node_graph.node(node_id)
             self.node_state = NodeState(node_id=node_id,
@@ -1636,8 +1635,6 @@ class PipelineEditor(QMainWindow):
             inp_node_id = None
             out_node_id = None
             string1, string2 = dialog.get_inputs()
-            print("First:", string1)
-            print("Second:", string2)
             for old_key, new_key in old_to_new_id_map.items():
                 short_id = shorten_uid(old_key)
                 if short_id == string1:

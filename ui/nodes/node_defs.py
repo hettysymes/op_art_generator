@@ -42,6 +42,10 @@ class GraphQuerier(ABC):
     def mark_inactive_port_id(self, node_id, port_id):
         pass
 
+    @abstractmethod
+    def get_topo_order_subgraph(self, subset=None):
+        pass
+
 
 class NodeInfo:
 
@@ -50,8 +54,13 @@ class NodeInfo:
         self.port_defs = port_defs if port_defs else {}
         self.prop_entries = prop_entries if prop_entries else {}
 
+class BaseNode:
 
-class Node(ABC):
+    @abstractmethod
+    def get_compute_result(self, port_key='_main'):
+        pass
+
+class Node(BaseNode, ABC):
     NAME = None  # To override
 
     def __init__(self, uid, graph_querier, prop_vals=None):
