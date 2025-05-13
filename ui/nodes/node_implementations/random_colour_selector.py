@@ -44,7 +44,10 @@ class RandomListSelectorNode(UnitNode):
         if self._prop_val('use_seed'):
             rng = random.Random(self._prop_val('user_seed'))
         else:
-            if not self._prop_val('_actual_seed'):
+            if self._prop_val('_actual_seed') is None:
                 self.prop_vals['_actual_seed'] = random.random()
             rng = random.Random(self._prop_val('_actual_seed'))
         self.set_compute_result(rng.choice(values))
+
+    def randomise(self):
+        self.set_property('_actual_seed', None)
