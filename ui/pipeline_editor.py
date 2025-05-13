@@ -164,7 +164,7 @@ class NodeItem(QGraphicsRectItem):
                     background-color: #cccccc;
                 }
             """)
-            self._randomise_button.clicked.connect(lambda: self.scene().undo_stack.push(RandomiseNodeCmd(self.scene(), self.node_state.node_id)))
+            self._randomise_button.clicked.connect(lambda: self.scene().undo_stack.push(RandomiseNodesCmd(self.scene(), [self.node_state.node_id])))
 
             # Proxy
             self._randomise_proxy = QGraphicsProxyWidget(self)
@@ -914,23 +914,25 @@ class RegisterCustomNodeCmd(QUndoCommand):
         else:
             print("Error: custom node definition with same name already exists.")
 
-class RandomiseNodeCmd(QUndoCommand):
-    def __init__(self, scene, node_id, description="Randomise node"):
+class RandomiseNodesCmd(QUndoCommand):
+    def __init__(self, scene, node_ids, description="Randomise node"):
         super().__init__(description)
         self.scene = scene
         self.node_graph: NodeGraph = scene.node_graph
-        self.node_id = node_id
-        self.prev_actual_seed = None
+        self.node_ids = node_ids
+        self.prev_actual_seeds = {}
 
     def undo(self):
-        self.node_graph.node(self.node_id).set_property('_actual_seed', self.prev_actual_seed)
-        self.scene.node_items[self.node_id].update_visualisations()
+        for node_id, prev_seed in self.prev_actual_seeds.items():
+            self.node_graph.node(node_id).set_property('_actual_seed', prev_seed)
+            self.scene.node_items[node_id].update_visualisations()
 
     def redo(self):
-        node = self.node_graph.node(self.node_id)
-        self.prev_actual_seed = node.get_property('_actual_seed')
-        node.randomise()
-        self.scene.node_items[self.node_id].update_visualisations()
+        for node_id in self.node_ids:
+            node = self.node_graph.node(node_id)
+            self.prev_actual_seeds[node_id] = node.get_property('_actual_seed')
+            node.randomise()
+            self.scene.node_items[node_id].update_visualisations()
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
