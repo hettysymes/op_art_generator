@@ -28,7 +28,6 @@ class ColourListNode(SelectableNode):
     def compute(self):
         ref_colours = self._prop_val('import_colours', get_refs=True)
         colours = handle_port_ref_table(ref_colours, self._prop_val('colour_order'))
-        print(colours)
         self.set_compute_result(colours)
         for port_id in self.extracted_port_ids:
             _, port_key = port_id

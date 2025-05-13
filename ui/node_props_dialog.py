@@ -10,7 +10,7 @@ from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.port_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
-    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable
+    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
@@ -352,14 +352,22 @@ class NodePropertiesDialog(QDialog):
             # Custom delegate to display colour swatches
             class ColourDelegate(QStyledItemDelegate):
                 def paint(self, painter, option, index):
-                    colour = index.data(Qt.UserRole)
-                    q_colour = QColor(*colour)
-                    # Fill the entire cell with the color
-                    painter.fillRect(option.rect, q_colour)
+                    value = index.data(Qt.UserRole)
 
-                    # Add a border around the color swatch
-                    painter.setPen(QPen(Qt.black, 1))
-                    painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+                    if not isinstance(value, PortRefTableEntry):
+                        q_colour = QColor(*value)
+                        painter.fillRect(option.rect, q_colour)
+
+                        # Draw a border
+                        painter.setPen(QPen(Qt.black, 1))
+                        painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+                    else:
+                        # Otherwise, fall back to the default behavior (centered text)
+                        super().paint(painter, option, index)
+
+                def initStyleOption(self, option, index):
+                    super().initStyleOption(option, index)
+                    option.displayAlignment = Qt.AlignCenter
 
             def custom_context_menu(menu, _):
                 menu.actions_map = {'edit': menu.addAction("Edit")}
