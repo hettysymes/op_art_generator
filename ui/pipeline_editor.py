@@ -22,7 +22,7 @@ from ui.id_generator import shorten_uid, gen_uid
 from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
-from ui.nodes.drawers.group_drawer import ElementDrawer
+from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
 from ui.reg_custom_dialog import RegCustomDialog
