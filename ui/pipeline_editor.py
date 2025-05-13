@@ -23,7 +23,7 @@ from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.node_implementations.random_colour_selector import RandomListSelectorNode
+from ui.nodes.node_implementations.random_list_selector import RandomListSelectorNode
 from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
 from ui.reg_custom_dialog import RegCustomDialog
@@ -149,7 +149,7 @@ class NodeItem(QGraphicsRectItem):
 
         # Add randomise button
         self._randomise_button = None
-        if isinstance(node, RandomListSelectorNode):
+        if node.randomisable:
             self._randomise_button = QPushButton("↺")
             self._randomise_button.setFixedSize(20, 20)
             self._randomise_button.setToolTip("Randomise selection")
@@ -164,7 +164,7 @@ class NodeItem(QGraphicsRectItem):
                     background-color: #cccccc;
                 }
             """)
-            self._randomise_button.clicked.connect(lambda: self.scene().undo_stack.push(RandomiseNodesCmd(self.scene(), [self.node_state.node_id])))
+            self._randomise_button.clicked.connect(lambda: self.scene().undo_stack.push(RandomiseNodesCmd(self.scene(), {self.node_state.node_id})))
 
             # Proxy
             self._randomise_proxy = QGraphicsProxyWidget(self)
@@ -919,7 +919,7 @@ class RandomiseNodesCmd(QUndoCommand):
         super().__init__(description)
         self.scene = scene
         self.node_graph: NodeGraph = scene.node_graph
-        self.node_ids = node_ids
+        self.node_ids = node_ids # Assumes these nodes are randomisable
         self.prev_actual_seeds = {}
 
     def undo(self):
@@ -1477,6 +1477,11 @@ class PipelineEditor(QMainWindow):
         select_all.setMenuRole(QAction.NoRole)
         scene_menu.addAction(select_all)
 
+        randomise = QAction("Randomise Selected Nodes", self)
+        randomise.setShortcut("Ctrl+R")
+        randomise.triggered.connect(self.randomise_selected)
+        scene_menu.addAction(randomise)
+
         create_custom = QAction("Group Nodes to Custom Node", self)
         create_custom.setShortcut("Ctrl+G")
         create_custom.triggered.connect(self.register_custom_node)
@@ -1723,6 +1728,15 @@ class PipelineEditor(QMainWindow):
                 node_state.pos = (node_state.pos[0] + offset.x(), node_state.pos[1] + offset.y())
             # Perform paste
             self.scene.undo_stack.push(PasteCmd(self.scene, node_states, nodes.values(), connections, port_refs))
+
+    def randomise_selected(self):
+        randomisable_ids = set()
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                node = self.scene.node_graph.node(item.node_state.node_id)
+                if node.randomisable:
+                    randomisable_ids.add(node.uid)
+        self.scene.undo_stack.push(RandomiseNodesCmd(self.scene, randomisable_ids))
 
 
 if __name__ == "__main__":

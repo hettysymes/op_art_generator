@@ -51,3 +51,7 @@ class RandomListSelectorNode(UnitNode):
 
     def randomise(self):
         self.set_property('_actual_seed', None)
+
+    @property
+    def randomisable(self):
+        return True
