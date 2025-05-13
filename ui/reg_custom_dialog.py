@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QTextEdit, QPushButton, QMessageBox,
-    QDialog, QTreeWidget, QTreeWidgetItem, QHeaderView
+    QDialog, QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox
 )
 
 from ui.id_generator import shorten_uid
@@ -95,6 +95,16 @@ class RegCustomDialog(QDialog):
         out_port_selector_layout.addWidget(out_port_selector_label)
         out_port_selector_layout.addWidget(self.out_port_selector)
 
+        # Visualisation selection
+        self.vis_selector = QComboBox()
+        vis_selector_label = QLabel("Select visualisation node (your custom node's visualisation will mirror this node):")
+        for node_id, (node_name, _) in self.id_to_info.items():
+            self.vis_selector.addItem(f"{node_name} (#{shorten_uid(node_id)})", userData=node_id)
+        self.vis_selector.setCurrentIndex(self.vis_selector.count() - 1) # Default to last list item
+        vis_selector_layout = QVBoxLayout()
+        vis_selector_layout.addWidget(vis_selector_label)
+        vis_selector_layout.addWidget(self.vis_selector)
+
         # OK button
         ok_button = QPushButton("OK")
         ok_button.clicked.connect(self.validate_inputs)
@@ -107,6 +117,7 @@ class RegCustomDialog(QDialog):
         layout.addWidget(self.description_input)
         layout.addLayout(in_port_selector_layout)
         layout.addLayout(out_port_selector_layout)
+        layout.addLayout(vis_selector_layout)
         layout.addWidget(ok_button)
         self.setLayout(layout)
 
@@ -140,5 +151,6 @@ class RegCustomDialog(QDialog):
             self.name_input.text().strip(),
             self.description_input.toPlainText(),
             self.in_port_selector.get_selected_ports(),
-            self.out_port_selector.get_selected_ports()
+            self.out_port_selector.get_selected_ports(),
+            self.vis_selector.currentData()
         )

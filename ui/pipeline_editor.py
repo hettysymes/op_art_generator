@@ -1607,12 +1607,13 @@ class PipelineEditor(QMainWindow):
         dialog = RegCustomDialog(old_id_to_info, self.scene.custom_node_defs.keys())
         if dialog.exec_():
             # Get input and output node ids
-            name, description, input_sel_ports, output_sel_ports = dialog.get_inputs()
+            name, description, input_sel_ports, output_sel_ports, vis_sel_node = dialog.get_inputs()
             selected_ports = defaultdict(list)
             for node_id, port_id in input_sel_ports + output_sel_ports:
                 selected_ports[old_to_new_id_map[node_id]].append(port_id)
             selected_ports = dict(selected_ports)
-            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, selected_ports, description=description)))
+            vis_sel_node = old_to_new_id_map[vis_sel_node]
+            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, selected_ports, vis_sel_node, description=description)))
 
     def identify_selected_items(self):
         node_states = {}

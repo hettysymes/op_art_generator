@@ -143,6 +143,7 @@ class CustomNode(Node):
         self._name, custom_node_def = add_info
         self.subgraph = custom_node_def.subgraph
         self.selected_ports = custom_node_def.selected_ports
+        self.vis_node = self.subgraph.node(custom_node_def.vis_node_id)
         description = custom_node_def.description or "(No help provided)"
         # Perform set up
         self.node_topo_order = self.subgraph.get_topo_order_subgraph()
@@ -202,5 +203,4 @@ class CustomNode(Node):
                 self.set_compute_result(node.get_compute_result(port_key), port_key=CustomNode.to_custom_key(node_id, port_key))
 
     def visualise(self):
-        return
-        # return self.out_node.visualise()
+        return self.vis_node.visualise()
