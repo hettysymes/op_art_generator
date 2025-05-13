@@ -68,6 +68,8 @@ def visualise_by_type(value, value_type):
         # Draw vertical grid
         grid = get_grid(height=len(value))
         elements = [visualise_by_type(value_item, value_type.item_type) for value_item in value]
+        if (not elements) or not all(isinstance(e, Element) for e in elements):
+            return None
         return repeat_shapes(grid, elements)
     elif isinstance(value_type, PT_Fill):
         return get_rectangle(value)

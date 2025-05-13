@@ -10,7 +10,7 @@ from ui.nodes.shape_datatypes import Group
 DEF_RANDOM_LIST_SELECTOR_INFO = NodeInfo(
     description="Randomly select from a list.",
     port_defs={
-        (PortIO.INPUT, 'list'): PortDef("List", PT_List()),
+        (PortIO.INPUT, 'list'): PortDef("List", PT_List(input_multiple=False)),
         (PortIO.OUTPUT, '_main'): PortDef("Random selection", PortType())
     },
     prop_entries={
@@ -32,23 +32,19 @@ class RandomListSelectorNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_RANDOM_LIST_SELECTOR_INFO
 
     def compute(self):
-        val_list = self._prop_val('list')
-        if val_list is not None:
-            if not val_list:
-                raise NodeInputException("List must contain at least one item.", self.uid)
-            if self._prop_val('use_seed'):
-                rng = random.Random(self._prop_val('user_seed'))
-            else:
-                if not self._prop_val('_actual_seed'):
-                    self.prop_vals['_actual_seed'] = random.random()
-                rng = random.Random(self._prop_val('_actual_seed'))
-            self.set_compute_result(rng.choice(val_list))
-
-    def visualise(self):
-        return None
-        # random_item = self.get_compute_result()
-        # if random_item:
-        #     group = Group(debug_info="Random Colour Selector")
-        #     group.add(RectangleNode.helper(colour))
-        #     return group
-        # return None
+        val_list = self._prop_val('list', get_refs=True)
+        if not val_list:
+            return
+        ref_id, values = val_list
+        # Update output port type
+        list_port_type = self._port_ref('list', ref_id).port_def.port_type
+        self.get_port_defs()[(PortIO.OUTPUT, '_main')].port_type = list_port_type.item_type
+        if not values:
+            raise NodeInputException("List must contain at least one item.", self.uid)
+        if self._prop_val('use_seed'):
+            rng = random.Random(self._prop_val('user_seed'))
+        else:
+            if not self._prop_val('_actual_seed'):
+                self.prop_vals['_actual_seed'] = random.random()
+            rng = random.Random(self._prop_val('_actual_seed'))
+        self.set_compute_result(rng.choice(values))
