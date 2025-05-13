@@ -2,6 +2,7 @@ import itertools
 
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.port_ref_table_handler import flatten_list, handle_port_ref_table
+from ui.nodes.node_implementations.visualiser import repeat_shapes
 from ui.nodes.nodes import SelectableNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Grid, PT_Element, PT_List, PropEntry, PT_ElemRefTable
 from ui.nodes.shape_datatypes import Group, Element
@@ -26,26 +27,6 @@ class ShapeRepeaterNode(SelectableNode):
     DEFAULT_NODE_INFO = DEF_SHAPE_REPEATER_NODE_INFO
 
     @staticmethod
-    def helper(grid, elements):
-        v_line_xs, h_line_ys = grid
-        ret_group = Group(debug_info="Shape Repeater")
-        if isinstance(elements, Element):
-            # Ensure elements is a list
-            elements = [elements]
-        element_it = itertools.cycle(elements)
-        for i in range(0, len(h_line_ys) - 1):
-            # Add row
-            for j in range(0, len(v_line_xs) - 1):
-                x1 = v_line_xs[j]
-                x2 = v_line_xs[j + 1]
-                y1 = h_line_ys[i]
-                y2 = h_line_ys[i + 1]
-                cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({i},{j})")
-                cell_group.add(next(element_it))
-                ret_group.add(cell_group)
-        return ret_group
-
-    @staticmethod
     def _compute_cell(i, j, main_group, grid):
         return main_group[ShapeRepeaterNode._grid_dims(grid)[1] * i + j]
 
@@ -61,7 +42,7 @@ class ShapeRepeaterNode(SelectableNode):
         elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
         if not grid or not elements:
             return
-        main_group = ShapeRepeaterNode.helper(grid, elements)
+        main_group = repeat_shapes(grid, elements)
         self.set_compute_result(main_group)
         for port_id in self.extracted_port_ids:
             _, port_key = port_id

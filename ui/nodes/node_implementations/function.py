@@ -1,3 +1,5 @@
+from abc import ABC
+
 import sympy as sp
 
 from ui.nodes.drawers.draw_graph import create_graph_svg
@@ -43,9 +45,6 @@ class CubicFunNode(UnitNode):
             CubicFun(self._prop_val('a_coeff'), self._prop_val('b_coeff'), self._prop_val('c_coeff'),
                      self._prop_val('d_coeff')))
 
-    def visualise(self):
-        return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))
-
 
 DEF_CUSTOM_FUN_INFO = NodeInfo(
     description="Define a custom function by entering an equation in terms of x.",
@@ -71,9 +70,6 @@ class CustomFunNode(UnitNode):
         parsed_expr = sp.sympify(self._prop_val('fun_def'))
         self.set_compute_result(CustomFun(x, parsed_expr))
 
-    def visualise(self):
-        return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))
-
 
 DEF_PIECEWISE_FUN_INFO = NodeInfo(
     description="Define a piecewise linear function by entering points the function passes through.",
@@ -96,9 +92,6 @@ class PiecewiseFunNode(UnitNode):
     def compute(self):
         xs, ys = zip(*self._prop_val('points'))
         self.set_compute_result(PiecewiseFun(xs, ys))
-
-    def visualise(self):
-        return MatplotlibFig(create_graph_svg(sample_fun(self.get_compute_result(), 1000)))
 
 
 class FunctionNode(CombinationNode):

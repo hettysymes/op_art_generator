@@ -3,6 +3,7 @@ from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.node_implementations.shape import RectangleNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
+from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.nodes import UnitNode, SelectableNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PT_List, PT_ColourRefTable, PropEntry
 
@@ -35,13 +36,7 @@ class ColourListNode(SelectableNode):
             self.set_compute_result(colours[int(i)], port_key=port_key)
 
     def visualise(self):
-        colours = self.get_compute_result()
-        if colours:
-            # Draw in vertical grid
-            grid = GridNode.helper(None, None, 1, len(colours))
-            elements = [RectangleNode.helper(colour) for colour in colours]
-            return ShapeRepeaterNode.helper(grid, elements)
-        return None
+        return visualise_by_type(self.get_compute_result(), PT_List(PT_Colour()))
 
     def extract_element(self, parent_group, element_id):
         i = parent_group.get_element_index_from_id(element_id)

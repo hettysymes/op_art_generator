@@ -4,14 +4,14 @@ from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.shape import RectangleNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PT_List, PT_Bool, PT_Int, PT_Hidden, PropEntry
+from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PT_List, PT_Bool, PT_Int, PT_Hidden, PropEntry, PortType
 from ui.nodes.shape_datatypes import Group
 
-DEF_RANDOM_COLOUR_SELECTOR_INFO = NodeInfo(
-    description="Randomly select a colour from a colour list.",
+DEF_RANDOM_LIST_SELECTOR_INFO = NodeInfo(
+    description="Randomly select from a list.",
     port_defs={
-        (PortIO.INPUT, 'colour_list'): PortDef("Colour list", PT_List(PT_Colour())),
-        (PortIO.OUTPUT, '_main'): PortDef("Random colour", PT_Colour())
+        (PortIO.INPUT, 'list'): PortDef("List", PT_List()),
+        (PortIO.OUTPUT, '_main'): PortDef("Random selection", PortType())
     },
     prop_entries={
         'use_seed': PropEntry(PT_Bool(),
@@ -27,27 +27,28 @@ DEF_RANDOM_COLOUR_SELECTOR_INFO = NodeInfo(
 )
 
 
-class RandomColourSelectorNode(UnitNode):
-    NAME = "Random Colour Selector"
-    DEFAULT_NODE_INFO = DEF_RANDOM_COLOUR_SELECTOR_INFO
+class RandomListSelectorNode(UnitNode):
+    NAME = "Random List Selector"
+    DEFAULT_NODE_INFO = DEF_RANDOM_LIST_SELECTOR_INFO
 
     def compute(self):
-        colours = self._prop_val('colour_list')
-        if colours is not None:
-            if not colours:
-                raise NodeInputException("At least one input colour is required.", self.uid)
+        val_list = self._prop_val('list')
+        if val_list is not None:
+            if not val_list:
+                raise NodeInputException("List must contain at least one item.", self.uid)
             if self._prop_val('use_seed'):
                 rng = random.Random(self._prop_val('user_seed'))
             else:
                 if not self._prop_val('_actual_seed'):
                     self.prop_vals['_actual_seed'] = random.random()
                 rng = random.Random(self._prop_val('_actual_seed'))
-            self.set_compute_result(rng.choice(colours))
+            self.set_compute_result(rng.choice(val_list))
 
     def visualise(self):
-        colour = self.get_compute_result()
-        if colour:
-            group = Group(debug_info="Random Colour Selector")
-            group.add(RectangleNode.helper(colour))
-            return group
         return None
+        # random_item = self.get_compute_result()
+        # if random_item:
+        #     group = Group(debug_info="Random Colour Selector")
+        #     group.add(RectangleNode.helper(colour))
+        #     return group
+        # return None

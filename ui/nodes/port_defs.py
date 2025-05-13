@@ -1,18 +1,16 @@
-from abc import ABC, abstractmethod
 from enum import Enum, auto
 
 
-class PortType(ABC):
+class PortType:
 
-    @abstractmethod
     def is_compatible_with(self, dest_type):
-        pass
+        return False
 
 
 # List
 class PT_List(PortType):
-    def __init__(self, item_type: PortType, input_multiple=True):
-        self.item_type = item_type
+    def __init__(self, item_type=None, input_multiple=True):
+        self.item_type = item_type or PortType()
         self.input_multiple = input_multiple
 
     def is_compatible_with(self, dest_type) -> bool:

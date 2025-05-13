@@ -22,11 +22,11 @@ from ui.id_generator import shorten_uid, gen_uid
 from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
-from ui.nodes.drawers.group_drawer import GroupDrawer
+from ui.nodes.drawers.group_drawer import ElementDrawer
 from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
 from ui.reg_custom_dialog import RegCustomDialog
-from ui.nodes.shape_datatypes import Group
+from ui.nodes.shape_datatypes import Group, Element
 from ui.selectable_renderer import SelectableSvgElement
 from ui.vis_types import ErrorFig, Visualisable
 
@@ -322,8 +322,8 @@ class NodeItem(QGraphicsRectItem):
         svg_width, svg_height = self.node_state.svg_size
 
         if isinstance(vis, ErrorFig) or not isinstance(self.node(), SelectableNode):
-            if isinstance(vis, Group):
-                GroupDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
+            if isinstance(vis, Element):
+                ElementDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
             else:
                 assert isinstance(vis, Visualisable)
                 vis.save_to_svg(svg_filepath, svg_width, svg_height)
@@ -336,7 +336,7 @@ class NodeItem(QGraphicsRectItem):
         else:
             assert isinstance(vis, Group)
             assert not vis.transform_list.transforms
-            GroupDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
+            ElementDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
 
             # Create SVG renderer
             svg_renderer = QSvgRenderer(svg_filepath)

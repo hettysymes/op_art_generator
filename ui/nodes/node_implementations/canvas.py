@@ -1,5 +1,6 @@
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.shape import RectangleNode
+from ui.nodes.node_implementations.visualiser import get_rectangle
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_Int, PropEntry, PT_Fill
 from ui.nodes.shape_datatypes import Group
@@ -32,7 +33,7 @@ class CanvasNode(UnitNode):
     @staticmethod
     def helper(colour, element=None):
         group = Group(debug_info="Canvas")
-        group.add(RectangleNode.helper(colour))
+        group.add(get_rectangle(colour))
         if element:
             group.add(element)
         return group

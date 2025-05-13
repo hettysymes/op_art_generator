@@ -2,6 +2,7 @@ import traceback
 from abc import ABC, abstractmethod
 
 from ui.id_generator import shorten_uid
+from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.port_defs import PortIO, PT_Scalar, PT_Hidden, PT_List
 from ui.nodes.shape_datatypes import Group
@@ -174,6 +175,15 @@ class Node(BaseNode, ABC):
     def final_compute(self):
         return self.compute()
 
+    def visualise(self):
+        try:
+            value = self.get_compute_result()
+            value_type = self.get_port_defs()[(PortIO.OUTPUT, '_main')].port_type
+            return visualise_by_type(value, value_type)
+        except:
+            return None
+
+
     @classmethod
     def name(cls):
         return cls.NAME
@@ -191,8 +201,4 @@ class Node(BaseNode, ABC):
 
     @abstractmethod
     def compute(self):
-        pass
-
-    @abstractmethod
-    def visualise(self):
         pass

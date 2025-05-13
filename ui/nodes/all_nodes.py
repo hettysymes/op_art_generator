@@ -11,7 +11,7 @@ from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.iterator import IteratorNode
 from ui.nodes.node_implementations.overlay import OverlayNode
-from ui.nodes.node_implementations.random_colour_selector import RandomColourSelectorNode
+from ui.nodes.node_implementations.random_colour_selector import RandomListSelectorNode
 from ui.nodes.node_implementations.shape import ShapeNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.node_implementations.stacker import StackerNode
@@ -40,7 +40,7 @@ node_settings = [
     (BlazeMakerNode, NodeSettings()),
     (StackerNode, NodeSettings()),
     (ColourNode, NodeSettings()),
-    (RandomColourSelectorNode, NodeSettings()),
+    (RandomListSelectorNode, NodeSettings()),
     (DrawingGroupNode, NodeSettings())
 ]
 

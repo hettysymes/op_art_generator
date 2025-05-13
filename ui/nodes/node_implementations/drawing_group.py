@@ -2,6 +2,7 @@ from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
+from ui.nodes.node_implementations.visualiser import get_grid, repeat_shapes, visualise_in_1d_grid
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PropEntry, PT_Enum, PT_ElemRefTable
 
@@ -36,11 +37,5 @@ class DrawingGroupNode(UnitNode):
     def visualise(self):
         elements = self.get_compute_result()
         if elements:
-            if self._prop_val('vis_layout') == "Vertical":
-                # Draw in vertical grid
-                grid = GridNode.helper(None, None, 1, len(elements))
-            else:
-                # Draw in Horizontal grid
-                grid = GridNode.helper(None, None, len(elements), 1)
-            return ShapeRepeaterNode.helper(grid, elements)
+            return visualise_in_1d_grid(elements, is_vertical=self._prop_val('vis_layout') == "Vertical")
         return None

@@ -18,9 +18,6 @@ class UnitNode(Node, ABC):
     def node_info(self):
         return self._node_info
 
-    def visualise(self):
-        return self.get_compute_result('_main')
-
     @classmethod
     def _default_node_info(cls):
         return cls.DEFAULT_NODE_INFO

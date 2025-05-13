@@ -2,6 +2,7 @@ from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.shape import StraightLineNode
+from ui.nodes.node_implementations.visualiser import get_grid
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Warp, PT_Grid, PT_Int, PropEntry
 from ui.nodes.shape_datatypes import Group
@@ -29,27 +30,11 @@ class GridNode(UnitNode):
     NAME = "Grid"
     DEFAULT_NODE_INFO = DEF_GRID_INFO
 
-    @staticmethod
-    def helper(x_warp, y_warp, width, height):
-        if x_warp is None:
-            x_warp = PosWarp(IdentityFun())
-        else:
-            assert isinstance(x_warp, PosWarp) or isinstance(x_warp, RelWarp)
-
-        if y_warp is None:
-            y_warp = PosWarp(IdentityFun())
-        else:
-            assert isinstance(y_warp, PosWarp) or isinstance(y_warp, RelWarp)
-
-        v_line_xs = x_warp.sample(width + 1)
-        h_line_ys = y_warp.sample(height + 1)
-        return v_line_xs, h_line_ys
-
     def compute(self):
         # Get warp functions
         x_warp = self._prop_val('x_warp')
         y_warp = self._prop_val('y_warp')
-        self.set_compute_result(GridNode.helper(x_warp, y_warp, self._prop_val('width'), self._prop_val('height')))
+        self.set_compute_result(get_grid(self._prop_val('width'), self._prop_val('height'), x_warp, y_warp))
 
     def visualise(self):
         v_line_xs, h_line_ys = self.get_compute_result()

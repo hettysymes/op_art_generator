@@ -1,5 +1,5 @@
 from ui.nodes.node_defs import NodeInfo
-from ui.nodes.node_implementations.shape import RectangleNode
+from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PropEntry, PT_Fill
 from ui.nodes.shape_datatypes import Group
@@ -21,8 +21,3 @@ class ColourNode(UnitNode):
 
     def compute(self):
         self.set_compute_result(self._prop_val('colour'))
-
-    def visualise(self):
-        group = Group(debug_info="Colour")
-        group.add(RectangleNode.helper(self.get_compute_result()))
-        return group

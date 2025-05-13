@@ -25,8 +25,3 @@ class GradientNode(UnitNode):
 
     def compute(self):
         self.set_compute_result(Gradient(self._prop_val('start_col'), self._prop_val('stop_col')))
-
-    def visualise(self):
-        group = Group(debug_info="Gradient")
-        group.add(RectangleNode.helper(self.get_compute_result()))
-        return group

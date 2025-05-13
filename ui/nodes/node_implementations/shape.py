@@ -1,6 +1,7 @@
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
+from ui.nodes.node_implementations.visualiser import get_polygon, get_rectangle
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Ellipse, PT_List, PT_Float, \
@@ -75,11 +76,6 @@ class SineWaveNode(UnitNode):
             raise NodeInputException(str(e), self.uid)
         self.set_compute_result(sine_wave)
 
-    def visualise(self):
-        group = Group(debug_info="Sine wave")
-        group.add(self.get_compute_result())
-        return group
-
 
 DEF_CUSTOM_LINE_INFO = NodeInfo(
     description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -110,11 +106,6 @@ class CustomLineNode(UnitNode):
     def compute(self):
         self.set_compute_result(
             CustomLineNode.helper(self._prop_val('points'), 'black', self._prop_val('stroke_width')))
-
-    def visualise(self):
-        group = Group(debug_info="Custom Line")
-        group.add(self.get_compute_result())
-        return group
 
 
 DEF_STRAIGHT_LINE_NODE_INFO = NodeInfo(
@@ -152,11 +143,6 @@ class StraightLineNode(UnitNode):
             StraightLineNode.helper(self._prop_val('start_coord'), self._prop_val('stop_coord'), 'black',
                                     self._prop_val('stroke_width')))
 
-    def visualise(self):
-        group = Group(debug_info="Straight Line")
-        group.add(self.get_compute_result())
-        return group
-
 
 DEF_POLYGON_INFO = NodeInfo(
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -182,14 +168,6 @@ class PolygonNode(UnitNode):
     NAME = "Polygon"
     DEFAULT_NODE_INFO = DEF_POLYGON_INFO
 
-    @staticmethod
-    def helper(fill, points, stroke, stroke_width):
-        if isinstance(fill, Gradient):
-            fill_opacity = 255
-        else:
-            fill, fill_opacity = process_rgb(fill)
-        return Polygon(points, fill, fill_opacity, stroke, stroke_width)
-
     def compute(self):
         # Process input polylines
         point_refs = self._prop_val('import_points', get_refs=True)
@@ -211,13 +189,8 @@ class PolygonNode(UnitNode):
                 x, y = table_entry
                 points.append((x, y))
         # Return polygon
-        self.set_compute_result(PolygonNode.helper(self._prop_val('fill'), points, 'none',
-                                                   self._prop_val('stroke_width')))
-
-    def visualise(self):
-        group = Group(debug_info="Polygon")
-        group.add(self.get_compute_result())
-        return group
+        self.set_compute_result(get_polygon(self._prop_val('fill'), points, 'none',
+                                            self._prop_val('stroke_width')))
 
 
 DEF_RECTANGLE_NODE_INFO = NodeInfo(
@@ -235,17 +208,8 @@ class RectangleNode(UnitNode):
     NAME = "Rectangle"
     DEFAULT_NODE_INFO = DEF_RECTANGLE_NODE_INFO
 
-    @staticmethod
-    def helper(colour):
-        return PolygonNode.helper(colour, [(0, 0), (0, 1), (1, 1), (1, 0)], 'none', 1)
-
     def compute(self):
-        self.set_compute_result(RectangleNode.helper(self._prop_val('fill')))
-
-    def visualise(self):
-        group = Group(debug_info="Rectangle")
-        group.add(self.get_compute_result())
-        return group
+        self.set_compute_result(get_rectangle(self._prop_val('fill'), 'none', 1))
 
 
 DEF_ELLIPSE_INFO = NodeInfo(
@@ -298,11 +262,6 @@ class EllipseNode(UnitNode):
                                                    (self._prop_val('rx'), self._prop_val('ry')),
                                                    'none', self._prop_val('stroke_width')))
 
-    def visualise(self):
-        group = Group(debug_info="Ellipse")
-        group.add(self.get_compute_result())
-        return group
-
 
 DEF_CIRCLE_INFO = NodeInfo(
     description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -345,11 +304,6 @@ class CircleNode(UnitNode):
                                                   self._prop_val('r'),
                                                   'none',
                                                   self._prop_val('stroke_width')))
-
-    def visualise(self):
-        group = Group(debug_info="Circle")
-        group.add(self.get_compute_result())
-        return group
 
 
 class ShapeNode(CombinationNode):

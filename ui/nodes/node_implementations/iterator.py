@@ -3,13 +3,14 @@ import copy
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
+from ui.nodes.node_implementations.visualiser import visualise_in_1d_grid
 from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_Scalar, PT_Enum, PropEntry
 
 DEF_ITERATOR_INFO = NodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",
     port_defs={
-        (PortIO.INPUT, 'value_list'): PortDef("Value list", PT_List(PT_Scalar(), input_multiple=False)),
+        (PortIO.INPUT, 'value_list'): PortDef("Value list", PT_List(input_multiple=False)),
         (PortIO.INPUT, 'element'): PortDef("Shape", PT_Element()),
         (PortIO.OUTPUT, '_main'): PortDef("Iterator", PT_List(PT_Element()))
     },
@@ -86,11 +87,5 @@ class IteratorNode(UnitNode):
     def visualise(self):
         elements = self.get_compute_result()
         if elements:
-            if self._prop_val('vis_layout') == "Vertical":
-                # Draw in vertical grid
-                grid = GridNode.helper(None, None, 1, len(elements))
-            else:
-                # Draw in Horizontal grid
-                grid = GridNode.helper(None, None, len(elements), 1)
-            return ShapeRepeaterNode.helper(grid, elements)
+            return visualise_in_1d_grid(elements, is_vertical=self._prop_val('vis_layout') == "Vertical")
         return None
