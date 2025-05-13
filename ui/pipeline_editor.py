@@ -1602,6 +1602,7 @@ class PipelineEditor(QMainWindow):
             output_open_ports = [(io, port_key) for (io, port_key) in node_states[out_node_id].ports_open if
                                 io == PortIO.OUTPUT]
             total_open_ports = input_open_ports + output_open_ports
+            print(total_open_ports)
             self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, inp_node_id, out_node_id, total_open_ports, description=description)))
 
     def identify_selected_items(self):

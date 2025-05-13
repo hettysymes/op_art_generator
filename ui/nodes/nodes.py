@@ -144,7 +144,11 @@ class CustomNode(Node):
         # Set up node info
         inp_node: Node = self.subgraph.node(self.inp_node_id)
         self.out_node: Node = self.subgraph.node(out_node_id)
-        port_defs = {port_id: port_def for port_id, port_def in {**inp_node.get_port_defs(), **self.out_node.get_port_defs()}.items() if port_id in ports_open}
+        port_defs = {}
+        for port_id, port_def in {**inp_node.get_port_defs(), **self.out_node.get_port_defs()}.items():
+            if port_id in ports_open:
+                port_def.optional = False
+                port_defs[port_id] = port_def
         self._node_info = NodeInfo(
             description=description,
             port_defs=port_defs

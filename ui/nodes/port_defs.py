@@ -129,6 +129,9 @@ class PT_ElemRefTable(PT_PortRefTable):
 class PT_PointRefTable(PT_PortRefTable):
     pass
 
+class PT_ColourRefTable(PT_PortRefTable):
+    pass
+
 
 # Other
 
@@ -181,10 +184,6 @@ class PT_Enum(PT_Scalar):
 
     def display_data_options(self):
         return zip(self.display_options, self.options)
-
-
-class PT_ColourTable(PT_Scalar):
-    pass
 
 
 class PT_Hidden(PT_Scalar):

@@ -10,7 +10,7 @@ from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.port_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
-    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourTable
+    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 from ui.reorderable_table_widget import ReorderableTableWidget
@@ -348,7 +348,7 @@ class NodePropertiesDialog(QDialog):
             )
             widget = port_ref_table
 
-        elif isinstance(prop_type, PT_ColourTable):
+        elif isinstance(prop_type, PT_ColourRefTable):
             # Custom delegate to display colour swatches
             class ColourDelegate(QStyledItemDelegate):
                 def paint(self, painter, option, index):
@@ -381,6 +381,9 @@ class NodePropertiesDialog(QDialog):
                     port_ref_table.set_item(sel_col, row)
 
             port_ref_table = PortRefTableWidget(
+                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
+                                                                                  prop_entry.prop_type.linked_port_key,
+                                                                                  ref_id),
                 table_heading="Colour",
                 entries=current_value,
                 context_menu_callback=custom_context_menu,

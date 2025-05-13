@@ -9,7 +9,7 @@ DEF_COLOUR_NODE_INFO = NodeInfo(
     port_defs={(PortIO.INPUT, 'colour'): PortDef("Colour", PT_Colour(), optional=True),
                (PortIO.OUTPUT, '_main'): PortDef("Colour", PT_Colour())},
     prop_entries={'colour': PropEntry(PT_Fill(),
-                                      display_name="Output colour.",
+                                      display_name="Output colour",
                                       description="Colour",
                                       default_value=(0, 0, 0, 255))}
 )

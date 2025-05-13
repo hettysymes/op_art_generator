@@ -77,8 +77,8 @@ class RegCustomDialog(QDialog):
         # Check start node is before stop node in the pipeline
         start_id = self.start_node_input.currentData()
         stop_id = self.stop_node_input.currentData()
-        if self.node_ids.index(start_id) >= self.node_ids.index(stop_id):
-            self.create_warning("Invalid Selection", "The selected input node must come before the selected output node in the pipeline. Please try again.")
+        if self.node_ids.index(start_id) > self.node_ids.index(stop_id):
+            self.create_warning("Invalid Selection", "The selected input node must come before (or be) the selected output node in the pipeline. Please try again.")
             return
         self.accept()
 
