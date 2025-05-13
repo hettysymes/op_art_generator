@@ -95,6 +95,16 @@ class NodeGraph(GraphQuerier):
                 active_ports.add(dst_port_key)
         return active_ports
 
+    def unconnected_ports(self, node_id):
+        """Return a set of port ids on the given node that don't have something connected."""
+        unconnected_ports = set(self.node(node_id).get_port_defs().keys())
+        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in self.edges:
+            if src_node_id == node_id:
+                unconnected_ports.discard((PortIO.OUTPUT, src_port_key))
+            elif dst_node_id == node_id:
+                unconnected_ports.discard((PortIO.INPUT, dst_port_key))
+        return unconnected_ports
+
     def active_output_ports(self, node_id):
         """Return a set of output port keys on the given node that have something connected."""
         return {

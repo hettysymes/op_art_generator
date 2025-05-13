@@ -36,10 +36,12 @@ class ColourListNode(SelectableNode):
 
     def visualise(self):
         colours = self.get_compute_result()
-        # Draw in vertical grid
-        grid = GridNode.helper(None, None, 1, len(colours))
-        elements = [RectangleNode.helper(colour) for colour in colours]
-        return ShapeRepeaterNode.helper(grid, elements)
+        if colours:
+            # Draw in vertical grid
+            grid = GridNode.helper(None, None, 1, len(colours))
+            elements = [RectangleNode.helper(colour) for colour in colours]
+            return ShapeRepeaterNode.helper(grid, elements)
+        return None
 
     def extract_element(self, parent_group, element_id):
         i = parent_group.get_element_index_from_id(element_id)
