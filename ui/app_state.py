@@ -8,11 +8,9 @@ class AppState:
         self.custom_node_defs = custom_node_defs # maps name to custom node def
 
 class CustomNodeDef:
-    def __init__(self, subgraph, inp_node_id, out_node_id, ports_open, description=None):
+    def __init__(self, subgraph, selected_ports, description=None):
         self.subgraph = subgraph
-        self.inp_node_id = inp_node_id
-        self.out_node_id = out_node_id
-        self.ports_open = ports_open
+        self.selected_ports = selected_ports # Maps node_id to list of port_ids
         self.description = description
 
 class NodeState:

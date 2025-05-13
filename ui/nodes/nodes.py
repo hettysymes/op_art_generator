@@ -129,26 +129,33 @@ class CombinationNode(Node, ABC):
 class CustomNode(Node):
     NAME = "Custom"
 
+    @staticmethod
+    def to_custom_key(node_id, port_key):
+        return f"{node_id}_{port_key}"
+
+    @staticmethod
+    def from_custom_key(custom_key):
+        return tuple(custom_key.split("_", 1)) # Returns node_id, port_key
+
     def __init__(self, uid, graph_querier, add_info):
         super().__init__(uid, graph_querier, {})
         # Extract given information
         self._name, custom_node_def = add_info
         self.subgraph = custom_node_def.subgraph
-        self.inp_node_id = custom_node_def.inp_node_id
-        out_node_id = custom_node_def.out_node_id
-        ports_open = custom_node_def.ports_open
+        self.selected_ports = custom_node_def.selected_ports
         description = custom_node_def.description or "(No help provided)"
         # Perform set up
         self.node_topo_order = self.subgraph.get_topo_order_subgraph()
-        self.input_port_keys = [port_key for (io, port_key) in ports_open if io == PortIO.INPUT]
-        # Set up node info
-        inp_node: Node = self.subgraph.node(self.inp_node_id)
-        self.out_node: Node = self.subgraph.node(out_node_id)
         port_defs = {}
-        for port_id, port_def in {**inp_node.get_port_defs(), **self.out_node.get_port_defs()}.items():
-            if port_id in ports_open:
+        for node_id, port_ids in self.selected_ports.items():
+            node_port_defs = self.subgraph.node(node_id).get_port_defs()
+            for port_id in port_ids:
+                port_def = node_port_defs[port_id]
                 port_def.optional = False
-                port_defs[port_id] = port_def
+                # Replace with custom port key
+                io, port_key = port_id
+                port_defs[(io, CustomNode.to_custom_key(node_id, port_key))] = port_def
+        # Set node info
         self._node_info = NodeInfo(
             description=description,
             port_defs=port_defs
@@ -161,8 +168,8 @@ class CustomNode(Node):
     def _replace_input_nodes(self):
         # Remove existing connections
         for edge in list(self.subgraph.edges):
-            _, (dst_node_id, _) = edge
-            if dst_node_id == self.inp_node_id:
+            _, (dst_node_id, dst_port_key) = edge
+            if dst_node_id in self.selected_ports and (PortIO.INPUT, dst_port_key) in self.selected_ports[dst_node_id]:
                 self.subgraph.remove_edge(*edge)
         # Get edges input to this node
         edges = self.graph_querier.edges_to_node(self.uid)
@@ -172,17 +179,28 @@ class CustomNode(Node):
         for src_node_id in source_nodes:
             self.subgraph.add_existing_node(self.graph_querier.node(src_node_id))
         for src_port_id, (_, dst_port_key) in edges:
-            self.subgraph.add_edge(src_port_id, (self.inp_node_id, dst_port_key))
+            # Replace dest port id with original (node_id, port_key) pair
+            self.subgraph.add_edge(src_port_id, CustomNode.from_custom_key(dst_port_key))
 
     @property
     def node_info(self):
         return self._node_info
 
     def compute(self):
+        # Compute nodes in the subgraph
         self._replace_input_nodes()
         for node_id in self.node_topo_order:
             self.subgraph.node(node_id).compute()
-        self.compute_results = self.out_node.compute_results
+        # Get and set compute results
+        self.compute_results = {}
+        for node_id, port_ids in self.selected_ports.items():
+            node = None
+            for io, port_key in port_ids:
+                if io == PortIO.INPUT: continue
+                # We have reached an output port, get and set the compute result
+                node = node or self.subgraph.node(node_id)
+                self.set_compute_result(node.get_compute_result(port_key), port_key=CustomNode.to_custom_key(node_id, port_key))
 
     def visualise(self):
-        return self.out_node.visualise()
+        return
+        # return self.out_node.visualise()

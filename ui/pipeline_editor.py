@@ -4,6 +4,7 @@ import os
 import pickle
 import sys
 import tempfile
+from collections import defaultdict
 from functools import partial
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData
@@ -1607,9 +1608,11 @@ class PipelineEditor(QMainWindow):
         if dialog.exec_():
             # Get input and output node ids
             name, description, input_sel_ports, output_sel_ports = dialog.get_inputs()
-            print(input_sel_ports + output_sel_ports)
-            return
-            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, inp_node_id, out_node_id, total_open_ports, description=description)))
+            selected_ports = defaultdict(list)
+            for node_id, port_id in input_sel_ports + output_sel_ports:
+                selected_ports[old_to_new_id_map[node_id]].append(port_id)
+            selected_ports = dict(selected_ports)
+            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, selected_ports, description=description)))
 
     def identify_selected_items(self):
         node_states = {}
