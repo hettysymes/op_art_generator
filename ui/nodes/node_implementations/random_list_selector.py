@@ -4,13 +4,14 @@ from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.shape import RectangleNode
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PT_List, PT_Bool, PT_Int, PT_Hidden, PropEntry, PortType
+from ui.nodes.port_defs import PortIO, PortDef, PT_Colour, PT_List, PT_Bool, PT_Int, PT_Hidden, PropEntry, PortType, \
+    get_most_general_type
 from ui.nodes.shape_datatypes import Group
 
 DEF_RANDOM_LIST_SELECTOR_INFO = NodeInfo(
     description="Randomly select from a list.",
     port_defs={
-        (PortIO.INPUT, 'list'): PortDef("List", PT_List(input_multiple=False)),
+        (PortIO.INPUT, 'list'): PortDef("List", PT_List()),
         (PortIO.OUTPUT, '_main'): PortDef("Random selection", PortType())
     },
     prop_entries={
@@ -37,18 +38,30 @@ class RandomListSelectorNode(UnitNode):
             # Update output port type
             self.get_port_defs()[(PortIO.OUTPUT, '_main')].port_type = PortType()
             return
-        ref_id, values = val_list
+        # If one input, take input as the list. Else, choose one of the inputs
+        if len(val_list) == 1:
+            ref_id, values = next(iter(val_list.items()))
+            set_type = self._port_ref('list', ref_id).port_def.port_type.item_type
+        else:
+            port_defs = []
+            for ref_id, values in val_list.items():
+                if not values:
+                    raise NodeInputException("List(s) must contain at least one item.", self.uid)
+                port_defs.append(self._port_ref('list', ref_id).port_def.port_type)
+            set_type = get_most_general_type(port_defs)
+            values = list(val_list.values())
         # Update output port type
-        list_port_type = self._port_ref('list', ref_id).port_def.port_type
-        self.get_port_defs()[(PortIO.OUTPUT, '_main')].port_type = list_port_type.item_type
-        if not values:
-            raise NodeInputException("List must contain at least one item.", self.uid)
+        self.get_port_defs()[(PortIO.OUTPUT, '_main')].port_type = set_type
+
+        # Update randomiser
         if self._prop_val('use_seed'):
             rng = random.Random(self._prop_val('user_seed'))
         else:
             if self._prop_val('_actual_seed') is None:
                 self.prop_vals['_actual_seed'] = random.random()
             rng = random.Random(self._prop_val('_actual_seed'))
+
+        # Set compute result
         self.set_compute_result(rng.choice(values))
 
     # Functions needed for randomisable node # TODO make into interface

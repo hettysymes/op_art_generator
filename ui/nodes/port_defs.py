@@ -1,6 +1,14 @@
 from enum import Enum, auto
 
 
+def get_most_general_type(types):# Look for a type that all others are compatible with
+    for candidate in types:
+        if all(other.is_compatible_with(candidate) for other in types):
+            return candidate
+
+    return PortType()  # Default to most general type
+
+
 class PortType:
 
     def is_compatible_with(self, dest_type):
