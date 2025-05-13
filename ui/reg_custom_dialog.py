@@ -1,59 +1,112 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QLabel, QTextEdit, QHBoxLayout, QPushButton, QComboBox, \
-    QMessageBox
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QLineEdit, QTextEdit, QPushButton, QMessageBox,
+    QDialog, QTreeWidget, QTreeWidgetItem, QHeaderView
+)
 
 from ui.id_generator import shorten_uid
+from ui.nodes.port_defs import PortIO
 
 
-def create_node_id_widget(id_to_names, set_last_index):
-    widget = QComboBox()
-    for node_id, node_name in id_to_names.items():
-        widget.addItem(f"{node_name} (#{shorten_uid(node_id)})", userData=node_id)
-    if set_last_index:
-        widget.setCurrentIndex(widget.count() - 1)
-    return widget
+class PortSelectionTree(QWidget):
+    def __init__(self, id_to_info, port_io):
+        """
+        id_to_ports: dict of node_id -> list of port
+        display_names: optional dict of (node_id, port) -> str for custom labels
+        """
+        super().__init__()
+
+        layout = QVBoxLayout()
+        self.tree = QTreeWidget()
+        self.tree.setHeaderHidden(True)
+        self.tree.setColumnCount(1)
+        self.check_items = {}  # {(node_id, port): QTreeWidgetItem}
+
+        for node_id, (node_name, port_map) in id_to_info.items():
+            # Filter by IO
+            filtered_ports = {
+                port_id: port_name
+                for port_id, port_name in port_map.items()
+                if port_id[0] == port_io
+            }
+
+            # Skip if no ports of this IO
+            if not filtered_ports:
+                continue
+
+            node_item = QTreeWidgetItem([f"{node_name} (#{shorten_uid(node_id)})"])
+            node_item.setFlags(Qt.ItemIsEnabled)
+            self.tree.addTopLevelItem(node_item)
+
+            for port_id, port_name in filtered_ports.items():
+                port_item = QTreeWidgetItem([port_name])
+                port_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+                port_item.setCheckState(0, Qt.Unchecked)
+
+                # Store actual data
+                port_item.setData(0, Qt.UserRole, (node_id, port_id))
+
+                node_item.addChild(port_item)
+                self.check_items[(node_id, port_id)] = port_item
+
+            node_item.setExpanded(False)
+
+        layout.addWidget(self.tree)
+        self.setLayout(layout)
+
+    def get_selected_ports(self):
+        selected = []
+        for item in self.check_items.values():
+            if item.checkState(0) == Qt.Checked:
+                node_id, port = item.data(0, Qt.UserRole)
+                selected.append((node_id, port))
+        return selected
+
 
 class RegCustomDialog(QDialog):
-    def __init__(self, id_to_names, existing_names):
+    def __init__(self, id_to_info, existing_names):
         super().__init__()
         self.setWindowTitle("Create custom node")
-        self.id_to_names = id_to_names
-        self.node_ids = list(id_to_names.keys())
+        self.id_to_info = id_to_info
+        self.node_ids = list(id_to_info.keys())
         self.existing_names = existing_names
 
         # Name
         name_label = QLabel("Name of custom node:")
         self.name_input = QLineEdit()
 
-        # Description (optional)
+        # Description
         description_label = QLabel("Description (optional):")
         self.description_input = QTextEdit()
         self.description_input.setPlaceholderText("This will appear over the help icon (?) for your node.")
-        self.description_input.setFixedHeight(60)  # Controls the height of the box
+        self.description_input.setFixedHeight(60)
 
-        # Start node input
-        self.start_node_input = create_node_id_widget(id_to_names, set_last_index=False)
-        start_node_layout = QHBoxLayout()
-        start_node_layout.addWidget(QLabel("Input node:"))
-        start_node_layout.addWidget(self.start_node_input)
+        # Input port selection
+        self.in_port_selector = PortSelectionTree(self.id_to_info, port_io=PortIO.INPUT)
+        in_port_selector_label = QLabel("Select input ports:")
+        in_port_selector_layout = QVBoxLayout()
+        in_port_selector_layout.addWidget(in_port_selector_label)
+        in_port_selector_layout.addWidget(self.in_port_selector)
 
-        # Stop node input
-        self.stop_node_input = create_node_id_widget(id_to_names, set_last_index=True)
-        stop_node_layout = QHBoxLayout()
-        stop_node_layout.addWidget(QLabel("Output node:"))
-        stop_node_layout.addWidget(self.stop_node_input)
+        # Output port selection
+        self.out_port_selector = PortSelectionTree(self.id_to_info, port_io=PortIO.OUTPUT)
+        out_port_selector_label = QLabel("Select output ports:")
+        out_port_selector_layout = QVBoxLayout()
+        out_port_selector_layout.addWidget(out_port_selector_label)
+        out_port_selector_layout.addWidget(self.out_port_selector)
 
         # OK button
         ok_button = QPushButton("OK")
         ok_button.clicked.connect(self.validate_inputs)
 
-        # Set layout
+        # Layout
         layout = QVBoxLayout()
         layout.addWidget(name_label)
         layout.addWidget(self.name_input)
         layout.addWidget(description_label)
         layout.addWidget(self.description_input)
-        layout.addLayout(start_node_layout)
-        layout.addLayout(stop_node_layout)
+        layout.addLayout(in_port_selector_layout)
+        layout.addLayout(out_port_selector_layout)
         layout.addWidget(ok_button)
         self.setLayout(layout)
 
@@ -75,17 +128,17 @@ class RegCustomDialog(QDialog):
             self.create_warning("Name In Use", "This name is assigned to an existing custom node. Please choose another.")
             return
         # Check start node is before stop node in the pipeline
-        start_id = self.start_node_input.currentData()
-        stop_id = self.stop_node_input.currentData()
-        if self.node_ids.index(start_id) > self.node_ids.index(stop_id):
-            self.create_warning("Invalid Selection", "The selected input node must come before (or be) the selected output node in the pipeline. Please try again.")
-            return
+        # start_id = self.start_node_input.currentData()
+        # stop_id = self.stop_node_input.currentData()
+        # if self.node_ids.index(start_id) > self.node_ids.index(stop_id):
+        #     self.create_warning("Invalid Selection", "The selected input node must come before (or be) the selected output node in the pipeline. Please try again.")
+        #     return
         self.accept()
 
     def get_inputs(self):
         return (
             self.name_input.text().strip(),
             self.description_input.toPlainText(),
-            self.start_node_input.currentData(),
-            self.stop_node_input.currentData()
+            self.in_port_selector.get_selected_ports(),
+            self.out_port_selector.get_selected_ports()
         )

@@ -1586,23 +1586,29 @@ class PipelineEditor(QMainWindow):
         for connection in connections:
             subgraph_querier.add_edge(*connection)
 
-        # Get node information from user
+        # Get node information for display
         new_ids_topo_order = subgraph_querier.get_topo_order_subgraph()
-        new_id_to_names = {new_id: subgraph_querier.node(new_id).base_node_name for new_id in new_ids_topo_order}
+        new_id_to_info = {}
+        for new_id in new_ids_topo_order:
+            node = subgraph_querier.node(new_id)
+            base_name = node.base_node_name
+            # Get port id (io, port_key) mapped to port display name
+            port_map = {}
+            ports_open = node_states[new_id].ports_open
+            port_defs = node.get_port_defs()
+            for port_id in ports_open:
+                port_map[port_id] = port_defs[port_id].display_name
+            # Add base name and port map to new_id_to_info
+            new_id_to_info[new_id] = (base_name, port_map)
         new_to_old_id_map = {v: k for k, v in old_to_new_id_map.items()}
-        old_id_to_names = {new_to_old_id_map[k]: v for k,v in new_id_to_names.items()}
-        dialog = RegCustomDialog(old_id_to_names, self.scene.custom_node_defs.keys())
+        old_id_to_info = {new_to_old_id_map[k]: v for k,v in new_id_to_info.items()}
+        # Get node information from user
+        dialog = RegCustomDialog(old_id_to_info, self.scene.custom_node_defs.keys())
         if dialog.exec_():
             # Get input and output node ids
-            name, description, start_id, stop_id = dialog.get_inputs()
-            inp_node_id = old_to_new_id_map[start_id]
-            out_node_id = old_to_new_id_map[stop_id]
-            # Get open ports
-            input_open_ports = [(io, port_key) for (io, port_key) in node_states[inp_node_id].ports_open if io == PortIO.INPUT]
-            output_open_ports = [(io, port_key) for (io, port_key) in node_states[out_node_id].ports_open if
-                                io == PortIO.OUTPUT]
-            total_open_ports = input_open_ports + output_open_ports
-            print(total_open_ports)
+            name, description, input_sel_ports, output_sel_ports = dialog.get_inputs()
+            print(input_sel_ports + output_sel_ports)
+            return
             self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name, CustomNodeDef(subgraph_querier, inp_node_id, out_node_id, total_open_ports, description=description)))
 
     def identify_selected_items(self):
