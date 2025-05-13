@@ -915,7 +915,7 @@ class RegisterCustomNodeCmd(QUndoCommand):
             print("Error: custom node definition with same name already exists.")
 
 class RandomiseNodesCmd(QUndoCommand):
-    def __init__(self, scene, node_ids, description="Randomise node"):
+    def __init__(self, scene, node_ids, description="Randomise node(s)"):
         super().__init__(description)
         self.scene = scene
         self.node_graph: NodeGraph = scene.node_graph
@@ -1222,7 +1222,7 @@ class PipelineScene(QGraphicsScene):
         # Update affected nodes in topological order
         for affected_node_id in self.node_graph.get_topo_order_subgraph(affected_node_ids):
             affected_node_item = self.node_items[affected_node_id]
-            affected_node_item.update_vis_image()
+            affected_node_item.update_visualisations()
 
     def clear_scene(self):
         node_ids = list(self.node_items.keys())

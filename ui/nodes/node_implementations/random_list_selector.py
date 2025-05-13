@@ -34,6 +34,8 @@ class RandomListSelectorNode(UnitNode):
     def compute(self):
         val_list = self._prop_val('list', get_refs=True)
         if not val_list:
+            # Update output port type
+            self.get_port_defs()[(PortIO.OUTPUT, '_main')].port_type = PortType()
             return
         ref_id, values = val_list
         # Update output port type
