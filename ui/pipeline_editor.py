@@ -924,13 +924,13 @@ class RandomiseNodesCmd(QUndoCommand):
 
     def undo(self):
         for node_id, prev_seed in self.prev_actual_seeds.items():
-            self.node_graph.node(node_id).set_property('_actual_seed', prev_seed)
+            self.node_graph.node(node_id).set_actual_seed(prev_seed)
             self.scene.node_items[node_id].update_visualisations()
 
     def redo(self):
         for node_id in self.node_ids:
             node = self.node_graph.node(node_id)
-            self.prev_actual_seeds[node_id] = node.get_property('_actual_seed')
+            self.prev_actual_seeds[node_id] = node.get_actual_seed()
             node.randomise()
             self.scene.node_items[node_id].update_visualisations()
 

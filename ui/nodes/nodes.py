@@ -204,6 +204,8 @@ class CustomNode(Node):
     def visualise(self):
         return self.vis_node.visualise()
 
+    # Functions needed for randomisable node
+
     @property
     def randomisable(self):
         return self._randomisable
@@ -211,3 +213,10 @@ class CustomNode(Node):
     def randomise(self):
         for node in self.randomisable_nodes:
             node.randomise()
+
+    def get_actual_seed(self):
+        return [node.get_actual_seed() for node in self.randomisable_nodes]
+
+    def set_actual_seed(self, values):
+        for i, v in enumerate(values):
+            self.randomisable_nodes[i].set_actual_seed(v)

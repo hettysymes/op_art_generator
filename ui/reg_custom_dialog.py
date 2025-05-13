@@ -41,7 +41,7 @@ class PortSelectionTree(QWidget):
             for port_id, port_name in filtered_ports.items():
                 port_item = QTreeWidgetItem([port_name])
                 port_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-                port_item.setCheckState(0, Qt.Unchecked)
+                port_item.setCheckState(0, Qt.Checked)
 
                 # Store actual data
                 port_item.setData(0, Qt.UserRole, (node_id, port_id))
@@ -49,7 +49,7 @@ class PortSelectionTree(QWidget):
                 node_item.addChild(port_item)
                 self.check_items[(node_id, port_id)] = port_item
 
-            node_item.setExpanded(False)
+            node_item.setExpanded(True)
 
         layout.addWidget(self.tree)
         self.setLayout(layout)
