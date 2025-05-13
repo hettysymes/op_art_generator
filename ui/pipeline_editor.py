@@ -1592,15 +1592,18 @@ class PipelineEditor(QMainWindow):
         new_id_to_info = {}
         for new_id in new_ids_topo_order:
             node = subgraph_querier.node(new_id)
+            unconnected_ports = subgraph_querier.unconnected_ports(new_id)
             base_name = node.base_node_name
             # Get port id (io, port_key) mapped to port display name
             port_map = {}
             ports_open = node_states[new_id].ports_open
             port_defs = node.get_port_defs()
             for port_id in ports_open:
-                port_map[port_id] = port_defs[port_id].display_name
-            # Add base name and port map to new_id_to_info
-            new_id_to_info[new_id] = (base_name, port_map)
+                if port_id in unconnected_ports:
+                    port_map[port_id] = port_defs[port_id].display_name
+            if port_map:
+                # Add base name and port map to new_id_to_info
+                new_id_to_info[new_id] = (base_name, port_map)
         new_to_old_id_map = {v: k for k, v in old_to_new_id_map.items()}
         old_id_to_info = {new_to_old_id_map[k]: v for k,v in new_id_to_info.items()}
         # Get node information from user
