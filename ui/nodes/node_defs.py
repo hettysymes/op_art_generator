@@ -192,6 +192,10 @@ class Node(BaseNode, ABC):
     def base_node_name(self):
         return self.name()
 
+    @property
+    def randomisable(self):
+        return False
+
     # Functions to implement
 
     @property

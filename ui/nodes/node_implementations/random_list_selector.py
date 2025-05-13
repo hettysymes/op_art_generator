@@ -34,6 +34,8 @@ class RandomListSelectorNode(UnitNode):
     def compute(self):
         val_list = self._prop_val('list', get_refs=True)
         if not val_list:
+            # Update output port type
+            self.get_port_defs()[(PortIO.OUTPUT, '_main')].port_type = PortType()
             return
         ref_id, values = val_list
         # Update output port type
@@ -44,7 +46,22 @@ class RandomListSelectorNode(UnitNode):
         if self._prop_val('use_seed'):
             rng = random.Random(self._prop_val('user_seed'))
         else:
-            if not self._prop_val('_actual_seed'):
+            if self._prop_val('_actual_seed') is None:
                 self.prop_vals['_actual_seed'] = random.random()
             rng = random.Random(self._prop_val('_actual_seed'))
         self.set_compute_result(rng.choice(values))
+
+    # Functions needed for randomisable node # TODO make into interface
+
+    def randomise(self):
+        self.set_property('_actual_seed', None)
+
+    def get_actual_seed(self):
+        return self._prop_val('_actual_seed')
+
+    def set_actual_seed(self, value):
+        self.set_property('_actual_seed', value)
+
+    @property
+    def randomisable(self):
+        return True

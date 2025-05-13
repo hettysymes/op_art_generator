@@ -7,10 +7,10 @@ import tempfile
 from collections import defaultdict
 from functools import partial
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData, QSize
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QKeySequence, \
-    QFontMetrics
+    QFontMetrics, QIcon
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack, QUndoCommand, QGraphicsProxyWidget)
@@ -23,6 +23,7 @@ from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.element_drawer import ElementDrawer
+from ui.nodes.node_implementations.random_list_selector import RandomListSelectorNode
 from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
 from ui.nodes.port_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
 from ui.reg_custom_dialog import RegCustomDialog
@@ -124,9 +125,9 @@ class NodeItem(QGraphicsRectItem):
         self.setBrush(QBrush(QColor(220, 230, 250)))
         self.setPen(QPen(Qt.black, 2))
 
-        if node.prop_entries_is_empty():
-            self._property_button = None
-        else:
+        # Add property button
+        self._property_button = None
+        if not node.prop_entries_is_empty():
             self._property_button = QPushButton("P")
             self._property_button.setFixedSize(20, 20)
             self._property_button.setStyleSheet("""
@@ -145,6 +146,31 @@ class NodeItem(QGraphicsRectItem):
             self._property_proxy.setWidget(self._property_button)
             self._property_proxy.setZValue(101)
             self._property_button.setToolTip("Edit node properties")
+
+        # Add randomise button
+        self._randomise_button = None
+        if node.randomisable:
+            self._randomise_button = QPushButton("↺")
+            self._randomise_button.setFixedSize(20, 20)
+            self._randomise_button.setToolTip("Randomise selection")
+            self._randomise_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #f0f0f0;
+                    border: 1px solid #646464;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #cccccc;
+                }
+            """)
+            self._randomise_button.clicked.connect(lambda: self.scene().undo_stack.push(RandomiseNodesCmd(self.scene(), {self.node_state.node_id})))
+
+            # Proxy
+            self._randomise_proxy = QGraphicsProxyWidget(self)
+            self._randomise_proxy.setWidget(self._randomise_button)
+            self._randomise_proxy.setZValue(101)
+
         self._help_icon_rect = QRectF()
         self._help_hover_timer = QTimer()
         self._help_hover_timer.setSingleShot(True)
@@ -286,13 +312,6 @@ class NodeItem(QGraphicsRectItem):
 
     def visualise(self):
         return self.node().safe_visualise()
-
-    # def get_svg_path(self):
-    #     wh_ratio = self.backend.svg_width / self.backend.svg_height if self.backend.svg_height > 0 else 1
-    #     # svg_path, exception = self.update_node().get_svg_path(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
-    #     compute = self.update_node().safe_visualise(self.scene().temp_dir, self.backend.svg_height, wh_ratio)
-    #     # return svg_path
-    #     return
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
@@ -486,12 +505,16 @@ class NodeItem(QGraphicsRectItem):
 
         # Store the help icon rect for hit testing in hover events
         self._help_icon_rect = help_rect
+        x_offset = self.rect().right() - 25  # Right edge - 20px width - 5px padding
+
+        # If property button exists, place it rightmost
         if self._property_button:
-            property_button_pos = QPointF(
-                self.rect().right() - 25,  # Button width (20) + 5px spacing
-                self.rect().top() + 5
-            )
-            self._property_proxy.setPos(property_button_pos)
+            self._property_proxy.setPos(QPointF(x_offset, self.rect().top() + 5))
+            x_offset -= 25  # Move left for next button
+
+        # If randomise button exists, place it to the left of property or take its place
+        if self._randomise_button:
+            self._randomise_proxy.setPos(QPointF(x_offset, self.rect().top() + 5))
 
         # Draw port labels if there are multiple
         painter.setFont(NodeItem.LABEL_FONT)
@@ -578,10 +601,7 @@ class NodeItem(QGraphicsRectItem):
         self.scene().node_graph.remove_node(self.node_state.node_id)
         del self.scene().node_items[self.node_state.node_id] # Remove reference to item
         self.scene().removeItem(self)
-#
-#     def create_separated_inputs_copy(self):
-#         self.scene().undo_stack.push(SeparateFromInputsCmd(self.scene(), (self.pos().x(), self.pos().y()), self.node))
-#
+
 class PortItem(QGraphicsPathItem):
     """Represents connection points on nodes with shapes based on port_type"""
 
@@ -749,48 +769,7 @@ class AddNewNodeCmd(QUndoCommand):
                                        pos=(self.pos.x(), self.pos.y()),
                                        svg_size=(150, 150)) # TODO: save as constant somewhere
         self.scene.add_node(self.node_state)
-#
-# class SeparateFromInputsCmd(QUndoCommand):
-#     def __init__(self, pipeline_scene, pos, node: Node, description="Separate Node From Inputs"):
-#         super().__init__(description)
-#         self.pipeline_scene = pipeline_scene
-#         self.scene: Scene = pipeline_scene.scene
-#         self.pos = pos
-#         self.node = node
-#         self.node_item = None
-#         self.output_port_ids = []
-#
-#     def undo(self):
-#         assert self.node_item
-#         self.pipeline_scene.delete_node(self.node_item)
-#
-#     def redo(self):
-#         new_id = gen_uid()
-#         new_node = copy.deepcopy(self.node)
-#         new_node.node_id = new_id
-#         node_item = NodeItem(
-#             NodeState(new_id, self.pos[0] + 10, self.pos[1] + 10, [], [], new_node, 150, 150, ignore_inputs=True))
-#         # Create output ports (right side)
-#         output_count = len(new_node.out_port_defs())
-#         output_ids_len = len(self.output_port_ids)
-#         for i, port_def in enumerate(new_node.out_port_defs()):
-#             y_offset = (i + 1) * node_item.rect().height() / (output_count + 1)
-#             state_id = gen_uid() if i >= output_ids_len else self.output_port_ids[i]
-#             output_port = PortItem(PortState(state_id,
-#                                              node_item.rect().width() + 10, y_offset,
-#                                              node_item.uid,
-#                                              False,
-#                                              [], port_def), node_item)
-#             node_item.backend.output_port_ids.append(state_id)
-#             self.scene.add(output_port)
-#         # Add node to scene
-#         self.scene.add(node_item)
-#         self.pipeline_scene.addItem(node_item)
-#         node_item.update_label_containers()
-#         node_item.update_vis_image()
-#         self.node_item = node_item
-#         self.output_port_ids = node_item.backend.output_port_ids
-#
+
 class AddNewEdgeCmd(QUndoCommand):
     def __init__(self, scene, src_conn_id, dst_conn_id, description="Add new edge"):
         super().__init__(description)
@@ -934,6 +913,26 @@ class RegisterCustomNodeCmd(QUndoCommand):
             self.scene.custom_node_defs[self.name] = self.custom_node_def
         else:
             print("Error: custom node definition with same name already exists.")
+
+class RandomiseNodesCmd(QUndoCommand):
+    def __init__(self, scene, node_ids, description="Randomise node(s)"):
+        super().__init__(description)
+        self.scene = scene
+        self.node_graph: NodeGraph = scene.node_graph
+        self.node_ids = node_ids # Assumes these nodes are randomisable
+        self.prev_actual_seeds = {}
+
+    def undo(self):
+        for node_id, prev_seed in self.prev_actual_seeds.items():
+            self.node_graph.node(node_id).set_actual_seed(prev_seed)
+            self.scene.node_items[node_id].update_visualisations()
+
+    def redo(self):
+        for node_id in self.node_ids:
+            node = self.node_graph.node(node_id)
+            self.prev_actual_seeds[node_id] = node.get_actual_seed()
+            node.randomise()
+            self.scene.node_items[node_id].update_visualisations()
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -1108,11 +1107,6 @@ class PipelineScene(QGraphicsScene):
                     submenu.addAction(change_action)
                 menu.addMenu(submenu)
 
-            # if isinstance(clicked_item.node, RandomColourSelectorNode):
-            #     randomise_action = QAction("Randomise", menu)
-            #     randomise_action.triggered.connect(lambda: self.randomise(clicked_item))
-            #     menu.addAction(randomise_action)
-
             menu.exec_(event.screenPos())
         else:
             menu = QMenu()
@@ -1228,7 +1222,7 @@ class PipelineScene(QGraphicsScene):
         # Update affected nodes in topological order
         for affected_node_id in self.node_graph.get_topo_order_subgraph(affected_node_ids):
             affected_node_item = self.node_items[affected_node_id]
-            affected_node_item.update_vis_image()
+            affected_node_item.update_visualisations()
 
     def clear_scene(self):
         node_ids = list(self.node_items.keys())
@@ -1260,15 +1254,7 @@ class PipelineScene(QGraphicsScene):
 
     def extract_element(self, node_item, port_id):
         self.undo_stack.push(ExtractElementCmd(node_item, port_id))
-#
-#     def randomise(self, clicked_item: RandomColourSelectorNode):
-#         clicked_item.node.prop_vals['_actual_seed'] = random.random()
-#         clicked_item.update_visualisations()
-#
-#     def separate_from_inputs_action(self, clicked_item: NodeItem):
-#         clicked_item.create_separated_inputs_copy()
-#
-#
+
 class PipelineView(QGraphicsView):
     """View to interact with the pipeline scene"""
 
@@ -1490,6 +1476,11 @@ class PipelineEditor(QMainWindow):
         select_all.triggered.connect(self.select_all)
         select_all.setMenuRole(QAction.NoRole)
         scene_menu.addAction(select_all)
+
+        randomise = QAction("Randomise Selected Nodes", self)
+        randomise.setShortcut("Ctrl+R")
+        randomise.triggered.connect(self.randomise_selected)
+        scene_menu.addAction(randomise)
 
         create_custom = QAction("Group Nodes to Custom Node", self)
         create_custom.setShortcut("Ctrl+G")
@@ -1737,6 +1728,15 @@ class PipelineEditor(QMainWindow):
                 node_state.pos = (node_state.pos[0] + offset.x(), node_state.pos[1] + offset.y())
             # Perform paste
             self.scene.undo_stack.push(PasteCmd(self.scene, node_states, nodes.values(), connections, port_refs))
+
+    def randomise_selected(self):
+        randomisable_ids = set()
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                node = self.scene.node_graph.node(item.node_state.node_id)
+                if node.randomisable:
+                    randomisable_ids.add(node.uid)
+        self.scene.undo_stack.push(RandomiseNodesCmd(self.scene, randomisable_ids))
 
 
 if __name__ == "__main__":

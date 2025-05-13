@@ -144,6 +144,8 @@ class CustomNode(Node):
         description = custom_node_def.description or "(No help provided)"
         # Perform set up
         self.node_topo_order = self.subgraph.get_topo_order_subgraph()
+        self.randomisable_nodes = [node for node in self.subgraph.node_map.values() if node.randomisable]
+        self._randomisable = bool(self.randomisable_nodes)
         port_defs = {}
         for node_id, port_ids in self.selected_ports.items():
             node_port_defs = self.subgraph.node(node_id).get_port_defs()
@@ -201,3 +203,20 @@ class CustomNode(Node):
 
     def visualise(self):
         return self.vis_node.visualise()
+
+    # Functions needed for randomisable node
+
+    @property
+    def randomisable(self):
+        return self._randomisable
+
+    def randomise(self):
+        for node in self.randomisable_nodes:
+            node.randomise()
+
+    def get_actual_seed(self):
+        return [node.get_actual_seed() for node in self.randomisable_nodes]
+
+    def set_actual_seed(self, values):
+        for i, v in enumerate(values):
+            self.randomisable_nodes[i].set_actual_seed(v)

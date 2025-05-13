@@ -4,7 +4,7 @@ from enum import Enum, auto
 class PortType:
 
     def is_compatible_with(self, dest_type):
-        return False
+        return True
 
 
 # List
