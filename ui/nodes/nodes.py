@@ -190,7 +190,9 @@ class CustomNode(Node):
         # Compute nodes in the subgraph
         self._replace_input_nodes()
         for node_id in self.node_topo_order:
-            self.subgraph.node(node_id).compute()
+            node = self.subgraph.node(node_id)
+            node.clear_compute_results()
+            node.final_compute()
         # Get and set compute results
         self.compute_results = {}
         for node_id, port_ids in self.selected_ports.items():
