@@ -192,16 +192,14 @@ class CustomNode(Node):
         # Compute nodes in the subgraph
         self._replace_input_nodes()
         if self.randomisable:
-            if self.get_actual_seed() is None:
-                self.set_actual_seed(random.random())
-            rng = random.Random(self.get_actual_seed())
+            rng = random.Random(self.get_seed())
             seeds = [rng.random() for _ in range(len(self.randomisable_nodes_ids))]
         seed_i = 0
         for node_id in self.node_topo_order:
             node = self.subgraph.node(node_id)
             # Set random seed if appropriate
             if node_id in self.randomisable_nodes_ids:
-                node.set_actual_seed(seeds[seed_i])
+                node.randomise(seeds[seed_i])
                 seed_i += 1
             node.clear_compute_results()
             node.final_compute()
@@ -224,11 +222,10 @@ class CustomNode(Node):
     def randomisable(self):
         return self._randomisable
 
-    def randomise(self):
-        self._actual_seed = None
+    def randomise(self, seed=None):
+        self._actual_seed = seed
 
-    def get_actual_seed(self):
+    def get_seed(self):
+        if self._actual_seed is None:
+            self._actual_seed = random.random()
         return self._actual_seed
-
-    def set_actual_seed(self, value):
-        self._actual_seed = value

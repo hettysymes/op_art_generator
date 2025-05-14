@@ -920,17 +920,17 @@ class RandomiseNodesCmd(QUndoCommand):
         self.scene = scene
         self.node_graph: NodeGraph = scene.node_graph
         self.node_ids = node_ids # Assumes these nodes are randomisable
-        self.prev_actual_seeds = {}
+        self.prev_seeds = {}
 
     def undo(self):
-        for node_id, prev_seed in self.prev_actual_seeds.items():
-            self.node_graph.node(node_id).set_actual_seed(prev_seed)
+        for node_id, prev_seed in self.prev_seeds.items():
+            self.node_graph.node(node_id).randomise(prev_seed)
             self.scene.node_items[node_id].update_visualisations()
 
     def redo(self):
         for node_id in self.node_ids:
             node = self.node_graph.node(node_id)
-            self.prev_actual_seeds[node_id] = node.get_actual_seed()
+            self.prev_seeds[node_id] = node.get_seed()
             node.randomise()
             self.scene.node_items[node_id].update_visualisations()
 

@@ -57,23 +57,20 @@ class RandomListSelectorNode(UnitNode):
         if self._prop_val('use_seed'):
             rng = random.Random(self._prop_val('user_seed'))
         else:
-            if self.get_actual_seed() is None:
-                self.set_actual_seed(random.random())
-            rng = random.Random(self.get_actual_seed())
+            rng = random.Random(self.get_seed())
 
         # Set compute result
         self.set_compute_result(rng.choice(values))
 
     # Functions needed for randomisable node # TODO make into interface
 
-    def randomise(self):
-        self.set_property('_actual_seed', None)
+    def randomise(self, seed=None):
+        self.set_property('_actual_seed', seed)
 
-    def get_actual_seed(self):
+    def get_seed(self):
+        if self._prop_val('_actual_seed') is None:
+            self.set_property('_actual_seed', random.random())
         return self._prop_val('_actual_seed')
-
-    def set_actual_seed(self, value):
-        self.set_property('_actual_seed', value)
 
     @property
     def randomisable(self):

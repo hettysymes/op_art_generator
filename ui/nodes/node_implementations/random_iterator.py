@@ -49,16 +49,14 @@ class RandomIteratorNode(UnitNode):
             return
 
         # Get random seeds
-        if self.get_actual_seed() is None:
-            self.set_actual_seed(random.random())
-        rng = random.Random(self.get_actual_seed())
+        rng = random.Random(self.get_seed())
         seeds = [rng.random() for _ in range(num_iterations)]
 
         # Calculate and set random compute result
         outputs = []
         for seed in seeds:
             random_node = copy.deepcopy(src_node)
-            random_node.set_actual_seed(seed)
+            random_node.randomise(seed)
             random_node.clear_compute_results()
             random_node.final_compute()
             outputs.append(random_node.get_compute_result(port_ref.port_key))
@@ -66,14 +64,13 @@ class RandomIteratorNode(UnitNode):
 
     # Functions needed for randomisable node # TODO make into interface
 
-    def randomise(self):
-        self.set_property('_actual_seed', None)
+    def randomise(self, seed=None):
+        self.set_property('_actual_seed', seed)
 
-    def get_actual_seed(self):
+    def get_seed(self):
+        if self._prop_val('_actual_seed') is None:
+            self.set_property('_actual_seed', random.random())
         return self._prop_val('_actual_seed')
-
-    def set_actual_seed(self, value):
-        self.set_property('_actual_seed', value)
 
     @property
     def randomisable(self):
