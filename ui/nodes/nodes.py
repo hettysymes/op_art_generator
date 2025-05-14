@@ -1,4 +1,5 @@
 import copy
+import random
 from abc import ABC, abstractmethod
 
 from ui.id_generator import gen_uid
@@ -144,8 +145,9 @@ class CustomNode(Node):
         description = custom_node_def.description or "(No help provided)"
         # Perform set up
         self.node_topo_order = self.subgraph.get_topo_order_subgraph()
-        self.randomisable_nodes = [node for node in self.subgraph.node_map.values() if node.randomisable]
-        self._randomisable = bool(self.randomisable_nodes)
+        self.randomisable_nodes_ids = [node_id for node_id, node in self.subgraph.node_map.items() if node.randomisable]
+        self._randomisable = bool(self.randomisable_nodes_ids)
+        self._actual_seed = None
         port_defs = {}
         for node_id, port_ids in self.selected_ports.items():
             node_port_defs = self.subgraph.node(node_id).get_port_defs()
@@ -189,8 +191,18 @@ class CustomNode(Node):
     def compute(self):
         # Compute nodes in the subgraph
         self._replace_input_nodes()
+        if self.randomisable:
+            if self.get_actual_seed() is None:
+                self.set_actual_seed(random.random())
+            rng = random.Random(self.get_actual_seed())
+            seeds = [rng.random() for _ in range(len(self.randomisable_nodes_ids))]
+        seed_i = 0
         for node_id in self.node_topo_order:
             node = self.subgraph.node(node_id)
+            # Set random seed if appropriate
+            if node_id in self.randomisable_nodes_ids:
+                node.set_actual_seed(seeds[seed_i])
+                seed_i += 1
             node.clear_compute_results()
             node.final_compute()
         # Get and set compute results
@@ -213,12 +225,10 @@ class CustomNode(Node):
         return self._randomisable
 
     def randomise(self):
-        for node in self.randomisable_nodes:
-            node.randomise()
+        self._actual_seed = None
 
     def get_actual_seed(self):
-        return [node.get_actual_seed() for node in self.randomisable_nodes]
+        return self._actual_seed
 
-    def set_actual_seed(self, values):
-        for i, v in enumerate(values):
-            self.randomisable_nodes[i].set_actual_seed(v)
+    def set_actual_seed(self, value):
+        self._actual_seed = value

@@ -12,6 +12,7 @@ from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.iterator import IteratorNode
 from ui.nodes.node_implementations.overlay import OverlayNode
 from ui.nodes.node_implementations.port_forwarder import PortForwarderNode
+from ui.nodes.node_implementations.random_iterator import RandomIteratorNode
 from ui.nodes.node_implementations.random_list_selector import RandomListSelectorNode
 from ui.nodes.node_implementations.shape import ShapeNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
@@ -43,7 +44,8 @@ node_settings = [
     (ColourNode, NodeSettings()),
     (RandomListSelectorNode, NodeSettings()),
     (DrawingGroupNode, NodeSettings()),
-    (PortForwarderNode, NodeSettings())
+    (PortForwarderNode, NodeSettings()),
+    (RandomIteratorNode, NodeSettings())
 ]
 
 

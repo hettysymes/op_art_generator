@@ -4,7 +4,7 @@ from ui.nodes.nodes import UnitNode
 from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_ElemRefTable, PropEntry, PortType
 from ui.nodes.shape_datatypes import Group
 
-DEF_PORT_FORWARDER = NodeInfo(
+DEF_PORT_FORWARDER_INFO = NodeInfo(
     description="Forward a port to multiple ports. Useful when making custom nodes.",
     port_defs={
         (PortIO.INPUT, 'input'): PortDef("Input", PortType()),
@@ -15,7 +15,7 @@ DEF_PORT_FORWARDER = NodeInfo(
 
 class PortForwarderNode(UnitNode):
     NAME = "Port Forwarder"
-    DEFAULT_NODE_INFO = DEF_PORT_FORWARDER
+    DEFAULT_NODE_INFO = DEF_PORT_FORWARDER_INFO
 
     def compute(self):
         inp_key = 'input'
