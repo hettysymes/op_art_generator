@@ -21,10 +21,13 @@ class PT_List(PortType):
         self.item_type = item_type or PortType()
         self.input_multiple = input_multiple
 
-    def is_compatible_with(self, dest_type) -> bool:
+    def is_compatible_with(self, dest_type):
         if isinstance(dest_type, PT_List):
             # List-to-list: inner types must be compatible
             return self.item_type.is_compatible_with(dest_type.item_type)
+        elif type(dest_type) is PortType:
+            # Compatible with the most general PortType only (not subclasses)
+            return True
         return False
 
 
