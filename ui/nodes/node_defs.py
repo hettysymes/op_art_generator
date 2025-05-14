@@ -2,6 +2,7 @@ import traceback
 from abc import ABC, abstractmethod
 
 from ui.id_generator import shorten_uid
+from ui.nodes.node_implementations.port_ref_table_handler import flatten_list
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.port_defs import PortIO, PT_Scalar, PT_Hidden, PT_List
@@ -153,16 +154,30 @@ class Node(BaseNode, ABC):
     def _prop_val(self, prop_key, get_refs=False):
         if prop_key in self._active_input_ports():
             # Property given by port
-            prop_node_vals = self._port_input(prop_key, get_refs)
+            prop_node_vals = self._port_input(prop_key, get_refs=True)
             # Get port type
             port_type = self.port_defs_filter_by_io(PortIO.INPUT)[prop_key].port_type
-            if isinstance(port_type, PT_Scalar):
-                return prop_node_vals[0]
-            else:
-                assert isinstance(port_type, PT_List)
-                if not port_type.input_multiple:
-                    return prop_node_vals[0]
-                return dict(prop_node_vals) if get_refs else prop_node_vals
+
+            if isinstance(port_type, PT_Scalar) or (isinstance(port_type, PT_List) and not port_type.input_multiple):
+                return prop_node_vals[0] if get_refs else prop_node_vals[0][1]
+            elif isinstance(port_type, PT_List) and port_type.input_multiple:
+                flattened_props = {}
+                # Get source port types
+                for ref_id, value in prop_node_vals:
+                    src_port_type = self._port_ref(prop_key, ref_id).port_def.port_type
+                    i = 0
+                    if isinstance(src_port_type, PT_List):
+                        if src_port_type.is_compatible_with(port_type.item_type):
+                            # Port types are directly compatible
+                            flattened_props[ref_id] = value
+                        else:
+                            # Flatten list
+                            flattened_value = flatten_list(value)
+                            flattened_props[(ref_id, i)] = flattened_value
+                            i += 1
+                    else:
+                        flattened_props[ref_id] = value
+                return flattened_props if get_refs else list(flattened_props.values())
         # No overriding from port, default to stored property value entry
         return self.prop_vals.get(prop_key)
 

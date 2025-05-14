@@ -931,7 +931,7 @@ class RandomiseNodesCmd(QUndoCommand):
         for node_id in self.node_ids:
             node = self.node_graph.node(node_id)
             self.prev_seeds[node_id] = node.get_seed()
-            node.randomise()
+            node.randomise() # TODO: store new seed for redo
             self.scene.node_items[node_id].update_visualisations()
 
 class PipelineScene(QGraphicsScene):
@@ -1091,7 +1091,12 @@ class PipelineScene(QGraphicsScene):
 
         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
-        if isinstance(clicked_item, NodeItem):
+        if isinstance(clicked_item, PortItem):
+            # Print type for debugging
+            node_id = clicked_item.parentItem().node_state.node_id
+            print(f"Node #{shorten_uid(node_id)} ({PortIO.INPUT if clicked_item.is_input else PortIO.OUTPUT}, {clicked_item.port_key}): {repr(clicked_item.port_type())}")
+
+        elif isinstance(clicked_item, NodeItem):
             # Context menu for nodes
             menu = QMenu()
             # separate_from_inputs_action = QAction("Separate from inputs", menu)

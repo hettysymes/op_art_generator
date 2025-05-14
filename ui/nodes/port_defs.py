@@ -14,6 +14,9 @@ class PortType:
     def is_compatible_with(self, dest_type):
         return True
 
+    def __repr__(self):
+        return self.__class__.__name__
+
 
 # List
 class PT_List(PortType):
@@ -24,11 +27,19 @@ class PT_List(PortType):
     def is_compatible_with(self, dest_type):
         if isinstance(dest_type, PT_List):
             # List-to-list: inner types must be compatible
-            return self.item_type.is_compatible_with(dest_type.item_type)
+            direct_compatible = self.item_type.is_compatible_with(dest_type.item_type)
+            # Compare flattened list if destination allows multiple inputs
+            split_compatible = False
+            if dest_type.input_multiple:
+                split_compatible = self.item_type.is_compatible_with(dest_type)
+            return direct_compatible or split_compatible
         elif type(dest_type) is PortType:
             # Compatible with the most general PortType only (not subclasses)
             return True
         return False
+
+    def __repr__(self):
+        return f"List({repr(self.item_type)})"
 
 
 # Scalar
