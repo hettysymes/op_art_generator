@@ -4,7 +4,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyledItemDelegate, QHBoxLayout, QPushButton
 
-from ui.id_generator import shorten_uid
 from ui.nodes.port_defs import PortRefTableEntry
 from ui.reorderable_table_widget import ReorderableTableWidget
 
@@ -129,5 +128,5 @@ class PortRefTableWidget(QWidget):
     @staticmethod
     def default_text_callback(port_ref, table_entry):
         if port_ref:
-            return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})"
+            return f"{port_ref.base_node_name} (id: {port_ref.node_id})"
         return ""

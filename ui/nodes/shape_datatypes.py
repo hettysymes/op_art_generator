@@ -1,7 +1,7 @@
 import math
+import uuid
 from abc import ABC, abstractmethod
 
-from ui.id_generator import gen_uid, shorten_uid
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.port_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
@@ -10,7 +10,7 @@ from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 class Element(ABC):
 
     def __init__(self, debug_info=None, uid=None):
-        self.uid = uid if uid else gen_uid()
+        self.uid = uid if uid else str(uuid.uuid4())
         self.debug_info = debug_info
 
     @abstractmethod
@@ -111,7 +111,7 @@ class Group(Element):
 
     def __repr__(self):
         debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""
-        result = f"Group (#{shorten_uid(self.uid)}) [{repr(self.transform_list)}] {debug_str} {{\n"
+        result = f"Group ({self.uid}) [{repr(self.transform_list)}] {debug_str} {{\n"
         for elem in self.elements:
             # Get multiline representation and indent each line
             lines = repr(elem).splitlines()
@@ -145,7 +145,7 @@ class Shape(Element, ABC):
         return PT_Shape()
 
     def __repr__(self):
-        return f"Shape (#{shorten_uid(self.uid)}) {self.__class__.__name__.upper()}"
+        return f"Shape ({self.uid}) {self.__class__.__name__.upper()}"
 
 
 class Polyline(Shape):

@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QTableWidgetItem, Q
     QGroupBox, QLabel, QLineEdit
 
 from ui.colour_prop_widget import ColorPropertyWidget
-from ui.id_generator import shorten_uid
 from ui.nodes.elem_ref import ElemRef
 from ui.nodes.port_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
     LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry
@@ -307,7 +306,7 @@ class NodePropertiesDialog(QDialog):
                     start_x, start_y = points[0]
                     stop_x, stop_y = points[-1]
                     arrow = '←' if table_entry.reversed() else '→'
-                    return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
+                    return f"{port_ref.base_node_name} (id: {port_ref.node_id})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
                 x, y = table_entry
                 return f"({x:.2f}, {y:.2f})"
 

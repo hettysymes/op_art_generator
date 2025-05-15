@@ -1,6 +1,8 @@
 from collections import defaultdict, deque
+from typing import Optional
 
-from ui.id_generator import gen_uid, shorten_uid
+from ui.app_state import NodeId
+from ui.id_datatypes import gen_node_id
 from ui.nodes.node_defs import GraphQuerier, PortRef
 from ui.nodes.port_defs import PortType, PortIO
 
@@ -20,8 +22,8 @@ class NodeGraph(GraphQuerier):
             node.clear_compute_results()
         return self
 
-    def add_new_node(self, node_class, add_info=None, node_id=None):
-        uid = node_id or gen_uid()
+    def add_new_node(self, node_class, add_info=None, node_id: Optional[NodeId] =None):
+        uid: NodeId = node_id or gen_node_id()
         self.node_map[uid] = node_class(uid, self, add_info=add_info)
         return uid
 

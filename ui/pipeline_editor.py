@@ -17,8 +17,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 
-from ui.app_state import NodeState, AppState, CustomNodeDef
-from ui.id_generator import shorten_uid, gen_uid
+from ui.app_state import NodeState, AppState, CustomNodeDef, NodeId
 from ui.node_graph import NodeGraph
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
@@ -468,7 +467,7 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(QFont("Arial", 8))
         painter.setPen(QColor("grey"))
         id_rect = self.rect().adjusted(10, 10, 0, 0)  # Shift the top edge down
-        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: #{shorten_uid(self.node_state.node_id)}")
+        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: {self.node_state.node_id}")
 
         # Draw node title
         title_font = QFont("Arial", 10)
@@ -937,7 +936,7 @@ class RandomiseNodesCmd(QUndoCommand):
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
 
-    def __init__(self, temp_dir, node_graph=None, parent=None):
+    def __init__(self, temp_dir: str, parent=None):
         super().__init__(parent)
         self.setSceneRect(-100000, -100000, 200000, 200000)
         self.skip_next_context_menu = False
@@ -950,8 +949,8 @@ class PipelineScene(QGraphicsScene):
         self.dest_port = None
 
         self.node_items = {}
-        self.custom_node_defs = {}
-        self.node_graph = node_graph if node_graph else NodeGraph()
+        self.custom_node_defs: dict[str, CustomNodeDef] = {}
+        self._node_graph: NodeGraph = NodeGraph()
 
         self.temp_dir = temp_dir
         print(temp_dir)
@@ -961,6 +960,10 @@ class PipelineScene(QGraphicsScene):
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
+
+    @property
+    def node_graph(self) -> NodeGraph:
+        return self._node_graph
 
     def view(self):
         return self.views()[0]
@@ -1094,7 +1097,7 @@ class PipelineScene(QGraphicsScene):
         if isinstance(clicked_item, PortItem):
             # Print type for debugging
             node_id = clicked_item.parentItem().node_state.node_id
-            print(f"Node #{shorten_uid(node_id)} ({PortIO.INPUT if clicked_item.is_input else PortIO.OUTPUT}, {clicked_item.port_key}): {repr(clicked_item.port_type())}")
+            print(f"Node {node_id} ({PortIO.INPUT if clicked_item.is_input else PortIO.OUTPUT}, {clicked_item.port_key}): {repr(clicked_item.port_type())}")
 
         elif isinstance(clicked_item, NodeItem):
             # Context menu for nodes
@@ -1670,7 +1673,7 @@ class PipelineEditor(QMainWindow):
         new_node_states = {}
         new_nodes = {}
         for node_state in node_states:
-            new_uid = gen_uid()
+            new_uid: NodeId = gen_node_id()
             # Copy node state
             new_node_state = copy.deepcopy(node_state)
             new_node_state.node_id = new_uid

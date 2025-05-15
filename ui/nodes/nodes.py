@@ -2,7 +2,6 @@ import copy
 import random
 from abc import ABC, abstractmethod
 
-from ui.id_generator import gen_uid
 from ui.nodes.node_defs import Node, GraphQuerier, NodeInfo, BaseNode
 from ui.nodes.port_defs import PortIO
 

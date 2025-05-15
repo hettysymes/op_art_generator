@@ -1,7 +1,6 @@
 import traceback
 from abc import ABC, abstractmethod
 
-from ui.id_generator import shorten_uid
 from ui.nodes.node_implementations.port_ref_table_handler import flatten_list
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
@@ -89,7 +88,7 @@ class Node(BaseNode, ABC):
             if e.node_id == self.uid:
                 msg = str(e.message)
             else:
-                msg = f"Error further up pipeline (id #{shorten_uid(e.node_id)})."
+                msg = f"Error further up pipeline (id {e.node_id})."
             vis = ErrorFig(e.title, msg)
         except Exception as e:
             vis = ErrorFig("Unknown Exception", str(e))

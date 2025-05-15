@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import (
     QDialog, QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox
 )
 
-from ui.id_generator import shorten_uid
 from ui.nodes.port_defs import PortIO
 
 
@@ -34,7 +33,7 @@ class PortSelectionTree(QWidget):
             if not filtered_ports:
                 continue
 
-            node_item = QTreeWidgetItem([f"{node_name} (#{shorten_uid(node_id)})"])
+            node_item = QTreeWidgetItem([f"{node_name} ({node_id})"])
             node_item.setFlags(Qt.ItemIsEnabled)
             self.tree.addTopLevelItem(node_item)
 
@@ -99,7 +98,7 @@ class RegCustomDialog(QDialog):
         self.vis_selector = QComboBox()
         vis_selector_label = QLabel("Select visualisation node (your custom node's visualisation will mirror this node):")
         for node_id, (node_name, _) in self.id_to_info.items():
-            self.vis_selector.addItem(f"{node_name} (#{shorten_uid(node_id)})", userData=node_id)
+            self.vis_selector.addItem(f"{node_name} ({node_id})", userData=node_id)
         self.vis_selector.setCurrentIndex(self.vis_selector.count() - 1) # Default to last list item
         vis_selector_layout = QVBoxLayout()
         vis_selector_layout.addWidget(vis_selector_label)
