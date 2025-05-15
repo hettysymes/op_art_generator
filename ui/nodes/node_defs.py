@@ -9,45 +9,6 @@ from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig
 
 
-class PortRef:
-    def __init__(self, node_id, port_key, base_node_name, port_def):
-        self.node_id = node_id
-        self.port_key = port_key
-        self.base_node_name = base_node_name
-        self.port_def = port_def
-
-
-class GraphQuerier(ABC):
-
-    @abstractmethod
-    def node(self, node_id):
-        pass
-
-    @abstractmethod
-    def get_port_ref(self, node_id, port_key, ref_id):
-        pass
-
-    @abstractmethod
-    def active_input_ports(self, node_id):  # Return input port keys connected to a node
-        pass
-
-    @abstractmethod
-    def active_output_ports(self, node_id):  # Return output port keys connected to a node
-        pass
-
-    @abstractmethod
-    def port_input(self, node_id, port_key, get_refs=False):
-        pass
-
-    @abstractmethod
-    def mark_inactive_port_id(self, node_id, port_id):
-        pass
-
-    @abstractmethod
-    def get_topo_order_subgraph(self, subset=None):
-        pass
-
-
 class NodeInfo:
 
     def __init__(self, description, port_defs=None, prop_entries=None):
@@ -142,10 +103,10 @@ class Node(BaseNode, ABC):
 
     # Private functions
     def _active_input_ports(self):
-        return self.graph_querier.active_input_ports(self.uid)
+        return self.graph_querier.active_input_port_keys(self.uid)
 
     def _active_output_ports(self):
-        return self.graph_querier.active_output_ports(self.uid)
+        return self.graph_querier.active_output_port_keys(self.uid)
 
     def _port_input(self, port_key, get_refs=False):
         return self.graph_querier.port_input(self.uid, port_key, get_refs)

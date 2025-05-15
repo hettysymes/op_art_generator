@@ -14,15 +14,31 @@ def gen_node_id() -> NodeId:
     return NodeId(str(uuid.uuid4()))
 
 # Port ID
-type PortKey = str
+type PropKey = str
 @dataclass(frozen=True)
 class PortId:
-    node_id: NodeId
-    port_key: PortKey
+    node: NodeId
+    key: PropKey
     is_input: bool
 
 # Edge ID
 @dataclass(frozen=True)
 class EdgeId:
-    src_port_id: PortId
-    dst_port_id: PortId
+    src_port: PortId
+    dst_port: PortId
+
+    @property
+    def src_node(self) -> NodeId:
+        return self.src_port.node
+
+    @property
+    def dst_node(self) -> NodeId:
+        return self.dst_port.node
+
+    @property
+    def src_key(self) -> PropKey:
+        return self.src_port.key
+
+    @property
+    def dst_key(self) -> PropKey:
+        return self.dst_port.key

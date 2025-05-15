@@ -19,7 +19,7 @@ class PortForwarderNode(UnitNode):
 
     def compute(self):
         inp_key = 'input'
-        input_srcs = self.graph_querier._input_sources(self.uid, inp_key)
+        input_srcs = self.graph_querier.conn_src_ports(self.uid, inp_key)
         if input_srcs:
             # Input node exists, get output type of connected key
             src_node_id, src_port_key = next(iter(input_srcs))
