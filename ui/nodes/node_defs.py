@@ -4,7 +4,6 @@ from typing import Optional
 
 from ui.id_datatypes import PropKey, NodeId, PortId, input_port, EdgeId
 from ui.node_graph import NodeGraph, RefId
-from ui.node_manager import NodeManager
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.prop_defs import PropDef, PropValue, PropType, PT_Scalar, PT_List
@@ -25,7 +24,15 @@ class Node(ABC):
     NAME = ""  # To override
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None):
-        self.internal_props = internal_props
+        self.internal_props: dict[PropKey, PropValue] = self.default_internal_props() if internal_props is None else internal_props
+
+    def default_internal_props(self):
+        default_props: dict[PropKey, PropValue] = {}
+        prop_defs: dict[PropKey, PropDef] = self.prop_defs
+        for key, prop_def in prop_defs.items():
+            if prop_def.default_value:
+                default_props[key] = prop_def.default_value
+        return default_props
 
     def final_compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
         return self.compute(props, refs)
@@ -50,7 +57,7 @@ class Node(ABC):
         return False
 
     @property
-    def description(self):
+    def description(self) -> str:
         return self.node_info.description
 
     @property
@@ -69,7 +76,7 @@ class Node(ABC):
         pass
 
 class RuntimeNode:
-    def __init__(self, uid: NodeId, graph_querier: NodeGraph, node_querier: NodeManager, node: Node):
+    def __init__(self, uid: NodeId, graph_querier: NodeGraph, node_querier, node: Node):
         self.uid = uid
         self.graph_querier = graph_querier
         self.node_querier = node_querier
@@ -138,3 +145,6 @@ class RuntimeNode:
             # We know there will be at most one result, so just return the first one
             return results[0], refs[0]
         return results, refs
+
+    def get_compute_result(self, key: PropKey) -> Optional[PropValue]:
+        return self.compute_results.get(key)

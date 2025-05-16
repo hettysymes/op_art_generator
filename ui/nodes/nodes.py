@@ -1,17 +1,21 @@
 import copy
 import random
 from abc import ABC, abstractmethod
+from typing import Optional
 
-from ui.nodes.node_defs import Node, PrivateNodeInfo
+from ui.id_datatypes import PropKey
+from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs
+from ui.nodes.prop_defs import PropValue
+from ui.vis_types import Visualisable
 
 
 class UnitNode(Node, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
-    def __init__(self, uid, graph_querier, internal_props=None, add_info=None):
+    def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._node_info = self._default_node_info()
-        super().__init__(uid, graph_querier, internal_props)
+        super().__init__(internal_props)
 
     @property
     def node_info(self):
@@ -21,60 +25,51 @@ class UnitNode(Node, ABC):
     def _default_node_info(cls):
         return cls.DEFAULT_NODE_INFO
 
-    # Functions to implement
-    @abstractmethod
-    def compute(self):
-        return
 
-
-class SelectableNode(UnitNode, ABC):
-    NAME = None
-    DEFAULT_NODE_INFO = None
-
-    def __init__(self, uid, graph_querier, internal_props=None, add_info=None):
-        self._node_info = self._default_node_info()
-        self.extracted_port_ids = []
-        super().__init__(uid, graph_querier, internal_props)
-
-    def final_compute(self):
-        self._remove_redundant_ports()
-        self.compute()
-
-    @abstractmethod
-    def compute(self):
-        pass
-
-    @abstractmethod
-    def extract_element(self, parent_group, element_id):
-        return
-
-    @abstractmethod
-    def _is_port_redundant(self, port_id):
-        pass
-
-    def _add_port(self, port_id, port_def):
-        self.node_info.port_defs[port_id] = port_def
-        self.extracted_port_ids.append(port_id)
-
-    def _remove_redundant_ports(self):
-        indices_to_remove = []
-        for i, port_id in enumerate(self.extracted_port_ids):
-            if self._is_port_redundant(port_id):
-                del self.node_info.port_defs[port_id]
-                self._mark_inactive_port_id(port_id)
-                indices_to_remove.append(i)
-        indices_to_remove.reverse()
-        for i in indices_to_remove:
-            del self.extracted_port_ids[i]
+# class SelectableNode(UnitNode, ABC):
+#     NAME = None
+#     DEFAULT_NODE_INFO = None
+#
+#     def __init__(self, uid, graph_querier, internal_props=None, add_info=None):
+#         self._node_info = self._default_node_info()
+#         self.extracted_port_ids = []
+#         super().__init__(uid, graph_querier, internal_props)
+#
+#     def final_compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
+#         self._remove_redundant_ports()
+#         self.compute()
+#
+#     @abstractmethod
+#     def extract_element(self, parent_group, element_id):
+#         return
+#
+#     @abstractmethod
+#     def _is_port_redundant(self, port_id):
+#         pass
+#
+#     def _add_port(self, port_id, port_def):
+#         self.node_info.port_defs[port_id] = port_def
+#         self.extracted_port_ids.append(port_id)
+#
+#     def _remove_redundant_ports(self):
+#         indices_to_remove = []
+#         for i, port_id in enumerate(self.extracted_port_ids):
+#             if self._is_port_redundant(port_id):
+#                 del self.node_info.port_defs[port_id]
+#                 self._mark_inactive_port_id(port_id)
+#                 indices_to_remove.append(i)
+#         indices_to_remove.reverse()
+#         for i in indices_to_remove:
+#             del self.extracted_port_ids[i]
 
 
 class CombinationNode(Node, ABC):
     NAME = None
     SELECTIONS: list[type[Node]] = []  # To override
 
-    def __init__(self, uid, graph_querier, internal_props=None, add_info=0):
+    def __init__(self, internal_props=None, add_info=0):
         self._selection_index = add_info
-        self._node = self.selections()[add_info](uid, graph_querier, internal_props)
+        self._node = self.selections()[add_info](internal_props)
 
     def __getattr__(self, attr):
         _node = object.__getattribute__(self, "_node")
@@ -99,13 +94,13 @@ class CombinationNode(Node, ABC):
 
     def set_selection(self, index):
         self._selection_index = index
-        old_prop_vals = copy.deepcopy(self._node.prop_vals)
-        self._node = self.selections()[index](self.uid, self.graph_querier, internal_props=None)
+        old_internal_props = copy.deepcopy(self.internal_props)
+        self._node = self.selections()[index](internal_props=None)
 
         # Copy over matching existing properties
-        for prop_key, old_value in old_prop_vals.items():
+        for prop_key, old_value in old_internal_props.items():
             if prop_key in self.prop_vals:
-                self.set_property(prop_key, old_value)
+                self.internal_props[prop_key] = old_value
 
     # Forwarded interface
     @property
@@ -116,11 +111,11 @@ class CombinationNode(Node, ABC):
     def node_info(self):
         return self._node.node_info
 
-    def compute(self):
-        return self._node.compute()
+    def compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
+        return self._node.compute(props, refs)
 
-    def visualise(self):
-        return self._node.visualise()
+    def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
+        return self._node.visualise(compute_results)
 
 
 class CustomNode(Node):

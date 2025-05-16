@@ -324,7 +324,9 @@ class Colour(PropValue):
     def type(self) -> PropType:
         return PT_Colour()
 
-class Int(PropValue):
+class Int(int, PropValue):
+    def __new__(cls, value: int):
+        return super().__new__(cls, value)
 
     def __init__(self, value: int):
         self.value = value

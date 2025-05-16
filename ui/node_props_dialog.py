@@ -122,7 +122,7 @@ class NodePropertiesDialog(QDialog):
 
             for prop_key, prop_entry in node_item.node().get_prop_entries().items():
                 if not isinstance(prop_entry.prop_type, PT_Hidden):
-                    widget = self.create_property_widget(prop_key, prop_entry, node_item.node().get_property(prop_key),
+                    widget = self.create_property_widget(prop_key, prop_entry, node_item.node().get_internal_property(prop_key),
                                                          node_item)
 
                     # Create the row with label and help icon
@@ -427,7 +427,7 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
 
-            old_val = self.node_item.node().get_property(prop_key)
+            old_val = self.node_item.node().get_internal_property(prop_key)
             if old_val != value:
                 props_changed[prop_key] = (copy.deepcopy(old_val), value)
 

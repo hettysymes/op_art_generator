@@ -1,8 +1,12 @@
-from ui.nodes.node_defs import PrivateNodeInfo
+from typing import Optional
+
+from ui.id_datatypes import PropKey
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.node_implementations.visualiser import get_grid, add_background
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PT_Warp, PT_Grid, PT_Int, PropDef, Colour, PortStatus, Int
+from ui.nodes.prop_defs import PT_Warp, PT_Grid, PT_Int, PropDef, Colour, PortStatus, Int, PropValue
 from ui.nodes.shape_datatypes import Group, Polyline
+from ui.vis_types import Visualisable
 
 DEF_GRID_INFO = PrivateNodeInfo(
     description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively.",
@@ -31,11 +35,11 @@ class GridNode(UnitNode):
     NAME = "Grid"
     DEFAULT_NODE_INFO = DEF_GRID_INFO
 
-    def compute(self):
-        self.set_compute_result(get_grid(self.get_property('width'), self.get_property('height'), self.get_property('x_warp'), self.get_property('y_warp')))
+    def compute(self, props: ResolvedProps, _):
+        return {'_main': get_grid(props.get('width'), props.get('height'), props.get('x_warp'), props.get('y_warp'))}
 
-    def visualise(self):
-        v_line_xs, h_line_ys = self.get_compute_result()
+    def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
+        v_line_xs, h_line_ys = compute_results.get('_main')
         grid_group = Group(debug_info="Grid")
         for x in v_line_xs:
             # Draw horizontal lines

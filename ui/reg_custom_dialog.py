@@ -4,11 +4,9 @@ from PyQt5.QtWidgets import (
     QDialog, QTreeWidget, QTreeWidgetItem, QComboBox
 )
 
-from ui.nodes.prop_defs import PortIO
-
 
 class PortSelectionTree(QWidget):
-    def __init__(self, id_to_info, port_io):
+    def __init__(self, id_to_info, is_input: bool):
         """
         id_to_ports: dict of node_id -> list of port
         display_names: optional dict of (node_id, port) -> str for custom labels
@@ -81,14 +79,14 @@ class RegCustomDialog(QDialog):
         self.description_input.setFixedHeight(60)
 
         # Input port selection
-        self.in_port_selector = PortSelectionTree(self.id_to_info, port_io=PortIO.INPUT)
+        self.in_port_selector = PortSelectionTree(self.id_to_info, is_input=True)
         in_port_selector_label = QLabel("Select input ports:")
         in_port_selector_layout = QVBoxLayout()
         in_port_selector_layout.addWidget(in_port_selector_label)
         in_port_selector_layout.addWidget(self.in_port_selector)
 
         # Output port selection
-        self.out_port_selector = PortSelectionTree(self.id_to_info, port_io=PortIO.OUTPUT)
+        self.out_port_selector = PortSelectionTree(self.id_to_info, is_input=False)
         out_port_selector_label = QLabel("Select output ports:")
         out_port_selector_layout = QVBoxLayout()
         out_port_selector_layout.addWidget(out_port_selector_label)

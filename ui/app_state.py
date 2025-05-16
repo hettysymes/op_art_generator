@@ -28,6 +28,5 @@ class AppState:
     view_pos: tuple[float, float]
     zoom: float
     node_states: list[NodeState]
-    node_graph: NodeGraph
     node_manager: NodeManager
     custom_node_defs: dict[str, CustomNodeDef]

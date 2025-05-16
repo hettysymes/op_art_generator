@@ -2,8 +2,6 @@ from PyQt5.QtCore import Qt, QRectF, QTimer
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
 
-from ui.nodes.nodes import SelectableNode
-
 
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""

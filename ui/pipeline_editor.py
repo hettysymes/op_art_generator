@@ -27,7 +27,7 @@ from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_defs import Node
-from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
+from ui.nodes.nodes import CombinationNode, CustomNode
 from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, Int
 from ui.nodes.shape_datatypes import Group, Element
 from ui.reg_custom_dialog import RegCustomDialog
@@ -184,7 +184,7 @@ class NodeItem(QGraphicsRectItem):
         self.setAcceptHoverEvents(True)
 
         # Set the help text for this node
-        self._help_text = f"{node.base_name} Help:\n{node.get_description()}"
+        self._help_text = f"{node_info.base_name} Help:\n{node_info.description}"
 
         self.resize_handle = None
         if node_setting(node_info.name).resizable:
@@ -363,62 +363,63 @@ class NodeItem(QGraphicsRectItem):
             self.svg_item.setPos(svg_pos_x, svg_pos_y)
             self.svg_item.setZValue(2)
         else:
-            assert isinstance(vis, Group)
-            assert not vis.transform_list.transforms
-            ElementDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
-
-            # Create SVG renderer
-            svg_renderer = QSvgRenderer(svg_filepath)
-
-            viewport_svg = QGraphicsSvgItem(svg_filepath)
-            viewport_svg.setParentItem(self)
-            viewport_svg.setPos(svg_pos_x, svg_pos_y)
-            viewport_svg.setZValue(1)  # Set below selectable items
-            self.svg_items.append(viewport_svg)
-
-            # Set clip path to clip out outside of SVG
-            clip_path = QPainterPath()
-            clip_path.addRect(QRectF(0, 0, svg_width, svg_height))
-            viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
-
-            # Load the SVG file as XML
-            dom_document = QDomDocument()
-            with open(svg_filepath, 'r') as file:
-                content = file.read()
-                dom_document.setContent(content)
-
-            def find_element_by_id(node, target_id):
-                if node.isElement():
-                    element = node.toElement()
-                    if element.attribute('id') == target_id:
-                        return element
-
-                # Check children recursively
-                child = node.firstChild()
-                while not child.isNull():
-                    result = find_element_by_id(child, target_id)
-                    if result and not result.isNull():
-                        return result
-                    child = child.nextSibling()
-
-                return QDomElement()  # Return null element if not found
-
-            root = dom_document.documentElement()
-            vis_element = find_element_by_id(root, vis.uid)
-            assert not vis_element.isNull()
-
-            child = vis_element.firstChild()
-            while not child.isNull():
-                if child.isElement():
-                    child_element = child.toElement()
-                    child_elem_id = child_element.attribute('id')
-                    assert child_elem_id
-                    selectable_item = SelectableSvgElement(child_elem_id, vis, svg_renderer, self)
-                    selectable_item.setParentItem(viewport_svg)
-                    selectable_item.setPos(0, 0)
-                    selectable_item.setZValue(3)
-                    self.svg_items.append(selectable_item)
-                child = child.nextSibling()
+            assert False
+            # assert isinstance(vis, Group)
+            # assert not vis.transform_list.transforms
+            # ElementDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
+            #
+            # # Create SVG renderer
+            # svg_renderer = QSvgRenderer(svg_filepath)
+            #
+            # viewport_svg = QGraphicsSvgItem(svg_filepath)
+            # viewport_svg.setParentItem(self)
+            # viewport_svg.setPos(svg_pos_x, svg_pos_y)
+            # viewport_svg.setZValue(1)  # Set below selectable items
+            # self.svg_items.append(viewport_svg)
+            #
+            # # Set clip path to clip out outside of SVG
+            # clip_path = QPainterPath()
+            # clip_path.addRect(QRectF(0, 0, svg_width, svg_height))
+            # viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
+            #
+            # # Load the SVG file as XML
+            # dom_document = QDomDocument()
+            # with open(svg_filepath, 'r') as file:
+            #     content = file.read()
+            #     dom_document.setContent(content)
+            #
+            # def find_element_by_id(node, target_id):
+            #     if node.isElement():
+            #         element = node.toElement()
+            #         if element.attribute('id') == target_id:
+            #             return element
+            #
+            #     # Check children recursively
+            #     child = node.firstChild()
+            #     while not child.isNull():
+            #         result = find_element_by_id(child, target_id)
+            #         if result and not result.isNull():
+            #             return result
+            #         child = child.nextSibling()
+            #
+            #     return QDomElement()  # Return null element if not found
+            #
+            # root = dom_document.documentElement()
+            # vis_element = find_element_by_id(root, vis.uid)
+            # assert not vis_element.isNull()
+            #
+            # child = vis_element.firstChild()
+            # while not child.isNull():
+            #     if child.isElement():
+            #         child_element = child.toElement()
+            #         child_elem_id = child_element.attribute('id')
+            #         assert child_elem_id
+            #         selectable_item = SelectableSvgElement(child_elem_id, vis, svg_renderer, self)
+            #         selectable_item.setParentItem(viewport_svg)
+            #         selectable_item.setPos(0, 0)
+            #         selectable_item.setZValue(3)
+            #         self.svg_items.append(selectable_item)
+            #     child = child.nextSibling()
 
     def update_visualisations(self):
         self.update_vis_image()
@@ -481,7 +482,7 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(title_font)
         painter.setPen(QColor("black"))
         metrics = QFontMetrics(title_font)
-        title_text = self.node().base_name
+        title_text = self.node_info.base_name
         text_width = metrics.horizontalAdvance(title_text)
         text_height = metrics.height()
         node_rect = self.rect()
@@ -769,11 +770,11 @@ class AddNewNodeCmd(QUndoCommand):
         node_item.remove_from_scene()
 
     def redo(self):
-        node_id: NodeId = self.node_state.node if self.node_state else gen_node_id()
-        node: Node = self.node_class(node_id, self.node_graph, add_info=self.add_info)
-        self.node_graph.add_node(node_id)
-        self.node_manager.add_node(node)
-        node_info: NodeInfo = self.node_manager.node_info(node_id)
+        node: NodeId = self.node_state.node if self.node_state else gen_node_id()
+        base_node: Node = self.node_class(add_info=self.add_info)
+        self.node_graph.add_node(node)
+        self.node_manager.add_node(node, base_node)
+        node_info: NodeInfo = self.node_manager.node_info(node)
         if not self.node_state:
             self.node_state = NodeState(node=node_info.uid,
                                         ports_open=node_info.filter_ports_by_status(PortStatus.COMPULSORY),
@@ -806,11 +807,11 @@ class ChangePropertiesCmd(QUndoCommand):
 
     def update_properties(self, props):
         for prop_key, value in props.items():
-            self.node_manager.set_property(self.node_item.uid, prop_key, value)
+            self.node_manager.set_internal_property(self.node_item.uid, prop_key, value)
             if (not node_setting(self.node_item.node_info.name).resizable) and (
                     prop_key == 'width' or prop_key == 'height'):
-                svg_width: Int = self.node_manager.get_property(self.node_item.uid, 'width')
-                svg_height: Int = self.node_manager.get_property(self.node_item.uid, 'height')
+                svg_width: Int = self.node_manager.get_internal_property(self.node_item.uid, 'width')
+                svg_height: Int = self.node_manager.get_internal_property(self.node_item.uid, 'height')
                 self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width.value, svg_height.value))
         # Update the node's appearance
         self.node_item.update_visualisations()
@@ -884,11 +885,11 @@ class RemoveExtractedElementCmd(QUndoCommand):
 
 
 class PasteCmd(QUndoCommand):
-    def __init__(self, scene, node_states: dict[NodeId, NodeState], subset_node_manager: NodeManager, edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], description="Paste"):
+    def __init__(self, scene, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], description="Paste"):
         super().__init__(description)
         self.scene = scene
         self.node_states = node_states
-        self.subset_node_manager = subset_node_manager
+        self.base_nodes = base_nodes
         self.edges = edges
         self.port_refs = port_refs
 
@@ -896,20 +897,20 @@ class PasteCmd(QUndoCommand):
         self.scene.remove_from_graph_and_scene(self.node_states, self.edges)
 
     def redo(self):
-        self.scene.add_to_graph_and_scene(self.node_states, self.subset_node_manager, self.edges, self.port_refs)
+        self.scene.add_to_graph_and_scene(self.node_states, self.base_nodes, self.edges, self.port_refs)
 
 
 class DeleteCmd(QUndoCommand):
-    def __init__(self, scene, node_states: dict[NodeId, NodeState], subset_node_manager: NodeManager, edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], description="Delete"):
+    def __init__(self, scene, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], description="Delete"):
         super().__init__(description)
         self.scene = scene
         self.node_states = node_states
-        self.subset_node_manager = subset_node_manager
+        self.base_nodes = base_nodes
         self.edges = edges
         self.port_refs = port_refs
 
     def undo(self):
-        self.scene.add_to_graph_and_scene(self.node_states, self.subset_node_manager, self.edges, self.port_refs)
+        self.scene.add_to_graph_and_scene(self.node_states, self.base_nodes, self.edges, self.port_refs)
 
     def redo(self):
         self.scene.remove_from_graph_and_scene(self.node_states, self.edges)
@@ -935,24 +936,23 @@ class RegisterCustomNodeCmd(QUndoCommand):
 
 
 class RandomiseNodesCmd(QUndoCommand):
-    def __init__(self, scene, node_ids, description="Randomise node(s)"):
+    def __init__(self, scene, nodes: set[NodeId], description="Randomise node(s)"):
         super().__init__(description)
         self.scene = scene
-        self.node_graph: NodeGraph = scene.graph_querier
-        self.node_ids = node_ids  # Assumes these nodes are randomisable
+        self.node_manager: NodeManager = scene.node_manager
+        self.nodes = nodes  # Assumes these nodes are randomisable
         self.prev_seeds = {}
 
     def undo(self):
-        for node_id, prev_seed in self.prev_seeds.items():
-            self.node_graph.node(node_id).randomise(prev_seed)
-            self.scene.node_items[node_id].update_visualisations()
+        for node, prev_seed in self.prev_seeds.items():
+            self.node_manager.randomise(node, prev_seed)
+            self.scene.node_items[node].update_visualisations()
 
     def redo(self):
-        for node_id in self.node_ids:
-            node = self.node_graph.node(node_id)
-            self.prev_seeds[node_id] = node.get_seed()
-            node.randomise()  # TODO: store new seed for redo
-            self.scene.node_items[node_id].update_visualisations()
+        for node in self.nodes:
+            self.prev_seeds[node] = self.node_manager.get_seed(node)
+            self.node_manager.randomise(node)  # TODO: store new seed for redo
+            self.scene.node_item(node).update_visualisations()
 
 
 class PipelineScene(QGraphicsScene):
@@ -967,12 +967,11 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals = ConnectionSignals()
         self.active_connection = None
         self.temp_line = None
-        self.source_port = None
-        self.dest_port = None
+        self.source_port_item = None
+        self.dest_port_item = None
 
         self.node_items = {}
         self.custom_node_defs: dict[str, CustomNodeDef] = {}
-        self.node_graph: NodeGraph = NodeGraph()
         self.node_manager: NodeManager = NodeManager()
 
         self.temp_dir = temp_dir
@@ -984,6 +983,10 @@ class PipelineScene(QGraphicsScene):
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
 
+    @property
+    def node_graph(self):
+        return self.node_manager.node_graph
+
     def view(self):
         return self.views()[0]
 
@@ -994,11 +997,11 @@ class PipelineScene(QGraphicsScene):
         """Open a dialog to edit the node's properties"""
         NodePropertiesDialog(node).exec_()
 
-    def start_connection(self, source_port: PortItem):
+    def start_connection(self, source_port_item: PortItem):
         """Start creating a connection from the given source port"""
-        if source_port and not source_port.is_input:
-            self.source_port = source_port
-            start_pos = source_port.get_center_scene_pos()
+        if source_port_item and not source_port_item.port.is_input:
+            self.source_port_item = source_port_item
+            start_pos = source_port_item.get_center_scene_pos()
 
             # Create a temporary line for visual feedback
             self.temp_line = QGraphicsLineItem()
@@ -1008,8 +1011,8 @@ class PipelineScene(QGraphicsScene):
 
     def update_temp_connection(self, end_pos):
         """Update the temporary connection line to the current mouse position"""
-        if self.source_port and self.temp_line:
-            start_pos = self.source_port.get_center_scene_pos()
+        if self.source_port_item and self.temp_line:
+            start_pos = self.source_port_item.get_center_scene_pos()
             self.temp_line.setLine(QLineF(start_pos, end_pos))
 
     def finish_connection(self, source_port_item: PortItem, dest_port_item: PortItem):
@@ -1036,8 +1039,8 @@ class PipelineScene(QGraphicsScene):
             self.temp_line = None
 
         # Reset ports
-        self.source_port = None
-        self.dest_port = None
+        self.source_port_item = None
+        self.dest_port_item = None
 
     def mousePressEvent(self, event):
         """Handle mouse press events for the scene"""
@@ -1054,24 +1057,24 @@ class PipelineScene(QGraphicsScene):
 
     def mouseMoveEvent(self, event):
         """Handle mouse move events for the scene"""
-        if self.source_port and self.temp_line:
+        if self.source_port_item and self.temp_line:
             self.update_temp_connection(event.scenePos())
 
             # Highlight input port if we're hovering over one
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
             if isinstance(item, PortItem) and item.port.is_input:
-                if self.dest_port != item:
+                if self.dest_port_item != item:
                     # Reset previous dest port highlighting
-                    if self.dest_port:
-                        self.dest_port.setPen(QPen(Qt.black, 1))
+                    if self.dest_port_item:
+                        self.dest_port_item.setPen(QPen(Qt.black, 1))
 
                     # Set new dest port
-                    self.dest_port = item
-                    self.dest_port.setPen(QPen(Qt.red, 2))
-            elif self.dest_port:
+                    self.dest_port_item = item
+                    self.dest_port_item.setPen(QPen(Qt.red, 2))
+            elif self.dest_port_item:
                 # Reset dest port highlighting if not hovering over an input port
-                self.dest_port.setPen(QPen(Qt.black, 1))
-                self.dest_port = None
+                self.dest_port_item.setPen(QPen(Qt.black, 1))
+                self.dest_port_item = None
 
             event.accept()
             return
@@ -1080,11 +1083,11 @@ class PipelineScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event):
         """Handle mouse release events for the scene"""
-        if event.button() == Qt.LeftButton and self.source_port:
+        if event.button() == Qt.LeftButton and self.source_port_item:
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
             if isinstance(item, PortItem) and item.port.is_input:
                 # Create permanent connection
-                self.connection_signals.connectionMade.emit(self.source_port, item)
+                self.connection_signals.connectionMade.emit(self.source_port_item, item)
                 event.accept()
                 return
             else:
@@ -1092,12 +1095,12 @@ class PipelineScene(QGraphicsScene):
                 if self.temp_line:
                     self.removeItem(self.temp_line)
                     self.temp_line = None
-                self.source_port = None
+                self.source_port_item = None
 
                 # Reset dest port highlighting if needed
-                if self.dest_port:
-                    self.dest_port.setPen(QPen(Qt.black, 1))
-                    self.dest_port = None
+                if self.dest_port_item:
+                    self.dest_port_item.setPen(QPen(Qt.black, 1))
+                    self.dest_port_item = None
 
         super().mouseReleaseEvent(event)
 
@@ -1172,7 +1175,6 @@ class PipelineScene(QGraphicsScene):
             pickle.dump(AppState(view_pos=(center.x(), center.y()),
                                  zoom=zoom,
                                  node_states=[node_item.node_state for node_item in self.node_items.values()],
-                                 node_graph=self.node_graph,
                                  node_manager=self.node_manager,
                                  custom_node_defs=self.custom_node_defs), f)
 
@@ -1222,9 +1224,9 @@ class PipelineScene(QGraphicsScene):
         for node in self.node_graph.get_topo_order_subgraph({node_state.node for node_state in node_states}):
             self.node_item(node).update_vis_image()
 
-    def add_to_graph_and_scene(self, node_states: dict[NodeId, NodeState], subset_node_manager: NodeManager, edges: set[EdgeId], more_node_to_port_refs: dict[NodeId, dict[PortId, RefId]]):
+    def add_to_graph_and_scene(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId], more_node_to_port_refs: dict[NodeId, dict[PortId, RefId]]):
         # Add to node implementations
-        self.node_manager.update_nodes(subset_node_manager)
+        self.node_manager.update_nodes(base_nodes)
         # Update graph
         for node in node_states:
             self.node_graph.add_node(node)
@@ -1271,7 +1273,6 @@ class PipelineScene(QGraphicsScene):
 
         self.view().centerOn(*app_state.view_pos)
         self.view().set_zoom(app_state.zoom)
-        self.node_graph = app_state.node_graph
         self.node_manager = app_state.node_manager
         self.custom_node_defs = app_state.custom_node_defs
         self.load_from_node_states(app_state.node_states, self.node_graph.edges)
@@ -1433,6 +1434,38 @@ class PipelineView(QGraphicsView):
         # Get mouse position relative to the scene
         self.mouse_pos = self.mapToScene(event.pos())
         super().mouseMoveEvent(event)
+
+
+def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]]):
+    old_to_new_id_map = {}
+    # Update node states
+    new_node_states: dict[NodeId, NodeState] = {}
+    new_base_nodes: dict[NodeId, Node] = {}
+    for node, node_state in node_states:
+        new_node: NodeId = gen_node_id()
+        # Copy node state
+        new_node_state: NodeState = copy.deepcopy(node_state)
+        new_node_state.node = new_node # Update id in node state
+        new_node_states[new_node] = new_node_state # Add to new node states
+        # Copy node
+        new_base_node = copy.deepcopy(new_base_nodes[node])
+        new_base_nodes[new_node] = new_base_node
+        # Add id to conversion map
+        old_to_new_id_map[node_state.node] = new_node
+    # Update ids in connections
+    new_edges = set()
+    for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in edges:
+        new_edges.add(((old_to_new_id_map[src_node_id], src_port_key),
+                                (old_to_new_id_map[dst_node_id], dst_port_key)))
+    # Update ids in port refs
+    new_port_refs = {}
+    for dst_node in port_refs:
+        new_entry: dict[PortId, RefId] = copy.deepcopy(port_refs[dst_node])
+        for port, ref in new_entry.items():
+            new_entry[PortId(node=old_to_new_id_map[port.node], key=port.key, is_input=port.is_input)] = ref
+        new_port_refs[old_to_new_id_map[dst_node]] = new_entry
+    # Return results
+    return new_node_states, new_base_nodes, new_edges, new_port_refs, old_to_new_id_map
 
 
 class PipelineEditor(QMainWindow):
@@ -1605,49 +1638,50 @@ class PipelineEditor(QMainWindow):
                 item.setSelected(True)
 
     def register_custom_node(self):
-        node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
-        subgraph = NodeGraph()
-        node_states, nodes, connections, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, nodes,
-                                                                                                connections, port_refs,
-                                                                                                node_graph=subgraph)
-        # Set up subgraph querier
-        subgraph.node_map = nodes
-        subgraph.ref_ports = port_refs
-        for connection in connections:
-            subgraph.add_edge(*connection)
-
-        # Get node information for display
-        new_ids_topo_order = subgraph.get_topo_order_subgraph()
-        new_id_to_info = {}
-        for new_id in new_ids_topo_order:
-            node = subgraph.node(new_id)
-            unconnected_ports = subgraph.unconnected_ports(new_id)
-            base_name = node.base_name
-            # Get port id (io, port_key) mapped to port display name
-            port_map = {}
-            ports_open = node_states[new_id].ports_open
-            port_defs = node.get_port_defs()
-            for port_id in ports_open:
-                if port_id in unconnected_ports:
-                    port_map[port_id] = port_defs[port_id].display_name
-            if port_map:
-                # Add base name and port map to new_id_to_info
-                new_id_to_info[new_id] = (base_name, port_map)
-        new_to_old_id_map = {v: k for k, v in old_to_new_id_map.items()}
-        old_id_to_info = {new_to_old_id_map[k]: v for k, v in new_id_to_info.items()}
-        # Get node information from user
-        dialog = RegCustomDialog(old_id_to_info, self.scene.custom_node_defs.keys())
-        if dialog.exec_():
-            # Get input and output node ids
-            name, description, input_sel_ports, output_sel_ports, vis_sel_node = dialog.get_inputs()
-            selected_ports = defaultdict(list)
-            for node_id, port_id in input_sel_ports + output_sel_ports:
-                selected_ports[old_to_new_id_map[node_id]].append(port_id)
-            selected_ports = dict(selected_ports)
-            vis_sel_node = old_to_new_id_map[vis_sel_node]
-            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
-                                                             CustomNodeDef(subgraph, selected_ports,
-                                                                           vis_sel_node, description=description)))
+        pass
+        # node_states, base_nodes, connections, port_refs = self.identify_selected_subgraph()
+        # subgraph = NodeGraph()
+        # node_states, base_nodes, connections, port_refs, old_to_new_id_map = deep_copy_subgraph(node_states, base_nodes,
+        #                                                                                         connections, port_refs,
+        #                                                                                         node_graph=subgraph)
+        # # Set up subgraph querier
+        # subgraph.node_map = base_nodes
+        # subgraph.ref_ports = port_refs
+        # for connection in connections:
+        #     subgraph.add_edge(*connection)
+        #
+        # # Get node information for display
+        # new_ids_topo_order = subgraph.get_topo_order_subgraph()
+        # new_id_to_info = {}
+        # for new_id in new_ids_topo_order:
+        #     node = subgraph.node(new_id)
+        #     unconnected_ports = subgraph.unconnected_ports(new_id)
+        #     base_name = node.base_name
+        #     # Get port id (io, port_key) mapped to port display name
+        #     port_map = {}
+        #     ports_open = node_states[new_id].ports_open
+        #     port_defs = node.get_port_defs()
+        #     for port_id in ports_open:
+        #         if port_id in unconnected_ports:
+        #             port_map[port_id] = port_defs[port_id].display_name
+        #     if port_map:
+        #         # Add base name and port map to new_id_to_info
+        #         new_id_to_info[new_id] = (base_name, port_map)
+        # new_to_old_id_map = {v: k for k, v in old_to_new_id_map.items()}
+        # old_id_to_info = {new_to_old_id_map[k]: v for k, v in new_id_to_info.items()}
+        # # Get node information from user
+        # dialog = RegCustomDialog(old_id_to_info, self.scene.custom_node_defs.keys())
+        # if dialog.exec_():
+        #     # Get input and output node ids
+        #     name, description, input_sel_ports, output_sel_ports, vis_sel_node = dialog.get_inputs()
+        #     selected_ports = defaultdict(list)
+        #     for node_id, port_id in input_sel_ports + output_sel_ports:
+        #         selected_ports[old_to_new_id_map[node_id]].append(port_id)
+        #     selected_ports = dict(selected_ports)
+        #     vis_sel_node = old_to_new_id_map[vis_sel_node]
+        #     self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
+        #                                                      CustomNodeDef(subgraph, selected_ports,
+        #                                                                    vis_sel_node, description=description)))
 
     def identify_selected_items(self):
         node_states: dict[NodeId, NodeState] = {}
@@ -1662,14 +1696,14 @@ class PipelineEditor(QMainWindow):
     def delete_selected_items(self):
         node_states, edges = self.identify_selected_items()
         if node_states or edges:
-            subset_node_manager: NodeManager = self.scene.node_manager.new_node_manager(subset={node for node in node_states})
+            base_nodes: dict[NodeId, Node] = self.scene.node_manager.get_node_copies(subset={node for node in node_states})
             port_refs: dict[NodeId, dict[PortId, RefId]] = {node: copy.deepcopy(port_ref_data) for node, port_ref_data in
                          self.scene.node_graph.node_to_port_ref.items() if node in node_states}
-            self.scene.undo_stack.push(DeleteCmd(self.scene, node_states, subset_node_manager, edges, port_refs))
+            self.scene.undo_stack.push(DeleteCmd(self.scene, node_states, base_nodes, edges, port_refs))
 
-    def identify_selected_subgraph(self):
+    def identify_selected_subgraph(self) -> tuple[dict[NodeId, NodeState], dict[NodeId, Node], set[EdgeId], dict[NodeId, dict[PortId, RefId]]]:
         node_states, edges = self.identify_selected_items()
-        subset_node_manager: NodeManager = self.scene.node_manager.new_node_manager(subset={node for node in node_states})
+        base_nodes: dict[NodeId, Node] = self.scene.node_manager.get_node_copies(subset={node for node in node_states})
         # Remove edges which are not connected at both ends to selected nodes
         edges_to_remove = {
             edge for edge in edges
@@ -1689,50 +1723,15 @@ class PipelineEditor(QMainWindow):
                     if port.node not in node_states:
                         del new_port_refs[dst_node][port]
         # Return node states and connections between them
-        return node_states, subset_node_manager, edges, new_port_refs
-
-    def deep_copy_subgraph(self, node_states: dict[NodeId, NodeState], subset_node_manager: NodeManager, edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], node_graph: Optional[NodeGraph] = None):
-        node_graph = node_graph or self.scene.node_graph
-        new_node_manager, old_to_new_id_map = subset_node_manager.new_node_manager(new_ids=True)
-        # Update node states
-        new_node_states: dict[NodeId, NodeState] = {}
-        for node, node_state in node_states:
-            new_node = old_to_new_id_map[node]
-            # Copy node state
-            new_node_state: NodeState = copy.deepcopy(node_state)
-            new_node_state.node = new_node # Update id in node state
-            new_node_states[new_node] = new_node_state # Add to new node states
-            # Copy node
-            node = nodes[node_state.node]
-            new_node = copy.deepcopy(node)
-            new_node.port = new_uid
-            new_node.graph_querier = node_graph  # Set graph querier
-            new_nodes[new_uid] = new_node
-            # Add id to conversion map
-            old_to_new_id_map[node_state.node] = new_uid
-        # Update ids in connections
-        new_connections = []
-        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in edges:
-            new_connections.append(((old_to_new_id_map[src_node_id], src_port_key),
-                                    (old_to_new_id_map[dst_node_id], dst_port_key)))
-        # Update ids in port refs
-        new_port_refs = {}
-        for dst_conn_id in port_refs:
-            dst_node_id, dst_port_key = dst_conn_id
-            new_entry = copy.deepcopy(port_refs[dst_conn_id])
-            for ref_id, (src_node_id, src_port_key) in new_entry['ref_map'].items():
-                new_entry['ref_map'][ref_id] = (old_to_new_id_map[src_node_id], src_port_key)
-            new_port_refs[(old_to_new_id_map[dst_node_id], dst_port_key)] = new_entry
-        # Return results
-        return new_node_states, new_nodes, new_connections, new_port_refs, old_to_new_id_map
+        return node_states, base_nodes, edges, new_port_refs
 
     def copy_selected_subgraph(self):
-        node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
+        node_states, base_nodes, edges, port_refs = self.identify_selected_subgraph()
         if node_states:
             # Calculate bounding rect
             bounding_rect = None
-            for node_state in node_states:
-                node_item = self.scene.node_items[node_state.node]
+            for node in node_states:
+                node_item: NodeItem = self.scene.node_item(node)
                 # Make part of bounding rect
                 if bounding_rect:
                     bounding_rect = bounding_rect.united(node_item.sceneBoundingRect())
@@ -1741,7 +1740,7 @@ class PipelineEditor(QMainWindow):
             # Save to clipboard
             mime_data = QMimeData()
             mime_data.setData("application/pipeline_editor_items",
-                              pickle.dumps((node_states, nodes, connections, port_refs, bounding_rect.center())))
+                              pickle.dumps((node_states, base_nodes, edges, port_refs, bounding_rect.center())))
             clipboard = QApplication.clipboard()
             clipboard.setMimeData(mime_data)
 
@@ -1752,25 +1751,24 @@ class PipelineEditor(QMainWindow):
         if mime.hasFormat("application/pipeline_editor_items"):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
-            node_states, nodes, connections, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
-            node_states, nodes, connections, port_refs, _ = self.deep_copy_subgraph(node_states, nodes, connections,
+            node_states, base_nodes, edges, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
+            node_states, base_nodes, edges, port_refs, _ = deep_copy_subgraph(node_states, base_nodes, edges,
                                                                                     port_refs)
-            node_states = node_states.values()
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
-            for node_state in node_states:
+            for node_state in node_states.values():
                 node_state.pos = (node_state.pos[0] + offset.x(), node_state.pos[1] + offset.y())
             # Perform paste
-            self.scene.undo_stack.push(PasteCmd(self.scene, node_states, nodes.values(), connections, port_refs))
+            self.scene.undo_stack.push(PasteCmd(self.scene, node_states, base_nodes, edges, port_refs))
 
     def randomise_selected(self):
-        randomisable_ids = set()
+        randomisable_nodes: set[NodeId] = set()
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
-                node = self.scene.node_graph.node(item.node_state.node)
-                if node.randomisable:
-                    randomisable_ids.add(node.port)
-        self.scene.undo_stack.push(RandomiseNodesCmd(self.scene, randomisable_ids))
+                node_info: NodeInfo = self.scene.node_manager.node_info(item.uid)
+                if node_info.randomisable:
+                    randomisable_nodes.add(item.uid)
+        self.scene.undo_stack.push(RandomiseNodesCmd(self.scene, randomisable_nodes))
 
 
 if __name__ == "__main__":
