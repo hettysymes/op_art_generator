@@ -3,12 +3,19 @@ import itertools
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.port_defs import PT_Colour, PT_Element, PT_List, PT_Function, PT_Fill
+from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour
 from ui.nodes.shape_datatypes import Group, Element, Polygon
 from ui.nodes.transforms import Scale, Translate
 from ui.nodes.utils import process_rgb
 from ui.nodes.warp_datatypes import sample_fun, PosWarp, RelWarp
 from ui.vis_types import MatplotlibFig
+
+def add_background(element: Element, colour: Colour):
+    group = Group(debug_info="Background")
+    group.add(get_rectangle(colour))
+    if element:
+        group.add(element)
+    return group
 
 def get_grid(width=1, height=1, x_warp=None, y_warp=None):
     if x_warp is None:
@@ -24,6 +31,7 @@ def get_grid(width=1, height=1, x_warp=None, y_warp=None):
     v_line_xs = x_warp.sample(width + 1)
     h_line_ys = y_warp.sample(height + 1)
     return v_line_xs, h_line_ys
+
 
 def repeat_shapes(grid, elements):
     v_line_xs, h_line_ys = grid
@@ -44,15 +52,20 @@ def repeat_shapes(grid, elements):
             ret_group.add(cell_group)
     return ret_group
 
-def get_polygon(fill, points, stroke, stroke_width):
+
+def get_polygon(fill: PropValue, points, stroke, stroke_width):
     if isinstance(fill, Gradient):
         fill_opacity = 255
+    elif isinstance(fill, Colour):
+        fill, fill_opacity = process_rgb(fill.rgba)
     else:
-        fill, fill_opacity = process_rgb(fill)
+        assert False
     return Polygon(points, fill, fill_opacity, stroke, stroke_width)
 
-def get_rectangle(fill, stroke='none', stroke_width=0):
+
+def get_rectangle(fill: PropValue, stroke='none', stroke_width=0):
     return get_polygon(fill, [(0, 0), (0, 1), (1, 1), (1, 0)], stroke, stroke_width)
+
 
 def visualise_in_1d_grid(elements, is_vertical=True):
     if is_vertical:
@@ -61,13 +74,14 @@ def visualise_in_1d_grid(elements, is_vertical=True):
         grid = get_grid(width=len(elements))
     return repeat_shapes(grid, elements)
 
+
 def visualise_by_type(value, value_type):
     if not value:
         return None
     elif isinstance(value_type, PT_List):
         # Draw vertical grid
         grid = get_grid(height=len(value))
-        elements = [visualise_by_type(value_item, value_type.item_type) for value_item in value]
+        elements = [visualise_by_type(value_item, value_type.scalar_type) for value_item in value]
         if (not elements) or not all(isinstance(e, Element) for e in elements):
             return None
         return repeat_shapes(grid, elements)

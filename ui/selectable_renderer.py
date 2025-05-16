@@ -82,4 +82,3 @@ class SelectableSvgElement(QGraphicsItem):
         self.scene().skip_next_context_menu = True
         # Defer deletion of this element (from updating svg image) until after element extraction
         QTimer.singleShot(0, lambda: self.scene().extract_element(self.node_item, port_id))
-

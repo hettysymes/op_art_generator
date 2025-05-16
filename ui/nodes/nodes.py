@@ -2,8 +2,7 @@ import copy
 import random
 from abc import ABC, abstractmethod
 
-from ui.nodes.node_defs import Node, GraphQuerier, NodeInfo, BaseNode
-from ui.nodes.port_defs import PortIO
+from ui.nodes.node_defs import Node, NodeInfo
 
 
 class UnitNode(Node, ABC):
@@ -123,6 +122,7 @@ class CombinationNode(Node, ABC):
     def visualise(self):
         return self._node.visualise()
 
+
 class CustomNode(Node):
     NAME = "Custom"
 
@@ -132,7 +132,7 @@ class CustomNode(Node):
 
     @staticmethod
     def from_custom_key(custom_key):
-        return tuple(custom_key.split("_", 1)) # Returns node_id, port_key
+        return tuple(custom_key.split("_", 1))  # Returns node_id, port_key
 
     def __init__(self, uid, graph_querier, add_info):
         super().__init__(uid, graph_querier, {})
@@ -210,7 +210,8 @@ class CustomNode(Node):
                 if io == PortIO.INPUT: continue
                 # We have reached an output port, get and set the compute result
                 node = node or self.subgraph.node(node_id)
-                self.set_compute_result(node.get_compute_result(port_key), port_key=CustomNode.to_custom_key(node_id, port_key))
+                self.set_compute_result(node.get_compute_result(port_key),
+                                        port_key=CustomNode.to_custom_key(node_id, port_key))
 
     def visualise(self):
         return self.vis_node.visualise()

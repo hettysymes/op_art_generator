@@ -2,12 +2,14 @@ import math
 import uuid
 from abc import ABC, abstractmethod
 
+from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.port_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element
+from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, PropValue
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
+from ui.vis_types import Visualisable
 
 
-class Element(ABC):
+class Element(PropValue, Visualisable, ABC):
 
     def __init__(self, debug_info=None, uid=None):
         self.uid = uid if uid else str(uuid.uuid4())
@@ -34,9 +36,11 @@ class Element(ABC):
         pass
 
     @abstractmethod
-    def get_output_type(self):
+    def type(self):
         pass
 
+    def save_to_svg(self, filepath, width, height):
+        ElementDrawer(filepath, width, height, self).save()
 
 class Group(Element):
 
@@ -103,10 +107,11 @@ class Group(Element):
                 transformed_shapes.append((shape, new_transform_list))
         return transformed_shapes
 
-    def get_output_type(self):
+    @property
+    def type(self):
         shapes, _ = zip(*self.shape_transformations())
         if len(shapes) == 1:
-            return shapes[0].get_output_type()
+            return shapes[0].type
         return PT_Element()
 
     def __repr__(self):
@@ -141,7 +146,8 @@ class Shape(Element, ABC):
     def shape_transformations(self):
         return [(self, TransformList())]
 
-    def get_output_type(self):
+    @property
+    def type(self):
         return PT_Shape()
 
     def __repr__(self):
@@ -169,7 +175,8 @@ class Polyline(Shape):
             return transform_list.transform_points(self.points)
         return self.points
 
-    def get_output_type(self):
+    @property
+    def type(self):
         return PT_Polyline()
 
 
@@ -193,7 +200,8 @@ class Polygon(Shape):
                            style='vector-effect: non-scaling-stroke',
                            id=self.uid)
 
-    def get_output_type(self):
+    @property
+    def type(self):
         return PT_Polygon()
 
 
@@ -219,7 +227,8 @@ class Ellipse(Shape):
                            style='vector-effect: non-scaling-stroke',
                            id=self.uid)
 
-    def get_output_type(self):
+    @property
+    def type(self):
         return PT_Ellipse()
 
 

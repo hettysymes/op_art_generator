@@ -2,17 +2,15 @@ import copy
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPen
-from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QTableWidgetItem, QHBoxLayout, QWidget, QVBoxLayout, \
-    QFormLayout, QDoubleSpinBox, QDialogButtonBox, QMenu, QStyledItemDelegate, QColorDialog, QSpinBox, QCheckBox, \
+from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, \
+    QFormLayout, QDoubleSpinBox, QDialogButtonBox, QStyledItemDelegate, QColorDialog, QSpinBox, QCheckBox, \
     QGroupBox, QLabel, QLineEdit
 
 from ui.colour_prop_widget import ColorPropertyWidget
-from ui.nodes.elem_ref import ElemRef
-from ui.nodes.port_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
+from ui.nodes.prop_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
     LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
-from ui.reorderable_table_widget import ReorderableTableWidget
 
 
 class HelpIconLabel(QPushButton):
@@ -42,6 +40,7 @@ class HelpIconLabel(QPushButton):
         width_px = str(max_width) + "px"
         wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{description}</div>"
         self.setToolTip(wrapped_text)
+
 
 class ModifyPropertyPortButton(QPushButton):
     def __init__(self, on_click_callback, port_key, adding, max_width=300, parent=None):
@@ -93,6 +92,7 @@ class ModifyPropertyPortButton(QPushButton):
         if self.user_callback:
             self.user_callback(self.port_key, not self.adding)
 
+
 class NodePropertiesDialog(QDialog):
     """Dialog for editing node properties"""
 
@@ -121,10 +121,12 @@ class NodePropertiesDialog(QDialog):
 
             for prop_key, prop_entry in node_item.node().get_prop_entries().items():
                 if not isinstance(prop_entry.prop_type, PT_Hidden):
-                    widget = self.create_property_widget(prop_key, prop_entry, node_item.node().get_property(prop_key), node_item)
+                    widget = self.create_property_widget(prop_key, prop_entry, node_item.node().get_property(prop_key),
+                                                         node_item)
 
                     # Create the row with label and help icon
-                    label_container, widget_container = self.create_property_row(prop_key, prop_entry, widget, node_item)
+                    label_container, widget_container = self.create_property_row(prop_key, prop_entry, widget,
+                                                                                 node_item)
                     props_layout.addRow(label_container, widget_container)
                     self.property_widgets[prop_key] = widget
 
@@ -221,7 +223,8 @@ class NodePropertiesDialog(QDialog):
                 widget_layout.addWidget(minus_btn)
             else:
                 # Does not exist port to modify this property, add plus button
-                plus_btn = ModifyPropertyPortButton(self.change_property_port, prop_key, adding=True)  # Set maximum width for tooltip
+                plus_btn = ModifyPropertyPortButton(self.change_property_port, prop_key,
+                                                    adding=True)  # Set maximum width for tooltip
                 widget_layout.addWidget(plus_btn)
 
         return label_container, widget_container
@@ -292,8 +295,9 @@ class NodePropertiesDialog(QDialog):
 
         elif isinstance(prop_type, PT_ElemRefTable):
             port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
-                                                                                  prop_entry.prop_type.linked_port_key, ref_id),
+                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node_id,
+                                                                                     prop_entry.prop_type.linked_port_key,
+                                                                                     ref_id),
                 table_heading="Drawing",
                 entries=current_value
             )
@@ -337,8 +341,9 @@ class NodePropertiesDialog(QDialog):
                     port_ref_table.set_item((x, y), row)
 
             port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
-                                                                                  prop_entry.prop_type.linked_port_key, ref_id),
+                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node_id,
+                                                                                     prop_entry.prop_type.linked_port_key,
+                                                                                     ref_id),
                 table_heading="Points (X, Y)",
                 entries=current_value,
                 text_callback=text_callback,
@@ -388,9 +393,9 @@ class NodePropertiesDialog(QDialog):
                     port_ref_table.set_item(sel_col, row)
 
             port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
-                                                                                  prop_entry.prop_type.linked_port_key,
-                                                                                  ref_id),
+                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node_id,
+                                                                                     prop_entry.prop_type.linked_port_key,
+                                                                                     ref_id),
                 table_heading="Colour",
                 entries=current_value,
                 context_menu_callback=custom_context_menu,

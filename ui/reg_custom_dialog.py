@@ -1,10 +1,10 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QLineEdit, QTextEdit, QPushButton, QMessageBox,
-    QDialog, QTreeWidget, QTreeWidgetItem, QHeaderView, QComboBox
+    QDialog, QTreeWidget, QTreeWidgetItem, QComboBox
 )
 
-from ui.nodes.port_defs import PortIO
+from ui.nodes.prop_defs import PortIO
 
 
 class PortSelectionTree(QWidget):
@@ -96,10 +96,11 @@ class RegCustomDialog(QDialog):
 
         # Visualisation selection
         self.vis_selector = QComboBox()
-        vis_selector_label = QLabel("Select visualisation node (your custom node's visualisation will mirror this node):")
+        vis_selector_label = QLabel(
+            "Select visualisation node (your custom node's visualisation will mirror this node):")
         for node_id, (node_name, _) in self.id_to_info.items():
             self.vis_selector.addItem(f"{node_name} ({node_id})", userData=node_id)
-        self.vis_selector.setCurrentIndex(self.vis_selector.count() - 1) # Default to last list item
+        self.vis_selector.setCurrentIndex(self.vis_selector.count() - 1)  # Default to last list item
         vis_selector_layout = QVBoxLayout()
         vis_selector_layout.addWidget(vis_selector_label)
         vis_selector_layout.addWidget(self.vis_selector)
@@ -135,7 +136,8 @@ class RegCustomDialog(QDialog):
             return
         # Check name does not already exist
         if name in self.existing_names:
-            self.create_warning("Name In Use", "This name is assigned to an existing custom node. Please choose another.")
+            self.create_warning("Name In Use",
+                                "This name is assigned to an existing custom node. Please choose another.")
             return
         # Check start node is before stop node in the pipeline
         # start_id = self.start_node_input.currentData()

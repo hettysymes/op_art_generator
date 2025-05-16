@@ -1,6 +1,6 @@
-
 import uuid
 from dataclasses import dataclass
+
 
 # Node ID
 @dataclass(frozen=True)
@@ -10,16 +10,27 @@ class NodeId:
     def __str__(self):
         return f"#{self.value[:3]}"
 
+
 def gen_node_id() -> NodeId:
     return NodeId(str(uuid.uuid4()))
 
+
 # Port ID
 type PropKey = str
+
+
 @dataclass(frozen=True)
 class PortId:
     node: NodeId
     key: PropKey
     is_input: bool
+
+def output_port(node: NodeId, key: PropKey) -> PortId:
+    return PortId(node, key, False)
+
+def input_port(node: NodeId, key: PropKey) -> PortId:
+    return PortId(node, key, True)
+
 
 # Edge ID
 @dataclass(frozen=True)

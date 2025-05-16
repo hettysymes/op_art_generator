@@ -1,43 +1,35 @@
 import traceback
 from abc import ABC, abstractmethod
+from typing import Optional
 
-from ui.nodes.node_implementations.port_ref_table_handler import flatten_list
+from ui.id_datatypes import PropKey, NodeId, PortId, create_output_port_id, create_input_port_id, input_port, EdgeId
+from ui.node_graph import NodeGraph
+from ui.node_manager import NodeManager
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.port_defs import PortIO, PT_Scalar, PT_Hidden, PT_List
+from ui.nodes.prop_defs import PropEntry, PropValue
 from ui.nodes.shape_datatypes import Group
-from ui.vis_types import ErrorFig
+from ui.vis_types import ErrorFig, Visualisable
 
 
 class NodeInfo:
 
-    def __init__(self, description, port_defs=None, prop_entries=None):
+    def __init__(self, description: str, prop_entries: Optional[dict[PropKey, PropEntry]] = None):
         self.description = description
-        self.port_defs = port_defs if port_defs else {}
-        self.prop_entries = prop_entries if prop_entries else {}
+        self.prop_entries = prop_entries if prop_entries is not None else {}
 
-class BaseNode:
 
-    @abstractmethod
-    def get_compute_result(self, port_key='_main'):
-        pass
+class Node(ABC):
+    NAME = ""  # To override
 
-class Node(BaseNode, ABC):
-    NAME = None  # To override
-
-    def __init__(self, uid, graph_querier, prop_vals=None):
+    def __init__(self, uid: NodeId, graph_querier: NodeGraph, node_querier: NodeManager, prop_vals: Optional[dict[PropKey, PropValue]] = None):
         self.uid = uid
         self.graph_querier = graph_querier
-        self.prop_vals = prop_vals if prop_vals is not None else self._default_prop_vals()
-        self.compute_results = {}
+        self.node_querier = node_querier
+        self.prop_vals = prop_vals
+        self.compute_results: dict[PropKey, PropValue] = {}
 
-    def _default_prop_vals(self):
-        default_prop_vals = {}
-        for prop_key, prop_entry in self.get_prop_entries().items():
-            default_prop_vals[prop_key] = prop_entry.default_value
-        return default_prop_vals
-
-    def safe_visualise(self):
+    def safe_visualise(self) -> Visualisable:
         # Catch exception if raised
         try:
             # Recompute results
@@ -59,125 +51,50 @@ class Node(BaseNode, ABC):
             vis = Group(debug_info="Blank Canvas")
         return vis
 
-    def clear_compute_results(self):
+    def clear_compute_results(self) -> "Node":
         self.compute_results.clear()
         return self
 
-    # Getter functions for node info
-    def get_description(self):
-        return self.node_info.description
+    def get_compute_result(self, key: PropKey = '_main') -> Optional[PropValue]:
+        return self.compute_results.get(key)
 
-    def get_port_defs(self):
-        return self.node_info.port_defs
+    def set_compute_result(self, value: PropValue, key: PropKey = '_main') -> None:
+        self.compute_results[key] = value
 
-    def port_defs_filter_by_io(self, port_io):
-        return {port_key: port_def for (io, port_key), port_def in self.get_port_defs().items() if io == port_io}
-
-    def get_prop_entries(self):
-        return self.node_info.prop_entries
-
-    def set_property(self, prop_key, value):
-        self.prop_vals[prop_key] = value
-
-    def get_property(self, prop_key):
-        return self.prop_vals[prop_key]
-
-    def prop_entries_is_empty(self):
-        for prop_entry in self.get_prop_entries().values():
-            if not isinstance(prop_entry.prop_type, PT_Hidden):
-                return False
-        return True
-
-    def compulsory_ports(self):
-        compulsory_ports = []
-        for port_id, port_def in self.get_port_defs().items():
-            if not port_def.optional:
-                compulsory_ports.append(port_id)
-        return compulsory_ports
-
-    def get_compute_result(self, port_key='_main'):
-        return self.compute_results.get(port_key)
-
-    def set_compute_result(self, value, port_key='_main'):
-        self.compute_results[port_key] = value
-
-    # Private functions
-    def _active_input_ports(self):
-        return self.graph_querier.active_input_port_keys(self.uid)
-
-    def _active_output_ports(self):
-        return self.graph_querier.active_output_port_keys(self.uid)
-
-    def _port_input(self, port_key, get_refs=False):
-        return self.graph_querier.port_input(self.uid, port_key, get_refs)
-
-    def _prop_val(self, prop_key, get_refs=False):
-        if prop_key in self._active_input_ports():
-            # Property given by port
-            prop_node_vals = self._port_input(prop_key, get_refs=True)
-            # Get port type
-            port_type = self.port_defs_filter_by_io(PortIO.INPUT)[prop_key].port_type
-
-            if isinstance(port_type, PT_Scalar) or (isinstance(port_type, PT_List) and not port_type.input_multiple):
-                return prop_node_vals[0] if get_refs else prop_node_vals[0][1]
-            elif isinstance(port_type, PT_List) and port_type.input_multiple:
-                flattened_props = {}
-                # Get source port types
-                for ref_id, value in prop_node_vals:
-                    src_port_type = self._port_ref(prop_key, ref_id).port_def.port_type
-                    i = 0
-                    if isinstance(src_port_type, PT_List):
-                        if src_port_type.is_compatible_with(port_type.item_type):
-                            # Port types are directly compatible
-                            flattened_props[ref_id] = value
-                        else:
-                            # Flatten list
-                            flattened_value = flatten_list(value)
-                            flattened_props[(ref_id, i)] = flattened_value
-                            i += 1
-                    else:
-                        flattened_props[ref_id] = value
-                return flattened_props if get_refs else list(flattened_props.values())
-        # No overriding from port, default to stored property value entry
-        return self.prop_vals.get(prop_key)
-
-    def _port_ref(self, port_key, ref_id):
-        return self.graph_querier.get_port_ref(self.uid, port_key, ref_id)
-
-    def _mark_inactive_port_id(self, port_id):
-        self.graph_querier.mark_inactive_port_id(self.uid, port_id)
-
-    def final_compute(self):
+    def final_compute(self) -> None:
         return self.compute()
 
-    def visualise(self):
+    def visualise(self) -> Optional[Visualisable]:
         try:
-            value = self.get_compute_result()
-            value_type = self.get_port_defs()[(PortIO.OUTPUT, '_main')].port_type
-            return visualise_by_type(value, value_type)
+            value: PropValue = self.get_compute_result()
+            return visualise_by_type(value, value.type)
         except:
             return None
 
+    def resolve_property(self, prop_key: PropKey) -> Optional[PropValue]:
+        pass
+
+
 
     @classmethod
-    def name(cls):
+    def name(cls) -> str:
         return cls.NAME
 
     @property
-    def base_node_name(self):
+    def base_node_name(self) -> str:
         return self.name()
 
     @property
-    def randomisable(self):
+    def randomisable(self) -> bool:
         return False
 
     # Functions to implement
 
     @property
     @abstractmethod
-    def node_info(self):
+    def node_info(self) -> NodeInfo:
         pass
 
     @abstractmethod
-    def compute(self):
+    def compute(self) -> None:
         pass

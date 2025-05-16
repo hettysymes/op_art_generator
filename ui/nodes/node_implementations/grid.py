@@ -1,12 +1,10 @@
-from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.node_defs import NodeInfo
 from ui.nodes.node_implementations.canvas import CanvasNode
-from ui.nodes.node_implementations.shape import StraightLineNode
-from ui.nodes.node_implementations.visualiser import get_grid
+from ui.nodes.node_implementations.shapes import StraightLineNode
+from ui.nodes.node_implementations.visualiser import get_grid, add_background
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Warp, PT_Grid, PT_Int, PropEntry
-from ui.nodes.shape_datatypes import Group
-from ui.nodes.warp_datatypes import PosWarp, RelWarp
+from ui.nodes.prop_defs import PortIO, PortDef, PT_Warp, PT_Grid, PT_Int, PropEntry, Colour
+from ui.nodes.shape_datatypes import Group, Polyline
 
 DEF_GRID_INFO = NodeInfo(
     description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively.",
@@ -41,8 +39,8 @@ class GridNode(UnitNode):
         grid_group = Group(debug_info="Grid")
         for x in v_line_xs:
             # Draw horizontal lines
-            grid_group.add(StraightLineNode.helper((x, 0), (x, 1), stroke='black', stroke_width=2))
+            grid_group.add(Polyline([(x, 0), (x, 1)], stroke='black', stroke_width=2))
         for y in h_line_ys:
             # Draw vertical lines
-            grid_group.add(StraightLineNode.helper((0, y), (1, y), stroke='black', stroke_width=2))
-        return CanvasNode.helper((255, 255, 255, 255), grid_group)
+            grid_group.add(Polyline([(0, y), (1, y)], stroke='black', stroke_width=2))
+        return add_background(grid_group, Colour(255, 255, 255, 255))

@@ -4,12 +4,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyledItemDelegate, QHBoxLayout, QPushButton
 
-from ui.nodes.port_defs import PortRefTableEntry
+from ui.nodes.prop_defs import PortRefTableEntry
 from ui.reorderable_table_widget import ReorderableTableWidget
 
 
 class PortRefTableWidget(QWidget):
-    def __init__(self, port_ref_getter=None, table_heading=None, entries=None, text_callback=None, context_menu_callback=None, additional_actions=None, item_delegate=None, parent=None):
+    def __init__(self, port_ref_getter=None, table_heading=None, entries=None, text_callback=None,
+                 context_menu_callback=None, additional_actions=None, item_delegate=None, parent=None):
         super().__init__(parent)
         self.port_ref_getter = port_ref_getter  # A function to get a port_ref given a ref_id
         self.text_callback = text_callback or self.default_text_callback

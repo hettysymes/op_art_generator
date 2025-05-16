@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+
 from ui.id_datatypes import NodeId, PortId
 from ui.node_graph import NodeGraph
 
@@ -12,12 +13,14 @@ class NodeState:
     pos: tuple[float, float]
     svg_size: tuple[float, float]
 
+
 @dataclass(frozen=True)
 class CustomNodeDef:
     subgraph: NodeGraph
     selected_ports: dict[NodeId, list[PortId]]
     vis_node_id: NodeId
     description: Optional[str] = None
+
 
 @dataclass(frozen=True)
 class AppState:
