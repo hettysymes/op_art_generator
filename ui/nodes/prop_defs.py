@@ -224,8 +224,9 @@ class PropValue(ABC):
         pass
 
 @dataclass(frozen=True)
-class PropEntry:
-    ports: tuple[PortStatus, PortStatus] # First element is INPUT status, second element is OUTPUT status
+class PropDef:
+    input_port_status: PortStatus = PortStatus.OPTIONAL
+    output_port_status: PortStatus = PortStatus.OPTIONAL
     prop_type: PropType = PropType()
     display_name: str = ""
     description: str = ""
@@ -322,3 +323,12 @@ class Colour(PropValue):
     @property
     def type(self) -> PropType:
         return PT_Colour()
+
+class Int(PropValue):
+
+    def __init__(self, value: int):
+        self.value = value
+
+    @property
+    def type(self) -> PropType:
+        return PT_Int()

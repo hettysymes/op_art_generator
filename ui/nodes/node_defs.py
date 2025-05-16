@@ -2,21 +2,21 @@ import traceback
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ui.id_datatypes import PropKey, NodeId, PortId, create_output_port_id, create_input_port_id, input_port, EdgeId
+from ui.id_datatypes import PropKey, NodeId, PortId, input_port, EdgeId
 from ui.node_graph import NodeGraph
 from ui.node_manager import NodeManager
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.prop_defs import PropEntry, PropValue
+from ui.nodes.prop_defs import PropDef, PropValue
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig, Visualisable
 
 
 class NodeInfo:
 
-    def __init__(self, description: str, prop_entries: Optional[dict[PropKey, PropEntry]] = None):
+    def __init__(self, description: str, prop_defs: Optional[dict[PropKey, PropDef]] = None):
         self.description = description
-        self.prop_entries = prop_entries if prop_entries is not None else {}
+        self.prop_defs = prop_defs if prop_defs is not None else {}
 
 
 class Node(ABC):

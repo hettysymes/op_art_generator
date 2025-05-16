@@ -1,26 +1,29 @@
 from ui.nodes.node_defs import NodeInfo
-from ui.nodes.node_implementations.canvas import CanvasNode
-from ui.nodes.node_implementations.shapes import StraightLineNode
 from ui.nodes.node_implementations.visualiser import get_grid, add_background
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PortIO, PortDef, PT_Warp, PT_Grid, PT_Int, PropEntry, Colour
+from ui.nodes.prop_defs import PT_Warp, PT_Grid, PT_Int, PropDef, Colour, PortStatus, Int
 from ui.nodes.shape_datatypes import Group, Polyline
 
 DEF_GRID_INFO = NodeInfo(
     description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively.",
-    port_defs={(PortIO.INPUT, 'x_warp'): PortDef("X Warp", PT_Warp(), optional=True,
-                                                 description="By default vertical grid lines are spaced equally."),
-               (PortIO.INPUT, 'y_warp'): PortDef("Y Warp", PT_Warp(), optional=True,
-                                                 description="By default horizontal grid lines are spaced equally."),
-               (PortIO.OUTPUT, '_main'): PortDef("Grid", PT_Grid())},
-    prop_entries={'width': PropEntry(PT_Int(min_value=1),
-                                     display_name="Width",
-                                     description="Number of cells in the width of the grid, at most 1.",
-                                     default_value=5),
-                  'height': PropEntry(PT_Int(min_value=1),
-                                      display_name="Height",
-                                      description="Number of cells in the height of the grid, at most 1.",
-                                      default_value=5)}
+    prop_defs={'width': PropDef(prop_type=PT_Int(min_value=1),
+                               display_name="Width",
+                               description="Number of cells in the width of the grid, at most 1.",
+                               default_value=Int(5)),
+              'height': PropDef(prop_type=PT_Int(min_value=1),
+                                display_name="Height",
+                                description="Number of cells in the height of the grid, at most 1.",
+                                default_value=Int(5)),
+               'x_warp': PropDef(prop_type=PT_Warp(),
+                                 display_name="X Warp",
+                                 description="By default vertical grid lines are spaced equally."),
+               'y_warp': PropDef(prop_type=PT_Warp(),
+                                 display_name="Y Warp",
+                                 description="By default horizontal grid lines are spaced equally."),
+               '_main': PropDef(input_port_status=PortStatus.FORBIDDEN,
+                                output_port_status=PortStatus.COMPULSORY,
+                                display_name="Grid")
+               }
 )
 
 
