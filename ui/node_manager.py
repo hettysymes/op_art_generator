@@ -21,12 +21,12 @@ class NodeInfo:
     selectable: bool
     combination: bool
 
-    def filter_ports_by_status(self, port_status: PortStatus) -> list[PortId]:
+    def filter_ports_by_status(self, port_status: PortStatus, get_input=True, get_output=True) -> list[PortId]:
         results = []
         for key, prop_def in self.prop_defs.items():
-            if prop_def.input_port_status == port_status:
+            if get_input and prop_def.input_port_status == port_status:
                 results.append(input_port(node=self.uid, key=key))
-            if prop_def.output_port_status == port_status:
+            if get_output and prop_def.output_port_status == port_status:
                 results.append(output_port(node=self.uid, key=key))
         return results
 

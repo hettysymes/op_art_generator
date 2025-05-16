@@ -7,9 +7,10 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidge
     QGroupBox, QLabel, QLineEdit
 
 from ui.colour_prop_widget import ColorPropertyWidget
-from ui.id_datatypes import PortId
+from ui.id_datatypes import PortId, PropKey, input_port
+from ui.node_manager import NodeInfo
 from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
-    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry
+    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry, PortStatus, PropDef
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -100,8 +101,9 @@ class NodePropertiesDialog(QDialog):
     def __init__(self, node_item, parent=None):
         super().__init__(parent)
         self.node_item = node_item
+        self.node_info: NodeInfo = node_item.node_info
         self.scene = node_item.scene()
-        self.setWindowTitle(f"Properties: {node_item.node_info.name}")
+        self.setWindowTitle(f"Properties: {self.node_info.name}")
         self.setMinimumWidth(400)
 
         # Main layout
@@ -115,60 +117,60 @@ class NodePropertiesDialog(QDialog):
         self.property_widgets = {}
 
         # Add custom properties based on node type
-        if node_item.node().get_prop_entries():
+        if self.node_info.prop_defs:
             props_group = QGroupBox("Node Properties")
             props_layout = QFormLayout()
             props_group.setLayout(props_layout)
 
-            for prop_key, prop_entry in node_item.node().get_prop_entries().items():
-                if not isinstance(prop_entry.prop_type, PT_Hidden):
-                    widget = self.create_property_widget(prop_key, prop_entry, node_item.node().get_internal_property(prop_key),
+            for key, prop_def in self.node_info.prop_defs.items():
+                if not isinstance(prop_def.prop_type, PT_Hidden):
+                    widget = self.create_property_widget(key, prop_def, node_item.node_manager.get_internal_property(node_item.uid, key),
                                                          node_item)
 
                     # Create the row with label and help icon
-                    label_container, widget_container = self.create_property_row(prop_key, prop_entry, widget,
+                    label_container, widget_container = self.create_property_row(key, prop_def, widget,
                                                                                  node_item)
                     props_layout.addRow(label_container, widget_container)
-                    self.property_widgets[prop_key] = widget
+                    self.property_widgets[key] = widget
 
             main_layout.addWidget(props_group)
 
-        input_ports_open: list[PortId] = [port for port in node_item.node_state.ports_open if port.is_input]
-        for port_key, port_def in node_item.node().port_defs_filter_by_io(PortIO.INPUT).items():
-            if port_def.optional and port_def.description and (port_key not in node_item.node().get_prop_entries()):
-                # Add label with property button
-                if not port_only_group:
-                    port_only_group = QGroupBox("Port modifiable properties")
-                    port_only_group_layout = QVBoxLayout(port_only_group)  # Create a vertical layout for the group
-                    port_only_group.setLayout(port_only_group_layout)  # Set the layout for the group
-
-                widget_container = QWidget()  # This will be a widget inside the group
-                widget_layout = QHBoxLayout(widget_container)
-                widget_layout.setContentsMargins(0, 0, 0, 0)
-                widget_layout.setSpacing(4)
-
-                text = f"{port_def.display_name}: {port_def.description}"
-
-                # Create and add label
-                label = QLabel(text)
-                widget_layout.addWidget(label)
-
-                # Add plus/minus buttons based on port state
-                if port_key in input_ports_open:
-                    # If port is open, add minus button to remove the port
-                    minus_btn = ModifyPropertyPortButton(self.change_property_port, port_key, adding=False)
-                    widget_layout.addWidget(minus_btn)
-                else:
-                    # If port is not open, add plus button to add the port
-                    plus_btn = ModifyPropertyPortButton(self.change_property_port, port_key, adding=True)
-                    widget_layout.addWidget(plus_btn)
-
-                # Add the widget container (with layout) to the group
-                port_only_group_layout.addWidget(widget_container)
-
-        # If port_only_group was created, add it to the main layout
-        if port_only_group:
-            main_layout.addWidget(port_only_group)
+        # input_ports_open: list[PortId] = [port for port in node_item.node_state.ports_open if port.is_input]
+        # for port in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL, get_output=False):
+        #     if port_def.optional and port_def.description and (port_key not in node_item.node().get_prop_entries()):
+        #         # Add label with property button
+        #         if not port_only_group:
+        #             port_only_group = QGroupBox("Port modifiable properties")
+        #             port_only_group_layout = QVBoxLayout(port_only_group)  # Create a vertical layout for the group
+        #             port_only_group.setLayout(port_only_group_layout)  # Set the layout for the group
+        #
+        #         widget_container = QWidget()  # This will be a widget inside the group
+        #         widget_layout = QHBoxLayout(widget_container)
+        #         widget_layout.setContentsMargins(0, 0, 0, 0)
+        #         widget_layout.setSpacing(4)
+        #
+        #         text = f"{port_def.display_name}: {port_def.description}"
+        #
+        #         # Create and add label
+        #         label = QLabel(text)
+        #         widget_layout.addWidget(label)
+        #
+        #         # Add plus/minus buttons based on port state
+        #         if port in input_ports_open:
+        #             # If port is open, add minus button to remove the port
+        #             minus_btn = ModifyPropertyPortButton(self.change_property_port, port_key, adding=False)
+        #             widget_layout.addWidget(minus_btn)
+        #         else:
+        #             # If port is not open, add plus button to add the port
+        #             plus_btn = ModifyPropertyPortButton(self.change_property_port, port_key, adding=True)
+        #             widget_layout.addWidget(plus_btn)
+        #
+        #         # Add the widget container (with layout) to the group
+        #         port_only_group_layout.addWidget(widget_container)
+        #
+        # # If port_only_group was created, add it to the main layout
+        # if port_only_group:
+        #     main_layout.addWidget(port_only_group)
 
         # Create buttons
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -184,7 +186,7 @@ class NodePropertiesDialog(QDialog):
         else:
             self.node_item.remove_property_port(port_key)
 
-    def create_property_row(self, prop_key, prop_entry, widget, node_item):
+    def create_property_row(self, key: PropKey, prop_def: PropDef, widget, node_item):
         """Create a row with property label and a help icon to the right of the widget"""
 
         # Create a container widget for the label
@@ -194,8 +196,8 @@ class NodePropertiesDialog(QDialog):
         label_layout.setSpacing(4)  # Small spacing between elements
 
         # Create the label
-        add_text = ":" if prop_entry.auto_format else ""
-        label = QLabel(prop_entry.display_name + add_text)
+        add_text = ":" if prop_def.auto_format else ""
+        label = QLabel(prop_def.display_name + add_text)
         label_layout.addWidget(label)
         label_layout.addStretch()
 
@@ -209,20 +211,20 @@ class NodePropertiesDialog(QDialog):
         widget_layout.addWidget(widget)
 
         # Add the help icon after the widget (on the right)
-        if prop_entry.description:
-            help_icon = HelpIconLabel(prop_entry.description, max_width=300)  # Set maximum width for tooltip
+        if prop_def.description:
+            help_icon = HelpIconLabel(prop_def.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
-        if prop_key in node_item.node().port_defs_filter_by_io(PortIO.INPUT):
-            input_ports_open = [port_key for (io, port_key) in node_item.node_state.ports_open if io == PortIO.INPUT]
-            if prop_key in input_ports_open:
+        if input_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL, get_output=False):
+            input_ports_open = [port for port in node_item.node_state.ports_open if port.is_input]
+            if key in input_ports_open:
                 # Exists port to modify this property, add minus button
                 minus_btn = ModifyPropertyPortButton(self.change_property_port,
-                                                     prop_key,
+                                                     key,
                                                      adding=False)  # Set maximum width for tooltip
                 widget_layout.addWidget(minus_btn)
             else:
                 # Does not exist port to modify this property, add plus button
-                plus_btn = ModifyPropertyPortButton(self.change_property_port, prop_key,
+                plus_btn = ModifyPropertyPortButton(self.change_property_port, key,
                                                     adding=True)  # Set maximum width for tooltip
                 widget_layout.addWidget(plus_btn)
 

@@ -810,9 +810,9 @@ class ChangePropertiesCmd(QUndoCommand):
             self.node_manager.set_internal_property(self.node_item.uid, prop_key, value)
             if (not node_setting(self.node_item.node_info.name).resizable) and (
                     prop_key == 'width' or prop_key == 'height'):
-                svg_width: Int = self.node_manager.get_internal_property(self.node_item.uid, 'width')
-                svg_height: Int = self.node_manager.get_internal_property(self.node_item.uid, 'height')
-                self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width.value, svg_height.value))
+                svg_width = self.node_manager.get_internal_property(self.node_item.uid, 'width')
+                svg_height = self.node_manager.get_internal_property(self.node_item.uid, 'height')
+                self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width, svg_height))
         # Update the node's appearance
         self.node_item.update_visualisations()
 
