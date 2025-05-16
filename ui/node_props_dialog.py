@@ -309,7 +309,7 @@ class NodePropertiesDialog(QDialog):
                     start_x, start_y = points[0]
                     stop_x, stop_y = points[-1]
                     arrow = '←' if table_entry.reversed() else '→'
-                    return f"{port_ref.base_node_name} (id: {port_ref.node})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
+                    return f"{port_ref.base_name} (id: {port_ref.node})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
                 x, y = table_entry
                 return f"({x:.2f}, {y:.2f})"
 

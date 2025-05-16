@@ -184,7 +184,7 @@ class NodeItem(QGraphicsRectItem):
         self.setAcceptHoverEvents(True)
 
         # Set the help text for this node
-        self._help_text = f"{node.base_node_name} Help:\n{node.get_description()}"
+        self._help_text = f"{node.base_name} Help:\n{node.get_description()}"
 
         self.resize_handle = None
         if node_setting(node_info.name).resizable:
@@ -481,7 +481,7 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(title_font)
         painter.setPen(QColor("black"))
         metrics = QFontMetrics(title_font)
-        title_text = self.node().base_node_name
+        title_text = self.node().base_name
         text_width = metrics.horizontalAdvance(title_text)
         text_height = metrics.height()
         node_rect = self.rect()
@@ -1622,7 +1622,7 @@ class PipelineEditor(QMainWindow):
         for new_id in new_ids_topo_order:
             node = subgraph.node(new_id)
             unconnected_ports = subgraph.unconnected_ports(new_id)
-            base_name = node.base_node_name
+            base_name = node.base_name
             # Get port id (io, port_key) mapped to port display name
             port_map = {}
             ports_open = node_states[new_id].ports_open
@@ -1662,14 +1662,14 @@ class PipelineEditor(QMainWindow):
     def delete_selected_items(self):
         node_states, edges = self.identify_selected_items()
         if node_states or edges:
-            subset_node_manager: NodeManager = self.scene.node_manager.subset_node_manager({node for node in node_states})
+            subset_node_manager: NodeManager = self.scene.node_manager.new_node_manager(subset={node for node in node_states})
             port_refs: dict[NodeId, dict[PortId, RefId]] = {node: copy.deepcopy(port_ref_data) for node, port_ref_data in
                          self.scene.node_graph.node_to_port_ref.items() if node in node_states}
             self.scene.undo_stack.push(DeleteCmd(self.scene, node_states, subset_node_manager, edges, port_refs))
 
     def identify_selected_subgraph(self):
         node_states, edges = self.identify_selected_items()
-        subset_node_manager: NodeManager = self.scene.node_manager.subset_node_manager({node for node in node_states})
+        subset_node_manager: NodeManager = self.scene.node_manager.new_node_manager(subset={node for node in node_states})
         # Remove edges which are not connected at both ends to selected nodes
         edges_to_remove = {
             edge for edge in edges
@@ -1691,17 +1691,17 @@ class PipelineEditor(QMainWindow):
         # Return node states and connections between them
         return node_states, subset_node_manager, edges, new_port_refs
 
-    def deep_copy_subgraph(self, node_states, nodes, connections, port_refs, node_graph=None):
+    def deep_copy_subgraph(self, node_states: dict[NodeId, NodeState], subset_node_manager: NodeManager, edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], node_graph: Optional[NodeGraph] = None):
         node_graph = node_graph or self.scene.node_graph
-        old_to_new_id_map: dict[NodeId, NodeId] = {}
-        # Copy nodes
+        new_node_manager, old_to_new_id_map = subset_node_manager.new_node_manager(new_ids=True)
+        # Update node states
         new_node_states: dict[NodeId, NodeState] = {}
-        for node_state in node_states:
-            new_uid: NodeId = gen_node_id()
+        for node, node_state in node_states:
+            new_node = old_to_new_id_map[node]
             # Copy node state
             new_node_state: NodeState = copy.deepcopy(node_state)
-            new_node_state.node = new_uid # Update id in node state
-            new_node_states[new_uid] = new_node_state # Add to new node states
+            new_node_state.node = new_node # Update id in node state
+            new_node_states[new_node] = new_node_state # Add to new node states
             # Copy node
             node = nodes[node_state.node]
             new_node = copy.deepcopy(node)
@@ -1712,7 +1712,7 @@ class PipelineEditor(QMainWindow):
             old_to_new_id_map[node_state.node] = new_uid
         # Update ids in connections
         new_connections = []
-        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in connections:
+        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in edges:
             new_connections.append(((old_to_new_id_map[src_node_id], src_port_key),
                                     (old_to_new_id_map[dst_node_id], dst_port_key)))
         # Update ids in port refs

@@ -2,6 +2,8 @@ import copy
 from dataclasses import dataclass
 from typing import Optional
 
+from fontTools.subset.svg import subset_elements
+
 from ui.id_datatypes import NodeId, PortId, PropKey, input_port, output_port, gen_node_id
 from ui.nodes.node_defs import Node
 from ui.nodes.nodes import SelectableNode, CombinationNode
@@ -63,7 +65,7 @@ class NodeManager:
         return NodeInfo(
             uid=node,
             name=node_impl.name(),
-            base_name=node_impl.base_node_name,
+            base_name=node_impl.base_name,
             description=node_impl.description,
             prop_defs=node_impl.prop_defs,
             randomisable=node_impl.randomisable,
@@ -78,7 +80,7 @@ class NodeManager:
         self._node_impl(node).prop_vals[key] = value
 
     def visualise(self, node: NodeId) -> Visualisable:
-        return self._node_impl(node).safe_visualise()
+        return self._node_impl(node).visualise()
 
     def selections_w_idx(self, node: NodeId) -> tuple[list[type[Node]], int]:
         comb_node: Node = self._node_impl(node)
@@ -90,17 +92,23 @@ class NodeManager:
         assert isinstance(comb_node, CombinationNode)
         comb_node.set_selection(index)
 
-    def subset_node_manager(self, nodes: set[NodeId], new_ids=False) -> tuple["NodeManager", dict[NodeId, NodeId]]:
-        subset_node_manager = NodeManager()
+    def new_node_manager(self, subset: Optional[set[NodeId]] = None, new_ids: bool = False) -> "NodeManager" | tuple["NodeManager", dict[NodeId, NodeId]]:
+        new_node_manager = NodeManager()
         old_to_new_id_map: dict[NodeId, NodeId] = {}
-        for node in nodes:
+        nodes_to_copy: set[NodeId] = subset if subset is not None else self.node_map.keys()
+        for node in nodes_to_copy:
+            node_impl = copy.deepcopy(self._node_impl(node))
             if new_ids:
                 node_id: NodeId = gen_node_id()
+                node_impl.uid = node_id
                 old_to_new_id_map[node] = node_id
             else:
                 node_id: NodeId = node
-            subset_node_manager.add_node(node_id, copy.deepcopy(self._node_impl(node)))
-        return subset_node_manager, old_to_new_id_map
+            new_node_manager.add_node(node_id, node_impl)
+        if new_ids:
+            return new_node_manager, old_to_new_id_map
+        else:
+            return new_node_manager
 
     def update_nodes(self, other_node_manager: "NodeManager") -> None:
         self.node_map.update(other_node_manager.node_map)

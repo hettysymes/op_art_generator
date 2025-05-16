@@ -9,9 +9,9 @@ class UnitNode(Node, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
-    def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
+    def __init__(self, uid, graph_querier, internal_props=None, add_info=None):
         self._node_info = self._default_node_info()
-        super().__init__(uid, graph_querier, prop_vals)
+        super().__init__(uid, graph_querier, internal_props)
 
     @property
     def node_info(self):
@@ -31,10 +31,10 @@ class SelectableNode(UnitNode, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
-    def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
+    def __init__(self, uid, graph_querier, internal_props=None, add_info=None):
         self._node_info = self._default_node_info()
         self.extracted_port_ids = []
-        super().__init__(uid, graph_querier, prop_vals)
+        super().__init__(uid, graph_querier, internal_props)
 
     def final_compute(self):
         self._remove_redundant_ports()
@@ -72,9 +72,9 @@ class CombinationNode(Node, ABC):
     NAME = None
     SELECTIONS: list[type[Node]] = []  # To override
 
-    def __init__(self, uid, graph_querier, prop_vals=None, add_info=0):
+    def __init__(self, uid, graph_querier, internal_props=None, add_info=0):
         self._selection_index = add_info
-        self._node = self.selections()[add_info](uid, graph_querier, prop_vals)
+        self._node = self.selections()[add_info](uid, graph_querier, internal_props)
 
     def __getattr__(self, attr):
         _node = object.__getattribute__(self, "_node")
@@ -100,7 +100,7 @@ class CombinationNode(Node, ABC):
     def set_selection(self, index):
         self._selection_index = index
         old_prop_vals = copy.deepcopy(self._node.prop_vals)
-        self._node = self.selections()[index](self.uid, self.graph_querier, prop_vals=None)
+        self._node = self.selections()[index](self.uid, self.graph_querier, internal_props=None)
 
         # Copy over matching existing properties
         for prop_key, old_value in old_prop_vals.items():
@@ -109,8 +109,8 @@ class CombinationNode(Node, ABC):
 
     # Forwarded interface
     @property
-    def base_node_name(self):
-        return self._node.base_node_name
+    def base_name(self):
+        return self._node.base_name
 
     @property
     def node_info(self):
@@ -163,7 +163,7 @@ class CustomNode(Node):
         )
 
     @property
-    def base_node_name(self):
+    def base_name(self):
         return self._name
 
     def _replace_input_nodes(self):
