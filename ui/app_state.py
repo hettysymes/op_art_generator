@@ -3,12 +3,13 @@ from typing import Optional
 
 from ui.id_datatypes import NodeId, PortId
 from ui.node_graph import NodeGraph
+from ui.node_manager import NodeManager
 
 
 # State classes
 @dataclass
 class NodeState:
-    node_id: NodeId
+    node: NodeId
     ports_open: list[PortId]
     pos: tuple[float, float]
     svg_size: tuple[float, float]
@@ -18,7 +19,7 @@ class NodeState:
 class CustomNodeDef:
     subgraph: NodeGraph
     selected_ports: dict[NodeId, list[PortId]]
-    vis_node_id: NodeId
+    vis_node: NodeId
     description: Optional[str] = None
 
 
@@ -28,4 +29,5 @@ class AppState:
     zoom: float
     node_states: list[NodeState]
     node_graph: NodeGraph
+    node_manager: NodeManager
     custom_node_defs: dict[str, CustomNodeDef]

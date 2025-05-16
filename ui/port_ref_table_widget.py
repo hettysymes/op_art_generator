@@ -129,5 +129,5 @@ class PortRefTableWidget(QWidget):
     @staticmethod
     def default_text_callback(port_ref, table_entry):
         if port_ref:
-            return f"{port_ref.base_node_name} (id: {port_ref.node_id})"
+            return f"{port_ref.base_node_name} (id: {port_ref.node})"
         return ""

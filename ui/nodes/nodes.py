@@ -2,7 +2,7 @@ import copy
 import random
 from abc import ABC, abstractmethod
 
-from ui.nodes.node_defs import Node, NodeInfo
+from ui.nodes.node_defs import Node, PrivateNodeInfo
 
 
 class UnitNode(Node, ABC):
@@ -70,7 +70,7 @@ class SelectableNode(UnitNode, ABC):
 
 class CombinationNode(Node, ABC):
     NAME = None
-    SELECTIONS = []  # To override
+    SELECTIONS: list[type[Node]] = []  # To override
 
     def __init__(self, uid, graph_querier, prop_vals=None, add_info=0):
         self._selection_index = add_info
@@ -91,10 +91,10 @@ class CombinationNode(Node, ABC):
             setattr(_node, name, value)
 
     @classmethod
-    def selections(cls):
+    def selections(cls) -> list[type[Node]]:
         return cls.SELECTIONS
 
-    def selection_index(self):
+    def selection_index(self) -> int:
         return self._selection_index
 
     def set_selection(self, index):
@@ -140,7 +140,7 @@ class CustomNode(Node):
         self._name, custom_node_def = add_info
         self.subgraph = custom_node_def.subgraph
         self.selected_ports = custom_node_def.selected_ports
-        self.vis_node = self.subgraph.node(custom_node_def.vis_node_id)
+        self.vis_node = self.subgraph.node(custom_node_def.vis_node)
         description = custom_node_def.description or "(No help provided)"
         # Perform set up
         self.node_topo_order = self.subgraph.get_topo_order_subgraph()
@@ -157,7 +157,7 @@ class CustomNode(Node):
                 io, port_key = port_id
                 port_defs[(io, CustomNode.to_custom_key(node_id, port_key))] = port_def
         # Set node info
-        self._node_info = NodeInfo(
+        self._node_info = PrivateNodeInfo(
             description=description,
             port_defs=port_defs
         )

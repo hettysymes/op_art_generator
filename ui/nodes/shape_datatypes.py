@@ -61,7 +61,7 @@ class Group(Element):
 
     def get_element_index_from_id(self, element_id):
         for i, elem in enumerate(self.elements):
-            if elem.uid == element_id:
+            if elem.port == element_id:
                 return i
         return None
 

@@ -31,6 +31,9 @@ class NodeGraph:
         # The node can look up information using the ref ID in a safer way, whilst still retaining the relationship with the nodes after pasting
         self.node_to_port_ref: defaultdict[NodeId, defaultdict[PortId, RefId]] = defaultdict(create_port_ref_dict)
 
+    def does_edge_exist(self, edge: EdgeId) -> bool:
+        return edge in self.edges
+
     def add_node(self, node: NodeId) -> None:
         # Add node ID to the nodes set
         self.nodes.add(node)
@@ -68,6 +71,13 @@ class NodeGraph:
                 for edge in self.edges
                 if edge.src_port == node_or_port
             }
+
+    def get_ref_id(self, node: NodeId, port_to_reference: PortId) -> RefId:
+        port_ref_map: defaultdict[PortId, RefId] = self.node_to_port_ref[node]
+        return port_ref_map[port_to_reference]
+
+    def extend_port_refs(self, more_node_to_port_refs: defaultdict[NodeId, defaultdict[PortId, RefId]]):
+        self.node_to_port_ref.update(more_node_to_port_refs)
 
     def output_nodes(self, node: NodeId) -> set[NodeId]:
         # Get nodes that receive outputs from the given node

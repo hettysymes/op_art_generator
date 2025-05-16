@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidge
     QGroupBox, QLabel, QLineEdit
 
 from ui.colour_prop_widget import ColorPropertyWidget
-from ui.nodes.prop_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
+from ui.id_datatypes import PortId
+from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
     LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
@@ -132,9 +133,7 @@ class NodePropertiesDialog(QDialog):
 
             main_layout.addWidget(props_group)
 
-        port_only_group = None
-        input_ports_open = [port_key for (io, port_key) in node_item.node_state.ports_open if io == PortIO.INPUT]
-
+        input_ports_open: list[PortId] = [port for port in node_item.node_state.ports_open if port.is_input]
         for port_key, port_def in node_item.node().port_defs_filter_by_io(PortIO.INPUT).items():
             if port_def.optional and port_def.description and (port_key not in node_item.node().get_prop_entries()):
                 # Add label with property button
@@ -295,7 +294,7 @@ class NodePropertiesDialog(QDialog):
 
         elif isinstance(prop_type, PT_ElemRefTable):
             port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node_id,
+                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
                                                                                      prop_entry.prop_type.linked_port_key,
                                                                                      ref_id),
                 table_heading="Drawing",
@@ -310,7 +309,7 @@ class NodePropertiesDialog(QDialog):
                     start_x, start_y = points[0]
                     stop_x, stop_y = points[-1]
                     arrow = '←' if table_entry.reversed() else '→'
-                    return f"{port_ref.base_node_name} (id: {port_ref.node_id})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
+                    return f"{port_ref.base_node_name} (id: {port_ref.node})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
                 x, y = table_entry
                 return f"({x:.2f}, {y:.2f})"
 
@@ -341,7 +340,7 @@ class NodePropertiesDialog(QDialog):
                     port_ref_table.set_item((x, y), row)
 
             port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node_id,
+                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
                                                                                      prop_entry.prop_type.linked_port_key,
                                                                                      ref_id),
                 table_heading="Points (X, Y)",
@@ -393,7 +392,7 @@ class NodePropertiesDialog(QDialog):
                     port_ref_table.set_item(sel_col, row)
 
             port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node_id,
+                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
                                                                                      prop_entry.prop_type.linked_port_key,
                                                                                      ref_id),
                 table_heading="Colour",

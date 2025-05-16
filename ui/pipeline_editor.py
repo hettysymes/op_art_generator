@@ -20,14 +20,15 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 
 from ui.app_state import NodeState, AppState, CustomNodeDef, NodeId
-from ui.id_datatypes import PortId, EdgeId, gen_node_id
-from ui.node_graph import NodeGraph
+from ui.id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, PropKey
+from ui.node_graph import NodeGraph, RefId
+from ui.node_manager import NodeManager, NodeInfo
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_defs import Node
 from ui.nodes.nodes import CombinationNode, SelectableNode, CustomNode
-from ui.nodes.prop_defs import PortIO, PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar
+from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, Int
 from ui.nodes.shape_datatypes import Group, Element
 from ui.reg_custom_dialog import RegCustomDialog
 from ui.selectable_renderer import SelectableSvgElement
@@ -108,7 +109,7 @@ class NodeItem(QGraphicsRectItem):
     LABEL_SVG_DIST = 5
     LABEL_FONT = QFont("Arial", 8)
 
-    def __init__(self, node_state: NodeState, node: Node):
+    def __init__(self, node_state: NodeState, node_info: NodeInfo):
         super().__init__(0, 0, 0, 0)
         self.node_state: NodeState = node_state
         self.port_items: dict[PortId, PortItem] = {}
@@ -130,7 +131,7 @@ class NodeItem(QGraphicsRectItem):
 
         # Add property button
         self._property_button = None
-        if not node.prop_entries_is_empty():
+        if node_info.filter_ports_by_status(PortStatus.OPTIONAL):
             self._property_button = QPushButton("P")
             self._property_button.setFixedSize(20, 20)
             self._property_button.setStyleSheet("""
@@ -152,7 +153,7 @@ class NodeItem(QGraphicsRectItem):
 
         # Add randomise button
         self._randomise_button = None
-        if node.randomisable:
+        if node_info.randomisable:
             self._randomise_button = QPushButton("↺")
             self._randomise_button.setFixedSize(20, 20)
             self._randomise_button.setToolTip("Randomise selection")
@@ -168,7 +169,7 @@ class NodeItem(QGraphicsRectItem):
                 }
             """)
             self._randomise_button.clicked.connect(
-                lambda: self.scene().undo_stack.push(RandomiseNodesCmd(self.scene(), {self.node_state.node_id})))
+                lambda: self.scene().undo_stack.push(RandomiseNodesCmd(self.scene(), {self.node_state.node})))
 
             # Proxy
             self._randomise_proxy = QGraphicsProxyWidget(self)
@@ -186,15 +187,25 @@ class NodeItem(QGraphicsRectItem):
         self._help_text = f"{node.base_node_name} Help:\n{node.get_description()}"
 
         self.resize_handle = None
-        if node_setting(node.name()).resizable:
+        if node_setting(node_info.name).resizable:
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
 
-    def node_graph(self):
+    @property
+    def uid(self) -> NodeId:
+        return self.node_state.node
+
+    @property
+    def node_graph(self) -> NodeGraph:
         return self.scene().node_graph
 
-    def node(self):
-        return self.node_graph().node(self.node_state.node_id)
+    @property
+    def node_manager(self) -> NodeManager:
+        return self.scene().node_manager
+
+    @property
+    def node_info(self) -> NodeInfo:
+        return self.node_manager.node_info(self.uid)
 
     def add_property_port(self, prop_key):
         self.scene().undo_stack.push(AddPropertyPortCmd(self, prop_key))
@@ -314,8 +325,8 @@ class NodeItem(QGraphicsRectItem):
     def svg_size_from_node_size(self, rect_w, rect_h):
         return rect_w - self.left_max_width - self.right_max_width - 2 * NodeItem.MARGIN_X - 2 * NodeItem.LABEL_SVG_DIST, rect_h - 2 * NodeItem.MARGIN_Y - NodeItem.TITLE_HEIGHT
 
-    def visualise(self):
-        return self.node().safe_visualise()
+    def visualise(self) -> Visualisable:
+        return self.node_manager.visualise(self.uid)
 
     def update_vis_image(self):
         """Add an SVG image to the node that scales with node size and has selectable elements"""
@@ -332,25 +343,20 @@ class NodeItem(QGraphicsRectItem):
                 self.scene().removeItem(self.svg_item)
 
         # Get item to draw
-        vis = self.visualise()
-        # Remove inactive port ids
-        inactive_port_ids = self.node_graph().pop_inactive_port_ids(self.node_state.node_id)
-        for port_id in inactive_port_ids:
-            self.scene().undo_stack.push(RemoveExtractedElementCmd(self, port_id))
+        vis: Visualisable = self.visualise()
+        # Remove inactive port ids TODO
+        # inactive_port_ids = self.node_graph().pop_inactive_port_ids(self.node_state.node)
+        # for port_id in inactive_port_ids:
+        #     self.scene().undo_stack.push(RemoveExtractedElementCmd(self, port_id))
 
-        svg_filepath = os.path.join(self.scene().temp_dir, f"{self.node_state.node_id}.svg")
+        svg_filepath = os.path.join(self.scene().temp_dir, f"{self.node_state.node}.svg")
         # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X + NodeItem.LABEL_SVG_DIST
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
         svg_width, svg_height = self.node_state.svg_size
 
-        if isinstance(vis, ErrorFig) or not isinstance(self.node(), SelectableNode):
-            if isinstance(vis, Element):
-                ElementDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
-            else:
-                assert isinstance(vis, Visualisable)
-                vis.save_to_svg(svg_filepath, svg_width, svg_height)
-
+        if not self.node_info.selectable:
+            vis.save_to_svg(svg_filepath, svg_width, svg_height)
             self.svg_item = QGraphicsSvgItem(svg_filepath)
             # Apply position
             self.svg_item.setParentItem(self)
@@ -416,49 +422,50 @@ class NodeItem(QGraphicsRectItem):
 
     def update_visualisations(self):
         self.update_vis_image()
-        for output_node_id in self.node_graph().output_nodes(self.node_state.node_id):
-            output_node_item = self.scene().node_items[output_node_id]
+        for output_node in self.node_graph.output_nodes(self.uid):
+            output_node_item: NodeItem = self.scene().node_item(output_node)
             output_node_item.update_visualisations()
 
     def create_ports(self, update_vis=True):
-        for port_id in self.node_state.ports_open:
+        for port in self.node_state.ports_open:
             # Update layout at the end for efficiency
-            self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
+            self.add_port(port, self.node_info.prop_defs[port.key], update_layout=False)
         self.update_label_port_positions(update_vis=update_vis)
 
-    def reset_ports_open(self, new_ports_open):
-        # Remove ports no longer in use
-        port_ids = list(self.port_items.keys())
-        for port_id in port_ids:
-            if port_id not in new_ports_open:
-                # Update layout at the end for efficiency
-                self.remove_port(port_id, update_layout=False)
-        # Add new ports
-        new_port_items = {}
-        for port_id in new_ports_open:
-            if port_id not in self.node_state.ports_open:
-                # Update layout at the end for efficiency
-                self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
-            new_port_items[port_id] = self.port_items[port_id]
-        # Set new port item order
-        self.port_items = new_port_items
-        self.update_label_port_positions()
+    def reset_ports_open(self, new_ports_open: list[PortId]):
+        pass
+        # # Remove ports no longer in use
+        # port_ids = list(self.port_items.keys())
+        # for port_id in port_ids:
+        #     if port_id not in new_ports_open:
+        #         # Update layout at the end for efficiency
+        #         self.remove_port(port_id, update_layout=False)
+        # # Add new ports
+        # new_port_items = {}
+        # for port_id in new_ports_open:
+        #     if port_id not in self.node_state.ports_open:
+        #         # Update layout at the end for efficiency
+        #         self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
+        #     new_port_items[port_id] = self.port_items[port_id]
+        # # Set new port item order
+        # self.port_items = new_port_items
+        # self.update_label_port_positions()
 
-    def add_port(self, port_id: PortId, port_def, update_layout=True) -> None:
+    def add_port(self, port: PortId, prop_def: PropDef, update_layout=True) -> None:
         # Add port to scene
-        port = PortItem(port_id, parent=self)
-        self.port_items[port_id] = port  # Add reference to port
-        if port_id not in self.node_state.ports_open:
-            self.node_state.ports_open.append(port_id)  # Add to open ports
+        port_item = PortItem(port, parent=self)
+        self.port_items[port] = port_item  # Add reference to port
+        if port not in self.node_state.ports_open:
+            self.node_state.ports_open.append(port)  # Add to open ports
         if update_layout:
             self.update_label_port_positions()
 
-    def remove_port(self, port_id, update_layout=True):
-        port = self.port_items[port_id]
-        port.remove_edges()  # Remove connections to/from this port
-        del self.port_items[port_id]  # Remove reference to port
-        self.node_state.ports_open.remove(port_id)  # Remove from open ports
-        port.scene().removeItem(port)  # Remove port from scene
+    def remove_port(self, port: PortId, update_layout=True):
+        port_item = self.port_items[port]
+        port_item.remove_edges()  # Remove connections to/from this port
+        del self.port_items[port]  # Remove reference to port
+        self.node_state.ports_open.remove(port)  # Remove from open ports
+        port_item.scene().removeItem(port_item)  # Remove port from scene
         if update_layout:
             self.update_label_port_positions()
 
@@ -467,7 +474,7 @@ class NodeItem(QGraphicsRectItem):
         painter.setFont(QFont("Arial", 8))
         painter.setPen(QColor("grey"))
         id_rect = self.rect().adjusted(10, 10, 0, 0)  # Shift the top edge down
-        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: {self.node_state.node_id}")
+        painter.drawText(id_rect, Qt.AlignTop | Qt.AlignLeft, f"id: {self.node_state.node}")
 
         # Draw node title
         title_font = QFont("Arial", 10)
@@ -521,10 +528,10 @@ class NodeItem(QGraphicsRectItem):
         text_height = font_metrics.height()
 
         # Draw port labels
-        for port in self.port_items.values():
-            port_io = PortIO.INPUT if port.is_input else PortIO.OUTPUT
-            text = self.node().get_port_defs()[(port_io, port.port_key)].display_name
-            port_y = port.y()
+        for port_item in self.port_items.values():
+            port: PortId = port_item.port
+            text = self.node_info.prop_defs[port.key].display_name
+            port_y = port_item.y()
             if port.is_input:
                 x_offset = NodeItem.MARGIN_X
                 width_to_use = self.left_max_width
@@ -551,20 +558,20 @@ class NodeItem(QGraphicsRectItem):
             self.node_state.pos = (self.pos().x(), self.pos().y())
         return super().itemChange(change, value)
 
-    def update_port_positions(self, port_io):
-        port_dict = {port_key: port for (io, port_key), port in self.port_items.items() if io == port_io}
+    def update_port_positions(self, is_input: bool):
+        port_dict = {port: port_item for port, port_item in self.port_items.items() if port.is_input == is_input}
         port_count = len(port_dict)
-        for i, (port_key, port) in enumerate(port_dict.items()):
+        for i, (port, port_item) in enumerate(port_dict.items()):
             x_offset = -10 if port.is_input else self.rect().width() + 10
             y_offset = (i + 1) * self.rect().height() / (port_count + 1)
-            port.setPos(x_offset, y_offset)
+            port_item.setPos(x_offset, y_offset)
             # Update any connections to this port
-            port.update_edge_positions()
+            port_item.update_edge_positions()
 
     def update_all_port_positions(self):
         """Update the positions of all ports based on current node dimensions"""
-        self.update_port_positions(PortIO.INPUT)
-        self.update_port_positions(PortIO.OUTPUT)
+        self.update_port_positions(is_input=True)
+        self.update_port_positions(is_input=False)
 
     def update_label_port_positions(self, update_vis=True):
         # Calculate the maximum width needed for each side
@@ -572,10 +579,10 @@ class NodeItem(QGraphicsRectItem):
         self.left_max_width = 0
         self.right_max_width = 0
 
-        for port_id in self.port_items:
-            text = self.node().get_port_defs()[port_id].display_name
+        for port in self.port_items:
+            text = self.node_info.prop_defs[port.key].display_name
             width = font_metrics.horizontalAdvance(text)
-            if port_id[0] == PortIO.INPUT:
+            if port.is_input:
                 self.left_max_width = max(self.left_max_width, width)
             else:
                 self.right_max_width = max(self.right_max_width, width)
@@ -597,18 +604,19 @@ class NodeItem(QGraphicsRectItem):
             self.scene().removeItem(self._help_tooltip)
             self._help_tooltip = None
         # Remove this node item
-        self.scene().node_graph.remove_node(self.node_state.node_id)
-        del self.scene().node_items[self.node_state.node_id]  # Remove reference to item
+        self.node_graph.remove_node(self.uid)
+        del self.scene().node_items[self.uid] # Remove reference to item
+        self.node_manager.remove_node(self.uid) # Remove from node manager
         self.scene().removeItem(self)
 
 
 class PortItem(QGraphicsPathItem):
     """Represents connection points on nodes with shapes based on port_type"""
 
-    def __init__(self, port_id: PortId, parent: NodeItem):
+    def __init__(self, port: PortId, parent: NodeItem):
         super().__init__(parent)
-        self.port_id = port_id
-        self.edge_items: dict[PortId, EdgeItem] = {}
+        self.port = port
+        self.edge_items: dict[PortId, EdgeItem] = {} # Key is the port that it is connected to by the edge
 
         self.size = 12  # Base size for the port
         # Create shape based on port_type
@@ -619,7 +627,7 @@ class PortItem(QGraphicsPathItem):
         self.setAcceptHoverEvents(True)
 
         # Set appearance based on input/output status
-        if self.is_input:
+        if port.is_input:
             self.setBrush(QBrush(QColor(100, 100, 100)))
             self.setCursor(Qt.ArrowCursor)
         else:
@@ -628,16 +636,15 @@ class PortItem(QGraphicsPathItem):
 
         self.setPen(QPen(Qt.black, 1))
 
+    @property
     def port_type(self):
-        node = self.parentItem().node()
-        port_io = PortIO.INPUT if self.is_input else PortIO.OUTPUT
-        port_def = node.get_port_defs()[(port_io, self.port_key)]
-        return port_def.port_type
+        prop_def: PropDef = cast(NodeItem, self.parentItem()).node_info.prop_defs[self.port.key]
+        return prop_def.prop_type
 
     def create_shape_for_port_type(self):
         path = QPainterPath()
         half_size = self.size / 2
-        port_type = self.port_type()
+        port_type = self.port_type
         if port_type.is_compatible_with(PT_Element()):
             # Circle for number type
             path.addEllipse(-half_size, -half_size, self.size, self.size)
@@ -703,23 +710,23 @@ class PortItem(QGraphicsPathItem):
         super().hoverLeaveEvent(event)
 
     def update_edge_positions(self):
-        for edge in self.edge_items.values():
-            edge.update_position()
+        for edge_item in self.edge_items.values():
+            edge_item.update_position()
 
     def remove_edges(self, update_vis=True):
-        other_edge_ids = list(self.edge_items.keys())
-        for other_edge_id in other_edge_ids:
-            self.edge_items[other_edge_id].remove_from_scene(update_vis=update_vis)
+        connected_ports: list[PortId] = list(self.edge_items.keys())
+        for connected_port in connected_ports:
+            self.edge_items[connected_port].remove_from_scene(update_vis=update_vis)
 
 
 class EdgeItem(QGraphicsLineItem):
     """Represents connections between nodes"""
 
-    def __init__(self, src_port: PortItem, dst_port: PortItem):
+    def __init__(self, src_port_item: PortItem, dst_port_item: PortItem):
         super().__init__()
-        self.src_port = src_port
-        self.dst_port = dst_port
-        self.edge_id = EdgeId(src_port.port_id, dst_port.port_id)
+        self.src_port_item = src_port_item
+        self.dst_port_item = dst_port_item
+        self.edge_id = EdgeId(src_port_item.port, dst_port_item.port)
 
         self.setZValue(0)
         # Thicker line with rounded caps for better appearance
@@ -727,18 +734,18 @@ class EdgeItem(QGraphicsLineItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable)
 
     def update_position(self):
-        source_pos = self.src_port.get_center_scene_pos()
-        dest_pos = self.dst_port.get_center_scene_pos()
+        source_pos = self.src_port_item.get_center_scene_pos()
+        dest_pos = self.dst_port_item.get_center_scene_pos()
         self.setLine(QLineF(source_pos, dest_pos))
 
     def remove_from_scene(self, update_vis=True):
-        del self.src_port.edge_items[self.dst_port.port_id]
-        del self.dst_port.edge_items[self.src_port.port_id]
+        del self.src_port_item.edge_items[self.dst_port_item.port]
+        del self.dst_port_item.edge_items[self.src_port_item.port]
         # Remove from node graph
         cast(PipelineScene, self.scene()).node_graph.remove_edge(self.edge_id)
         # Update dest node visualisations
         if update_vis:
-            self.dst_port.parentItem().update_visualisations()
+            cast(NodeItem, self.dst_port_item.parentItem()).update_visualisations()
         # Remove from scene
         self.scene().removeItem(self)
 
@@ -747,58 +754,61 @@ class AddNewNodeCmd(QUndoCommand):
     def __init__(self, scene, pos, node_class, add_info=None, description="Add new node"):
         super().__init__(description)
         self.scene = scene
-        self.node_graph: NodeGraph = scene.graph_querier
+        self.node_graph: NodeGraph = scene.node_graph
+        self.node_manager: NodeManager = scene.node_manager
         self.pos = pos
         self.node_class = node_class
         self.add_info = add_info
         self.node_state = None
 
     def undo(self):
-        node_item = self.scene.node_items[self.node_state.node_id]
+        node_item = self.scene.node_items[self.node_state.node]
         node_item.remove_from_scene()
 
     def redo(self):
-        node_id = self.node_state.node_id if self.node_state else None
-        node_id = self.node_graph.add_new_node(self.node_class, add_info=self.add_info, node_id=node_id)
+        node_id: NodeId = self.node_state.node if self.node_state else gen_node_id()
+        node: Node = self.node_class(node_id, self.node_graph, add_info=self.add_info)
+        self.node_graph.add_node(node_id)
+        self.node_manager.add_node(node)
+        node_info: NodeInfo = self.node_manager.node_info(node_id)
         if not self.node_state:
-            node = self.node_graph.node(node_id)
-            self.node_state = NodeState(node_id=node_id,
-                                        ports_open=node.compulsory_ports(),
+            self.node_state = NodeState(node=node_info.uid,
+                                        ports_open=node_info.filter_ports_by_status(PortStatus.COMPULSORY),
                                         pos=(self.pos.x(), self.pos.y()),
                                         svg_size=(150, 150))  # TODO: save as constant somewhere
         self.scene.add_node(self.node_state)
 
 
 class AddNewEdgeCmd(QUndoCommand):
-    def __init__(self, scene, src_conn_id, dst_conn_id, description="Add new edge"):
+    def __init__(self, scene, edge: EdgeId, description="Add new edge"):
         super().__init__(description)
         self.scene = scene
         self.node_graph = self.scene.graph_querier
-        self.src_conn_id = src_conn_id
-        self.dst_conn_id = dst_conn_id
+        self.edge = edge
 
     def undo(self):
-        self.scene.remove_edge(self.src_conn_id, self.dst_conn_id)
+        self.scene.remove_edge(self.edge)
 
     def redo(self):
-        self.node_graph.add_edge(self.src_conn_id, self.dst_conn_id)
-        self.scene.add_edge(self.src_conn_id, self.dst_conn_id)
+        self.node_graph.add_edge(self.edge)
+        self.scene.add_edge(self.edge)
 
 
 class ChangePropertiesCmd(QUndoCommand):
     def __init__(self, node_item: NodeItem, props_changed, description="Change properties"):
         super().__init__(description)
         self.node_item = node_item
+        self.node_manager: NodeManager = node_item.node_manager
         self.props_changed = props_changed
 
     def update_properties(self, props):
         for prop_key, value in props.items():
-            self.node_item.node().set_property(prop_key, value)
-            if (not node_setting(self.node_item.node().name()).resizable) and (
+            self.node_manager.set_property(self.node_item.uid, prop_key, value)
+            if (not node_setting(self.node_item.node_info.name).resizable) and (
                     prop_key == 'width' or prop_key == 'height'):
-                svg_width = self.node_item.node().get_property('width')
-                svg_height = self.node_item.node().get_property('height')
-                self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width, svg_height))
+                svg_width: Int = self.node_manager.get_property(self.node_item.uid, 'width')
+                svg_height: Int = self.node_manager.get_property(self.node_item.uid, 'height')
+                self.node_item.resize(*self.node_item.node_size_from_svg_size(svg_width.value, svg_height.value))
         # Update the node's appearance
         self.node_item.update_visualisations()
 
@@ -822,54 +832,52 @@ class AddPropertyPortCmd(QUndoCommand):
         self.prop_key = prop_key
 
     def undo(self):
-        self.node_item.remove_port((PortIO.INPUT, self.prop_key))
+        self.node_item.remove_port(input_port(self.node_item.uid, self.prop_key))
 
     def redo(self):
-        input_port_defs = self.node_item.node().port_defs_filter_by_io(PortIO.INPUT)
-        port_def = input_port_defs[self.prop_key]
-        self.node_item.add_port((PortIO.INPUT, self.prop_key), port_def)
+        prop_def: PropDef = self.node_item.node_info.prop_defs[self.prop_key]
+        self.node_item.add_port(input_port(self.node_item.uid, self.prop_key), prop_def)
 
 
 class RemovePropertyPortCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, prop_key, description="Remove property port"):
+    def __init__(self, node_item: NodeItem, prop_key: PropKey, description="Remove property port"):
         super().__init__(description)
         self.node_item = node_item
         self.prop_key = prop_key
 
     def undo(self):
-        input_port_defs = self.node_item.node().port_defs_filter_by_io(PortIO.INPUT)
-        port_def = input_port_defs[self.prop_key]
-        self.node_item.add_port((PortIO.INPUT, self.prop_key), port_def)
+        prop_def: PropDef = self.node_item.node_info.prop_defs[self.prop_key]
+        self.node_item.add_port(input_port(self.node_item.uid, self.prop_key), prop_def)
 
     def redo(self):
-        self.node_item.remove_port((PortIO.INPUT, self.prop_key))
+        self.node_item.remove_port(input_port(self.node_item.uid, self.prop_key))
 
 
 class ExtractElementCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, port_id, description="Extract element"):
+    def __init__(self, node_item: NodeItem, prop_key: PropKey, description="Extract element"):
         super().__init__(description)
         self.node_item = node_item
-        self.port_id = port_id
+        self.prop_key = prop_key
 
     def undo(self):
         pass
 
     def redo(self):
-        port_def = self.node_item.node().get_port_defs()[self.port_id]
-        self.node_item.add_port(self.port_id, port_def)
+        prop_def: PropDef = self.node_item.node_info.prop_defs[self.prop_key]
+        self.node_item.add_port(input_port(self.node_item.uid, self.prop_key), prop_def)
 
 
 class RemoveExtractedElementCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, port_id, description="Remove extracted element"):
+    def __init__(self, node_item: NodeItem, prop_key: PropKey, description="Remove extracted element"):
         super().__init__(description)
         self.node_item = node_item
-        self.port_id = port_id
+        self.prop_key = prop_key
 
     def undo(self):
         pass
 
     def redo(self):
-        self.node_item.remove_port(self.port_id)
+        self.node_item.remove_port(input_port(self.node_item.uid, self.prop_key))
 
 
 class PasteCmd(QUndoCommand):
@@ -961,7 +969,8 @@ class PipelineScene(QGraphicsScene):
 
         self.node_items = {}
         self.custom_node_defs: dict[str, CustomNodeDef] = {}
-        self._node_graph: NodeGraph = NodeGraph()
+        self.node_graph: NodeGraph = NodeGraph()
+        self.node_manager: NodeManager = NodeManager()
 
         self.temp_dir = temp_dir
         print(temp_dir)
@@ -971,10 +980,6 @@ class PipelineScene(QGraphicsScene):
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
-
-    @property
-    def node_graph(self) -> NodeGraph:
-        return self._node_graph
 
     def view(self):
         return self.views()[0]
@@ -1004,28 +1009,23 @@ class PipelineScene(QGraphicsScene):
             start_pos = self.source_port.get_center_scene_pos()
             self.temp_line.setLine(QLineF(start_pos, end_pos))
 
-    def finish_connection(self, source_port: PortItem, dest_port: PortItem):
+    def finish_connection(self, source_port_item: PortItem, dest_port_item: PortItem):
         """Create a permanent connection between source and destination ports"""
-        if source_port and dest_port and source_port != dest_port:
+        if source_port_item and dest_port_item and source_port_item != dest_port_item:
             # Don't connect if they're on the same node
-            if source_port.parentItem() != dest_port.parentItem():
-                src_node_id = source_port.parentItem().node_state.node_id
-                dst_node_id = dest_port.parentItem().node_state.node_id
+            if source_port_item.parentItem() != dest_port_item.parentItem():
+                edge: EdgeId = EdgeId(source_port_item.port, dest_port_item.port)
                 # Check if connection already exists
-                connection_exists = False
-                for dst_node_port_key in source_port.edge_items:
-                    if dst_node_port_key == (dst_node_id, dest_port.port_key):
-                        connection_exists = True
-                        break
+                connection_exists = self.node_graph.does_edge_exist(edge)
 
                 # Check if target port already has a connection
-                target_has_connection = len(dest_port.edge_items) > 0
-                if not connection_exists and source_port.port_type().is_compatible_with(dest_port.port_type()) and \
+                target_has_connection = len(dest_port_item.edge_items) > 0
+                if not connection_exists and source_port_item.port_type.is_compatible_with(dest_port_item.port_type) and \
                         (not target_has_connection or (
-                                isinstance(dest_port.port_type(), PT_List) and dest_port.port_type().input_multiple)):
+                                isinstance(dest_port_item.port_type, PT_List) and dest_port_item.port_type.input_multiple)):
                     # Add the connection
                     self.undo_stack.push(
-                        AddNewEdgeCmd(self, (src_node_id, source_port.port_key), (dst_node_id, dest_port.port_key)))
+                        AddNewEdgeCmd(self, edge))
 
         # Clean up temporary line
         if self.temp_line:
@@ -1041,7 +1041,7 @@ class PipelineScene(QGraphicsScene):
         if event.button() == Qt.LeftButton:
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
-            if isinstance(item, PortItem) and not item.is_input:
+            if isinstance(item, PortItem) and not item.port.is_input:
                 # Start creating a connection if an output port is clicked
                 self.connection_signals.connectionStarted.emit(item)
                 event.accept()
@@ -1056,7 +1056,7 @@ class PipelineScene(QGraphicsScene):
 
             # Highlight input port if we're hovering over one
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
-            if isinstance(item, PortItem) and item.is_input:
+            if isinstance(item, PortItem) and item.port.is_input:
                 if self.dest_port != item:
                     # Reset previous dest port highlighting
                     if self.dest_port:
@@ -1079,7 +1079,7 @@ class PipelineScene(QGraphicsScene):
         """Handle mouse release events for the scene"""
         if event.button() == Qt.LeftButton and self.source_port:
             item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
-            if isinstance(item, PortItem) and item.is_input:
+            if isinstance(item, PortItem) and item.port.is_input:
                 # Create permanent connection
                 self.connection_signals.connectionMade.emit(self.source_port, item)
                 event.accept()
@@ -1109,22 +1109,24 @@ class PipelineScene(QGraphicsScene):
 
         if isinstance(clicked_item, PortItem):
             # Print type for debugging
-            node_id = clicked_item.parentItem().node_state.node_id
+            port: PortId = clicked_item.port
             print(
-                f"Node {node_id} ({PortIO.INPUT if clicked_item.is_input else PortIO.OUTPUT}, {clicked_item.port_key}): {repr(clicked_item.port_type())}")
+                f"Node {port.node} ({"Input" if port.is_input else "Output"}, {port.key}): {clicked_item.port_type}")
 
         elif isinstance(clicked_item, NodeItem):
+            node_info: NodeInfo = clicked_item.node_info
             # Context menu for nodes
             menu = QMenu()
             # separate_from_inputs_action = QAction("Separate from inputs", menu)
             # separate_from_inputs_action.triggered.connect(lambda: self.separate_from_inputs_action(clicked_item))
             # menu.addAction(separate_from_inputs_action)
 
-            if isinstance(clicked_item.node(), CombinationNode):
-                submenu = QMenu(f"Change {clicked_item.node().name()} to...")
-                for i in range(len(clicked_item.node().selections())):
-                    if i == clicked_item.node().selection_index(): continue
-                    change_action = QAction(clicked_item.node().selections()[i].name(), submenu)
+            if node_info.selectable:
+                selections, curr_idx = self.node_manager.selections_w_idx(clicked_item.uid)
+                submenu = QMenu(f"Change {node_info.name} to...")
+                for i in range(len(selections)):
+                    if i == curr_idx: continue
+                    change_action = QAction(selections[i].name(), submenu)
                     change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
                     submenu.addAction(change_action)
                 menu.addMenu(submenu)
@@ -1167,90 +1169,94 @@ class PipelineScene(QGraphicsScene):
             pickle.dump(AppState(view_pos=(center.x(), center.y()),
                                  zoom=zoom,
                                  node_states=[node_item.node_state for node_item in self.node_items.values()],
-                                 node_graph=copy.deepcopy(self.node_graph).clear_compute_results(),
+                                 node_graph=self.node_graph,
+                                 node_manager=self.node_manager,
                                  custom_node_defs=self.custom_node_defs), f)
 
-    def add_edge(self, src_conn_id, dst_conn_id, update_vis=True):
-        src_node_id, src_port_key = src_conn_id
-        dst_node_id, dst_port_key = dst_conn_id
-        src_node_item = self.node_items[src_node_id]
-        dst_node_item = self.node_items[dst_node_id]
-        src_port_item = src_node_item.port_items[(PortIO.OUTPUT, src_port_key)]
-        dst_port_item = dst_node_item.port_items[(PortIO.INPUT, dst_port_key)]
-        edge = EdgeItem(src_port_item, dst_port_item)
-        self.addItem(edge)
-        edge.update_position()
-        if update_vis:
-            dst_node_item.update_visualisations()
-        # Update port edge_items
-        src_port_item.edge_items[dst_conn_id] = edge
-        dst_port_item.edge_items[src_conn_id] = edge
+    # Item getter functions
+    def node_item(self, node: NodeId) -> NodeItem:
+        return self.node_items[node]
 
-    def remove_edge(self, src_conn_id, dst_conn_id, update_vis=True):
+    def port_item(self, port: PortId) -> PortItem:
+        node_item: NodeItem = self.node_item(port.node)
+        return node_item.port_items[port]
+
+    def edge_item(self, edge: EdgeId) -> EdgeItem:
         # Obtain edge via source port
-        src_node_id, src_port_key = src_conn_id
-        src_node_item = self.node_items[src_node_id]
-        src_port_item = src_node_item.port_items[(PortIO.OUTPUT, src_port_key)]
-        # Remove edge item
-        edge_item = src_port_item.edge_items[dst_conn_id]
-        edge_item.remove_from_scene(update_vis=update_vis)
+        src_port_item: PortItem = self.port_item(edge.src_port)
+        return src_port_item.edge_items[edge.dst_port]
 
-    def add_node(self, node_state, update_vis=True):
-        node = self.node_graph.node(node_state.node_id)
-        node_item = NodeItem(node_state, node)
-        self.node_items[node_state.node_id] = node_item
+    # Other functions
+    def add_edge(self, edge: EdgeId, update_vis=True):
+        src_port_item = self.port_item(edge.src_port)
+        dst_port_item = self.port_item(edge.dst_port)
+        new_edge_item = EdgeItem(src_port_item, dst_port_item)
+        self.addItem(new_edge_item)
+        new_edge_item.update_position()
+        # Update port edge_items
+        src_port_item.edge_items[edge.dst_port] = new_edge_item
+        dst_port_item.edge_items[edge.src_port] = new_edge_item
+        if update_vis:
+            self.node_item(edge.dst_node).update_visualisations()
+
+    def remove_edge(self, edge: EdgeId, update_vis=True):
+        self.edge_item(edge).remove_from_scene(update_vis=update_vis)
+
+    def add_node(self, node_state: NodeState, update_vis=True):
+        node_item = NodeItem(node_state, self.node_manager.node_info(node_state.node))
+        self.node_items[node_state.node] = node_item
         self.addItem(node_item)
         node_item.create_ports(update_vis=update_vis)
 
-    def load_from_node_states(self, node_states, connections):
+    def load_from_node_states(self, node_states: set[NodeState], edges: set[EdgeId]):
         # Add node items
         for node_state in node_states:
             self.add_node(node_state, update_vis=False)
         # Add edge items
-        for connection in connections:
-            self.add_edge(*connection, update_vis=False)
+        for edge in edges:
+            self.add_edge(edge, update_vis=False)
         # Update visualisations in order
-        for node_id in self.node_graph.get_topo_order_subgraph([node_state.node_id for node_state in node_states]):
-            self.node_items[node_id].update_vis_image()
+        for node in self.node_graph.get_topo_order_subgraph({node_state.node for node_state in node_states}):
+            self.node_item(node).update_vis_image()
 
-    def add_to_graph_and_scene(self, node_states, nodes, connections, port_refs):
+    def add_to_graph_and_scene(self, node_states: set[NodeState], nodes: set[Node], edges: set[EdgeId], more_node_to_port_refs: defaultdict[NodeId, defaultdict[PortId, RefId]]):
         # Add to node graph
         for node in nodes:
-            self.node_graph.add_existing_node(node)
-        for connection in connections:
-            self.node_graph.add_edge(*connection)
-        self.node_graph.extend_ref_ports(port_refs)
+            self.node_manager.add_node(node)
+        for edge in edges:
+            self.node_graph.add_edge(edge)
+        self.node_graph.extend_port_refs(more_node_to_port_refs)
         # Load items
-        self.load_from_node_states(node_states, connections)
+        self.load_from_node_states(node_states, edges)
 
-    def remove_from_graph_and_scene(self, node_states, connections):
-        removed_node_ids = {node_state.node_id for node_state in node_states}
-        # Get affected node ids
-        affected_node_ids = set()
-        for node_id in removed_node_ids:
-            affected_node_ids.update(self.node_graph.output_nodes(node_id))
-        for _, (dst_node_id, _) in connections:
-            affected_node_ids.add(dst_node_id)
-        affected_node_ids.difference_update(removed_node_ids)
+    def remove_from_graph_and_scene(self, node_states: set[NodeState], edges: set[EdgeId]):
+        removed_nodes: set[NodeId] = {node_state.node for node_state in node_states}
+        # Get affected nodes
+        affected_nodes: set[NodeId] = set()
+        for node in removed_nodes:
+            affected_nodes.update(self.node_graph.output_nodes(node))
+        for edge in edges:
+            affected_nodes.add(edge.dst_node)
+        affected_nodes.difference_update(removed_nodes)
 
         # Remove nodes
         for node_state in node_states:
-            node_item = self.node_items[node_state.node_id]
+            node_item = self.node_item(node_state.node)
             node_item.remove_from_scene(update_vis=False)
         # Remove edges
-        for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in connections:
-            if src_node_id in self.node_items and dst_node_id in self.node_items:
+        for edge in edges:
+            if edge.src_node in self.node_items and edge.dst_node in self.node_items:
                 # Connection still exists, remove now
-                self.remove_edge((src_node_id, src_port_key), (dst_node_id, dst_port_key), update_vis=False)
+                self.remove_edge(edge, update_vis=False)
         # Update affected nodes in topological order
-        for affected_node_id in self.node_graph.get_topo_order_subgraph(affected_node_ids):
-            affected_node_item = self.node_items[affected_node_id]
+        for affected_node in self.node_graph.get_topo_order_subgraph(affected_nodes):
+            affected_node_item = self.node_item(affected_node)
             affected_node_item.update_visualisations()
 
     def clear_scene(self):
-        node_ids = list(self.node_items.keys())
-        for node_id in node_ids:
-            self.node_items[node_id].remove_from_scene(update_vis=False)
+        nodes = list(self.node_items.keys())
+        for node in nodes:
+            self.node_item(node).remove_from_scene(update_vis=False)
 
     def load_scene(self, filepath):
         self.clear_scene()
@@ -1260,23 +1266,26 @@ class PipelineScene(QGraphicsScene):
 
         self.view().centerOn(*app_state.view_pos)
         self.view().set_zoom(app_state.zoom)
-        self.node_graph = app_state.graph_querier
+        self.node_graph = app_state.node_graph
+        self.node_manager = app_state.node_manager
         self.custom_node_defs = app_state.custom_node_defs
         self.load_from_node_states(app_state.node_states, self.node_graph.edges)
         self.undo_stack.clear()
         self.filepath = filepath
 
     def change_node_selection(self, clicked_item: NodeItem, index):
-        clicked_item.node().set_selection(index)
-        new_ports_open = clicked_item.node().compulsory_ports()
-        for port_id in clicked_item.node_state.ports_open:
-            if (port_id in clicked_item.node().get_port_defs()) and (port_id not in new_ports_open):
-                new_ports_open.append(port_id)
+        self.node_manager.set_selection(clicked_item.uid, index)
+        new_node_info: NodeInfo = self.node_manager.node_info(clicked_item.uid)
+        new_ports_open: list[PortId] = new_node_info.filter_ports_by_status(PortStatus.COMPULSORY)
+        for port in clicked_item.node_state.ports_open:
+            if (port.key in new_node_info.prop_defs) and (port not in new_ports_open):
+                if (port.is_input and new_node_info.prop_defs[port.key].input_port_status != PortStatus.FORBIDDEN) or (not port.is_input and new_node_info.prop_defs[port.key].output_port_status != PortStatus.FORBIDDEN):
+                    new_ports_open.append(port)
         clicked_item.reset_ports_open(new_ports_open)
         clicked_item.update_visualisations()
 
-    def extract_element(self, node_item, port_id):
-        self.undo_stack.push(ExtractElementCmd(node_item, port_id))
+    def extract_element(self, node_item: NodeItem, prop_key: PropKey):
+        self.undo_stack.push(ExtractElementCmd(node_item, prop_key))
 
 
 class PipelineView(QGraphicsView):
@@ -1592,22 +1601,22 @@ class PipelineEditor(QMainWindow):
 
     def register_custom_node(self):
         node_states, nodes, connections, port_refs = self.identify_selected_subgraph()
-        subgraph_querier = NodeGraph()
+        subgraph = NodeGraph()
         node_states, nodes, connections, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, nodes,
                                                                                                 connections, port_refs,
-                                                                                                graph_querier=subgraph_querier)
+                                                                                                graph_querier=subgraph)
         # Set up subgraph querier
-        subgraph_querier.node_map = nodes
-        subgraph_querier.ref_ports = port_refs
+        subgraph.node_map = nodes
+        subgraph.ref_ports = port_refs
         for connection in connections:
-            subgraph_querier.add_edge(*connection)
+            subgraph.add_edge(*connection)
 
         # Get node information for display
-        new_ids_topo_order = subgraph_querier.get_topo_order_subgraph()
+        new_ids_topo_order = subgraph.get_topo_order_subgraph()
         new_id_to_info = {}
         for new_id in new_ids_topo_order:
-            node = subgraph_querier.node(new_id)
-            unconnected_ports = subgraph_querier.unconnected_ports(new_id)
+            node = subgraph.node(new_id)
+            unconnected_ports = subgraph.unconnected_ports(new_id)
             base_name = node.base_node_name
             # Get port id (io, port_key) mapped to port display name
             port_map = {}
@@ -1632,7 +1641,7 @@ class PipelineEditor(QMainWindow):
             selected_ports = dict(selected_ports)
             vis_sel_node = old_to_new_id_map[vis_sel_node]
             self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
-                                                             CustomNodeDef(subgraph_querier, selected_ports,
+                                                             CustomNodeDef(subgraph, selected_ports,
                                                                            vis_sel_node, description=description)))
 
     def identify_selected_items(self):
@@ -1640,12 +1649,12 @@ class PipelineEditor(QMainWindow):
         connections = []
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
-                node_states[item.node_state.node_id] = copy.deepcopy(item.node_state)
+                node_states[item.node_state.node] = copy.deepcopy(item.node_state)
             elif isinstance(item, EdgeItem):
-                src_node_id = item.src_port.parentItem().node_state.node_id
-                src_port_key = item.src_port.port_key
-                dst_node_id = item.dst_port.parentItem().node_state.node_id
-                dst_port_key = item.dst_port.port_key
+                src_node_id = item.src_port_item.parentItem().node_state.node
+                src_port_key = item.src_port_item.port_key
+                dst_node_id = item.dst_port_item.parentItem().node_state.node
+                dst_port_key = item.dst_port_item.port_key
                 connections.append(((src_node_id, src_port_key), (dst_node_id, dst_port_key)))
         return node_states, connections
 
@@ -1697,16 +1706,16 @@ class PipelineEditor(QMainWindow):
             new_uid: NodeId = gen_node_id()
             # Copy node state
             new_node_state = copy.deepcopy(node_state)
-            new_node_state.node_id = new_uid
+            new_node_state.node = new_uid
             new_node_states[new_uid] = new_node_state
             # Copy node
-            node = nodes[node_state.node_id]
+            node = nodes[node_state.node]
             new_node = copy.deepcopy(node)
-            new_node.uid = new_uid
+            new_node.port = new_uid
             new_node.graph_querier = graph_querier  # Set graph querier
             new_nodes[new_uid] = new_node
             # Add id to conversion map
-            old_to_new_id_map[node_state.node_id] = new_uid
+            old_to_new_id_map[node_state.node] = new_uid
         # Update ids in connections
         new_connections = []
         for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in connections:
@@ -1729,7 +1738,7 @@ class PipelineEditor(QMainWindow):
             # Calculate bounding rect
             bounding_rect = None
             for node_state in node_states:
-                node_item = self.scene.node_items[node_state.node_id]
+                node_item = self.scene.node_items[node_state.node]
                 # Make part of bounding rect
                 if bounding_rect:
                     bounding_rect = bounding_rect.united(node_item.sceneBoundingRect())
@@ -1764,9 +1773,9 @@ class PipelineEditor(QMainWindow):
         randomisable_ids = set()
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
-                node = self.scene.node_graph.node(item.node_state.node_id)
+                node = self.scene.node_graph.node(item.node_state.node)
                 if node.randomisable:
-                    randomisable_ids.add(node.uid)
+                    randomisable_ids.add(node.port)
         self.scene.undo_stack.push(RandomiseNodesCmd(self.scene, randomisable_ids))
 
 

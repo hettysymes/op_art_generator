@@ -31,7 +31,7 @@ class PT_Scalar(PropType):
 
 # List
 class PT_List(PropType):
-    def __init__(self, scalar_type: PT_Scalar = PT_Scalar(), input_multiple: bool = True, depth: int = 1):
+    def __init__(self, scalar_type: PT_Scalar = PT_Scalar(), input_multiple: bool = False, depth: int = 1):
         self.scalar_type = scalar_type
         self.input_multiple = input_multiple
         self.depth = depth
