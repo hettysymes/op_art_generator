@@ -22,8 +22,7 @@ class PrivateNodeInfo:
 class Node(ABC):
     NAME = ""  # To override
 
-    def __init__(self, uid: NodeId, graph_querier: NodeGraph, node_querier: NodeManager, prop_vals: Optional[dict[PropKey, PropValue]] = None):
-        self.uid = uid
+    def __init__(self, graph_querier: NodeGraph, node_querier: NodeManager, prop_vals: Optional[dict[PropKey, PropValue]] = None):
         self.graph_querier = graph_querier
         self.node_querier = node_querier
         self.prop_vals = prop_vals

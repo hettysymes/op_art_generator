@@ -726,12 +726,15 @@ class EdgeItem(QGraphicsLineItem):
         super().__init__()
         self.src_port_item = src_port_item
         self.dst_port_item = dst_port_item
-        self.edge_id = EdgeId(src_port_item.port, dst_port_item.port)
 
         self.setZValue(0)
         # Thicker line with rounded caps for better appearance
         self.setPen(QPen(Qt.black, 2.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         self.setFlag(QGraphicsItem.ItemIsSelectable)
+
+    @property
+    def edge(self) -> EdgeId:
+        return EdgeId(self.src_port_item.port, self.dst_port_item.port)
 
     def update_position(self):
         source_pos = self.src_port_item.get_center_scene_pos()
@@ -742,7 +745,7 @@ class EdgeItem(QGraphicsLineItem):
         del self.src_port_item.edge_items[self.dst_port_item.port]
         del self.dst_port_item.edge_items[self.src_port_item.port]
         # Remove from node graph
-        cast(PipelineScene, self.scene()).node_graph.remove_edge(self.edge_id)
+        cast(PipelineScene, self.scene()).node_graph.remove_edge(self.edge)
         # Update dest node visualisations
         if update_vis:
             cast(NodeItem, self.dst_port_item.parentItem()).update_visualisations()
@@ -881,35 +884,35 @@ class RemoveExtractedElementCmd(QUndoCommand):
 
 
 class PasteCmd(QUndoCommand):
-    def __init__(self, scene, node_states, nodes, connections, port_refs, description="Paste"):
+    def __init__(self, scene, node_states: dict[NodeId, NodeState], subset_node_manager: NodeManager, edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], description="Paste"):
         super().__init__(description)
         self.scene = scene
         self.node_states = node_states
-        self.nodes = nodes
-        self.connections = connections
+        self.subset_node_manager = subset_node_manager
+        self.edges = edges
         self.port_refs = port_refs
 
     def undo(self):
-        self.scene.remove_from_graph_and_scene(self.node_states, self.connections)
+        self.scene.remove_from_graph_and_scene(self.node_states, self.edges)
 
     def redo(self):
-        self.scene.add_to_graph_and_scene(self.node_states, self.nodes, self.connections, self.port_refs)
+        self.scene.add_to_graph_and_scene(self.node_states, self.subset_node_manager, self.edges, self.port_refs)
 
 
 class DeleteCmd(QUndoCommand):
-    def __init__(self, scene, node_states, nodes, connections, port_refs, description="Delete"):
+    def __init__(self, scene, node_states: dict[NodeId, NodeState], subset_node_manager: NodeManager, edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], description="Delete"):
         super().__init__(description)
         self.scene = scene
         self.node_states = node_states
-        self.nodes = nodes
-        self.connections = connections
+        self.subset_node_manager = subset_node_manager
+        self.edges = edges
         self.port_refs = port_refs
 
     def undo(self):
-        self.scene.add_to_graph_and_scene(self.node_states, self.nodes, self.connections, self.port_refs)
+        self.scene.add_to_graph_and_scene(self.node_states, self.subset_node_manager, self.edges, self.port_refs)
 
     def redo(self):
-        self.scene.remove_from_graph_and_scene(self.node_states, self.connections)
+        self.scene.remove_from_graph_and_scene(self.node_states, self.edges)
 
 
 class RegisterCustomNodeCmd(QUndoCommand):
@@ -1219,15 +1222,17 @@ class PipelineScene(QGraphicsScene):
         for node in self.node_graph.get_topo_order_subgraph({node_state.node for node_state in node_states}):
             self.node_item(node).update_vis_image()
 
-    def add_to_graph_and_scene(self, node_states: set[NodeState], nodes: set[Node], edges: set[EdgeId], more_node_to_port_refs: defaultdict[NodeId, defaultdict[PortId, RefId]]):
-        # Add to node graph
-        for node in nodes:
-            self.node_manager.add_node(node)
+    def add_to_graph_and_scene(self, node_states: dict[NodeId, NodeState], subset_node_manager: NodeManager, edges: set[EdgeId], more_node_to_port_refs: dict[NodeId, dict[PortId, RefId]]):
+        # Add to node implementations
+        self.node_manager.update_nodes(subset_node_manager)
+        # Update graph
+        for node in node_states:
+            self.node_graph.add_node(node)
         for edge in edges:
             self.node_graph.add_edge(edge)
         self.node_graph.extend_port_refs(more_node_to_port_refs)
         # Load items
-        self.load_from_node_states(node_states, edges)
+        self.load_from_node_states(set(node_states.values()), edges)
 
     def remove_from_graph_and_scene(self, node_states: set[NodeState], edges: set[EdgeId]):
         removed_nodes: set[NodeId] = {node_state.node for node_state in node_states}
@@ -1604,7 +1609,7 @@ class PipelineEditor(QMainWindow):
         subgraph = NodeGraph()
         node_states, nodes, connections, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, nodes,
                                                                                                 connections, port_refs,
-                                                                                                graph_querier=subgraph)
+                                                                                                node_graph=subgraph)
         # Set up subgraph querier
         subgraph.node_map = nodes
         subgraph.ref_ports = port_refs
@@ -1645,74 +1650,63 @@ class PipelineEditor(QMainWindow):
                                                                            vis_sel_node, description=description)))
 
     def identify_selected_items(self):
-        node_states = {}
-        connections = []
+        node_states: dict[NodeId, NodeState] = {}
+        edges: set[EdgeId] = set()
         for item in self.scene.selectedItems():
             if isinstance(item, NodeItem):
                 node_states[item.node_state.node] = copy.deepcopy(item.node_state)
             elif isinstance(item, EdgeItem):
-                src_node_id = item.src_port_item.parentItem().node_state.node
-                src_port_key = item.src_port_item.port_key
-                dst_node_id = item.dst_port_item.parentItem().node_state.node
-                dst_port_key = item.dst_port_item.port_key
-                connections.append(((src_node_id, src_port_key), (dst_node_id, dst_port_key)))
-        return node_states, connections
+                edges.add(item.edge)
+        return node_states, edges
 
     def delete_selected_items(self):
-        node_states, connections = self.identify_selected_items()
-        if node_states or connections:
-            nodes = [copy.deepcopy(self.scene.node_graph.node(node_id)).clear_compute_results() for node_id in
-                     node_states]
-            port_refs = {dst_conn_id: copy.deepcopy(port_ref_data) for dst_conn_id, port_ref_data in
-                         self.scene.node_graph.ref_ports.items() if dst_conn_id[0] in node_states}
-            self.scene.undo_stack.push(DeleteCmd(self.scene, list(node_states.values()), nodes, connections, port_refs))
+        node_states, edges = self.identify_selected_items()
+        if node_states or edges:
+            subset_node_manager: NodeManager = self.scene.node_manager.subset_node_manager({node for node in node_states})
+            port_refs: dict[NodeId, dict[PortId, RefId]] = {node: copy.deepcopy(port_ref_data) for node, port_ref_data in
+                         self.scene.node_graph.node_to_port_ref.items() if node in node_states}
+            self.scene.undo_stack.push(DeleteCmd(self.scene, node_states, subset_node_manager, edges, port_refs))
 
     def identify_selected_subgraph(self):
-        node_states, connections = self.identify_selected_items()
-        nodes = {node_id: copy.deepcopy(self.scene.node_graph.node(node_id)).clear_compute_results() for node_id in
-                 node_states}
+        node_states, edges = self.identify_selected_items()
+        subset_node_manager: NodeManager = self.scene.node_manager.subset_node_manager({node for node in node_states})
         # Remove edges which are not connected at both ends to selected nodes
-        connection_indices_to_remove = []
-        for i, ((src_node_id, src_port_key), (dst_node_id, dst_port_key)) in enumerate(connections):
-            if (src_node_id not in node_states) or (dst_node_id not in node_states):
-                connection_indices_to_remove.append(i)
-        connection_indices_to_remove.reverse()
-        for i in connection_indices_to_remove:
-            del connections[i]
+        edges_to_remove = {
+            edge for edge in edges
+            if edge.src_node not in node_states or edge.dst_node not in node_states
+        }
+        edges.difference_update(edges_to_remove)
         # Get relevant port refs
-        port_refs = {}
-        dst_conn_ids = set(dst_conn_id for (_, dst_conn_id) in connections)
-        for dst_conn_id in dst_conn_ids:
-            conn_port_refs = self.scene.node_graph.get_ref_port(*dst_conn_id)
-            if conn_port_refs:
+        new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
+        dst_nodes = {edge.dst_node for edge in edges}
+        for dst_node in dst_nodes:
+            if dst_node in self.scene.node_graph.node_to_port_ref:
+                port_refs = self.scene.node_graph.node_to_port_ref[dst_node]
                 # Port refs exist, add
-                port_refs[dst_conn_id] = copy.deepcopy(conn_port_refs)
-                ref_ids = list(port_refs[dst_conn_id]['ref_map'].keys())
-                for ref_id in ref_ids:
+                new_port_refs[dst_node] = copy.deepcopy(port_refs)
+                for port in port_refs:
                     # Remove port refs referring to non-relevant nodes
-                    src_node_id, _ = port_refs[dst_conn_id]['ref_map'][ref_id]
-                    if src_node_id not in node_states:
-                        del port_refs[dst_conn_id]['ref_map'][ref_id]
+                    if port.node not in node_states:
+                        del new_port_refs[dst_node][port]
         # Return node states and connections between them
-        return list(node_states.values()), nodes, connections, port_refs
+        return node_states, subset_node_manager, edges, new_port_refs
 
-    def deep_copy_subgraph(self, node_states, nodes, connections, port_refs, graph_querier=None):
-        graph_querier = graph_querier or self.scene.node_graph
-        old_to_new_id_map = {}
+    def deep_copy_subgraph(self, node_states, nodes, connections, port_refs, node_graph=None):
+        node_graph = node_graph or self.scene.node_graph
+        old_to_new_id_map: dict[NodeId, NodeId] = {}
         # Copy nodes
-        new_node_states = {}
-        new_nodes = {}
+        new_node_states: dict[NodeId, NodeState] = {}
         for node_state in node_states:
             new_uid: NodeId = gen_node_id()
             # Copy node state
-            new_node_state = copy.deepcopy(node_state)
-            new_node_state.node = new_uid
-            new_node_states[new_uid] = new_node_state
+            new_node_state: NodeState = copy.deepcopy(node_state)
+            new_node_state.node = new_uid # Update id in node state
+            new_node_states[new_uid] = new_node_state # Add to new node states
             # Copy node
             node = nodes[node_state.node]
             new_node = copy.deepcopy(node)
             new_node.port = new_uid
-            new_node.graph_querier = graph_querier  # Set graph querier
+            new_node.graph_querier = node_graph  # Set graph querier
             new_nodes[new_uid] = new_node
             # Add id to conversion map
             old_to_new_id_map[node_state.node] = new_uid

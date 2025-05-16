@@ -76,8 +76,15 @@ class NodeGraph:
         port_ref_map: defaultdict[PortId, RefId] = self.node_to_port_ref[node]
         return port_ref_map[port_to_reference]
 
-    def extend_port_refs(self, more_node_to_port_refs: defaultdict[NodeId, defaultdict[PortId, RefId]]):
-        self.node_to_port_ref.update(more_node_to_port_refs)
+    def extend_port_refs(self, more_node_to_port_refs: dict[NodeId, dict[PortId, RefId]]):
+        converted_dict: defaultdict[NodeId, defaultdict[PortId, RefId]] = defaultdict(
+            create_port_ref_dict,
+            {
+                node_id: defaultdict(generate_ref_id, port_dict)
+                for node_id, port_dict in more_node_to_port_refs.items()
+            }
+        )
+        self.node_to_port_ref.update(converted_dict)
 
     def output_nodes(self, node: NodeId) -> set[NodeId]:
         # Get nodes that receive outputs from the given node

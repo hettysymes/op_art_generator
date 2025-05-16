@@ -9,9 +9,9 @@ class UnitNode(Node, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
-    def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
+    def __init__(self, graph_querier, prop_vals=None, add_info=None):
         self._node_info = self._default_node_info()
-        super().__init__(uid, graph_querier, prop_vals)
+        super().__init__(graph_querier, prop_vals)
 
     @property
     def node_info(self):
@@ -31,10 +31,10 @@ class SelectableNode(UnitNode, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
-    def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
+    def __init__(self, graph_querier, prop_vals=None, add_info=None):
         self._node_info = self._default_node_info()
         self.extracted_port_ids = []
-        super().__init__(uid, graph_querier, prop_vals)
+        super().__init__(graph_querier, prop_vals)
 
     def final_compute(self):
         self._remove_redundant_ports()
@@ -134,8 +134,8 @@ class CustomNode(Node):
     def from_custom_key(custom_key):
         return tuple(custom_key.split("_", 1))  # Returns node_id, port_key
 
-    def __init__(self, uid, graph_querier, add_info):
-        super().__init__(uid, graph_querier, {})
+    def __init__(self, graph_querier, add_info):
+        super().__init__(graph_querier, {})
         # Extract given information
         self._name, custom_node_def = add_info
         self.subgraph = custom_node_def.subgraph
