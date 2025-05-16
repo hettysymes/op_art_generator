@@ -9,6 +9,9 @@
 # from ui.nodes.node_implementations.function_sampler import FunSamplerNode
 # from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.grid import GridNode
+from ui.nodes.node_implementations.shapes import CircleNode
+
+
 # from ui.nodes.node_implementations.iterator import IteratorNode
 # from ui.nodes.node_implementations.overlay import OverlayNode
 # from ui.nodes.node_implementations.port_forwarder import PortForwarderNode
@@ -47,7 +50,8 @@ class NodeSettings:
 #     (PortForwarderNode, NodeSettings()),
 #     (RandomIteratorNode, NodeSettings())
 # ]
-node_settings = [(GridNode, NodeSettings())]
+node_settings = [(GridNode, NodeSettings()),
+                 (CircleNode, NodeSettings())]
 
 
 def node_classes():

@@ -263,47 +263,72 @@
 #                                                    'none', self._prop_val('stroke_width')))
 #
 #
-# DEF_CIRCLE_INFO = NodeInfo(
-#     description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#     port_defs={
-#         (PortIO.INPUT, 'fill'): PortDef("Colour", PT_Fill(), optional=True),
-#         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Ellipse())
-#     },
-#     prop_entries={
-#         'r': PropEntry(PT_Float(min_value=0),
-#                        display_name="Radius",
-#                        description="Radius of the circle. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                        default_value=0.5),
-#         'centre': PropEntry(PT_Point(),
-#                             display_name="Centre coordinate",
-#                             description="Coordinate of the circle centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                             default_value=(0.5, 0.5)),
-#         'fill': PropEntry(PT_Fill(),
-#                           display_name="Colour",
-#                           description="Circle fill colour.",
-#                           default_value=(0, 0, 0, 255)),
-#         'stroke_width': PropEntry(PT_Float(min_value=0),
-#                                   display_name="Border thickness",
-#                                   description="Thickness of the line drawing the circle border.",
-#                                   default_value=1.0)
-#     }
-# )
-#
-#
-# class CircleNode(UnitNode):
-#     NAME = "Circle"
-#     DEFAULT_NODE_INFO = DEF_CIRCLE_INFO
-#
-#     @staticmethod
-#     def helper(colour, centre, radius, stroke='none', stroke_width=1):
-#         return EllipseNode.helper(colour, centre, (radius, radius), stroke, stroke_width)
-#
-#     def compute(self):
-#         self.set_compute_result(CircleNode.helper(self._prop_val('fill'),
-#                                                   self._prop_val('centre'),
-#                                                   self._prop_val('r'),
-#                                                   'none',
-#                                                   self._prop_val('stroke_width')))
+from ui.nodes.gradient_datatype import Gradient
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.nodes import UnitNode
+from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int
+from ui.nodes.shape_datatypes import Ellipse
+from ui.nodes.utils import process_rgb
+
+DEF_CIRCLE_INFO = PrivateNodeInfo(
+    description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+    prop_defs={
+        'r': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Radius",
+            description="Radius of the circle. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Float(0.5)
+        ),
+        'centre': PropDef(
+            prop_type=PT_Point(),
+            display_name="Centre coordinate",
+            description="Coordinate of the circle centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Point(0.5, 0.5)
+        ),
+        'fill': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Colour",
+            description="Circle fill colour.",
+            default_value=Colour(0, 0, 0, 255)
+        ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Border thickness",
+            description="Thickness of the line drawing the circle border.",
+            default_value=Float(0.5)
+        ),
+        '_main': PropDef(
+            display_name="Drawing",
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY
+        )
+    }
+)
+
+
+def ellipse_helper(fill, centre, radius, stroke='none', stroke_width=1.0):
+    if isinstance(fill, Gradient):
+        fill = fill
+        fill_opacity = 255
+    else:
+        fill, fill_opacity = process_rgb(fill)
+    return Ellipse(centre, radius, fill,
+                   fill_opacity, stroke, stroke_width)
+
+class CircleNode(UnitNode):
+    NAME = "Circle"
+    DEFAULT_NODE_INFO = DEF_CIRCLE_INFO
+
+    @staticmethod
+    def helper(colour, centre, radius, stroke='none', stroke_width=Float(1.0)):
+        return ellipse_helper(colour, centre, (radius, radius), stroke, stroke_width)
+
+    def compute(self, props: ResolvedProps, _):
+        return {'_main': CircleNode.helper(props.get('fill'),
+                                              props.get('centre'),
+                                              props.get('r'),
+                                              'none',
+                                              props.get('stroke_width'))}
 #
 #
 # class ShapeNode(CombinationNode):

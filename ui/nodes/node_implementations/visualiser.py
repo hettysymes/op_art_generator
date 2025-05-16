@@ -57,7 +57,7 @@ def get_polygon(fill: PropValue, points, stroke, stroke_width):
     if isinstance(fill, Gradient):
         fill_opacity = 255
     elif isinstance(fill, Colour):
-        fill, fill_opacity = process_rgb(fill.rgba)
+        fill, fill_opacity = process_rgb(fill)
     else:
         assert False
     return Polygon(points, fill, fill_opacity, stroke, stroke_width)

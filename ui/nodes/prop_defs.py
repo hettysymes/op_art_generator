@@ -315,10 +315,12 @@ def flatten(x: PropValue) -> List:
         return List(item_type=x.type, items=[x])
 
 
-class Colour(PropValue):
+class Colour(tuple, PropValue):
+    def __new__(cls, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
+        return super().__new__(cls, (red, green, blue, alpha))
 
     def __init__(self, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
-        self.rgba = (red, green, blue, alpha)
+        pass  # No need to store attributes separately; values are in the tuple
 
     @property
     def type(self) -> PropType:
@@ -334,3 +336,26 @@ class Int(int, PropValue):
     @property
     def type(self) -> PropType:
         return PT_Int()
+
+class Float(float, PropValue):
+    def __new__(cls, value: float):
+        return super().__new__(cls, value)
+
+    def __init__(self, value: float):
+        self.value = value  # optional, but consistent with your Int class
+
+    @property
+    def type(self) -> PropType:
+        return PT_Float()
+
+class Point(tuple, PropValue):
+    def __new__(cls, x: float, y: float):
+        return super().__new__(cls, (x, y))
+
+    def __init__(self, x: float, y: float):
+        # Optional: no need to store self.x/y, values are in the tuple
+        pass
+
+    @property
+    def type(self) -> PropType:
+        return PT_Point()

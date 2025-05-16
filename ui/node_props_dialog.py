@@ -101,7 +101,7 @@ class NodePropertiesDialog(QDialog):
         super().__init__(parent)
         self.node_item = node_item
         self.scene = node_item.scene()
-        self.setWindowTitle(f"Properties: {node_item.node().name()}")
+        self.setWindowTitle(f"Properties: {node_item.node_info.name}")
         self.setMinimumWidth(400)
 
         # Main layout
