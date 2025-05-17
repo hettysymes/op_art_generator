@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional, TypeVar, cast
+from typing import Optional, TypeVar, cast, Generic
+
+from ui.id_datatypes import PropKey
+from ui.node_graph import RefId
 
 
 def get_most_general_type(types):  # Look for a type that all others are compatible with
@@ -24,7 +27,10 @@ class PropType:
 class PT_Scalar(PropType):
 
     def is_compatible_with(self, dest_type):
+        print(self)
+        print(dest_type)
         if isinstance(dest_type, PT_List):
+            print(dest_type.scalar_type)
             # Scalar-to-list: inner types must be compatible
             return self.is_compatible_with(dest_type.scalar_type)
         return isinstance(self, type(dest_type))
@@ -105,51 +111,6 @@ class PT_Gradient(PT_Fill):
 
 class PT_Colour(PT_Fill):
     pass
-
-
-class PortRefTableEntry:
-    def __init__(self, ref_id, deletable, port_data, own_data=None):
-        self.ref_id = ref_id
-        self.deletable = deletable
-        self.port_data = port_data
-        self.own_data = own_data
-
-
-# Tables
-
-class LineRef(PortRefTableEntry):
-    def __init__(self, ref_id, deletable, port_data, own_data=False):
-        super().__init__(ref_id, deletable, port_data, own_data)
-
-    def points(self):
-        return self.port_data
-
-    def reversed(self):
-        return self.own_data
-
-    def toggle_reverse(self):
-        self.own_data = not self.reversed()
-
-    def points_w_reversal(self):
-        return list(reversed(self.points())) if self.reversed() else self.points()
-
-
-class PT_PortRefTable(PT_Scalar):
-    def __init__(self, linked_port_key=None):
-        self.linked_port_key = linked_port_key
-
-
-class PT_ElemRefTable(PT_PortRefTable):
-    pass
-
-
-class PT_PointRefTable(PT_PortRefTable):
-    pass
-
-
-class PT_ColourRefTable(PT_PortRefTable):
-    pass
-
 
 # Other
 
@@ -235,8 +196,9 @@ class PropDef:
 
 # PROP VALUES
 
-class List(PropValue):
-    def __init__(self, item_type: PropType, items: list[PropValue]):
+T = TypeVar('T', bound='PropType')
+class List(Generic[T], PropValue):
+    def __init__(self, item_type: T, items: list[PropValue]):
         self.item_type = item_type
         self.items = items
 
@@ -289,6 +251,9 @@ class List(PropValue):
         if not item.type.is_compatible_with(self.item_type):
             raise TypeError(f"Invalid type: expected {self.item_type}, got {item.type}")
         self.items.append(item)
+
+    def reversed(self):
+        return List(self.item_type, list(reversed(self.items)))
 
     def __iter__(self):
         return iter(self.items)
@@ -374,3 +339,38 @@ class Grid(PropValue):
     @property
     def type(self) -> PropType:
         return PT_Grid()
+
+class PortRefTableEntry(PropValue):
+    def __init__(self, data: PropValue, ref: Optional[RefId] = None, deletable: bool = True):
+        self.ref = ref
+        self.deletable = deletable
+        self.data = data
+
+    @property
+    def type(self) -> PropType:
+        return self.data.type
+
+# Tables
+
+class LineRef(PortRefTableEntry):
+    def __init__(self, data, ref: RefId, deletable: bool):
+        super().__init__(data, ref, deletable)
+        self._reversed = False
+
+    @property
+    def points(self) -> List:
+        return self.data
+
+    @property
+    def reversed(self):
+        return self._reversed
+
+    def toggle_reverse(self):
+        self._reversed = not self.reversed
+
+    def points_w_reversal(self):
+        return self.points.reversed() if self.reversed else self.points
+
+class PointRef(PortRefTableEntry):
+    def __init__(self, point: Point):
+        super().__init__(point)

@@ -1,9 +1,13 @@
+from typing import Optional
+
+from ui.node_graph import RefId
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs
 from ui.nodes.node_implementations.visualiser import get_rectangle
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
-from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int, PT_Int
+from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int, PT_Int, \
+    PT_PointRefTable, List, PT_Polyline, PT_List, PT_Element
 from ui.nodes.shape_datatypes import Ellipse, SineWave, Polyline
 from ui.nodes.utils import process_rgb
 
@@ -96,42 +100,40 @@ class SineWaveNode(UnitNode):
         return {'_main': sine_wave}
 
 
-# DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
-#     description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#     prop_defs={
-#         'points': PropDef(
-#             prop_type=PT_PointRefTable(),
-#             display_name="Points",
-#             description="Points defining the path of the line (in order).",
-#             default_value=[Point(0, 0), Point(0.5, 0.5), Point(1, 0)]
-#         ),
-#         'stroke_width': PropDef(
-#             prop_type=PT_Float(min_value=0),
-#             display_name="Line thickness",
-#             description="Thickness of the line drawing.",
-#             default_value=Float(1)
-#         ),
-#         '_main': PropDef(
-#             display_name="Drawing",
-#             input_port_status=PortStatus.FORBIDDEN,
-#             output_port_status=PortStatus.COMPULSORY
-#         )
-#     }
-# )
-#
-#
-#
-# class CustomLineNode(UnitNode):
-#     NAME = "Custom Line"
-#     DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
-#
-#     @staticmethod
-#     def helper(points, stroke='black', stroke_width=1):
-#         return Polyline(points, stroke, stroke_width)
-#
-#     def compute(self):
-#         self.set_compute_result(
-#             CustomLineNode.helper(self._prop_val('points'), 'black', self._prop_val('stroke_width')))
+DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
+    description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+    prop_defs={
+        'points': PropDef(
+            prop_type=PT_PointRefTable(),
+            display_name="Points",
+            description="Points defining the path of the line (in order).",
+            default_value=List(PT_Point(), [Point(0, 0), Point(0.5, 0.5), Point(1, 0)])
+        ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Line thickness",
+            description="Thickness of the line drawing.",
+            default_value=Float(1)
+        ),
+        '_main': PropDef(
+            display_name="Drawing",
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY
+        )
+    }
+)
+
+
+class CustomLineNode(UnitNode):
+    NAME = "Custom Line"
+    DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
+
+    @staticmethod
+    def helper(points, stroke='black', stroke_width=1):
+        return Polyline(points, stroke, stroke_width)
+
+    def compute(self, props: ResolvedProps, _):
+        return {'_main': CustomLineNode.helper(props.get('points'), 'black', props.get('stroke_width'))}
 
 
 DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
@@ -178,55 +180,67 @@ class StraightLineNode(UnitNode):
                                     props.get('stroke_width'))}
 
 
-# DEF_POLYGON_INFO = NodeInfo(
-#     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#     port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_List(PT_Polyline())),
-#                (PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill(), optional=True),
-#                (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polygon())},
-#     prop_entries={'points': PropEntry(PT_PointRefTable('import_points'),
-#                                       display_name="Points",
-#                                       description="Points defining the path of the polygon edge (in order).",
-#                                       default_value=[(0, 0), (0, 1), (1, 1)]),
-#                   'fill': PropEntry(PT_Fill(),
-#                                     display_name="Fill",
-#                                     description="Polygon fill colour.",
-#                                     default_value=(0, 0, 0, 255)),
-#                   'stroke_width': PropEntry(PT_Float(min_value=0),
-#                                             display_name="Border thickness",
-#                                             description="Thickness of the line drawing the polygon border.",
-#                                             default_value=1)}
-# )
-#
-#
-# class PolygonNode(UnitNode):
-#     NAME = "Polygon"
-#     DEFAULT_NODE_INFO = DEF_POLYGON_INFO
-#
-#     def compute(self):
-#         # Process input polylines
-#         point_refs = self._prop_val('import_points', get_refs=True)
-#         if point_refs:
-#             line_ref_data = {}
-#             for ref_id, element in point_refs.items():
-#                 shape, transform_list = element.shape_transformations()[0]
-#                 line_ref_data[ref_id] = shape.get_points(transform_list)
-#         else:
-#             line_ref_data = None
-#         handle_port_ref_table(line_ref_data, self._prop_val('points'), entry_class=LineRef)
-#         # Get points
-#         points = []
-#         for table_entry in self._prop_val('points'):
-#             if isinstance(table_entry, LineRef):
-#                 points += table_entry.points_w_reversal()
-#             else:
-#                 # Ordinary point
-#                 x, y = table_entry
-#                 points.append((x, y))
-#         # Return polygon
-#         self.set_compute_result(get_polygon(self._prop_val('fill'), points, 'none',
-#                                             self._prop_val('stroke_width')))
-#
-#
+DEF_POLYGON_INFO = PrivateNodeInfo(
+    description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+    prop_defs={
+        'points': PropDef(
+            prop_type=PT_List(PT_Polyline(), input_multiple=True),
+            display_name="Points",
+            description="Points defining the path of the polygon edge (in order).",
+            default_value=List(PT_Point(), [Point(0, 0), Point(0, 1), Point(1, 1)]),
+        ),
+        'fill': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Fill",
+            description="Polygon fill colour.",
+            default_value=Colour(0, 0, 0, 255)
+        ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Border thickness",
+            description="Thickness of the line drawing the polygon border.",
+            default_value=Float(1)
+        ),
+        '_main': PropDef(
+            display_name="Drawing",
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY
+        )
+    }
+)
+
+
+
+class PolygonNode(UnitNode):
+    NAME = "Polygon"
+    DEFAULT_NODE_INFO = DEF_POLYGON_INFO
+
+    def compute(self, props: ResolvedProps, refs: ResolvedRefs):
+        # Process input polylines
+        line_ref_data: dict[RefId, List[PT_Point]] = {}
+        if props.get('import_points'):
+            import_data: list[List[PT_Polyline]] = props.get('import_points')
+            import_refs: list[RefId] = refs.get('import_points')
+            print(import_data)
+            return
+        #     for elem_list, element in point_refs.items():
+        #         shape, transform_list = element.shape_transformations()[0]
+        #         line_ref_data[ref_id] = shape.get_points(transform_list)
+        # handle_port_ref_table(line_ref_data, self._prop_val('points'), entry_class=LineRef)
+        # # Get points
+        # points = []
+        # for table_entry in self._prop_val('points'):
+        #     if isinstance(table_entry, LineRef):
+        #         points += table_entry.points_w_reversal()
+        #     else:
+        #         # Ordinary point
+        #         x, y = table_entry
+        #         points.append((x, y))
+        # # Return polygon
+        # self.set_compute_result(get_polygon(self._prop_val('fill'), points, 'none',
+        #                                     self._prop_val('stroke_width')))
+
+
 DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
     description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape.",
     prop_defs={
@@ -382,4 +396,4 @@ class CircleNode(UnitNode):
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode]

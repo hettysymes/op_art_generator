@@ -12,7 +12,7 @@ from ui.id_datatypes import PortId, PropKey, input_port
 from ui.node_manager import NodeInfo, NodeManager
 from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
     LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry, PortStatus, PropDef, PropValue, \
-    PT_String, PT_Colour
+    PT_String, PT_Colour, PT_PortRefTable
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -214,6 +214,7 @@ class NodePropertiesDialog(QDialog):
         if prop_def.description:
             help_icon = HelpIconLabel(prop_def.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
+        linked_key: PropKey = prop_def.prop_type.linked_key if isinstance(prop_def.prop_type, PT_PortRefTable) else
         if input_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL, get_output=False):
             input_ports_open = [port for port in node_item.node_state.ports_open if port.is_input]
             if key in input_ports_open:

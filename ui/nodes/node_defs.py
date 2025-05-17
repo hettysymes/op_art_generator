@@ -11,7 +11,7 @@ from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig, Visualisable
 
 type ResolvedProps = dict[PropKey, list[PropValue] | PropValue]
-type ResolvedRefs = dict[PropKey, list[RefId] | RefId]
+type ResolvedRefs = dict[PropKey, list[Optional[RefId]] | Optional[RefId]]
 
 
 class PrivateNodeInfo:

@@ -57,10 +57,10 @@ class PortRefTableWidget(QWidget):
     def set_item(self, table_entry, row=None):
         port_ref = None
         if isinstance(table_entry, PortRefTableEntry):
-            if isinstance(table_entry.ref_id, tuple):
-                ref_id = table_entry.ref_id[0]
+            if isinstance(table_entry.ref, tuple):
+                ref_id = table_entry.ref[0]
             else:
-                ref_id = table_entry.ref_id
+                ref_id = table_entry.ref
             port_ref = self.port_ref_getter(ref_id)
         item = QTableWidgetItem()
         item.setTextAlignment(Qt.AlignCenter)

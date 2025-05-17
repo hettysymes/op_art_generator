@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, PropValue
+from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, PropValue, Point, List, \
+    PT_Point
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 from ui.vis_types import Visualisable
 
@@ -156,7 +157,7 @@ class Shape(Element, ABC):
 
 class Polyline(Shape):
 
-    def __init__(self, points, stroke, stroke_width):
+    def __init__(self, points: List[PT_Point], stroke, stroke_width):
         super().__init__()
         self.points = points
         self.stroke = stroke
@@ -170,7 +171,7 @@ class Polyline(Shape):
                             style='vector-effect: non-scaling-stroke',
                             id=self.uid)
 
-    def get_points(self, transform_list=None):
+    def get_points(self, transform_list=None) -> List[PT_Point]:
         if transform_list:
             return transform_list.transform_points(self.points)
         return self.points
