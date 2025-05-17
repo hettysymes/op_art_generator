@@ -1,13 +1,9 @@
-# from ui.nodes.gradient_datatype import Gradient
-# from ui.nodes.node_defs import NodeInfo
-# from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
-# from ui.nodes.node_implementations.visualiser import get_polygon, get_rectangle
-# from ui.nodes.node_input_exception import NodeInputException
-# from ui.nodes.nodes import UnitNode, CombinationNode
-# from ui.nodes.prop_defs import PortIO, PortDef, PT_Polyline, PT_Fill, PT_Ellipse, PT_List, PT_Float, \
-#     PropEntry, PT_Int, PT_PointRefTable, PT_Point, LineRef, PT_Polygon
-# from ui.nodes.shape_datatypes import Polyline, SineWave, Ellipse
-# from ui.nodes.utils import process_rgb
+from ui.nodes.gradient_datatype import Gradient
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.nodes import UnitNode, CombinationNode
+from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int
+from ui.nodes.shape_datatypes import Ellipse
+from ui.nodes.utils import process_rgb
 #
 # DEF_SINE_WAVE_INFO = NodeInfo(
 #     description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -211,64 +207,71 @@
 #     def compute(self):
 #         self.set_compute_result(get_rectangle(self._prop_val('fill'), 'none', 1))
 #
+
+DEF_ELLIPSE_INFO = PrivateNodeInfo(
+    description="Create an ellipse shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+    prop_defs={
+        'rx': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Horizontal radius (rx)",
+            description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Float(0.5)
+        ),
+        'ry': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Vertical radius (ry)",
+            description="Vertical semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Float(0.5)
+        ),
+        'centre': PropDef(
+            prop_type=PT_Point(),
+            display_name="Centre coordinate",
+            description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Point(0.5, 0.5)
+        ),
+        'fill': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Colour",
+            description="Ellipse fill colour.",
+            default_value=Colour(0, 0, 0, 255),
+            input_port_status=PortStatus.OPTIONAL
+        ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Border thickness",
+            description="Thickness of the line drawing the ellipse border.",
+            default_value=Float(1)
+        ),
+        '_main': PropDef(
+            display_name="Drawing",
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY
+        )
+    }
+)
+
+
 #
-# DEF_ELLIPSE_INFO = NodeInfo(
-#     description="Create an ellipse shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#     port_defs={
-#         (PortIO.INPUT, 'fill'): PortDef("Colour", PT_Fill(), optional=True),
-#         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Ellipse())
-#     },
-#     prop_entries={
-#         'rx': PropEntry(PT_Float(min_value=0),
-#                         display_name="Horizontal radius (rx)",
-#                         description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                         default_value=0.5),
-#         'ry': PropEntry(PT_Float(min_value=0),
-#                         display_name="Vertical radius (ry)",
-#                         description="Vertical semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                         default_value=0.5),
-#         'centre': PropEntry(PT_Point(),
-#                             display_name="Centre coordinate",
-#                             description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                             default_value=(0.5, 0.5)),
-#         'fill': PropEntry(PT_Fill(),
-#                           display_name="Colour",
-#                           description="Ellipse fill colour.",
-#                           default_value=(0, 0, 0, 255)),
-#         'stroke_width': PropEntry(PT_Float(min_value=0),
-#                                   display_name="Border thickness",
-#                                   description="Thickness of the line drawing the ellipse border.",
-#                                   default_value=1)
-#     }
-# )
-#
-#
-# class EllipseNode(UnitNode):
-#     NAME = "Ellipse"
-#     DEFAULT_NODE_INFO = DEF_ELLIPSE_INFO
-#
-#     @staticmethod
-#     def helper(colour, centre, radius, stroke='none', stroke_width=1):
-#         if isinstance(colour, Gradient):
-#             fill = colour
-#             fill_opacity = 255
-#         else:
-#             fill, fill_opacity = process_rgb(colour)
-#         return Ellipse(centre, radius, fill,
-#                        fill_opacity, stroke, stroke_width)
-#
-#     def compute(self, out_port_key='_main'):
-#         self.set_compute_result(EllipseNode.helper(self._prop_val('fill'), self._prop_val('centre'),
-#                                                    (self._prop_val('rx'), self._prop_val('ry')),
-#                                                    'none', self._prop_val('stroke_width')))
-#
-#
-from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
-from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int
-from ui.nodes.shape_datatypes import Ellipse
-from ui.nodes.utils import process_rgb
+class EllipseNode(UnitNode):
+    NAME = "Ellipse"
+    DEFAULT_NODE_INFO = DEF_ELLIPSE_INFO
+
+    @staticmethod
+    def helper(colour, centre, radius, stroke='none', stroke_width=1):
+        if isinstance(colour, Gradient):
+            fill = colour
+            fill_opacity = 255
+        else:
+            fill, fill_opacity = process_rgb(colour)
+        return Ellipse(centre, radius, fill,
+                       fill_opacity, stroke, stroke_width)
+
+    def compute(self, props: ResolvedProps, _):
+        return {'_main': EllipseNode.helper(props.get('fill'), props.get('centre'),
+                                                   (props.get('rx'), props.get('ry')),
+                                                   'none', props.get('stroke_width'))}
+
+
 
 DEF_CIRCLE_INFO = PrivateNodeInfo(
     description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -334,3 +337,8 @@ class CircleNode(UnitNode):
 # class ShapeNode(CombinationNode):
 #     NAME = "Shape"
 #     SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, CustomLineNode, StraightLineNode]
+
+
+class ShapeNode(CombinationNode):
+    NAME = "Shape"
+    SELECTIONS = [EllipseNode, CircleNode]

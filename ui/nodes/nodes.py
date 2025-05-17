@@ -99,7 +99,7 @@ class CombinationNode(Node, ABC):
 
         # Copy over matching existing properties
         for prop_key, old_value in old_internal_props.items():
-            if prop_key in self.prop_vals:
+            if prop_key in self.internal_props:
                 self.internal_props[prop_key] = old_value
 
     # Forwarded interface

@@ -71,7 +71,7 @@ class NodeManager:
             randomisable=runtime_node.node.randomisable,
             selectable=False,
             # selectable=isinstance(runtime_node, SelectableNode),
-            combination=isinstance(runtime_node, CombinationNode)
+            combination=isinstance(runtime_node.node, CombinationNode)
         )
 
     def get_compute_result(self, node: NodeId, key: PropKey) -> Optional[PropValue]:

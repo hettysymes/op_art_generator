@@ -895,7 +895,7 @@ class PasteCmd(QUndoCommand):
         self.port_refs = port_refs
 
     def undo(self):
-        self.scene.remove_from_graph_and_scene(self.node_states, self.edges)
+        self.scene.remove_from_graph_and_scene(self.node_states.keys(), self.edges)
 
     def redo(self):
         self.scene.add_to_graph_and_scene(self.node_states, self.base_nodes, self.edges, self.port_refs)
@@ -914,7 +914,7 @@ class DeleteCmd(QUndoCommand):
         self.scene.add_to_graph_and_scene(self.node_states, self.base_nodes, self.edges, self.port_refs)
 
     def redo(self):
-        self.scene.remove_from_graph_and_scene(self.node_states, self.edges)
+        self.scene.remove_from_graph_and_scene(self.node_states.keys(), self.edges)
 
 
 class RegisterCustomNodeCmd(QUndoCommand):
@@ -1134,8 +1134,7 @@ class PipelineScene(QGraphicsScene):
             # separate_from_inputs_action = QAction("Separate from inputs", menu)
             # separate_from_inputs_action.triggered.connect(lambda: self.separate_from_inputs_action(clicked_item))
             # menu.addAction(separate_from_inputs_action)
-
-            if node_info.selectable:
+            if node_info.combination:
                 selections, curr_idx = self.node_manager.selections_w_idx(clicked_item.uid)
                 submenu = QMenu(f"Change {node_info.name} to...")
                 for i in range(len(selections)):
@@ -1244,19 +1243,18 @@ class PipelineScene(QGraphicsScene):
         # Load items
         self.load_from_node_states(set(node_states.values()), edges)
 
-    def remove_from_graph_and_scene(self, node_states: set[NodeState], edges: set[EdgeId]):
-        removed_nodes: set[NodeId] = {node_state.node for node_state in node_states}
+    def remove_from_graph_and_scene(self, nodes: set[NodeId], edges: set[EdgeId]):
         # Get affected nodes
         affected_nodes: set[NodeId] = set()
-        for node in removed_nodes:
+        for node in nodes:
             affected_nodes.update(self.node_graph.output_nodes(node))
         for edge in edges:
             affected_nodes.add(edge.dst_node)
-        affected_nodes.difference_update(removed_nodes)
+        affected_nodes.difference_update(nodes)
 
         # Remove nodes
-        for node_state in node_states:
-            node_item = self.node_item(node_state.node)
+        for node in nodes:
+            node_item = self.node_item(node)
             node_item.remove_from_scene(update_vis=False)
         # Remove edges
         for edge in edges:

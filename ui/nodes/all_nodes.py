@@ -10,7 +10,7 @@
 # from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.grid import GridNode
-from ui.nodes.node_implementations.shapes import CircleNode
+from ui.nodes.node_implementations.shapes import CircleNode, EllipseNode, ShapeNode
 
 
 # from ui.nodes.node_implementations.iterator import IteratorNode
@@ -52,7 +52,7 @@ class NodeSettings:
 #     (RandomIteratorNode, NodeSettings())
 # ]
 node_settings = [(GridNode, NodeSettings()),
-                 (CircleNode, NodeSettings()),
+                 (ShapeNode, NodeSettings()),
                  (CanvasNode, NodeSettings(resizable=False))]
 
 
