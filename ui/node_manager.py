@@ -74,6 +74,10 @@ class NodeManager:
             combination=isinstance(runtime_node, CombinationNode)
         )
 
+    def get_compute_result(self, node: NodeId, key: PropKey) -> Optional[PropValue]:
+        runtime_node: RuntimeNode = self._runtime_node(node)
+        return runtime_node.get_compute_result(key)
+
     def get_internal_property(self, node: NodeId, key: PropKey) -> Optional[PropValue]:
         return self._runtime_node(node).node.internal_props.get(key)
 

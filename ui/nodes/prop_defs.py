@@ -322,6 +322,9 @@ class Colour(tuple, PropValue):
     def __init__(self, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
         pass  # No need to store attributes separately; values are in the tuple
 
+    def __reduce__(self):
+        return self.__class__, (self[0], self[1], self[2], self[3])
+
     @property
     def type(self) -> PropType:
         return PT_Colour()
@@ -356,6 +359,18 @@ class Point(tuple, PropValue):
         # Optional: no need to store self.x/y, values are in the tuple
         pass
 
+    def __reduce__(self):
+        return self.__class__, (self[0], self[1])
+
     @property
     def type(self) -> PropType:
         return PT_Point()
+
+class Grid(PropValue):
+    def __init__(self, v_line_xs: list[float], h_line_ys: list[float]):
+        self.v_line_xs = v_line_xs
+        self.h_line_ys = h_line_ys
+
+    @property
+    def type(self) -> PropType:
+        return PT_Grid()

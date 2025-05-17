@@ -4,7 +4,7 @@ from ui.id_datatypes import PropKey
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.node_implementations.visualiser import get_grid, add_background
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PT_Warp, PT_Grid, PT_Int, PropDef, Colour, PortStatus, Int, PropValue
+from ui.nodes.prop_defs import PT_Warp, PT_Grid, PT_Int, PropDef, Colour, PortStatus, Int, PropValue, Grid
 from ui.nodes.shape_datatypes import Group, Polyline
 from ui.vis_types import Visualisable
 
@@ -39,12 +39,12 @@ class GridNode(UnitNode):
         return {'_main': get_grid(props.get('width'), props.get('height'), props.get('x_warp'), props.get('y_warp'))}
 
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
-        v_line_xs, h_line_ys = compute_results.get('_main')
+        grid: Grid = compute_results.get('_main')
         grid_group = Group(debug_info="Grid")
-        for x in v_line_xs:
+        for x in grid.v_line_xs:
             # Draw horizontal lines
             grid_group.add(Polyline([(x, 0), (x, 1)], stroke='black', stroke_width=2))
-        for y in h_line_ys:
+        for y in grid.h_line_ys:
             # Draw vertical lines
             grid_group.add(Polyline([(0, y), (1, y)], stroke='black', stroke_width=2))
         return add_background(grid_group, Colour(255, 255, 255, 255))

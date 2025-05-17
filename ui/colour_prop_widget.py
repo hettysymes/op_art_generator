@@ -2,6 +2,8 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPainter
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QColorDialog
 
+from ui.nodes.prop_defs import Colour
+
 
 class ColorPreviewWidget(QWidget):
     """Widget that displays a color preview and handles clicks."""
@@ -59,4 +61,4 @@ class ColorPropertyWidget(QWidget):
         self.preview.setColor(self.color)
 
     def get_value(self):
-        return self.color.getRgb()
+        return Colour(*self.color.getRgb())

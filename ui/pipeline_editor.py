@@ -6,7 +6,7 @@ import sys
 import tempfile
 from collections import defaultdict
 from functools import partial
-from typing import cast
+from typing import cast, Optional
 
 from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData
 from PyQt5.QtCore import QPointF
@@ -28,7 +28,8 @@ from ui.nodes.all_nodes import node_setting, node_classes
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_defs import Node
 from ui.nodes.nodes import CombinationNode, CustomNode
-from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, Int
+from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, Int, \
+    PropValue, PropType
 from ui.nodes.shape_datatypes import Group, Element
 from ui.reg_custom_dialog import RegCustomDialog
 from ui.selectable_renderer import SelectableSvgElement
@@ -702,7 +703,7 @@ class PortItem(QGraphicsPathItem):
 
     def hoverEnterEvent(self, event):
         self.setPen(QPen(Qt.red, 2))
-        if not self.is_input:
+        if not self.port.is_input:
             self.setCursor(Qt.CrossCursor)
         super().hoverEnterEvent(event)
 
@@ -787,7 +788,7 @@ class AddNewEdgeCmd(QUndoCommand):
     def __init__(self, scene, edge: EdgeId, description="Add new edge"):
         super().__init__(description)
         self.scene = scene
-        self.node_graph = self.scene.graph_querier
+        self.node_graph = self.scene.node_graph
         self.edge = edge
 
     def undo(self):
@@ -1015,6 +1016,15 @@ class PipelineScene(QGraphicsScene):
             start_pos = self.source_port_item.get_center_scene_pos()
             self.temp_line.setLine(QLineF(start_pos, end_pos))
 
+    def is_edge_type_valid(self, src_port: PortId, dst_port: PortId) -> bool:
+        # Check compute result from source port is compatible with type of dest port
+        compute_res: Optional[PropValue] = self.node_manager.get_compute_result(src_port.node, src_port.key)
+        if not compute_res:
+            # None input is allowed
+            return True
+        dst_port_type: PropType = self.node_manager.node_info(dst_port.node).prop_defs[dst_port.key].prop_type
+        return compute_res.type.is_compatible_with(dst_port_type)
+
     def finish_connection(self, source_port_item: PortItem, dest_port_item: PortItem):
         """Create a permanent connection between source and destination ports"""
         if source_port_item and dest_port_item and source_port_item != dest_port_item:
@@ -1026,9 +1036,7 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port_item.edge_items) > 0
-                if not connection_exists and source_port_item.port_type.is_compatible_with(dest_port_item.port_type) and \
-                        (not target_has_connection or (
-                                isinstance(dest_port_item.port_type, PT_List) and dest_port_item.port_type.input_multiple)):
+                if not connection_exists and (not target_has_connection or (isinstance(dest_port_item.port_type, PT_List) and dest_port_item.port_type.input_multiple)) and self.is_edge_type_valid(source_port_item.port, dest_port_item.port):
                     # Add the connection
                     self.undo_stack.push(
                         AddNewEdgeCmd(self, edge))

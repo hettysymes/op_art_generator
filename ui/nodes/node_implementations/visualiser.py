@@ -3,7 +3,7 @@ import itertools
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour
+from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid
 from ui.nodes.shape_datatypes import Group, Element, Polygon
 from ui.nodes.transforms import Scale, Translate
 from ui.nodes.utils import process_rgb
@@ -17,7 +17,7 @@ def add_background(element: Element, colour: Colour):
         group.add(element)
     return group
 
-def get_grid(width=1, height=1, x_warp=None, y_warp=None):
+def get_grid(width=1, height=1, x_warp=None, y_warp=None) -> Grid:
     if x_warp is None:
         x_warp = PosWarp(IdentityFun())
     else:
@@ -30,23 +30,22 @@ def get_grid(width=1, height=1, x_warp=None, y_warp=None):
 
     v_line_xs = x_warp.sample(width + 1)
     h_line_ys = y_warp.sample(height + 1)
-    return v_line_xs, h_line_ys
+    return Grid(v_line_xs, h_line_ys)
 
 
-def repeat_shapes(grid, elements):
-    v_line_xs, h_line_ys = grid
+def repeat_shapes(grid: Grid, elements):
     ret_group = Group(debug_info="Shape Repeater")
     if isinstance(elements, Element):
         # Ensure elements is a list
         elements = [elements]
     element_it = itertools.cycle(elements)
-    for i in range(0, len(h_line_ys) - 1):
+    for i in range(0, len(grid.h_line_ys) - 1):
         # Add row
-        for j in range(0, len(v_line_xs) - 1):
-            x1 = v_line_xs[j]
-            x2 = v_line_xs[j + 1]
-            y1 = h_line_ys[i]
-            y2 = h_line_ys[i + 1]
+        for j in range(0, len(grid.v_line_xs) - 1):
+            x1 = grid.v_line_xs[j]
+            x2 = grid.v_line_xs[j + 1]
+            y1 = grid.h_line_ys[i]
+            y2 = grid.h_line_ys[i + 1]
             cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({i},{j})")
             cell_group.add(next(element_it))
             ret_group.add(cell_group)
@@ -63,7 +62,7 @@ def get_polygon(fill: PropValue, points, stroke, stroke_width):
     return Polygon(points, fill, fill_opacity, stroke, stroke_width)
 
 
-def get_rectangle(fill: PropValue, stroke='none', stroke_width=0):
+def get_rectangle(fill: Gradient | Colour, stroke='none', stroke_width=0):
     return get_polygon(fill, [(0, 0), (0, 1), (1, 1), (1, 0)], stroke, stroke_width)
 
 

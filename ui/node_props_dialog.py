@@ -1,4 +1,5 @@
 import copy
+from typing import Optional, cast
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPen
@@ -8,9 +9,10 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidge
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_datatypes import PortId, PropKey, input_port
-from ui.node_manager import NodeInfo
+from ui.node_manager import NodeInfo, NodeManager
 from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
-    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry, PortStatus, PropDef
+    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry, PortStatus, PropDef, PropValue, \
+    PT_String, PT_Colour
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -124,15 +126,13 @@ class NodePropertiesDialog(QDialog):
 
             for key, prop_def in self.node_info.prop_defs.items():
                 if not isinstance(prop_def.prop_type, PT_Hidden):
-                    widget = self.create_property_widget(key, prop_def, node_item.node_manager.get_internal_property(node_item.uid, key),
-                                                         node_item)
-
-                    # Create the row with label and help icon
-                    label_container, widget_container = self.create_property_row(key, prop_def, widget,
-                                                                                 node_item)
-                    props_layout.addRow(label_container, widget_container)
-                    self.property_widgets[key] = widget
-
+                    widget: Optional[QWidget] = self.create_property_widget(prop_def, node_item.node_manager.get_internal_property(node_item.uid, key))
+                    if widget:
+                        # Create the row with label and help icon
+                        label_container, widget_container = self.create_property_row(key, prop_def, widget,
+                                                                                     node_item)
+                        props_layout.addRow(label_container, widget_container)
+                        self.property_widgets[key] = widget
             main_layout.addWidget(props_group)
 
         # input_ports_open: list[PortId] = [port for port in node_item.node_state.ports_open if port.is_input]
@@ -230,8 +230,9 @@ class NodePropertiesDialog(QDialog):
 
         return label_container, widget_container
 
-    def create_property_widget(self, prop_key, prop_entry, current_value, node_item):
-        prop_type = prop_entry.prop_type
+    def create_property_widget(self, prop_def: PropDef, current_value: Optional[PropValue]) -> Optional[QWidget]:
+        prop_type = prop_def.prop_type
+        widget: Optional[QWidget] = None
         """Create an appropriate widget for the property type"""
         if isinstance(prop_type, PT_Number):
             if isinstance(prop_type, PT_Int):
@@ -297,7 +298,7 @@ class NodePropertiesDialog(QDialog):
         elif isinstance(prop_type, PT_ElemRefTable):
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
-                                                                                     prop_entry.prop_type.linked_port_key,
+                                                                                     prop_def.prop_type.linked_port_key,
                                                                                      ref_id),
                 table_heading="Drawing",
                 entries=current_value
@@ -343,7 +344,7 @@ class NodePropertiesDialog(QDialog):
 
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
-                                                                                     prop_entry.prop_type.linked_port_key,
+                                                                                     prop_def.prop_type.linked_port_key,
                                                                                      ref_id),
                 table_heading="Points (X, Y)",
                 entries=current_value,
@@ -395,7 +396,7 @@ class NodePropertiesDialog(QDialog):
 
             port_ref_table = PortRefTableWidget(
                 port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
-                                                                                     prop_entry.prop_type.linked_port_key,
+                                                                                     prop_def.prop_type.linked_port_key,
                                                                                      ref_id),
                 table_heading="Colour",
                 entries=current_value,
@@ -407,7 +408,7 @@ class NodePropertiesDialog(QDialog):
         elif isinstance(prop_type, PT_Fill):
             r, g, b, a = current_value
             widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
-        else:  # Default to string type
+        elif isinstance(prop_type, PT_String):  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
 
         return widget
@@ -429,7 +430,7 @@ class NodePropertiesDialog(QDialog):
             else:  # QLineEdit
                 value = widget.text()
 
-            old_val = self.node_item.node().get_internal_property(prop_key)
+            old_val = cast(NodeManager, self.node_item.node_manager).get_internal_property(self.node_item.uid, prop_key)
             if old_val != value:
                 props_changed[prop_key] = (copy.deepcopy(old_val), value)
 

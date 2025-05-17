@@ -8,6 +8,7 @@
 # from ui.nodes.node_implementations.function import FunctionNode
 # from ui.nodes.node_implementations.function_sampler import FunSamplerNode
 # from ui.nodes.node_implementations.gradient import GradientNode
+from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.shapes import CircleNode
 
@@ -51,7 +52,8 @@ class NodeSettings:
 #     (RandomIteratorNode, NodeSettings())
 # ]
 node_settings = [(GridNode, NodeSettings()),
-                 (CircleNode, NodeSettings())]
+                 (CircleNode, NodeSettings()),
+                 (CanvasNode, NodeSettings(resizable=False))]
 
 
 def node_classes():
