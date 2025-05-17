@@ -30,7 +30,7 @@ class Node(ABC):
         default_props: dict[PropKey, PropValue] = {}
         prop_defs: dict[PropKey, PropDef] = self.prop_defs
         for key, prop_def in prop_defs.items():
-            if prop_def.default_value:
+            if prop_def.default_value is not None:
                 default_props[key] = prop_def.default_value
         return default_props
 
@@ -91,11 +91,7 @@ class RuntimeNode:
             # Obtain visualisation
             vis = self.node.visualise(self.compute_results)
         except NodeInputException as e:
-            if e.node_id == self.uid:
-                msg = str(e.message)
-            else:
-                msg = f"Error further up pipeline (id {e.node_id})."
-            vis = ErrorFig(e.title, msg)
+            vis = ErrorFig(e.title, e.message)
         except Exception as e:
             vis = ErrorFig("Unknown Exception", str(e))
             traceback.print_exc()
@@ -112,7 +108,7 @@ class RuntimeNode:
         refs: ResolvedRefs = {}
         for key in self.node.prop_defs:
             result = self.get_property(key)
-            if result:
+            if result is not None:
                 prop_vals[key], refs[key] = result # Set
         return prop_vals, refs
 
@@ -135,12 +131,12 @@ class RuntimeNode:
         if not results:
             # No incoming edge results, default to internal property value if it exists
             prop_value: Optional[PropValue] = self.node.internal_props.get(prop_key)
-            if prop_value:
-                results = [prop_value]
-                refs = [None]
-            else:
+            if prop_value is None:
                 # No value could be resolved anywhere
                 return None
+            else:
+                results = [prop_value]
+                refs = [None]
         if isinstance(prop_type, PT_Scalar) or (isinstance(prop_type, PT_List) and not prop_type.input_multiple):
             # We know there will be at most one result, so just return the first one
             return results[0], refs[0]

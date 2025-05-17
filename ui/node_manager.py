@@ -48,7 +48,7 @@ class NodeManager:
     def resolve_property(self, src_port: PortId, inp_type: PropType) -> Optional[PropValue]:
         src_runtime_node = self._runtime_node(src_port.node)
         comp_result: Optional[PropValue] = src_runtime_node.get_compute_result(src_port.key)
-        if not comp_result:
+        if comp_result is None:
             return None
         # Check types of the result, assume they are already compatible
         if isinstance(comp_result, List):

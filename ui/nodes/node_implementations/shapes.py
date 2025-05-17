@@ -1,94 +1,124 @@
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_implementations.visualiser import get_rectangle
+from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
-from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int
-from ui.nodes.shape_datatypes import Ellipse
+from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int, PT_Int
+from ui.nodes.shape_datatypes import Ellipse, SineWave, Polyline
 from ui.nodes.utils import process_rgb
-#
-# DEF_SINE_WAVE_INFO = NodeInfo(
-#     description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#     port_defs={
-#         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline())
-#     },
-#     prop_entries={
-#         'amplitude': PropEntry(PT_Float(),
-#                                display_name="Amplitude",
-#                                description="Amplitude of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                                default_value=0.5),
-#         'wavelength': PropEntry(PT_Float(min_value=0.001),
-#                                 display_name="Wavelength",
-#                                 description="Wavelength of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                                 default_value=1),
-#         'centre_y': PropEntry(PT_Float(),
-#                               display_name="Equilibrium position",
-#                               description="Equilibrium position of the sine wave. With 0° rotation, this is the y-coordinate of the equilibrium position. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                               default_value=0.5),
-#         'phase': PropEntry(PT_Float(),
-#                            display_name="Phase (°)",
-#                            description="Phase of the sine wave in degrees.",
-#                            default_value=0),
-#         'x_min': PropEntry(PT_Float(),
-#                            display_name="Wave start",
-#                            description="Start position of the sine wave. With 0° rotation, this is the x-coordinate of the start of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                            default_value=0),
-#         'x_max': PropEntry(PT_Float(),
-#                            display_name="Wave stop",
-#                            description="Stop position of the sine wave. With 0° rotation, this is the x-coordinate of the end of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                            default_value=1),
-#         'stroke_width': PropEntry(PT_Float(min_value=0),
-#                                   display_name="Line thickness",
-#                                   description="Thickness of the line drawing the sine wave.",
-#                                   default_value=1.0),
-#         'orientation': PropEntry(PT_Float(),
-#                                  display_name="Rotation (°)",
-#                                  description="Clockwise rotation applied to the (horizontal) sine wave.",
-#                                  default_value=0),
-#         'num_points': PropEntry(PT_Int(min_value=2),
-#                                 display_name="Line resolution",
-#                                 description="Number of points used to draw the line, (at least 2). The more points used, the more accurate the line is to a sine wave.",
-#                                 default_value=100)
-#     }
-# )
-#
-#
-# class SineWaveNode(UnitNode):
-#     NAME = "Sine Wave"
-#     DEFAULT_NODE_INFO = DEF_SINE_WAVE_INFO
-#
-#     @staticmethod
-#     def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, num_points=100, orientation=0):
-#         return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points).rotate(
-#             orientation, (0.5, 0.5))
-#
-#     def compute(self):
-#         try:
-#             sine_wave = SineWaveNode.helper(self._prop_val('amplitude'), self._prop_val('wavelength'),
-#                                             self._prop_val('centre_y'),
-#                                             self._prop_val('phase'), self._prop_val('x_min'),
-#                                             self._prop_val('x_max'),
-#                                             self._prop_val('stroke_width'), self._prop_val('num_points'),
-#                                             self._prop_val('orientation'))
-#         except ValueError as e:
-#             raise NodeInputException(str(e), self.uid)
-#         self.set_compute_result(sine_wave)
-#
-#
-# DEF_CUSTOM_LINE_INFO = NodeInfo(
+
+DEF_SINE_WAVE_INFO = PrivateNodeInfo(
+    description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+    prop_defs={
+        'amplitude': PropDef(
+            prop_type=PT_Float(),
+            display_name="Amplitude",
+            description="Amplitude of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Float(0.5)
+        ),
+        'wavelength': PropDef(
+            prop_type=PT_Float(min_value=0.001),
+            display_name="Wavelength",
+            description="Wavelength of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Float(1)
+        ),
+        'centre_y': PropDef(
+            prop_type=PT_Float(),
+            display_name="Equilibrium position",
+            description="Equilibrium position of the sine wave. With 0° rotation, this is the y-coordinate of the equilibrium position. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Float(0.5)
+        ),
+        'phase': PropDef(
+            prop_type=PT_Float(),
+            display_name="Phase (°)",
+            description="Phase of the sine wave in degrees.",
+            default_value=Float(0)
+        ),
+        'x_min': PropDef(
+            prop_type=PT_Float(),
+            display_name="Wave start",
+            description="Start position of the sine wave. With 0° rotation, this is the x-coordinate of the start of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Float(0)
+        ),
+        'x_max': PropDef(
+            prop_type=PT_Float(),
+            display_name="Wave stop",
+            description="Stop position of the sine wave. With 0° rotation, this is the x-coordinate of the end of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Float(1)
+        ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Line thickness",
+            description="Thickness of the line drawing the sine wave.",
+            default_value=Float(1)
+        ),
+        'orientation': PropDef(
+            prop_type=PT_Float(),
+            display_name="Rotation (°)",
+            description="Clockwise rotation applied to the (horizontal) sine wave.",
+            default_value=Float(0)
+        ),
+        'num_points': PropDef(
+            prop_type=PT_Int(min_value=2),
+            display_name="Line resolution",
+            description="Number of points used to draw the line, (at least 2). The more points used, the more accurate the line is to a sine wave.",
+            default_value=Int(100)
+        ),
+        '_main': PropDef(
+            display_name="Drawing",
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY
+        )
+    }
+)
+
+
+
+class SineWaveNode(UnitNode):
+    NAME = "Sine Wave"
+    DEFAULT_NODE_INFO = DEF_SINE_WAVE_INFO
+
+    @staticmethod
+    def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, num_points=100, orientation=0):
+        return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points).rotate(
+            orientation, (0.5, 0.5))
+
+    def compute(self, props: ResolvedProps, _):
+        try:
+            sine_wave = SineWaveNode.helper(props.get('amplitude'), props.get('wavelength'),
+                                            props.get('centre_y'),
+                                            props.get('phase'), props.get('x_min'),
+                                            props.get('x_max'),
+                                            props.get('stroke_width'), props.get('num_points'),
+                                            props.get('orientation'))
+        except ValueError as e:
+            raise NodeInputException(e)
+        return {'_main': sine_wave}
+
+
+# DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
 #     description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#     port_defs={
-#         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline())
-#     },
-#     prop_entries={
-#         'points': PropEntry(PT_PointRefTable(),
-#                             display_name="Points",
-#                             description="Points defining the path of the line (in order).",
-#                             default_value=[(0, 0), (0.5, 0.5), (1, 0)]),
-#         'stroke_width': PropEntry(PT_Float(min_value=0),
-#                                   display_name="Line thickness",
-#                                   description="Thickness of the line drawing.",
-#                                   default_value=1)
+#     prop_defs={
+#         'points': PropDef(
+#             prop_type=PT_PointRefTable(),
+#             display_name="Points",
+#             description="Points defining the path of the line (in order).",
+#             default_value=[Point(0, 0), Point(0.5, 0.5), Point(1, 0)]
+#         ),
+#         'stroke_width': PropDef(
+#             prop_type=PT_Float(min_value=0),
+#             display_name="Line thickness",
+#             description="Thickness of the line drawing.",
+#             default_value=Float(1)
+#         ),
+#         '_main': PropDef(
+#             display_name="Drawing",
+#             input_port_status=PortStatus.FORBIDDEN,
+#             output_port_status=PortStatus.COMPULSORY
+#         )
 #     }
 # )
+#
 #
 #
 # class CustomLineNode(UnitNode):
@@ -102,44 +132,52 @@ from ui.nodes.utils import process_rgb
 #     def compute(self):
 #         self.set_compute_result(
 #             CustomLineNode.helper(self._prop_val('points'), 'black', self._prop_val('stroke_width')))
-#
-#
-# DEF_STRAIGHT_LINE_NODE_INFO = NodeInfo(
-#     description="Create a straight line by defining the start and stop points. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#     port_defs={
-#         (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polyline())
-#     },
-#     prop_entries={
-#         'start_coord': PropEntry(PT_Point(),
-#                                  display_name="Start coordinate",
-#                                  description="Coordinate of the start of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                                  default_value=(1, 0)),
-#         'stop_coord': PropEntry(PT_Point(),
-#                                 display_name="Stop coordinate",
-#                                 description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#                                 default_value=(0, 1)),
-#         'stroke_width': PropEntry(PT_Float(min_value=0),
-#                                   display_name="Line thickness",
-#                                   description="Thickness of the straight line.",
-#                                   default_value=1)
-#     }
-# )
-#
-#
-# class StraightLineNode(UnitNode):
-#     NAME = "Straight Line"
-#     DEFAULT_NODE_INFO = DEF_STRAIGHT_LINE_NODE_INFO
-#
-#     @staticmethod
-#     def helper(start_coord, stop_coord, stroke='black', stroke_width=1):
-#         return Polyline([start_coord, stop_coord], stroke, stroke_width)
-#
-#     def compute(self):
-#         self.set_compute_result(
-#             StraightLineNode.helper(self._prop_val('start_coord'), self._prop_val('stop_coord'), 'black',
-#                                     self._prop_val('stroke_width')))
-#
-#
+
+
+DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
+    description="Create a straight line by defining the start and stop points. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+    prop_defs={
+        'start_coord': PropDef(
+            prop_type=PT_Point(),
+            display_name="Start coordinate",
+            description="Coordinate of the start of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Point(1, 0)
+        ),
+        'stop_coord': PropDef(
+            prop_type=PT_Point(),
+            display_name="Stop coordinate",
+            description="Coordinate of the end of the line. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            default_value=Point(0, 1)
+        ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Line thickness",
+            description="Thickness of the straight line.",
+            default_value=Float(1)
+        ),
+        '_main': PropDef(
+            display_name="Drawing",
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY
+        )
+    }
+)
+
+
+class StraightLineNode(UnitNode):
+    NAME = "Straight Line"
+    DEFAULT_NODE_INFO = DEF_STRAIGHT_LINE_NODE_INFO
+
+    @staticmethod
+    def helper(start_coord, stop_coord, stroke='black', stroke_width=1):
+        return Polyline([start_coord, stop_coord], stroke, stroke_width)
+
+    def compute(self, props: ResolvedProps, _):
+        return {'_main':
+            StraightLineNode.helper(props.get('start_coord'), props.get('stop_coord'), 'black',
+                                    props.get('stroke_width'))}
+
+
 # DEF_POLYGON_INFO = NodeInfo(
 #     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
 #     port_defs={(PortIO.INPUT, 'import_points'): PortDef("Import Points", PT_List(PT_Polyline())),
@@ -189,24 +227,32 @@ from ui.nodes.utils import process_rgb
 #                                             self._prop_val('stroke_width')))
 #
 #
-# DEF_RECTANGLE_NODE_INFO = NodeInfo(
-#     description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape.",
-#     port_defs={(PortIO.INPUT, 'fill'): PortDef("Fill", PT_Fill()),
-#                (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Polygon())},
-#     prop_entries={'fill': PropEntry(PT_Fill(),
-#                                     display_name="Fill",
-#                                     description="Rectangle fill colour.",
-#                                     default_value=(0, 0, 0, 255))}
-# )
-#
-#
-# class RectangleNode(UnitNode):
-#     NAME = "Rectangle"
-#     DEFAULT_NODE_INFO = DEF_RECTANGLE_NODE_INFO
-#
-#     def compute(self):
-#         self.set_compute_result(get_rectangle(self._prop_val('fill'), 'none', 1))
-#
+DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
+    description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape.",
+    prop_defs={
+        'fill': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Fill",
+            description="Rectangle fill colour.",
+            default_value=Colour(0, 0, 0, 255),
+            input_port_status=PortStatus.COMPULSORY
+        ),
+        '_main': PropDef(
+            display_name="Drawing",
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY
+        )
+    }
+)
+
+
+class RectangleNode(UnitNode):
+    NAME = "Rectangle"
+    DEFAULT_NODE_INFO = DEF_RECTANGLE_NODE_INFO
+
+    def compute(self, props: ResolvedProps, _):
+        return {'_main': get_rectangle(props.get('fill'), 'none', 1)}
+
 
 DEF_ELLIPSE_INFO = PrivateNodeInfo(
     description="Create an ellipse shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -332,13 +378,8 @@ class CircleNode(UnitNode):
                                               props.get('r'),
                                               'none',
                                               props.get('stroke_width'))}
-#
-#
-# class ShapeNode(CombinationNode):
-#     NAME = "Shape"
-#     SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, CustomLineNode, StraightLineNode]
 
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [EllipseNode, CircleNode]
+    SELECTIONS = [RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode]
