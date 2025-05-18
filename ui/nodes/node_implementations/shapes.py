@@ -100,40 +100,47 @@ class SineWaveNode(UnitNode):
         return {'_main': sine_wave}
 
 
-# DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
-#     description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-#     prop_defs={
-#         'points': PropDef(
-#             prop_type=PT_PointRefTable(),
-#             display_name="Points",
-#             description="Points defining the path of the line (in order).",
-#             default_value=List(PT_Point(), [Point(0, 0), Point(0.5, 0.5), Point(1, 0)])
-#         ),
-#         'stroke_width': PropDef(
-#             prop_type=PT_Float(min_value=0),
-#             display_name="Line thickness",
-#             description="Thickness of the line drawing.",
-#             default_value=Float(1)
-#         ),
-#         '_main': PropDef(
-#             display_name="Drawing",
-#             input_port_status=PortStatus.FORBIDDEN,
-#             output_port_status=PortStatus.COMPULSORY
-#         )
-#     }
-# )
-#
-#
-# class CustomLineNode(UnitNode):
-#     NAME = "Custom Line"
-#     DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
-#
-#     @staticmethod
-#     def helper(points, stroke='black', stroke_width=1):
-#         return Polyline(points, stroke, stroke_width)
-#
-#     def compute(self, props: ResolvedProps, _):
-#         return {'_main': CustomLineNode.helper(props.get('points'), 'black', props.get('stroke_width'))}
+DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
+    description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+    prop_defs={
+        'points': PropDef(
+            prop_type=PT_List(PT_PointsHolder(), input_multiple=True),
+            display_name="Points",
+            description="Points defining the path of the line (in order).",
+            default_value=List(PT_Point(), [Point(0, 0), Point(0.5, 0.5), Point(1, 0)])
+        ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Line thickness",
+            description="Thickness of the line drawing.",
+            default_value=Float(1)
+        ),
+        '_main': PropDef(
+            display_name="Drawing",
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY
+        )
+    }
+)
+
+
+class CustomLineNode(UnitNode):
+    NAME = "Custom Line"
+    DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
+
+    @staticmethod
+    def helper(points, stroke='black', stroke_width=1):
+        return Polyline(points, stroke, stroke_width)
+
+    def compute(self, props: ResolvedProps, _):
+        points = List(PT_Point())
+        for points_holder in props.get('points'):
+            points_holder = cast(PointsHolder, points_holder)
+            if isinstance(points_holder, LineRef):
+                points.extend(points_holder.points_w_reversal())
+            else:
+                points.extend(points_holder.points)
+        return {'_main': CustomLineNode.helper(points, 'black', props.get('stroke_width'))}
 
 
 DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
@@ -171,8 +178,8 @@ class StraightLineNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_STRAIGHT_LINE_NODE_INFO
 
     @staticmethod
-    def helper(start_coord, stop_coord, stroke='black', stroke_width=1):
-        return Polyline([start_coord, stop_coord], stroke, stroke_width)
+    def helper(start_coord: Point, stop_coord: Point, stroke='black', stroke_width=1):
+        return Polyline(List(PT_Point(), [start_coord, stop_coord]), stroke, stroke_width)
 
     def compute(self, props: ResolvedProps, _):
         return {'_main':
@@ -383,4 +390,4 @@ class CircleNode(UnitNode):
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode]
