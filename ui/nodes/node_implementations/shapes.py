@@ -1,13 +1,13 @@
-from typing import Optional
+from typing import Optional, cast
 
 from ui.node_graph import RefId
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs
-from ui.nodes.node_implementations.visualiser import get_rectangle
+from ui.nodes.node_implementations.visualiser import get_rectangle, get_polygon
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int, PT_Int, \
-    List, PT_Polyline, PT_List, PT_Element, PT_PointsHolder
+    List, PT_Polyline, PT_List, PT_Element, PT_PointsHolder, LineRef, PointsHolder
 from ui.nodes.shape_datatypes import Ellipse, SineWave, Polyline
 from ui.nodes.utils import process_rgb
 
@@ -215,29 +215,22 @@ class PolygonNode(UnitNode):
     NAME = "Polygon"
     DEFAULT_NODE_INFO = DEF_POLYGON_INFO
 
-    def compute(self, props: ResolvedProps, refs: ResolvedRefs):
+    def compute(self, props: ResolvedProps, _):
         # Process input polylines
-        line_ref_data: dict[RefId, List[PT_Point]] = {}
-        if props.get('points'):
-            import_data: list[List[PT_Polyline]] = props.get('points')
-            print(f"Import polygon data: {import_data}")
-            return
-        #     for elem_list, element in point_refs.items():
-        #         shape, transform_list = element.shape_transformations()[0]
-        #         line_ref_data[ref_id] = shape.get_points(transform_list)
-        # handle_port_ref_table(line_ref_data, self._prop_val('points'), entry_class=LineRef)
-        # # Get points
-        # points = []
-        # for table_entry in self._prop_val('points'):
-        #     if isinstance(table_entry, LineRef):
-        #         points += table_entry.points_w_reversal()
-        #     else:
-        #         # Ordinary point
-        #         x, y = table_entry
-        #         points.append((x, y))
-        # # Return polygon
-        # self.set_compute_result(get_polygon(self._prop_val('fill'), points, 'none',
-        #                                     self._prop_val('stroke_width')))
+        # if props.get('points'):
+        #     import_data: List[PT_PointsHolder] = props.get('points')
+        #     print(f"Import polygon data: {import_data}")
+        # Get points
+        points = List(PT_Point())
+        for points_holder in props.get('points'):
+            points_holder = cast(PointsHolder, points_holder)
+            if isinstance(points_holder, LineRef):
+                points.extend(points_holder.points_w_reversal())
+            else:
+                points.extend(points_holder.points)
+        # Return polygon
+        return {'_main': get_polygon(props.get('fill'), points, 'none',
+                                            props.get('stroke_width'))}
 
 
 DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(

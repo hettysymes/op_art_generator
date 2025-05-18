@@ -1241,7 +1241,7 @@ class PipelineScene(QGraphicsScene):
             self.node_graph.add_edge(edge)
         self.node_graph.extend_port_refs(more_node_to_port_refs)
         # Load items
-        self.load_from_node_states(set(node_states.values()), edges)
+        self.load_from_node_states(node_states.values(), edges)
 
     def remove_from_graph_and_scene(self, nodes: set[NodeId], edges: set[EdgeId]):
         # Get affected nodes
@@ -1447,27 +1447,26 @@ def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[No
     # Update node states
     new_node_states: dict[NodeId, NodeState] = {}
     new_base_nodes: dict[NodeId, Node] = {}
-    for node, node_state in node_states:
+    for node, node_state in node_states.items():
         new_node: NodeId = gen_node_id()
         # Copy node state
         new_node_state: NodeState = copy.deepcopy(node_state)
         new_node_state.node = new_node # Update id in node state
         new_node_states[new_node] = new_node_state # Add to new node states
         # Copy node
-        new_base_node = copy.deepcopy(new_base_nodes[node])
+        new_base_node = copy.deepcopy(base_nodes[node])
         new_base_nodes[new_node] = new_base_node
         # Add id to conversion map
         old_to_new_id_map[node_state.node] = new_node
     # Update ids in connections
-    new_edges = set()
-    for (src_node_id, src_port_key), (dst_node_id, dst_port_key) in edges:
-        new_edges.add(((old_to_new_id_map[src_node_id], src_port_key),
-                                (old_to_new_id_map[dst_node_id], dst_port_key)))
+    new_edges: set[EdgeId] = set()
+    for edge in edges:
+        new_edges.add(EdgeId(input_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key), output_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
     # Update ids in port refs
-    new_port_refs = {}
+    new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
     for dst_node in port_refs:
-        new_entry: dict[PortId, RefId] = copy.deepcopy(port_refs[dst_node])
-        for port, ref in new_entry.items():
+        new_entry: dict[PortId, RefId] = {}
+        for port, ref in port_refs[dst_node].items():
             new_entry[PortId(node=old_to_new_id_map[port.node], key=port.key, is_input=port.is_input)] = ref
         new_port_refs[old_to_new_id_map[dst_node]] = new_entry
     # Return results

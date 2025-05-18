@@ -246,7 +246,7 @@ class SineWave(Polyline):
     def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points):
         if x_min > x_max:
             raise ValueError("Wave start position must be smaller than wave stop position.")
-        points = []
+        points = List(PT_Point())
 
         # Generate 100 evenly spaced x-values between x_min and x_max
         x_values = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
@@ -256,6 +256,6 @@ class SineWave(Polyline):
             # Standard sine wave equation: y = A * sin(2π * x / λ + φ) + centre_y
             # where A is amplitude, λ is wavelength, and φ is phase
             y = amplitude * math.sin(2 * math.pi * x / wavelength + math.radians(phase)) + centre_y
-            points.append((x, y))
+            points.append(Point(x, y))
 
         super().__init__(points, 'black', stroke_width)

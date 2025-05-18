@@ -196,9 +196,9 @@ class PropDef:
 
 T = TypeVar('T', bound='PropType')
 class List(Generic[T], PropValue):
-    def __init__(self, item_type: T, items: list[PropValue]):
+    def __init__(self, item_type: T, items: Optional[list[PropValue]] = None):
         self.item_type = item_type
-        self.items = items
+        self.items: list[PropValue] = items if items is not None else []
 
     @property
     def type(self) -> PropType:
@@ -255,6 +255,12 @@ class List(Generic[T], PropValue):
 
     def delete(self, idx: int):
         del self.items[idx]
+
+    def extend(self, other_list):
+        print(other_list.item_type)
+        print(self.item_type)
+        assert isinstance(other_list, List) and other_list.item_type.is_compatible_with(self.item_type)
+        self.items += other_list.items
 
     def __iter__(self):
         return iter(self.items)
@@ -384,7 +390,7 @@ class LineRef(PointsHolder, PortRefTableEntry):
     def toggle_reverse(self):
         self._reversed = not self.is_reversed
 
-    def points_w_reversal(self):
+    def points_w_reversal(self) -> List[PT_Point]:
         return self.points.reversed() if self.is_reversed else self.points
 
     @property
