@@ -3,7 +3,8 @@ import itertools
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid, List, PT_Point, Point
+from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid, List, PT_Point, \
+    Point, PT_Warp
 from ui.nodes.shape_datatypes import Group, Element, Polygon
 from ui.nodes.transforms import Scale, Translate
 from ui.nodes.utils import process_rgb
@@ -40,7 +41,6 @@ def repeat_shapes(grid: Grid, elements: List[PT_Element] | Element):
         elements = [elements]
     else:
         elements = elements.items
-    print(elements)
     element_it = itertools.cycle(elements)
     for i in range(0, len(grid.h_line_ys) - 1):
         # Add row
@@ -93,5 +93,7 @@ def visualise_by_type(value, value_type):
         return value
     elif isinstance(value_type, PT_Function):
         return MatplotlibFig(create_graph_svg(sample_fun(value, 1000)))
+    elif isinstance(value_type, PT_Warp):
+        return MatplotlibFig(create_graph_svg(value.sample(1000)))
     else:
         return None
