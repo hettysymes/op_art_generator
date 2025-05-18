@@ -1,6 +1,7 @@
 import math
 import uuid
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
@@ -60,9 +61,9 @@ class Group(Element, PointsHolder):
             group.add(element.get(dwg))
         return group
 
-    def get_element_index_from_id(self, element_id):
+    def get_element_index_from_id(self, element_id: str) -> Optional[int]:
         for i, elem in enumerate(self.elements):
-            if elem.port == element_id:
+            if elem.uid == element_id:
                 return i
         return None
 

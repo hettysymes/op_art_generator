@@ -105,6 +105,9 @@ class RuntimeNode:
     def compute(self) -> None:
         self.compute_results = self.node.final_compute(*self.resolve_properties())
 
+    def extract_element(self, parent_group: Group, element_id: str) -> PropKey:
+        return self.node.extract_element(self.resolve_properties()[0], parent_group, element_id)
+
     def resolve_properties(self) -> tuple[ResolvedProps, ResolvedRefs]:
         prop_vals: ResolvedProps = {}
         refs: ResolvedRefs = {}

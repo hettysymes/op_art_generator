@@ -345,10 +345,11 @@ class NodeItem(QGraphicsRectItem):
 
         # Get item to draw
         vis: Visualisable = self.visualise()
-        # Remove inactive port ids TODO
-        # inactive_port_ids = self.node_graph().pop_inactive_port_ids(self.node_state.node)
-        # for port_id in inactive_port_ids:
-        #     self.scene().undo_stack.push(RemoveExtractedElementCmd(self, port_id))
+
+        # Remove invalid keys (from extracted elements)
+        invalid_keys: set[PropKey] = {port.key for port in self.node_state.ports_open if port.key not in self.node_info.prop_defs}
+        for key in invalid_keys:
+            self.scene().undo_stack.push(RemoveExtractedElementCmd(self, key))
 
         svg_filepath = os.path.join(self.scene().temp_dir, f"{self.node_state.node}.svg")
         # Base position for all SVG elements
@@ -356,71 +357,69 @@ class NodeItem(QGraphicsRectItem):
         svg_pos_y = NodeItem.TITLE_HEIGHT + NodeItem.MARGIN_Y
         svg_width, svg_height = self.node_state.svg_size
 
+        vis.save_to_svg(svg_filepath, svg_width, svg_height)
         if not self.node_info.selectable:
-            vis.save_to_svg(svg_filepath, svg_width, svg_height)
             self.svg_item = QGraphicsSvgItem(svg_filepath)
             # Apply position
             self.svg_item.setParentItem(self)
             self.svg_item.setPos(svg_pos_x, svg_pos_y)
             self.svg_item.setZValue(2)
         else:
-            assert False
-            # assert isinstance(vis, Group)
-            # assert not vis.transform_list.transforms
-            # ElementDrawer(svg_filepath, svg_width, svg_height, (vis, None)).save()
-            #
-            # # Create SVG renderer
-            # svg_renderer = QSvgRenderer(svg_filepath)
-            #
-            # viewport_svg = QGraphicsSvgItem(svg_filepath)
-            # viewport_svg.setParentItem(self)
-            # viewport_svg.setPos(svg_pos_x, svg_pos_y)
-            # viewport_svg.setZValue(1)  # Set below selectable items
-            # self.svg_items.append(viewport_svg)
-            #
-            # # Set clip path to clip out outside of SVG
-            # clip_path = QPainterPath()
-            # clip_path.addRect(QRectF(0, 0, svg_width, svg_height))
-            # viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
-            #
-            # # Load the SVG file as XML
-            # dom_document = QDomDocument()
-            # with open(svg_filepath, 'r') as file:
-            #     content = file.read()
-            #     dom_document.setContent(content)
-            #
-            # def find_element_by_id(node, target_id):
-            #     if node.isElement():
-            #         element = node.toElement()
-            #         if element.attribute('id') == target_id:
-            #             return element
-            #
-            #     # Check children recursively
-            #     child = node.firstChild()
-            #     while not child.isNull():
-            #         result = find_element_by_id(child, target_id)
-            #         if result and not result.isNull():
-            #             return result
-            #         child = child.nextSibling()
-            #
-            #     return QDomElement()  # Return null element if not found
-            #
-            # root = dom_document.documentElement()
-            # vis_element = find_element_by_id(root, vis.uid)
-            # assert not vis_element.isNull()
-            #
-            # child = vis_element.firstChild()
-            # while not child.isNull():
-            #     if child.isElement():
-            #         child_element = child.toElement()
-            #         child_elem_id = child_element.attribute('id')
-            #         assert child_elem_id
-            #         selectable_item = SelectableSvgElement(child_elem_id, vis, svg_renderer, self)
-            #         selectable_item.setParentItem(viewport_svg)
-            #         selectable_item.setPos(0, 0)
-            #         selectable_item.setZValue(3)
-            #         self.svg_items.append(selectable_item)
-            #     child = child.nextSibling()
+            assert isinstance(vis, Group)
+            assert not vis.transform_list.transforms
+
+            # Create SVG renderer
+            svg_renderer = QSvgRenderer(svg_filepath)
+
+            viewport_svg = QGraphicsSvgItem(svg_filepath)
+            viewport_svg.setParentItem(self)
+            viewport_svg.setPos(svg_pos_x, svg_pos_y)
+            viewport_svg.setZValue(1)  # Set below selectable items
+            self.svg_items.append(viewport_svg)
+
+            # Set clip path to clip out outside of SVG
+            clip_path = QPainterPath()
+            clip_path.addRect(QRectF(0, 0, svg_width, svg_height))
+            viewport_svg.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
+
+            # Load the SVG file as XML
+            dom_document = QDomDocument()
+            with open(svg_filepath, 'r') as file:
+                content = file.read()
+                dom_document.setContent(content)
+
+            def find_element_by_id(node, target_id):
+                if node.isElement():
+                    element = node.toElement()
+                    if element.attribute('id') == target_id:
+                        return element
+
+                # Check children recursively
+                child = node.firstChild()
+                while not child.isNull():
+                    result = find_element_by_id(child, target_id)
+                    if result and not result.isNull():
+                        return result
+                    child = child.nextSibling()
+
+                return QDomElement()  # Return null element if not found
+
+            root = dom_document.documentElement()
+            vis_element = find_element_by_id(root, vis.uid)
+            assert not vis_element.isNull()
+
+            child = vis_element.firstChild()
+            while not child.isNull():
+                if child.isElement():
+                    child_element = child.toElement()
+                    child_elem_id = child_element.attribute('id')
+                    assert child_elem_id
+                    selectable_item = SelectableSvgElement(child_elem_id, vis, svg_renderer, self)
+                    selectable_item.setParentItem(viewport_svg)
+                    selectable_item.setPos(0, 0)
+                    selectable_item.setZValue(3)
+                    self.svg_items.append(selectable_item)
+                child = child.nextSibling()
 
     def update_visualisations(self):
         self.update_vis_image()
@@ -869,7 +868,7 @@ class ExtractElementCmd(QUndoCommand):
 
     def redo(self):
         prop_def: PropDef = self.node_item.node_info.prop_defs[self.prop_key]
-        self.node_item.add_port(input_port(self.node_item.uid, self.prop_key), prop_def)
+        self.node_item.add_port(output_port(self.node_item.uid, self.prop_key), prop_def)
 
 
 class RemoveExtractedElementCmd(QUndoCommand):
@@ -882,7 +881,7 @@ class RemoveExtractedElementCmd(QUndoCommand):
         pass
 
     def redo(self):
-        self.node_item.remove_port(input_port(self.node_item.uid, self.prop_key))
+        self.node_item.remove_port(output_port(self.node_item.uid, self.prop_key))
 
 
 class PasteCmd(QUndoCommand):

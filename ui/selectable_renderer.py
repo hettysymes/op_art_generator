@@ -2,6 +2,8 @@ from PyQt5.QtCore import Qt, QRectF, QTimer
 from PyQt5.QtGui import QColor, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QAction
 
+from ui.id_datatypes import PortId, PropKey
+
 
 class SelectableSvgElement(QGraphicsItem):
     """A custom graphics item that represents an SVG element and can be selected."""
@@ -75,8 +77,7 @@ class SelectableSvgElement(QGraphicsItem):
 
     def extractElement(self):
         """Handle the 'Extract into node' action."""
-        node: SelectableNode = self.node_item.node()
-        port_id = node.extract_element(self.parent_group, self.element_id)
+        prop_key: PropKey = self.node_item.node_manager.extract_element(self.node_item.uid, self.parent_group, self.element_id)
         self.scene().skip_next_context_menu = True
         # Defer deletion of this element (from updating svg image) until after element extraction
-        QTimer.singleShot(0, lambda: self.scene().extract_element(self.node_item, port_id))
+        QTimer.singleShot(0, lambda: self.scene().extract_element(self.node_item, prop_key))

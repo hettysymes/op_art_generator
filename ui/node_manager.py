@@ -5,9 +5,9 @@ from typing import Optional
 from ui.id_datatypes import NodeId, PortId, PropKey, input_port, output_port, gen_node_id
 from ui.node_graph import NodeGraph
 from ui.nodes.node_defs import Node, RuntimeNode
-from ui.nodes.nodes import CombinationNode
+from ui.nodes.nodes import CombinationNode, SelectableNode
 from ui.nodes.prop_defs import PropValue, PropType, List, PT_List, PropDef, PortStatus
-from ui.nodes.shape_datatypes import Element
+from ui.nodes.shape_datatypes import Element, Group
 from ui.vis_types import Visualisable
 
 
@@ -73,8 +73,7 @@ class NodeManager:
             description=runtime_node.node.description,
             prop_defs=runtime_node.node.prop_defs,
             randomisable=runtime_node.node.randomisable,
-            selectable=False,
-            # selectable=isinstance(runtime_node, SelectableNode),
+            selectable=isinstance(runtime_node.node, SelectableNode),
             combination=isinstance(runtime_node.node, CombinationNode)
         )
 
@@ -119,5 +118,10 @@ class NodeManager:
     def get_seed(self, node: NodeId, seed=None) -> float:
         random_node: Node = self._runtime_node(node).node
         return random_node.get_seed()
+
+    def extract_element(self, node: NodeId, parent_group: Group, element_id: str) -> PropKey:
+        runtime_node: RuntimeNode = self._runtime_node(node)
+        assert isinstance(runtime_node.node, SelectableNode)
+        return runtime_node.extract_element(parent_group, element_id)
 
 

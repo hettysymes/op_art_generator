@@ -5,7 +5,8 @@ from typing import Optional
 
 from ui.id_datatypes import PropKey
 from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs
-from ui.nodes.prop_defs import PropValue
+from ui.nodes.prop_defs import PropValue, PropDef
+from ui.nodes.shape_datatypes import Group
 from ui.vis_types import Visualisable
 
 
@@ -26,41 +27,38 @@ class UnitNode(Node, ABC):
         return cls.DEFAULT_NODE_INFO
 
 
-# class SelectableNode(UnitNode, ABC):
-#     NAME = None
-#     DEFAULT_NODE_INFO = None
-#
-#     def __init__(self, uid, graph_querier, internal_props=None, add_info=None):
-#         self._node_info = self._default_node_info()
-#         self.extracted_port_ids = []
-#         super().__init__(uid, graph_querier, internal_props)
-#
-#     def final_compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
-#         self._remove_redundant_ports()
-#         self.compute()
-#
-#     @abstractmethod
-#     def extract_element(self, parent_group, element_id):
-#         return
-#
-#     @abstractmethod
-#     def _is_port_redundant(self, port_id):
-#         pass
-#
-#     def _add_port(self, port_id, port_def):
-#         self.node_info.port_defs[port_id] = port_def
-#         self.extracted_port_ids.append(port_id)
-#
-#     def _remove_redundant_ports(self):
-#         indices_to_remove = []
-#         for i, port_id in enumerate(self.extracted_port_ids):
-#             if self._is_port_redundant(port_id):
-#                 del self.node_info.port_defs[port_id]
-#                 self._mark_inactive_port_id(port_id)
-#                 indices_to_remove.append(i)
-#         indices_to_remove.reverse()
-#         for i in indices_to_remove:
-#             del self.extracted_port_ids[i]
+class SelectableNode(UnitNode, ABC):
+    NAME = None
+    DEFAULT_NODE_INFO = None
+
+    def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
+        self._node_info: PrivateNodeInfo = self._default_node_info()
+        self.extracted_props: set[PropKey] = set()
+        super().__init__(internal_props)
+
+    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
+        self._remove_redundant_ports(props)
+        return self.compute(props, refs)
+
+    @abstractmethod
+    def extract_element(self, props: ResolvedProps, parent_group: Group, element_id: str) -> PropKey:
+        pass
+
+    @abstractmethod
+    def _is_port_redundant(self, props: ResolvedProps, key: PropKey) -> bool:
+        pass
+
+    def _add_prop_def(self, key: PropKey, prop_def: PropDef):
+        self.prop_defs[key] = prop_def
+        self.extracted_props.add(key)
+
+    def _remove_redundant_ports(self, props: ResolvedProps):
+        keys_to_remove: set[PropKey] = {prop_key for prop_key in self.extracted_props if self._is_port_redundant(props, prop_key)}
+        # Remove from prop_defs
+        for key in keys_to_remove:
+            self.prop_defs.pop(key, None)
+        # Remove from extracted_props
+        self.extracted_props: set[PropKey] = {key for key in self.extracted_props if key not in keys_to_remove}
 
 
 class CombinationNode(Node, ABC):
