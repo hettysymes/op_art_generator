@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidge
 
 from ui.app_state import NodeState
 from ui.colour_prop_widget import ColorPropertyWidget
-from ui.id_datatypes import PortId, PropKey, input_port
+from ui.id_datatypes import PortId, PropKey, input_port, output_port, NodeId
 from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
 from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, \
@@ -49,30 +49,37 @@ class HelpIconLabel(QPushButton):
 
 
 class ModifyPropertyPortButton(QPushButton):
-    def __init__(self, on_click_callback, port_key, adding, max_width=300, parent=None):
+    def __init__(self, on_click_callback, port: PortId, adding, max_width=300, parent=None):
         super().__init__(parent)
-        self.port_key = port_key
+        self.port = port
         self.adding = adding
-        self.text_pair = ('-', '+')
-        self.description_pair = ("Remove the input port for this property.",
-                                 "Add an input port to control this property.")
+        txt_display1 = "IN" if self.port.is_input else "OUT"
+        txt_display2 = "input" if self.port.is_input else "output"
+        self.text_pair = (f"{txt_display1} -", f"{txt_display1} +")
+        self.description_pair = (f"Remove the {txt_display2} port for this property.",
+                                 f"Add an {txt_display2} port to control this property.")
         self.setText(self.text_pair[int(self.adding)])
         self.setFixedSize(16, 16)
         self.max_width = max_width
 
         # Style the button to look like a help icon
-        self.setStyleSheet("""
-            QPushButton {
-                background-color: #b0b0b0;
+        self.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {"#4a90e2" if port.is_input else "#7ed321"};  /* Blue for input, Green for output */
                 color: white;
                 font-weight: bold;
-                border-radius: 8px;
+                border-radius: 10px;
                 border: none;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                background-color: #8a8a8a;
-            }
+                padding: 1px 4px;
+                font-size: 6px;
+                min-width: 18px;
+                min-height: 18px;
+                max-width: 22px;
+                max-height: 22px;
+            }}
+            QPushButton:hover {{
+                background-color: {"#357ABD" if port.is_input else "#5DAA1E"};
+            }}
         """)
 
         # Apply word-wrapped tooltip using HTML
@@ -96,7 +103,7 @@ class ModifyPropertyPortButton(QPushButton):
 
         # Execute user callback
         if self.user_callback:
-            self.user_callback(self.port_key, not self.adding)
+            self.user_callback(self.port, not self.adding)
 
 
 class NodePropertiesDialog(QDialog):
@@ -165,11 +172,11 @@ class NodePropertiesDialog(QDialog):
         main_layout.addLayout(form_layout)
         main_layout.addWidget(button_box)
 
-    def change_property_port(self, port_key, adding):
+    def change_property_port(self, port: PortId, adding):
         if adding:
-            self.node_item.add_property_port(port_key)
+            self.node_item.add_property_port(port)
         else:
-            self.node_item.remove_property_port(port_key)
+            self.node_item.remove_property_port(port)
 
     def create_property_row(self, key: PropKey, prop_def: PropDef, node_item, widget=None):
         """Create a row with property label and a help icon to the right of the widget"""
@@ -200,15 +207,18 @@ class NodePropertiesDialog(QDialog):
         if prop_def.description:
             help_icon = HelpIconLabel(prop_def.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
+        # Add input and output toggle buttons
         if input_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL, get_output=False):
-            widget_layout.addWidget(self.create_toggle_input_btn(cast(NodeState, node_item.node_state).ports_open, key))
+            widget_layout.addWidget(self.create_toggle_plus_minus_btn(cast(NodeState, node_item.node_state).ports_open, key, node_item.uid, is_input=True))
+        if output_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL, get_output=True):
+            widget_layout.addWidget(self.create_toggle_plus_minus_btn(cast(NodeState, node_item.node_state).ports_open, key, node_item.uid, is_input=False))
 
         return label_container, widget_container
 
-    def create_toggle_input_btn(self, ports_open: list[PortId], key: PropKey):
-        keys_w_input = [port.key for port in ports_open if port.is_input]
+    def create_toggle_plus_minus_btn(self, ports_open: list[PortId], key: PropKey, node: NodeId, is_input=True):
+        keys_w_input = [port.key for port in ports_open if port.is_input == is_input]
         return ModifyPropertyPortButton(self.change_property_port,
-                                         key,
+                                         PortId(node=node, key=key, is_input=is_input),
                                          adding=key not in keys_w_input)
 
     def create_property_widget(self, prop_def: PropDef, current_value: Optional[PropValue]) -> Optional[QWidget]:

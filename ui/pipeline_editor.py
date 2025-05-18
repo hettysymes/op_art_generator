@@ -208,11 +208,11 @@ class NodeItem(QGraphicsRectItem):
     def node_info(self) -> NodeInfo:
         return self.node_manager.node_info(self.uid)
 
-    def add_property_port(self, prop_key):
-        self.scene().undo_stack.push(AddPropertyPortCmd(self, prop_key))
+    def add_property_port(self, port: PortId):
+        self.scene().undo_stack.push(AddPropertyPortCmd(self, port))
 
-    def remove_property_port(self, prop_key):
-        self.scene().undo_stack.push(RemovePropertyPortCmd(self, prop_key))
+    def remove_property_port(self, port: PortId):
+        self.scene().undo_stack.push(RemovePropertyPortCmd(self, port))
 
     def change_properties(self, props_changed):
         self.scene().undo_stack.push(ChangePropertiesCmd(self, props_changed))
@@ -430,7 +430,7 @@ class NodeItem(QGraphicsRectItem):
     def create_ports(self, update_vis=True):
         for port in self.node_state.ports_open:
             # Update layout at the end for efficiency
-            self.add_port(port, self.node_info.prop_defs[port.key], update_layout=False)
+            self.add_port(port, update_layout=False)
         self.update_label_port_positions(update_vis=update_vis)
 
     def reset_ports_open(self, new_ports_open: list[PortId]):
@@ -452,7 +452,7 @@ class NodeItem(QGraphicsRectItem):
         # self.port_items = new_port_items
         # self.update_label_port_positions()
 
-    def add_port(self, port: PortId, prop_def: PropDef, update_layout=True) -> None:
+    def add_port(self, port: PortId, update_layout=True) -> None:
         # Add port to scene
         port_item = PortItem(port, parent=self)
         self.port_items[port] = port_item  # Add reference to port
@@ -830,31 +830,29 @@ class ChangePropertiesCmd(QUndoCommand):
 
 
 class AddPropertyPortCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, prop_key, description="Add property port"):
+    def __init__(self, node_item: NodeItem, port: PortId, description="Add property port"):
         super().__init__(description)
         self.node_item = node_item
-        self.prop_key = prop_key
+        self.port = port
 
     def undo(self):
-        self.node_item.remove_port(input_port(self.node_item.uid, self.prop_key))
+        self.node_item.remove_port(self.port)
 
     def redo(self):
-        prop_def: PropDef = self.node_item.node_info.prop_defs[self.prop_key]
-        self.node_item.add_port(input_port(self.node_item.uid, self.prop_key), prop_def)
+        self.node_item.add_port(self.port)
 
 
 class RemovePropertyPortCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, prop_key: PropKey, description="Remove property port"):
+    def __init__(self, node_item: NodeItem, port: PortId, description="Remove property port"):
         super().__init__(description)
         self.node_item = node_item
-        self.prop_key = prop_key
+        self.port = port
 
     def undo(self):
-        prop_def: PropDef = self.node_item.node_info.prop_defs[self.prop_key]
-        self.node_item.add_port(input_port(self.node_item.uid, self.prop_key), prop_def)
+        self.node_item.add_port(self.port)
 
     def redo(self):
-        self.node_item.remove_port(input_port(self.node_item.uid, self.prop_key))
+        self.node_item.remove_port(self.port)
 
 
 class ExtractElementCmd(QUndoCommand):
@@ -867,8 +865,7 @@ class ExtractElementCmd(QUndoCommand):
         pass
 
     def redo(self):
-        prop_def: PropDef = self.node_item.node_info.prop_defs[self.prop_key]
-        self.node_item.add_port(output_port(self.node_item.uid, self.prop_key), prop_def)
+        self.node_item.add_port(output_port(self.node_item.uid, self.prop_key))
 
 
 class RemoveExtractedElementCmd(QUndoCommand):
