@@ -11,7 +11,8 @@ DEF_POS_WARP_NODE_INFO = PrivateNodeInfo(
             prop_type=PT_Function(),
             display_name="Function",
             input_port_status=PortStatus.COMPULSORY,
-            output_port_status=PortStatus.FORBIDDEN
+            output_port_status=PortStatus.FORBIDDEN,
+            display_in_props=False
         ),
         '_main': PropDef(
             prop_type=PT_Warp(),
@@ -51,7 +52,8 @@ DEF_REL_WARP_NODE_INFO = PrivateNodeInfo(
             prop_type=PT_Function(),
             display_name="Function",
             input_port_status=PortStatus.COMPULSORY,
-            output_port_status=PortStatus.FORBIDDEN
+            output_port_status=PortStatus.FORBIDDEN,
+            display_in_props=False
         ),
         '_main': PropDef(
             prop_type=PT_Warp(),

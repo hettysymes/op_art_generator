@@ -10,6 +10,7 @@
 # from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.function import FunctionNode
+from ui.nodes.node_implementations.function_sampler import FunSamplerNode
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.node_implementations.shapes import CircleNode, EllipseNode, ShapeNode
@@ -59,7 +60,8 @@ node_settings = [(GridNode, NodeSettings()),
                  (CanvasNode, NodeSettings(resizable=False)),
                  (ShapeRepeaterNode, NodeSettings()),
                  (FunctionNode, NodeSettings()),
-                 (WarpNode, NodeSettings())]
+                 (WarpNode, NodeSettings()),
+                 (FunSamplerNode, NodeSettings())]
 
 
 def node_classes():

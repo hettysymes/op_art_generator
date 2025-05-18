@@ -4,7 +4,7 @@ from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid, List, PT_Point, \
-    Point, PT_Warp
+    Point, PT_Warp, PT_Number
 from ui.nodes.shape_datatypes import Group, Element, Polygon
 from ui.nodes.transforms import Scale, Translate
 from ui.nodes.utils import process_rgb
@@ -78,15 +78,18 @@ def visualise_in_1d_grid(elements, is_vertical=True):
 
 
 def visualise_by_type(value, value_type):
-    if not value:
+    if value is None:
         return None
     elif isinstance(value_type, PT_List):
-        # Draw vertical grid
-        grid = get_grid(height=len(value))
-        elements = [visualise_by_type(value_item, value_type.base_item_type) for value_item in value]
-        if (not elements) or not all(isinstance(e, Element) for e in elements):
-            return None
-        return repeat_shapes(grid, elements)
+        if isinstance(value_type.base_item_type, PT_Number):
+            return MatplotlibFig(create_graph_svg(value.items, scatter=True))
+        else:
+            # Draw vertical grid
+            grid = get_grid(height=len(value))
+            elements = [visualise_by_type(value_item, value_type.base_item_type) for value_item in value]
+            if (not elements) or not all(isinstance(e, Element) for e in elements):
+                return None
+            return repeat_shapes(grid, elements)
     elif isinstance(value_type, PT_Fill):
         return get_rectangle(value)
     elif isinstance(value_type, PT_Element):
