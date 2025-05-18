@@ -3,11 +3,17 @@ from abc import ABC, abstractmethod
 import numpy as np
 import sympy as sp
 
+from ui.nodes.prop_defs import PropValue, PT_Function
 
-class Function(ABC):
+
+class Function(PropValue, ABC):
     @abstractmethod
     def get(self):
         pass
+
+    @property
+    def type(self):
+        return PT_Function()
 
 
 class IdentityFun(Function):
