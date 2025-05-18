@@ -216,11 +216,6 @@ class PolygonNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_POLYGON_INFO
 
     def compute(self, props: ResolvedProps, _):
-        # Process input polylines
-        # if props.get('points'):
-        #     import_data: List[PT_PointsHolder] = props.get('points')
-        #     print(f"Import polygon data: {import_data}")
-        # Get points
         points = List(PT_Point())
         for points_holder in props.get('points'):
             points_holder = cast(PointsHolder, points_holder)

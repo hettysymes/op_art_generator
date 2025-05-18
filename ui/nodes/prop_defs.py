@@ -257,8 +257,6 @@ class List(Generic[T], PropValue):
         del self.items[idx]
 
     def extend(self, other_list):
-        print(other_list.item_type)
-        print(self.item_type)
         assert isinstance(other_list, List) and other_list.item_type.is_compatible_with(self.item_type)
         self.items += other_list.items
 

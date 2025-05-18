@@ -1452,6 +1452,7 @@ def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[No
         # Copy node state
         new_node_state: NodeState = copy.deepcopy(node_state)
         new_node_state.node = new_node # Update id in node state
+        new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in node_state.ports_open]
         new_node_states[new_node] = new_node_state # Add to new node states
         # Copy node
         new_base_node = copy.deepcopy(base_nodes[node])
@@ -1461,7 +1462,7 @@ def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[No
     # Update ids in connections
     new_edges: set[EdgeId] = set()
     for edge in edges:
-        new_edges.add(EdgeId(input_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key), output_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
+        new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key), input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
     # Update ids in port refs
     new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
     for dst_node in port_refs:
