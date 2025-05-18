@@ -54,10 +54,6 @@ class NodeManager:
         comp_result: Optional[PropValue] = src_runtime_node.get_compute_result(src_port.key)
         if comp_result is None:
             return None
-        print("resolving property")
-        print(comp_result)
-        if isinstance(comp_result, Element):
-            print(f"Fill: {comp_result.fill}")
         # Check types of the result, assume they are already compatible
         if isinstance(comp_result, List):
             return comp_result.extract(inp_type)

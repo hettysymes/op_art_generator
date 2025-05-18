@@ -56,7 +56,6 @@ class ShapeRepeaterNode(UnitNode):
         if not grid or not elem_entries:
             return
         main_group = repeat_shapes(grid, List(PT_Element(), [elem_entry.data for elem_entry in elem_entries]))
-        print([elem_entry.data.fill for elem_entry in elem_entries])
         return {'_main': main_group}
         # self.set_compute_result(main_group)
         # for port_id in self.extracted_port_ids:
