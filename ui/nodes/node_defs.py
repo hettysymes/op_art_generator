@@ -154,6 +154,8 @@ class RuntimeNode:
                     else:
                         deleted_indices.append(i)
                         i += 1
+                else:
+                    i += 1
             # Remove deleted existing refs
             deleted_indices.reverse()
             for i in deleted_indices:
