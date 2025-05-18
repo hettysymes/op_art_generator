@@ -72,9 +72,16 @@ class NodeGraph:
                 if edge.src_port == node_or_port
             }
 
-    def get_ref_id(self, node: NodeId, port_to_reference: PortId) -> RefId:
+    def get_ref(self, node: NodeId, port_to_reference: PortId) -> RefId:
         port_ref_map: defaultdict[PortId, RefId] = self.node_to_port_ref[node]
         return port_ref_map[port_to_reference]
+
+    def query_ref(self, node: NodeId, ref: RefId) -> PortId:
+        port_ref_map: defaultdict[PortId, RefId] = self.node_to_port_ref[node]
+        return next(
+            (port for port, r in port_ref_map.items() if r == ref),
+            KeyError(f"Ref {ref} not found")
+        )
 
     def extend_port_refs(self, more_node_to_port_refs: dict[NodeId, dict[PortId, RefId]]):
         converted_dict: defaultdict[NodeId, defaultdict[PortId, RefId]] = defaultdict(

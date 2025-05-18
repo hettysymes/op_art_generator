@@ -27,10 +27,7 @@ class PropType:
 class PT_Scalar(PropType):
 
     def is_compatible_with(self, dest_type):
-        print(self)
-        print(dest_type)
         if isinstance(dest_type, PT_List):
-            print(dest_type.scalar_type)
             # Scalar-to-list: inner types must be compatible
             return self.is_compatible_with(dest_type.scalar_type)
         return isinstance(self, type(dest_type))
@@ -70,6 +67,13 @@ class PT_Warp(PT_Scalar):
 class PT_Grid(PT_Scalar):
     pass
 
+# Sampling
+
+class PT_PointsHolder(PT_Scalar):
+    pass
+
+class PT_Point(PT_PointsHolder):
+    pass
 
 # Elements
 
@@ -81,7 +85,7 @@ class PT_Shape(PT_Element):
     pass
 
 
-class PT_Polyline(PT_Shape):
+class PT_Polyline(PT_Shape, PT_PointsHolder):
     pass
 
 
@@ -90,12 +94,6 @@ class PT_Polygon(PT_Shape):
 
 
 class PT_Ellipse(PT_Shape):
-    pass
-
-
-# Sampling
-
-class PT_Point(PT_Scalar):
     pass
 
 
@@ -255,6 +253,9 @@ class List(Generic[T], PropValue):
     def reversed(self):
         return List(self.item_type, list(reversed(self.items)))
 
+    def delete(self, idx: int):
+        del self.items[idx]
+
     def __iter__(self):
         return iter(self.items)
 
@@ -316,7 +317,18 @@ class Float(float, PropValue):
     def type(self) -> PropType:
         return PT_Float()
 
-class Point(tuple, PropValue):
+class PointsHolder(PropValue, ABC):
+    @property
+    @abstractmethod
+    def points(self) -> List[PT_Point]:
+        pass
+
+    @property
+    def type(self) -> PropType:
+        return PT_PointsHolder()
+
+class Point(tuple, PointsHolder):
+
     def __new__(cls, x: float, y: float):
         return super().__new__(cls, (x, y))
 
@@ -326,6 +338,10 @@ class Point(tuple, PropValue):
 
     def __reduce__(self):
         return self.__class__, (self[0], self[1])
+
+    @property
+    def points(self) -> List[PT_Point]:
+        return List(PT_Point(), [self])
 
     @property
     def type(self) -> PropType:
@@ -341,7 +357,7 @@ class Grid(PropValue):
         return PT_Grid()
 
 class PortRefTableEntry(PropValue):
-    def __init__(self, data: PropValue, ref: Optional[RefId] = None, deletable: bool = True):
+    def __init__(self, ref: RefId, data: PropValue, deletable: bool = True):
         self.ref = ref
         self.deletable = deletable
         self.data = data
@@ -352,25 +368,25 @@ class PortRefTableEntry(PropValue):
 
 # Tables
 
-class LineRef(PortRefTableEntry):
-    def __init__(self, data, ref: RefId, deletable: bool):
-        super().__init__(data, ref, deletable)
+class LineRef(PointsHolder, PortRefTableEntry):
+    def __init__(self, ref: RefId, data: PT_PointsHolder, deletable: bool):
+        super().__init__(ref, data, deletable)
         self._reversed = False
 
     @property
-    def points(self) -> List:
-        return self.data
+    def points(self) -> List[PT_Point]:
+        return cast(PointsHolder, self.data).points
 
     @property
-    def reversed(self):
+    def is_reversed(self):
         return self._reversed
 
     def toggle_reverse(self):
-        self._reversed = not self.reversed
+        self._reversed = not self.is_reversed
 
     def points_w_reversal(self):
-        return self.points.reversed() if self.reversed else self.points
+        return self.points.reversed() if self.is_reversed else self.points
 
-class PointRef(PortRefTableEntry):
-    def __init__(self, point: Point):
-        super().__init__(point)
+    @property
+    def type(self) -> PropType:
+        return PT_PointsHolder()

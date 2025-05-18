@@ -1,18 +1,23 @@
 import copy
+from typing import Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyledItemDelegate, QHBoxLayout, QPushButton
 
-from ui.nodes.prop_defs import PortRefTableEntry
+from ui.id_datatypes import PortId
+from ui.node_manager import NodeManager, NodeInfo
+from ui.nodes.prop_defs import PortRefTableEntry, PropType, List
 from ui.reorderable_table_widget import ReorderableTableWidget
 
 
 class PortRefTableWidget(QWidget):
-    def __init__(self, port_ref_getter=None, table_heading=None, entries=None, text_callback=None,
+    def __init__(self, list_item_type: PropType, ref_querier=None, node_manager: Optional[NodeManager] = None, table_heading=None, entries=None, text_callback=None,
                  context_menu_callback=None, additional_actions=None, item_delegate=None, parent=None):
         super().__init__(parent)
-        self.port_ref_getter = port_ref_getter  # A function to get a port_ref given a ref_id
+        self.list_item_type = list_item_type
+        self.ref_querier = ref_querier  # A function to get a port given a ref
+        self.node_manager = node_manager
         self.text_callback = text_callback or self.default_text_callback
         self.context_menu_callback = context_menu_callback
         self.additional_actions = additional_actions
@@ -55,19 +60,19 @@ class PortRefTableWidget(QWidget):
             self.set_item(entry, row)
 
     def set_item(self, table_entry, row=None):
-        port_ref = None
+        ref_port: Optional[PortId] = None
         if isinstance(table_entry, PortRefTableEntry):
             if isinstance(table_entry.ref, tuple):
                 ref_id = table_entry.ref[0]
             else:
                 ref_id = table_entry.ref
-            port_ref = self.port_ref_getter(ref_id)
+            ref_port = self.ref_querier(ref_id)
         item = QTableWidgetItem()
         item.setTextAlignment(Qt.AlignCenter)
         item.setData(Qt.UserRole, table_entry)
 
         # Use text_callback to determine display string
-        item.setText(self.text_callback(port_ref, table_entry))
+        item.setText(self.text_callback(ref_port, self.node_manager, table_entry))
 
         if isinstance(table_entry, PortRefTableEntry) and not table_entry.deletable:  # non-deletable
             item.setBackground(QColor(237, 130, 157))
@@ -115,7 +120,7 @@ class PortRefTableWidget(QWidget):
                     self.additional_actions[action_key](self, table_entry, row)
 
     def get_value(self):
-        entries = []
+        entries = List(self.list_item_type, [])
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
             entries.append(item.data(Qt.UserRole))
@@ -127,7 +132,8 @@ class PortRefTableWidget(QWidget):
             option.displayAlignment = Qt.AlignCenter
 
     @staticmethod
-    def default_text_callback(port_ref, table_entry):
-        if port_ref:
-            return f"{port_ref.base_name} (id: {port_ref.node})"
+    def default_text_callback(ref_port: Optional[PortId], node_manager: Optional[NodeManager], table_entry):
+        if ref_port and node_manager:
+            node_info: NodeInfo = node_manager.node_info(ref_port.node)
+            return f"{node_info.base_name} (id: {node_info.uid})"
         return ""

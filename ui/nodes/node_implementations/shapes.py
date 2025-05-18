@@ -7,7 +7,7 @@ from ui.nodes.node_implementations.visualiser import get_rectangle
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int, PT_Int, \
-    PT_PointRefTable, List, PT_Polyline, PT_List, PT_Element
+    List, PT_Polyline, PT_List, PT_Element, PT_PointsHolder
 from ui.nodes.shape_datatypes import Ellipse, SineWave, Polyline
 from ui.nodes.utils import process_rgb
 
@@ -100,40 +100,40 @@ class SineWaveNode(UnitNode):
         return {'_main': sine_wave}
 
 
-DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
-    description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-    prop_defs={
-        'points': PropDef(
-            prop_type=PT_PointRefTable(),
-            display_name="Points",
-            description="Points defining the path of the line (in order).",
-            default_value=List(PT_Point(), [Point(0, 0), Point(0.5, 0.5), Point(1, 0)])
-        ),
-        'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
-            display_name="Line thickness",
-            description="Thickness of the line drawing.",
-            default_value=Float(1)
-        ),
-        '_main': PropDef(
-            display_name="Drawing",
-            input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.COMPULSORY
-        )
-    }
-)
-
-
-class CustomLineNode(UnitNode):
-    NAME = "Custom Line"
-    DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
-
-    @staticmethod
-    def helper(points, stroke='black', stroke_width=1):
-        return Polyline(points, stroke, stroke_width)
-
-    def compute(self, props: ResolvedProps, _):
-        return {'_main': CustomLineNode.helper(props.get('points'), 'black', props.get('stroke_width'))}
+# DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
+#     description="Create a custom line by defining the points the line passes through. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+#     prop_defs={
+#         'points': PropDef(
+#             prop_type=PT_PointRefTable(),
+#             display_name="Points",
+#             description="Points defining the path of the line (in order).",
+#             default_value=List(PT_Point(), [Point(0, 0), Point(0.5, 0.5), Point(1, 0)])
+#         ),
+#         'stroke_width': PropDef(
+#             prop_type=PT_Float(min_value=0),
+#             display_name="Line thickness",
+#             description="Thickness of the line drawing.",
+#             default_value=Float(1)
+#         ),
+#         '_main': PropDef(
+#             display_name="Drawing",
+#             input_port_status=PortStatus.FORBIDDEN,
+#             output_port_status=PortStatus.COMPULSORY
+#         )
+#     }
+# )
+#
+#
+# class CustomLineNode(UnitNode):
+#     NAME = "Custom Line"
+#     DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
+#
+#     @staticmethod
+#     def helper(points, stroke='black', stroke_width=1):
+#         return Polyline(points, stroke, stroke_width)
+#
+#     def compute(self, props: ResolvedProps, _):
+#         return {'_main': CustomLineNode.helper(props.get('points'), 'black', props.get('stroke_width'))}
 
 
 DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
@@ -184,10 +184,10 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
     description="Create a polygon shape by defining the connecting points and deciding the fill colour. Optionally a gradient can be used to fill the shape. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     prop_defs={
         'points': PropDef(
-            prop_type=PT_List(PT_Polyline(), input_multiple=True),
+            prop_type=PT_List(PT_PointsHolder(), input_multiple=True),
             display_name="Points",
             description="Points defining the path of the polygon edge (in order).",
-            default_value=List(PT_Point(), [Point(0, 0), Point(0, 1), Point(1, 1)]),
+            default_value=List(PT_PointsHolder(), [Point(0, 0), Point(0, 1), Point(1, 1)]),
         ),
         'fill': PropDef(
             prop_type=PT_Fill(),
@@ -218,10 +218,9 @@ class PolygonNode(UnitNode):
     def compute(self, props: ResolvedProps, refs: ResolvedRefs):
         # Process input polylines
         line_ref_data: dict[RefId, List[PT_Point]] = {}
-        if props.get('import_points'):
-            import_data: list[List[PT_Polyline]] = props.get('import_points')
-            import_refs: list[RefId] = refs.get('import_points')
-            print(import_data)
+        if props.get('points'):
+            import_data: list[List[PT_Polyline]] = props.get('points')
+            print(f"Import polygon data: {import_data}")
             return
         #     for elem_list, element in point_refs.items():
         #         shape, transform_list = element.shape_transformations()[0]
@@ -396,4 +395,4 @@ class CircleNode(UnitNode):
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode]

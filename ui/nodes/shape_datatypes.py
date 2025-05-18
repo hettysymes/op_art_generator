@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, PropValue, Point, List, \
-    PT_Point
+    PT_Point, PointsHolder
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 from ui.vis_types import Visualisable
 
@@ -43,7 +43,7 @@ class Element(PropValue, Visualisable, ABC):
     def save_to_svg(self, filepath, width, height):
         ElementDrawer(filepath, width, height, self).save()
 
-class Group(Element):
+class Group(Element, PointsHolder):
 
     def __init__(self, transforms=None, debug_info=None, uid=None):
         super().__init__(debug_info, uid)
@@ -115,6 +115,15 @@ class Group(Element):
             return shapes[0].type
         return PT_Element()
 
+    @property
+    def points(self) -> List[PT_Point]:
+        assert isinstance(self.type, PT_Polyline)
+        shape, transform_list = self.shape_transformations()[0]
+        if transform_list:
+            return transform_list.transform_points(shape.points)
+        return shape.points
+
+
     def __repr__(self):
         debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""
         result = f"Group ({self.uid}) [{repr(self.transform_list)}] {debug_str} {{\n"
@@ -155,13 +164,17 @@ class Shape(Element, ABC):
         return f"Shape ({self.uid}) {self.__class__.__name__.upper()}"
 
 
-class Polyline(Shape):
+class Polyline(Shape, PointsHolder):
 
     def __init__(self, points: List[PT_Point], stroke, stroke_width):
         super().__init__()
-        self.points = points
+        self._points = points
         self.stroke = stroke
         self.stroke_width = stroke_width
+
+    @property
+    def points(self) -> List[PT_Point]:
+        return self._points
 
     def get(self, dwg):
         return dwg.polyline(points=self.points,
@@ -170,11 +183,6 @@ class Polyline(Shape):
                             fill='none',
                             style='vector-effect: non-scaling-stroke',
                             id=self.uid)
-
-    def get_points(self, transform_list=None) -> List[PT_Point]:
-        if transform_list:
-            return transform_list.transform_points(self.points)
-        return self.points
 
     @property
     def type(self):

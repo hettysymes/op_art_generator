@@ -1,3 +1,4 @@
+import copy
 import traceback
 from abc import ABC, abstractmethod
 from typing import Optional
@@ -6,7 +7,7 @@ from ui.id_datatypes import PropKey, NodeId, PortId, input_port, EdgeId
 from ui.node_graph import NodeGraph, RefId
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.prop_defs import PropDef, PropValue, PropType, PT_Scalar, PT_List
+from ui.nodes.prop_defs import PropDef, PropValue, PropType, PT_Scalar, PT_List, List, PortRefTableEntry
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig, Visualisable
 
@@ -124,11 +125,34 @@ class RuntimeNode:
         for edge in incoming_edges:
             comp_result: Optional[PropValue] = self.node_querier.resolve_property(edge.src_port, prop_type)
             if comp_result is not None:
-                ref: RefId = self.graph_querier.get_ref_id(self.uid, edge.src_port)
+                ref: RefId = self.graph_querier.get_ref(self.uid, edge.src_port)
                 # Compute result is not None, add both compute result and reference
                 results.append(comp_result)
                 refs.append(ref)
-        if not results:
+
+        if isinstance(prop_type, PT_List) and prop_type.input_multiple:
+            # Port input UPDATES the internal state
+            prop_value: List = self.node.internal_props.get(prop_key)
+            assert isinstance(prop_value, List)
+            existing_refs: set[RefId] = {ref_entry.ref for ref_entry in prop_value if isinstance(ref_entry, PortRefTableEntry)}
+            for comp_result, ref in zip(results, refs):
+                assert comp_result.type.is_compatible_with(prop_value.type)
+                if ref in existing_refs:
+                    existing_refs.discard(ref)
+                else:
+                    for cr in comp_result:
+                        prop_value.append(PortRefTableEntry(ref=ref, data=cr, deletable=False))
+            # Remove no longer existing refs
+            idxs_to_remove: list[int] = []
+            for i, ref_entry in enumerate(prop_value):
+                if isinstance(ref_entry, PortRefTableEntry) and ref_entry.ref in existing_refs:
+                    idxs_to_remove.append(i)
+            idxs_to_remove.reverse()
+            for i in idxs_to_remove:
+                prop_value.delete(i)
+            return prop_value, None
+
+        elif not results:
             # No incoming edge results, default to internal property value if it exists
             prop_value: Optional[PropValue] = self.node.internal_props.get(prop_key)
             if prop_value is None:
@@ -140,6 +164,7 @@ class RuntimeNode:
         if isinstance(prop_type, PT_Scalar) or (isinstance(prop_type, PT_List) and not prop_type.input_multiple):
             # We know there will be at most one result, so just return the first one
             return results[0], refs[0]
+        # Port input
         return results, refs
 
     def get_compute_result(self, key: PropKey) -> Optional[PropValue]:

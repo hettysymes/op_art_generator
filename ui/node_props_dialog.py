@@ -9,10 +9,11 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidge
 
 from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_datatypes import PortId, PropKey, input_port
+from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
-from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
-    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry, PortStatus, PropDef, PropValue, \
-    PT_String, PT_Colour, PT_PortRefTable
+from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, \
+    LineRef, PT_Fill, PT_Hidden, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
+    PT_String, PT_Colour, List, Point, PT_List, PT_PointsHolder
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -214,7 +215,6 @@ class NodePropertiesDialog(QDialog):
         if prop_def.description:
             help_icon = HelpIconLabel(prop_def.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
-        linked_key: PropKey = prop_def.prop_type.linked_key if isinstance(prop_def.prop_type, PT_PortRefTable) else
         if input_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL, get_output=False):
             input_ports_open = [port for port in node_item.node_state.ports_open if port.is_input]
             if key in input_ports_open:
@@ -296,116 +296,119 @@ class NodePropertiesDialog(QDialog):
                 index = prop_type.get_options().index(current_value) if current_value in prop_type.get_options() else 0
                 widget.setCurrentIndex(index)
 
-        elif isinstance(prop_type, PT_ElemRefTable):
-            port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
-                                                                                     prop_def.prop_type.linked_port_key,
-                                                                                     ref_id),
-                table_heading="Drawing",
-                entries=current_value
-            )
-            widget = port_ref_table
+        # elif isinstance(prop_type, PT_ElemRefTable):
+        #     port_ref_table = PortRefTableWidget(
+        #         port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
+        #                                                                              prop_def.prop_type.linked_port_key,
+        #                                                                              ref_id),
+        #         table_heading="Drawing",
+        #         entries=current_value
+        #     )
+        #     widget = port_ref_table
 
-        elif isinstance(prop_type, PT_PointRefTable):
-            def text_callback(port_ref, table_entry):
-                if isinstance(table_entry, LineRef):
-                    points = table_entry.points()
-                    start_x, start_y = points[0]
-                    stop_x, stop_y = points[-1]
-                    arrow = '←' if table_entry.reversed() else '→'
-                    return f"{port_ref.base_name} (id: {port_ref.node})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
-                x, y = table_entry
-                return f"({x:.2f}, {y:.2f})"
 
-            def custom_context_menu(menu, table_entry):
-                if isinstance(table_entry, LineRef):
-                    menu.actions_map = {'reverse': menu.addAction("Reverse")}
-                else:
-                    # Ordinary point
-                    menu.actions_map = {'edit': menu.addAction("Edit")}
+        elif isinstance(prop_type, PT_List):
+            if isinstance(prop_type.scalar_type, PT_PointsHolder):
+                def text_callback(ref_port: Optional[PortId], node_manager: Optional[NodeManager], table_entry):
+                    if isinstance(table_entry, LineRef):
+                        node_info: NodeInfo = node_manager.node_info(ref_port.node)
+                        start_x, start_y = table_entry.points[0]
+                        stop_x, stop_y = table_entry.points[-1]
+                        arrow = '←' if table_entry.is_reversed else '→'
+                        return f"{node_info.base_name} (id: {ref_port.node})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
+                    assert isinstance(table_entry, Point)
+                    x, y = table_entry
+                    return f"({x:.2f}, {y:.2f})"
 
-            def edit_action(port_ref_table, point, row):
-                point_dialog = PointDialog(*point)
-                if point_dialog.exec_() == QDialog.Accepted:
-                    x, y = point_dialog.get_value()
-                    port_ref_table.set_item((x, y), row)
-
-            def reverse_action(port_ref_table, line_ref_entry, row):
-                new_line_ref_entry = copy.deepcopy(line_ref_entry)
-                new_line_ref_entry.toggle_reverse()
-                port_ref_table.set_item(new_line_ref_entry, row)
-
-            def add_action(port_ref_table):
-                point_dialog = PointDialog()
-                if point_dialog.exec_() == QDialog.Accepted:
-                    x, y = point_dialog.get_value()
-                    row = port_ref_table.row_count()
-                    port_ref_table.set_row_count(row + 1)
-                    port_ref_table.set_item((x, y), row)
-
-            port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
-                                                                                     prop_def.prop_type.linked_port_key,
-                                                                                     ref_id),
-                table_heading="Points (X, Y)",
-                entries=current_value,
-                text_callback=text_callback,
-                context_menu_callback=custom_context_menu,
-                additional_actions={'edit': edit_action, 'reverse': reverse_action, 'add': add_action}
-            )
-            widget = port_ref_table
-
-        elif isinstance(prop_type, PT_ColourRefTable):
-            # Custom delegate to display colour swatches
-            class ColourDelegate(QStyledItemDelegate):
-                def paint(self, painter, option, index):
-                    value = index.data(Qt.UserRole)
-
-                    if not isinstance(value, PortRefTableEntry):
-                        q_colour = QColor(*value)
-                        painter.fillRect(option.rect, q_colour)
-
-                        # Draw a border
-                        painter.setPen(QPen(Qt.black, 1))
-                        painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+                def custom_context_menu(menu, table_entry):
+                    if isinstance(table_entry, LineRef):
+                        menu.actions_map = {'reverse': menu.addAction("Reverse")}
                     else:
-                        # Otherwise, fall back to the default behavior (centered text)
-                        super().paint(painter, option, index)
+                        # Ordinary point
+                        menu.actions_map = {'edit': menu.addAction("Edit")}
 
-                def initStyleOption(self, option, index):
-                    super().initStyleOption(option, index)
-                    option.displayAlignment = Qt.AlignCenter
+                def edit_action(table, point, row):
+                    point_dialog = PointDialog(*point)
+                    if point_dialog.exec_() == QDialog.Accepted:
+                        x, y = point_dialog.get_value()
+                        table.set_item(Point(x, y), row)
 
-            def custom_context_menu(menu, _):
-                menu.actions_map = {'edit': menu.addAction("Edit")}
+                def reverse_action(table, line_ref_entry, row):
+                    new_line_ref_entry = copy.deepcopy(line_ref_entry)
+                    new_line_ref_entry.toggle_reverse()
+                    table.set_item(new_line_ref_entry, row)
 
-            def edit_action(port_ref_table, _, row):
-                colour_dialog = QColorDialog()
-                colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
-                if colour_dialog.exec_() == QDialog.Accepted:
-                    sel_col = colour_dialog.selectedColor().getRgb()
-                    port_ref_table.set_item(sel_col, row)
+                def add_action(table):
+                    point_dialog = PointDialog()
+                    if point_dialog.exec_() == QDialog.Accepted:
+                        x, y = point_dialog.get_value()
+                        row = table.row_count()
+                        table.set_row_count(row + 1)
+                        table.set_item(Point(x, y), row)
 
-            def add_action(port_ref_table):
-                colour_dialog = QColorDialog()
-                colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
-                if colour_dialog.exec_() == QDialog.Accepted:
-                    sel_col = colour_dialog.selectedColor().getRgb()
-                    row = port_ref_table.row_count()
-                    port_ref_table.set_row_count(row + 1)
-                    port_ref_table.set_item(sel_col, row)
+                port_ref_table = PortRefTableWidget(
+                    list_item_type=PT_PointsHolder(),
+                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid, ref=ref),
+                    node_manager=self.node_item.node_manager,
+                    table_heading="Points (X, Y)",
+                    entries=current_value,
+                    text_callback=text_callback,
+                    context_menu_callback=custom_context_menu,
+                    additional_actions={'edit': edit_action, 'reverse': reverse_action, 'add': add_action}
+                )
+                widget = port_ref_table
 
-            port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
-                                                                                     prop_def.prop_type.linked_port_key,
-                                                                                     ref_id),
-                table_heading="Colour",
-                entries=current_value,
-                context_menu_callback=custom_context_menu,
-                additional_actions={'edit': edit_action, 'add': add_action},
-                item_delegate=ColourDelegate()
-            )
-            widget = port_ref_table
+        # elif isinstance(prop_type, PT_ColourRefTable):
+        #     # Custom delegate to display colour swatches
+        #     class ColourDelegate(QStyledItemDelegate):
+        #         def paint(self, painter, option, index):
+        #             value = index.data(Qt.UserRole)
+        #
+        #             if not isinstance(value, PortRefTableEntry):
+        #                 q_colour = QColor(*value)
+        #                 painter.fillRect(option.rect, q_colour)
+        #
+        #                 # Draw a border
+        #                 painter.setPen(QPen(Qt.black, 1))
+        #                 painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+        #             else:
+        #                 # Otherwise, fall back to the default behavior (centered text)
+        #                 super().paint(painter, option, index)
+        #
+        #         def initStyleOption(self, option, index):
+        #             super().initStyleOption(option, index)
+        #             option.displayAlignment = Qt.AlignCenter
+        #
+        #     def custom_context_menu(menu, _):
+        #         menu.actions_map = {'edit': menu.addAction("Edit")}
+        #
+        #     def edit_action(port_ref_table, _, row):
+        #         colour_dialog = QColorDialog()
+        #         colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+        #         if colour_dialog.exec_() == QDialog.Accepted:
+        #             sel_col = colour_dialog.selectedColor().getRgb()
+        #             port_ref_table.set_item(sel_col, row)
+        #
+        #     def add_action(port_ref_table):
+        #         colour_dialog = QColorDialog()
+        #         colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+        #         if colour_dialog.exec_() == QDialog.Accepted:
+        #             sel_col = colour_dialog.selectedColor().getRgb()
+        #             row = port_ref_table.row_count()
+        #             port_ref_table.set_row_count(row + 1)
+        #             port_ref_table.set_item(sel_col, row)
+        #
+        #     port_ref_table = PortRefTableWidget(
+        #         port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
+        #                                                                              prop_def.prop_type.linked_port_key,
+        #                                                                              ref_id),
+        #         table_heading="Colour",
+        #         entries=current_value,
+        #         context_menu_callback=custom_context_menu,
+        #         additional_actions={'edit': edit_action, 'add': add_action},
+        #         item_delegate=ColourDelegate()
+        #     )
+        #     widget = port_ref_table
         elif isinstance(prop_type, PT_Fill):
             r, g, b, a = current_value
             widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
