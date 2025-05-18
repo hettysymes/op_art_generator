@@ -12,8 +12,8 @@ from ui.id_datatypes import PortId, PropKey, input_port
 from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
 from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, \
-    LineRef, PT_Fill, PT_Hidden, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
-    PT_String, PT_Colour, List, Point, PT_List, PT_PointsHolder
+    LineRef, PT_Fill, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
+    PT_String, PT_Colour, List, Point, PT_List, PT_PointsHolder, PT_Element, PT_TableEntry
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -126,7 +126,7 @@ class NodePropertiesDialog(QDialog):
             props_group.setLayout(props_layout)
 
             for key, prop_def in self.node_info.prop_defs.items():
-                if not isinstance(prop_def.prop_type, PT_Hidden):
+                if prop_def.display_in_props:
                     widget: Optional[QWidget] = self.create_property_widget(prop_def, node_item.node_manager.get_internal_property(node_item.uid, key))
                     if widget:
                         # Create the row with label and help icon
@@ -296,19 +296,20 @@ class NodePropertiesDialog(QDialog):
                 index = prop_type.get_options().index(current_value) if current_value in prop_type.get_options() else 0
                 widget.setCurrentIndex(index)
 
-        # elif isinstance(prop_type, PT_ElemRefTable):
-        #     port_ref_table = PortRefTableWidget(
-        #         port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
-        #                                                                              prop_def.prop_type.linked_port_key,
-        #                                                                              ref_id),
-        #         table_heading="Drawing",
-        #         entries=current_value
-        #     )
-        #     widget = port_ref_table
-
 
         elif isinstance(prop_type, PT_List):
-            if isinstance(prop_type.scalar_type, PT_PointsHolder):
+            if isinstance(prop_type.base_item_type, PT_TableEntry) and isinstance(prop_type.base_item_type.data_type, PT_Element):
+                port_ref_table = PortRefTableWidget(
+                    list_item_type=PT_Element(),
+                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid,
+                                                                                             ref=ref),
+                    node_manager=self.node_item.node_manager,
+                    table_heading="Drawings",
+                    entries=current_value
+                )
+                widget = port_ref_table
+
+            if isinstance(prop_type.base_item_type, PT_PointsHolder):
                 def text_callback(ref_port: Optional[PortId], node_manager: Optional[NodeManager], table_entry):
                     if isinstance(table_entry, LineRef):
                         node_info: NodeInfo = node_manager.node_info(ref_port.node)

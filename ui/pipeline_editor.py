@@ -132,7 +132,7 @@ class NodeItem(QGraphicsRectItem):
 
         # Add property button
         self._property_button = None
-        if node_info.filter_ports_by_status(PortStatus.OPTIONAL):
+        if node_info.requires_property_box():
             self._property_button = QPushButton("P")
             self._property_button.setFixedSize(20, 20)
             self._property_button.setStyleSheet("""

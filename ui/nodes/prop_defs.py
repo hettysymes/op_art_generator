@@ -23,19 +23,36 @@ class PropType:
     def __repr__(self):
         return self.__class__.__name__
 
+class PT_ListItem(PropType):
+    pass
+
+T = TypeVar('T', bound=PropType)
+class PT_TableEntry(Generic[T], PT_ListItem):
+    def __init__(self, data_type: T):
+        self.data_type = data_type
+
+    def is_compatible_with(self, dest_type: PropType) -> bool:
+        if isinstance(dest_type, PT_TableEntry):
+            return self.data_type.is_compatible_with(dest_type.data_type)
+        if isinstance(dest_type, PT_Scalar):
+            return self.data_type.is_compatible_with(dest_type)
+        return False
+
 # Scalar
-class PT_Scalar(PropType):
+class PT_Scalar(PT_ListItem):
 
     def is_compatible_with(self, dest_type):
         if isinstance(dest_type, PT_List):
             # Scalar-to-list: inner types must be compatible
-            return self.is_compatible_with(dest_type.scalar_type)
+            return self.is_compatible_with(dest_type.base_item_type)
+        elif isinstance(dest_type, PT_TableEntry):
+            return self.is_compatible_with(dest_type.data_type)
         return isinstance(self, type(dest_type))
 
 # List
 class PT_List(PropType):
-    def __init__(self, scalar_type: PT_Scalar = PT_Scalar(), input_multiple: bool = False, depth: int = 1):
-        self.scalar_type = scalar_type
+    def __init__(self, base_item_type: PT_ListItem = PT_ListItem(), input_multiple: bool = False, depth: int = 1):
+        self.base_item_type = base_item_type
         self.input_multiple = input_multiple
         self.depth = depth
 
@@ -43,11 +60,11 @@ class PT_List(PropType):
         if not isinstance(self, type(dest_type)):
             return False
         if isinstance(dest_type, PT_List):
-           return self.scalar_type.is_compatible_with(dest_type.scalar_type)
+           return self.base_item_type.is_compatible_with(dest_type.base_item_type)
         return True # Connected to PropType()
 
     def __repr__(self):
-        return f"List({repr(self.scalar_type)}, depth={self.depth})"
+        return f"List({repr(self.base_item_type)}, depth={self.depth})"
 
 
 
@@ -162,11 +179,6 @@ class PT_Enum(PT_Scalar):
     def display_data_options(self):
         return zip(self.display_options, self.options)
 
-
-class PT_Hidden(PT_Scalar):
-    pass
-
-
 class PT_String(PT_Scalar):
     pass
 
@@ -191,6 +203,7 @@ class PropDef:
     description: str = ""
     default_value: Optional[PropValue] = None
     auto_format: bool = True
+    display_in_props: bool = True
 
 # PROP VALUES
 
@@ -204,11 +217,11 @@ class List(Generic[T], PropValue):
     def type(self) -> PropType:
         if isinstance(self.item_type, PT_List):
             return PT_List(
-                scalar_type=self.item_type.scalar_type,
+                base_item_type=self.item_type.base_item_type,
                 depth=self.item_type.depth + 1
             )
-        elif isinstance(self.item_type, PT_Scalar):
-            return PT_List(scalar_type=self.item_type, depth=1)
+        elif isinstance(self.item_type, PT_ListItem):
+            return PT_List(base_item_type=self.item_type, depth=1)
         else:
             raise TypeError(f"Invalid item_type: {type(self.item_type)}")
 
@@ -223,16 +236,16 @@ class List(Generic[T], PropValue):
         # Step 1: Fully flatten the value
         flat: List = flatten(self)
 
-        # Step 2: Validate scalar type compatibility
-        target_scalar_type = (
-            extract_type.scalar_type
+        # Step 2: Validate base item type compatibility
+        target_base_item_type = (
+            extract_type.base_item_type
             if isinstance(extract_type, PT_List)
             else extract_type
         )
 
         # Step 3: Return scalar if depth is 0
         if target_depth == 0:
-            assert len(flat.items) == 1, f"Expected single scalar value, got {len(flat.items)}"
+            assert len(flat.items) == 1, f"Expected single base item value, got {len(flat.items)}"
             scalar = flat.items[0]
             assert isinstance(scalar.type, PT_Scalar)
             return scalar
@@ -260,6 +273,9 @@ class List(Generic[T], PropValue):
         assert isinstance(other_list, List) and other_list.item_type.is_compatible_with(self.item_type)
         self.items += other_list.items
 
+    def __bool__(self):
+        return bool(self.items)
+
     def __iter__(self):
         return iter(self.items)
 
@@ -278,7 +294,7 @@ def flatten(x: PropValue) -> List:
         flat_items = []
         for item in x.items:
             flat_items.extend(flatten(item).items)
-        item_type = x.item_type.scalar_type if isinstance(x.item_type, PT_List) else x.item_type
+        item_type = x.item_type.base_item_type if isinstance(x.item_type, PT_List) else x.item_type
         return List(item_type=item_type, items=flat_items)
     else:
         assert isinstance(x.type, PT_Scalar)
@@ -360,6 +376,16 @@ class Grid(PropValue):
     def type(self) -> PropType:
         return PT_Grid()
 
+    @property
+    def width(self) -> Int:
+        return Int(len(self.v_line_xs) - 1)
+
+    @property
+    def height(self) -> Int:
+        return Int(len(self.h_line_ys) - 1)
+
+
+
 class PortRefTableEntry(PropValue):
     def __init__(self, ref: RefId, data: PropValue, deletable: bool = True):
         self.ref = ref
@@ -368,7 +394,7 @@ class PortRefTableEntry(PropValue):
 
     @property
     def type(self) -> PropType:
-        return self.data.type
+        return PT_TableEntry(self.data.type)
 
 # Tables
 

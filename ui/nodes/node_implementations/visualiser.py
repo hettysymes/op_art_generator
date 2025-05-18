@@ -33,11 +33,14 @@ def get_grid(width=1, height=1, x_warp=None, y_warp=None) -> Grid:
     return Grid(v_line_xs, h_line_ys)
 
 
-def repeat_shapes(grid: Grid, elements):
+def repeat_shapes(grid: Grid, elements: List[PT_Element] | Element):
     ret_group = Group(debug_info="Shape Repeater")
     if isinstance(elements, Element):
         # Ensure elements is a list
         elements = [elements]
+    else:
+        elements = elements.items
+    print(elements)
     element_it = itertools.cycle(elements)
     for i in range(0, len(grid.h_line_ys) - 1):
         # Add row
@@ -80,7 +83,7 @@ def visualise_by_type(value, value_type):
     elif isinstance(value_type, PT_List):
         # Draw vertical grid
         grid = get_grid(height=len(value))
-        elements = [visualise_by_type(value_item, value_type.scalar_type) for value_item in value]
+        elements = [visualise_by_type(value_item, value_type.base_item_type) for value_item in value]
         if (not elements) or not all(isinstance(e, Element) for e in elements):
             return None
         return repeat_shapes(grid, elements)

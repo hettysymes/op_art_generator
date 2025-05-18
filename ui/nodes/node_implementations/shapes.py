@@ -71,7 +71,8 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
         '_main': PropDef(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.COMPULSORY
+            output_port_status=PortStatus.COMPULSORY,
+            display_in_props=False
         )
     }
 )
@@ -118,7 +119,8 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
         '_main': PropDef(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.COMPULSORY
+            output_port_status=PortStatus.COMPULSORY,
+            display_in_props=False
         )
     }
 )
@@ -167,7 +169,8 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
         '_main': PropDef(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.COMPULSORY
+            output_port_status=PortStatus.COMPULSORY,
+            display_in_props=False
         )
     }
 )
@@ -211,7 +214,8 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
         '_main': PropDef(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.COMPULSORY
+            output_port_status=PortStatus.COMPULSORY,
+            display_in_props=False
         )
     }
 )
@@ -248,7 +252,8 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
         '_main': PropDef(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.COMPULSORY
+            output_port_status=PortStatus.COMPULSORY,
+            display_in_props=False
         )
     }
 )
@@ -299,7 +304,8 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
         '_main': PropDef(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.COMPULSORY
+            output_port_status=PortStatus.COMPULSORY,
+            display_in_props=False
         )
     }
 )
@@ -357,7 +363,8 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
         '_main': PropDef(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.COMPULSORY
+            output_port_status=PortStatus.COMPULSORY,
+            display_in_props=False
         )
     }
 )

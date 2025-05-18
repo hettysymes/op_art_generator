@@ -135,26 +135,38 @@ class RuntimeNode:
             # Port input UPDATES the internal state
             prop_value: List = self.node.internal_props.get(prop_key)
             assert isinstance(prop_value, List)
-            existing_refs: set[RefId] = {ref_entry.ref for ref_entry in prop_value if isinstance(ref_entry, PortRefTableEntry)}
-            for comp_result, ref in zip(results, refs):
-                assert comp_result.type.is_compatible_with(prop_value.type)
-                if ref in existing_refs:
-                    existing_refs.discard(ref)
-                else:
-                    for cr in comp_result:
-                        if isinstance(cr.type, PT_PointsHolder):
-                            class_entry = LineRef
-                        else:
-                            class_entry = PortRefTableEntry
-                        prop_value.append(class_entry(ref=ref, data=cr, deletable=False))
-            # Remove no longer existing refs
-            idxs_to_remove: list[int] = []
-            for i, ref_entry in enumerate(prop_value):
-                if isinstance(ref_entry, PortRefTableEntry) and ref_entry.ref in existing_refs:
-                    idxs_to_remove.append(i)
-            idxs_to_remove.reverse()
-            for i in idxs_to_remove:
+            ref_result_map: dict[RefId, List[PropValue]] = {ref: comp_result for ref, comp_result in zip(refs, results)}
+            # Update existing references
+            updated_refs: set[RefId] = set()
+            deleted_indices: list[int] = []
+            i = 0
+            while i < len(prop_value):
+                if isinstance(prop_value[i], PortRefTableEntry):
+                    if prop_value[i].ref in ref_result_map:
+                        ref = prop_value[i].ref
+                        updated_refs.add(ref)
+                        res_idx = 0
+                        while isinstance(prop_value[i], PortRefTableEntry) and prop_value[i].ref == ref:
+                            prop_value[i].data = ref_result_map[prop_value[i].ref][res_idx]
+                            res_idx += 1
+                            i += 1
+                            if i >= len(prop_value): break
+                    else:
+                        deleted_indices.append(i)
+                        i += 1
+            # Remove deleted existing refs
+            deleted_indices.reverse()
+            for i in deleted_indices:
                 prop_value.delete(i)
+            # Add new references
+            new_refs: set[RefId] = set(ref_result_map.keys()) - updated_refs
+            for ref in new_refs:
+                for compute_result in ref_result_map[ref]:
+                    if isinstance(compute_result.type, PT_PointsHolder):
+                        class_entry = LineRef
+                    else:
+                        class_entry = PortRefTableEntry
+                    prop_value.append(class_entry(ref=ref, data=compute_result, deletable=False))
             return prop_value, None
 
         elif not results:

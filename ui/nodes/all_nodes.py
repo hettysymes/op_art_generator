@@ -10,6 +10,7 @@
 # from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.grid import GridNode
+from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.node_implementations.shapes import CircleNode, EllipseNode, ShapeNode
 
 
@@ -53,7 +54,8 @@ class NodeSettings:
 # ]
 node_settings = [(GridNode, NodeSettings()),
                  (ShapeNode, NodeSettings()),
-                 (CanvasNode, NodeSettings(resizable=False))]
+                 (CanvasNode, NodeSettings(resizable=False)),
+                 (ShapeRepeaterNode, NodeSettings())]
 
 
 def node_classes():

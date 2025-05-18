@@ -7,6 +7,7 @@ from ui.node_graph import NodeGraph
 from ui.nodes.node_defs import Node, RuntimeNode
 from ui.nodes.nodes import CombinationNode
 from ui.nodes.prop_defs import PropValue, PropType, List, PT_List, PropDef, PortStatus
+from ui.nodes.shape_datatypes import Element
 from ui.vis_types import Visualisable
 
 
@@ -30,6 +31,9 @@ class NodeInfo:
                 results.append(output_port(node=self.uid, key=key))
         return results
 
+    def requires_property_box(self) -> bool:
+        return any(prop_def.display_in_props for prop_def in self.prop_defs.values())
+
 class NodeManager:
 
     def __init__(self):
@@ -50,6 +54,10 @@ class NodeManager:
         comp_result: Optional[PropValue] = src_runtime_node.get_compute_result(src_port.key)
         if comp_result is None:
             return None
+        print("resolving property")
+        print(comp_result)
+        if isinstance(comp_result, Element):
+            print(f"Fill: {comp_result.fill}")
         # Check types of the result, assume they are already compatible
         if isinstance(comp_result, List):
             return comp_result.extract(inp_type)
