@@ -1,6 +1,6 @@
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Function, PT_Int, Int, PortStatus, PT_Float, List
+from ui.nodes.prop_defs import PropDef, PT_Function, PT_Int, Int, PortStatus, PT_Float, List, Float
 from ui.nodes.warp_datatypes import sample_fun
 
 DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
@@ -36,9 +36,9 @@ class FunSamplerNode(UnitNode):
 
     @staticmethod
     def helper(function, num_samples):
-        return List(PT_Float(), sample_fun(function, num_samples))
+        return List(PT_Float(), [Float(i) for i in sample_fun(function, num_samples)])
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         function = props.get('function')
         if function:
             return {'_main': FunSamplerNode.helper(function, props.get('num_samples'))}

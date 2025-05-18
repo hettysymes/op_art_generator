@@ -280,10 +280,10 @@ class NodePropertiesDialog(QDialog):
 
         elif isinstance(prop_type, PT_Enum):
             widget = QComboBox()
-            for display, data in prop_type.display_data_options():
+            for display, data in prop_type.display_data_options:
                 widget.addItem(display, userData=data)
             if current_value is not None:
-                index = prop_type.get_options().index(current_value) if current_value in prop_type.get_options() else 0
+                index = prop_type.options.index(current_value) if current_value in prop_type.options else 0
                 widget.setCurrentIndex(index)
 
 

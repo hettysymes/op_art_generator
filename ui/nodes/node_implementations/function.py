@@ -48,7 +48,7 @@ class CubicFunNode(UnitNode):
     NAME = "Cubic Function"
     DEFAULT_NODE_INFO = DEF_CUBIC_FUN_INFO
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         return {'_main':
             CubicFun(props.get('a_coeff'), props.get('b_coeff'), props.get('c_coeff'),
                      props.get('d_coeff'))}
@@ -79,7 +79,7 @@ class CustomFunNode(UnitNode):
     NAME = "Custom Function"
     DEFAULT_NODE_INFO = DEF_CUSTOM_FUN_INFO
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         x = sp.symbols('x')
         parsed_expr = sp.sympify(props.get('fun_def'))
         return {'_main': CustomFun(x, parsed_expr)}
@@ -111,7 +111,7 @@ class PiecewiseFunNode(UnitNode):
     NAME = "Piecewise Linear Function"
     DEFAULT_NODE_INFO = DEF_PIECEWISE_FUN_INFO
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         xs, ys = zip(*props.get('points'))
         return {'_main': PiecewiseFun(xs, ys)}
 

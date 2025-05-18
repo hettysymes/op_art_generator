@@ -12,6 +12,7 @@ from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.function import FunctionNode
 from ui.nodes.node_implementations.function_sampler import FunSamplerNode
 from ui.nodes.node_implementations.grid import GridNode
+from ui.nodes.node_implementations.iterator import IteratorNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.node_implementations.shapes import CircleNode, EllipseNode, ShapeNode
 from ui.nodes.node_implementations.warp import WarpNode
@@ -61,7 +62,8 @@ node_settings = [(GridNode, NodeSettings()),
                  (ShapeRepeaterNode, NodeSettings()),
                  (FunctionNode, NodeSettings()),
                  (WarpNode, NodeSettings()),
-                 (FunSamplerNode, NodeSettings())]
+                 (FunSamplerNode, NodeSettings()),
+                 (IteratorNode, NodeSettings())]
 
 
 def node_classes():

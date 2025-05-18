@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from ui.id_datatypes import PropKey
-from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs
+from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier
 from ui.nodes.prop_defs import PropValue, PropDef
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import Visualisable
@@ -36,9 +36,9 @@ class SelectableNode(UnitNode, ABC):
         self.extracted_props: set[PropKey] = set()
         super().__init__(internal_props)
 
-    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
+    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
         self._remove_redundant_ports(props)
-        return self.compute(props, refs)
+        return self.compute(props, refs, ref_querier)
 
     @abstractmethod
     def extract_element(self, props: ResolvedProps, parent_group: Group, element_id: str) -> PropKey:
@@ -109,8 +109,8 @@ class CombinationNode(Node, ABC):
     def node_info(self):
         return self._node.node_info
 
-    def compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
-        return self._node.compute(props, refs)
+    def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
+        return self._node.compute(props, refs, ref_querier)
 
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
         return self._node.visualise(compute_results)

@@ -51,7 +51,7 @@ class CanvasNode(UnitNode):
             group.add(element)
         return group
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         return {'_main': props.get('element'), 'bg_fill': props.get('bg_fill')}
 
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:

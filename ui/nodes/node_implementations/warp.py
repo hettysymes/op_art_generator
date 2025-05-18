@@ -34,7 +34,7 @@ class PosWarpNode(UnitNode):
     def helper(function):
         return PosWarp(function)
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         f = props.get('function')
         if f:
             try:
@@ -75,7 +75,7 @@ class RelWarpNode(UnitNode):
     def helper(function):
         return RelWarp(function)
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         f = props.get('function')
         if f:
             try:

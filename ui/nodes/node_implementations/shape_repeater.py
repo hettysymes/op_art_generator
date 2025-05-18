@@ -51,7 +51,7 @@ class ShapeRepeaterNode(SelectableNode):
         _, i, j = cell_key.split('_')
         return int(i), int(j)
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         grid: Grid = props.get('grid')
         elem_entries: List[PT_TableEntry[PT_Element]] = props.get('elements')
         if not grid or not elem_entries:

@@ -15,6 +15,22 @@ from ui.vis_types import ErrorFig, Visualisable
 type ResolvedProps = dict[PropKey, list[PropValue] | PropValue]
 type ResolvedRefs = dict[PropKey, list[Optional[RefId]] | Optional[RefId]]
 
+class RefQuerier:
+
+    def __init__(self, uid, node_querier, graph_querier):
+        self.uid = uid
+        self._node_querier = node_querier
+        self._graph_querier = graph_querier
+
+    def node_info(self, ref: RefId):
+        return self._node_querier.node_info(self.port(ref).node)
+
+    def node_copy(self, ref: RefId):
+        node: NodeId = self.port(ref).node
+        return self._node_querier.get_node_copies({node})[node]
+
+    def port(self, ref: RefId) -> PortId:
+        return self._graph_querier.query_ref(self.uid, ref)
 
 class PrivateNodeInfo:
 
@@ -36,8 +52,8 @@ class Node(ABC):
                 default_props[key] = prop_def.default_value
         return default_props
 
-    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
-        return self.compute(props, refs)
+    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
+        return self.compute(props, refs, ref_querier)
 
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
         try:
@@ -74,7 +90,7 @@ class Node(ABC):
         pass
 
     @abstractmethod
-    def compute(self, props: ResolvedProps, refs: ResolvedRefs) -> dict[PropKey, PropValue]:
+    def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
         pass
 
 class RuntimeNode:
@@ -103,7 +119,8 @@ class RuntimeNode:
         return vis
 
     def compute(self) -> None:
-        self.compute_results = self.node.final_compute(*self.resolve_properties())
+        props, refs = self.resolve_properties()
+        self.compute_results = self.node.final_compute(props, refs, RefQuerier(self.uid, self.node_querier, self.graph_querier))
 
     def extract_element(self, parent_group: Group, element_id: str) -> PropKey:
         return self.node.extract_element(self.resolve_properties()[0], parent_group, element_id)

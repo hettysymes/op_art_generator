@@ -36,7 +36,7 @@ class GridNode(UnitNode):
     NAME = "Grid"
     DEFAULT_NODE_INFO = DEF_GRID_INFO
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         return {'_main': get_grid(props.get('width'), props.get('height'), props.get('x_warp'), props.get('y_warp'))}
 
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:

@@ -158,26 +158,28 @@ class PT_SelectorEnum(PT_Scalar):
 
 
 class PT_Enum(PT_Scalar):
-    def __init__(self, options=None, display_options=None):
-        self.options = None
-        self.display_options = None
+    def __init__(self, options = None, display_options = None):
+        self._options = None
+        self._display_options = None
         self.set_options(options, display_options)
 
     def set_options(self, options=None, display_options=None):
         if options:
-            self.options = options
+            self._options = options
             if display_options:
                 assert len(display_options) == len(options)
-            self.display_options = display_options if display_options else options
+            self._display_options = display_options if display_options else options
         else:
-            self.options = [None]
-            self.display_options = ["[none]"]
+            self._options = [None]
+            self._display_options = ["[none]"]
 
-    def get_options(self):
-        return self.options
+    @property
+    def options(self) -> list[Optional[PropKey]]:
+        return self._options
 
-    def display_data_options(self):
-        return zip(self.display_options, self.options)
+    @property
+    def display_data_options(self) -> list[tuple[str, Optional[PropKey]]]:
+        return list(zip(self._display_options, self._options))
 
 class PT_String(PT_Scalar):
     pass
@@ -209,9 +211,10 @@ class PropDef:
 
 T = TypeVar('T', bound='PropType')
 class List(Generic[T], PropValue):
-    def __init__(self, item_type: T, items: Optional[list[PropValue]] = None):
+    def __init__(self, item_type: T = PropType(), items: Optional[list[PropValue]] = None, vertical_layout=True):
         self.item_type = item_type
         self.items: list[PropValue] = items if items is not None else []
+        self.vertical_layout = vertical_layout
 
     @property
     def type(self) -> PropType:
@@ -274,7 +277,7 @@ class List(Generic[T], PropValue):
         self.items += other_list.items
 
     def __bool__(self):
-        return bool(self.items)
+        return len(self.items) > 0
 
     def __iter__(self):
         return iter(self.items)
@@ -336,6 +339,24 @@ class Float(float, PropValue):
     @property
     def type(self) -> PropType:
         return PT_Float()
+
+class String(str, PropValue):
+    def __new__(cls, value: str):
+        return super().__new__(cls, value)
+
+    def __init__(self, value: str):
+        self.value = value  # Optional but consistent with other PropValue classes
+
+    @property
+    def type(self) -> PropType:
+        return PT_String()
+
+    def __str__(self) -> str:
+        return self
+
+    def __repr__(self) -> str:
+        return f'String("{self}")'
+
 
 class PointsHolder(PropValue, ABC):
     @property

@@ -88,7 +88,7 @@ class SineWaveNode(UnitNode):
         return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points).rotate(
             orientation, (0.5, 0.5))
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         try:
             sine_wave = SineWaveNode.helper(props.get('amplitude'), props.get('wavelength'),
                                             props.get('centre_y'),
@@ -134,7 +134,7 @@ class CustomLineNode(UnitNode):
     def helper(points, stroke='black', stroke_width=1):
         return Polyline(points, stroke, stroke_width)
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         points = List(PT_Point())
         for points_holder in props.get('points'):
             points_holder = cast(PointsHolder, points_holder)
@@ -184,7 +184,7 @@ class StraightLineNode(UnitNode):
     def helper(start_coord: Point, stop_coord: Point, stroke='black', stroke_width=1):
         return Polyline(List(PT_Point(), [start_coord, stop_coord]), stroke, stroke_width)
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         return {'_main':
             StraightLineNode.helper(props.get('start_coord'), props.get('stop_coord'), 'black',
                                     props.get('stroke_width'))}
@@ -226,7 +226,7 @@ class PolygonNode(UnitNode):
     NAME = "Polygon"
     DEFAULT_NODE_INFO = DEF_POLYGON_INFO
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         points = List(PT_Point())
         for points_holder in props.get('points'):
             points_holder = cast(PointsHolder, points_holder)
@@ -263,7 +263,7 @@ class RectangleNode(UnitNode):
     NAME = "Rectangle"
     DEFAULT_NODE_INFO = DEF_RECTANGLE_NODE_INFO
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         return {'_main': get_rectangle(props.get('fill'), 'none', 1)}
 
 
@@ -326,7 +326,7 @@ class EllipseNode(UnitNode):
         return Ellipse(centre, radius, fill,
                        fill_opacity, stroke, stroke_width)
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         return {'_main': EllipseNode.helper(props.get('fill'), props.get('centre'),
                                                    (props.get('rx'), props.get('ry')),
                                                    'none', props.get('stroke_width'))}
@@ -387,7 +387,7 @@ class CircleNode(UnitNode):
     def helper(colour, centre, radius, stroke='none', stroke_width=Float(1.0)):
         return ellipse_helper(colour, centre, (radius, radius), stroke, stroke_width)
 
-    def compute(self, props: ResolvedProps, _):
+    def compute(self, props: ResolvedProps, *args):
         return {'_main': CircleNode.helper(props.get('fill'),
                                               props.get('centre'),
                                               props.get('r'),
