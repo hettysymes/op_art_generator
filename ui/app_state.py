@@ -17,7 +17,7 @@ class NodeState:
 
 @dataclass(frozen=True)
 class CustomNodeDef:
-    subgraph: NodeGraph
+    sub_node_manager: NodeManager
     selected_ports: dict[NodeId, list[PortId]]
     vis_node: NodeId
     description: Optional[str] = None
