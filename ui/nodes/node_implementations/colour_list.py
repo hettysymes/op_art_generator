@@ -10,7 +10,8 @@ DEF_COLOUR_LIST_INFO = PrivateNodeInfo(
             display_name="Colours",
             description="Colours to populate the colour list.",
             output_port_status=PortStatus.FORBIDDEN,
-            default_value=List(PT_ColourHolder(), [Colour(0, 0, 0, 255), Colour(255, 0, 0, 255), Colour(0, 255, 0, 255)])
+            default_value=List(PT_ColourHolder(),
+                               [Colour(0, 0, 0, 255), Colour(255, 0, 0, 255), Colour(0, 255, 0, 255)])
         ),
         '_main': PropDef(
             input_port_status=PortStatus.FORBIDDEN,
@@ -20,7 +21,6 @@ DEF_COLOUR_LIST_INFO = PrivateNodeInfo(
         )
     }
 )
-
 
 
 class ColourListNode(UnitNode):

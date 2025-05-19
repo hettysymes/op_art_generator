@@ -28,7 +28,6 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
 )
 
 
-
 class GradientNode(UnitNode):
     NAME = "Gradient"
     DEFAULT_NODE_INFO = DEF_GRADIENT_NODE_INFO

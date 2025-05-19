@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ui.id_datatypes import NodeId, PortId
-from ui.node_graph import NodeGraph
 from ui.node_manager import NodeManager
 
 

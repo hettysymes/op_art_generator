@@ -21,7 +21,6 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
 )
 
 
-
 class ColourNode(UnitNode):
     NAME = "Colour"
     DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO

@@ -29,7 +29,6 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
 )
 
 
-
 class FunSamplerNode(UnitNode):
     NAME = "Function Sampler"
     DEFAULT_NODE_INFO = DEF_FUN_SAMPLER_INFO

@@ -14,8 +14,8 @@ from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
 from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, Enum, \
     LineRef, PT_Fill, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
-    PT_String, PT_Colour, List, Point, PT_List, PT_PointsHolder, PT_Element, PT_TableEntry, PT_Enum, PT_ElementHolder, \
-    PT_ColourHolder, ColourHolder, Colour
+    PT_String, Point, PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
+    PT_ColourHolder, Colour
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -136,7 +136,9 @@ class NodePropertiesDialog(QDialog):
         no_widget_keys: list[PropKey] = []
         for key, prop_def in self.node_info.prop_defs.items():
             if prop_def.display_in_props:
-                widget: Optional[QWidget] = self.create_property_widget(prop_def, node_item.node_manager.get_internal_property(node_item.uid, key))
+                widget: Optional[QWidget] = self.create_property_widget(prop_def,
+                                                                        node_item.node_manager.get_internal_property(
+                                                                            node_item.uid, key))
                 if widget:
                     # Create the row with label and help icon
                     label_container, widget_container = self.create_property_row(key, prop_def, node_item, widget)
@@ -209,18 +211,24 @@ class NodePropertiesDialog(QDialog):
             help_icon = HelpIconLabel(prop_def.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
         # Add input and output toggle buttons
-        if input_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL, get_output=False):
-            widget_layout.addWidget(self.create_toggle_plus_minus_btn(cast(NodeState, node_item.node_state).ports_open, key, node_item.uid, is_input=True))
-        if output_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL, get_output=True):
-            widget_layout.addWidget(self.create_toggle_plus_minus_btn(cast(NodeState, node_item.node_state).ports_open, key, node_item.uid, is_input=False))
+        if input_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL,
+                                                                                            get_output=False):
+            widget_layout.addWidget(
+                self.create_toggle_plus_minus_btn(cast(NodeState, node_item.node_state).ports_open, key, node_item.uid,
+                                                  is_input=True))
+        if output_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL,
+                                                                                             get_output=True):
+            widget_layout.addWidget(
+                self.create_toggle_plus_minus_btn(cast(NodeState, node_item.node_state).ports_open, key, node_item.uid,
+                                                  is_input=False))
 
         return label_container, widget_container
 
     def create_toggle_plus_minus_btn(self, ports_open: list[PortId], key: PropKey, node: NodeId, is_input=True):
         keys_w_input = [port.key for port in ports_open if port.is_input == is_input]
         return ModifyPropertyPortButton(self.change_property_port,
-                                         PortId(node=node, key=key, is_input=is_input),
-                                         adding=key not in keys_w_input)
+                                        PortId(node=node, key=key, is_input=is_input),
+                                        adding=key not in keys_w_input)
 
     def create_property_widget(self, prop_def: PropDef, current_value: Optional[PropValue]) -> Optional[QWidget]:
         prop_type = prop_def.prop_type
@@ -344,7 +352,8 @@ class NodePropertiesDialog(QDialog):
 
                 port_ref_table = PortRefTableWidget(
                     list_item_type=PT_PointsHolder(),
-                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid, ref=ref),
+                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid,
+                                                                                             ref=ref),
                     node_manager=self.node_item.node_manager,
                     table_heading="Points (X, Y)",
                     entries=current_value,
@@ -405,7 +414,7 @@ class NodePropertiesDialog(QDialog):
                     entries=current_value,
                     context_menu_callback=custom_context_menu,
                     additional_actions={'edit': edit_action, 'add': add_action},
-                    item_delegate = ColourDelegate()
+                    item_delegate=ColourDelegate()
                 )
                 widget = port_ref_table
         elif isinstance(prop_type, PT_Fill):

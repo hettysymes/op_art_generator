@@ -37,7 +37,8 @@ class SelectableNode(UnitNode, ABC):
         self.extracted_props: set[PropKey] = set()
         super().__init__(internal_props)
 
-    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
+    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[
+        PropKey, PropValue]:
         self._remove_redundant_ports(props)
         return self.compute(props, refs, ref_querier)
 
@@ -54,7 +55,8 @@ class SelectableNode(UnitNode, ABC):
         self.extracted_props.add(key)
 
     def _remove_redundant_ports(self, props: ResolvedProps):
-        keys_to_remove: set[PropKey] = {prop_key for prop_key in self.extracted_props if self._is_port_redundant(props, prop_key)}
+        keys_to_remove: set[PropKey] = {prop_key for prop_key in self.extracted_props if
+                                        self._is_port_redundant(props, prop_key)}
         # Remove from prop_defs
         for key in keys_to_remove:
             self.prop_defs.pop(key, None)
@@ -131,7 +133,8 @@ class CustomNode(Node):
         return NodeId(node_str), key  # Returns node id, port_key
 
     @staticmethod
-    def _get_new_prop_defs(prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]], selected_ports: dict[NodeId, list[PortId]]) -> dict[PropKey, PropDef]:
+    def _get_new_prop_defs(prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]],
+                           selected_ports: dict[NodeId, list[PortId]]) -> dict[PropKey, PropDef]:
         prop_defs: dict[PropKey, PropDef] = {}
         for node, ports in selected_ports.items():
             node_prop_defs: dict[PropKey, PropDef] = prop_defs_dict[node]
@@ -168,12 +171,14 @@ class CustomNode(Node):
         description = custom_node_def.description or "(No help provided)"
         # Perform set up
         self.node_topo_order: list[NodeId] = self.subgraph.get_topo_order_subgraph()
-        self.randomisable_nodes: list[NodeId] = [node for node in self.node_topo_order if self.sub_node_manager.node_info(node).randomisable]
+        self.randomisable_nodes: list[NodeId] = [node for node in self.node_topo_order if
+                                                 self.sub_node_manager.node_info(node).randomisable]
         self._randomisable = bool(self.randomisable_nodes)
         self._actual_seed = None
 
         # Get new prop defs
-        prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]] = {node: self.sub_node_manager.node_info(node).prop_defs for node in self.node_topo_order}
+        prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]] = {node: self.sub_node_manager.node_info(node).prop_defs
+                                                                for node in self.node_topo_order}
         prop_defs: dict[PropKey, PropDef] = CustomNode._get_new_prop_defs(prop_defs_dict, self.selected_ports)
 
         # Set node info
@@ -218,7 +223,8 @@ class CustomNode(Node):
         # Add source nodes and edges to internal graph and node manager
         for src_node, ref in source_nodes.items():
             self.subgraph.add_node(src_node)
-            self.sub_node_manager.add_node(src_node, ref_querier.node_copy(ref), compute_results=ref_querier.get_compute_results(ref))
+            self.sub_node_manager.add_node(src_node, ref_querier.node_copy(ref),
+                                           compute_results=ref_querier.get_compute_results(ref))
         for edge in edges_to_have:
             # Replace dest port id with original
             node, key = CustomNode.from_custom_key(edge.dst_key)
@@ -247,7 +253,7 @@ class CustomNode(Node):
         for node, ports in self.selected_ports.items():
             for port in ports:
                 if not port.is_input:
-                    compute_res: Optional[PropValue] =  self.sub_node_manager.get_compute_result(node, port.key)
+                    compute_res: Optional[PropValue] = self.sub_node_manager.get_compute_result(node, port.key)
                     if compute_res is not None:
                         compute_results[CustomNode.to_custom_key(node, port.key)] = compute_res
         return compute_results

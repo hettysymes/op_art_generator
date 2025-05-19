@@ -25,7 +25,6 @@ DEF_POS_WARP_NODE_INFO = PrivateNodeInfo(
 )
 
 
-
 class PosWarpNode(UnitNode):
     NAME = "Position Warp"
     DEFAULT_NODE_INFO = DEF_POS_WARP_NODE_INFO
@@ -64,7 +63,6 @@ DEF_REL_WARP_NODE_INFO = PrivateNodeInfo(
         )
     }
 )
-
 
 
 class RelWarpNode(UnitNode):

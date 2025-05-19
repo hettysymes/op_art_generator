@@ -18,7 +18,6 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QUndoCommand, QGraphicsProxyWidget)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
-from numpy.ma.extras import notmasked_edges
 
 from ui.app_state import NodeState, AppState, CustomNodeDef, NodeId
 from ui.id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, PropKey, node_changed_port
@@ -26,15 +25,14 @@ from ui.node_graph import NodeGraph, RefId
 from ui.node_manager import NodeManager, NodeInfo
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_setting, node_classes
-from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.node_defs import Node
 from ui.nodes.nodes import CombinationNode, CustomNode
-from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, Int, \
+from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, \
     PropValue, PropType
-from ui.nodes.shape_datatypes import Group, Element
+from ui.nodes.shape_datatypes import Group
 from ui.reg_custom_dialog import RegCustomDialog
 from ui.selectable_renderer import SelectableSvgElement
-from ui.vis_types import ErrorFig, Visualisable
+from ui.vis_types import Visualisable
 
 
 class ConnectionSignals(QObject):
@@ -348,7 +346,8 @@ class NodeItem(QGraphicsRectItem):
         vis: Visualisable = self.visualise()
 
         # Remove invalid keys (from extracted elements)
-        invalid_keys: set[PropKey] = {port.key for port in self.node_state.ports_open if port.key not in self.node_info.prop_defs}
+        invalid_keys: set[PropKey] = {port.key for port in self.node_state.ports_open if
+                                      port.key not in self.node_info.prop_defs}
         for key in invalid_keys:
             self.scene().undo_stack.push(RemoveExtractedElementCmd(self, key))
 
@@ -607,8 +606,8 @@ class NodeItem(QGraphicsRectItem):
             self._help_tooltip = None
         # Remove this node item
         self.node_graph.remove_node(self.uid)
-        del self.scene().node_items[self.uid] # Remove reference to item
-        self.node_manager.remove_node(self.uid) # Remove from node manager
+        del self.scene().node_items[self.uid]  # Remove reference to item
+        self.node_manager.remove_node(self.uid)  # Remove from node manager
         self.scene().removeItem(self)
 
 
@@ -618,7 +617,7 @@ class PortItem(QGraphicsPathItem):
     def __init__(self, port: PortId, parent: NodeItem):
         super().__init__(parent)
         self.port = port
-        self.edge_items: dict[PortId, EdgeItem] = {} # Key is the port that it is connected to by the edge
+        self.edge_items: dict[PortId, EdgeItem] = {}  # Key is the port that it is connected to by the edge
 
         self.size = 12  # Base size for the port
         # Create shape based on port_type
@@ -883,7 +882,8 @@ class RemoveExtractedElementCmd(QUndoCommand):
 
 
 class PasteCmd(QUndoCommand):
-    def __init__(self, scene, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], description="Paste"):
+    def __init__(self, scene, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
+                 port_refs: dict[NodeId, dict[PortId, RefId]], description="Paste"):
         super().__init__(description)
         self.scene = scene
         self.node_states = node_states
@@ -899,7 +899,8 @@ class PasteCmd(QUndoCommand):
 
 
 class DeleteCmd(QUndoCommand):
-    def __init__(self, scene, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]], description="Delete"):
+    def __init__(self, scene, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
+                 port_refs: dict[NodeId, dict[PortId, RefId]], description="Delete"):
         super().__init__(description)
         self.scene = scene
         self.node_states = node_states
@@ -1032,7 +1033,9 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port_item.edge_items) > 0
-                if not connection_exists and (not target_has_connection or (isinstance(dest_port_item.port_type, PT_List) and dest_port_item.port_type.input_multiple)) and self.is_edge_type_valid(source_port_item.port, dest_port_item.port):
+                if not connection_exists and (not target_has_connection or (isinstance(dest_port_item.port_type,
+                                                                                       PT_List) and dest_port_item.port_type.input_multiple)) and self.is_edge_type_valid(
+                        source_port_item.port, dest_port_item.port):
                     # Add the connection
                     self.undo_stack.push(
                         AddNewEdgeCmd(self, edge))
@@ -1227,7 +1230,8 @@ class PipelineScene(QGraphicsScene):
         for node in self.node_graph.get_topo_order_subgraph({node_state.node for node_state in node_states}):
             self.node_item(node).update_vis_image()
 
-    def add_to_graph_and_scene(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId], more_node_to_port_refs: dict[NodeId, dict[PortId, RefId]]):
+    def add_to_graph_and_scene(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node],
+                               edges: set[EdgeId], more_node_to_port_refs: dict[NodeId, dict[PortId, RefId]]):
         # Add to node implementations
         self.node_manager.update_nodes(base_nodes)
         # Update graph
@@ -1287,7 +1291,9 @@ class PipelineScene(QGraphicsScene):
         new_ports_open: list[PortId] = new_node_info.filter_ports_by_status(PortStatus.COMPULSORY)
         for port in clicked_item.node_state.ports_open:
             if (port.key in new_node_info.prop_defs) and (port not in new_ports_open):
-                if (port.is_input and new_node_info.prop_defs[port.key].input_port_status != PortStatus.FORBIDDEN) or (not port.is_input and new_node_info.prop_defs[port.key].output_port_status != PortStatus.FORBIDDEN):
+                if (port.is_input and new_node_info.prop_defs[port.key].input_port_status != PortStatus.FORBIDDEN) or (
+                        not port.is_input and new_node_info.prop_defs[
+                    port.key].output_port_status != PortStatus.FORBIDDEN):
                     new_ports_open.append(port)
         clicked_item.reset_ports_open(new_ports_open)
         clicked_item.update_visualisations()
@@ -1438,7 +1444,8 @@ class PipelineView(QGraphicsView):
         super().mouseMoveEvent(event)
 
 
-def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId], port_refs: dict[NodeId, dict[PortId, RefId]]):
+def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
+                       port_refs: dict[NodeId, dict[PortId, RefId]]):
     old_to_new_id_map = {}
     # Update node states
     new_node_states: dict[NodeId, NodeState] = {}
@@ -1447,9 +1454,10 @@ def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[No
         new_node: NodeId = gen_node_id()
         # Copy node state
         new_node_state: NodeState = copy.deepcopy(node_state)
-        new_node_state.node = new_node # Update id in node state
-        new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in node_state.ports_open]
-        new_node_states[new_node] = new_node_state # Add to new node states
+        new_node_state.node = new_node  # Update id in node state
+        new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in
+                                     node_state.ports_open]
+        new_node_states[new_node] = new_node_state  # Add to new node states
         # Copy node
         new_base_node = copy.deepcopy(base_nodes[node])
         new_base_nodes[new_node] = new_base_node
@@ -1458,7 +1466,8 @@ def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[No
     # Update ids in connections
     new_edges: set[EdgeId] = set()
     for edge in edges:
-        new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key), input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
+        new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key),
+                             input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
     # Update ids in port refs
     new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
     for dst_node in port_refs:
@@ -1641,8 +1650,9 @@ class PipelineEditor(QMainWindow):
 
     def register_custom_node(self):
         node_states, base_nodes, edges, port_refs = self.identify_selected_subgraph()
-        node_states, base_nodes, edges, port_refs, old_to_new_id_map = deep_copy_subgraph(node_states, base_nodes, edges,
-                                                                          port_refs)
+        node_states, base_nodes, edges, port_refs, old_to_new_id_map = deep_copy_subgraph(node_states, base_nodes,
+                                                                                          edges,
+                                                                                          port_refs)
 
         # Add nodes to sub node manager
         sub_node_manager: NodeManager = NodeManager()
@@ -1711,12 +1721,16 @@ class PipelineEditor(QMainWindow):
     def delete_selected_items(self):
         node_states, edges = self.identify_selected_items()
         if node_states or edges:
-            base_nodes: dict[NodeId, Node] = self.scene.node_manager.get_node_copies(subset={node for node in node_states})
-            port_refs: dict[NodeId, dict[PortId, RefId]] = {node: copy.deepcopy(port_ref_data) for node, port_ref_data in
-                         self.scene.node_graph.node_to_port_ref.items() if node in node_states}
+            base_nodes: dict[NodeId, Node] = self.scene.node_manager.get_node_copies(
+                subset={node for node in node_states})
+            port_refs: dict[NodeId, dict[PortId, RefId]] = {node: copy.deepcopy(port_ref_data) for node, port_ref_data
+                                                            in
+                                                            self.scene.node_graph.node_to_port_ref.items() if
+                                                            node in node_states}
             self.scene.undo_stack.push(DeleteCmd(self.scene, node_states, base_nodes, edges, port_refs))
 
-    def identify_selected_subgraph(self) -> tuple[dict[NodeId, NodeState], dict[NodeId, Node], set[EdgeId], dict[NodeId, dict[PortId, RefId]]]:
+    def identify_selected_subgraph(self) -> tuple[
+        dict[NodeId, NodeState], dict[NodeId, Node], set[EdgeId], dict[NodeId, dict[PortId, RefId]]]:
         node_states, edges = self.identify_selected_items()
         base_nodes: dict[NodeId, Node] = self.scene.node_manager.get_node_copies(subset={node for node in node_states})
         # Remove edges which are not connected at both ends to selected nodes
@@ -1768,7 +1782,7 @@ class PipelineEditor(QMainWindow):
             # Deserialize with pickle
             node_states, base_nodes, edges, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
             node_states, base_nodes, edges, port_refs, _ = deep_copy_subgraph(node_states, base_nodes, edges,
-                                                                                    port_refs)
+                                                                              port_refs)
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for node_state in node_states.values():

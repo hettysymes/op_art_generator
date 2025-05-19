@@ -1,6 +1,5 @@
 import sympy as sp
 
-from ui.id_datatypes import input_port
 from ui.nodes.function_datatypes import CubicFun, CustomFun, PiecewiseFun
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode, CombinationNode
@@ -44,14 +43,15 @@ DEF_CUBIC_FUN_INFO = PrivateNodeInfo(
     }
 )
 
+
 class CubicFunNode(UnitNode):
     NAME = "Cubic Function"
     DEFAULT_NODE_INFO = DEF_CUBIC_FUN_INFO
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main':
-            CubicFun(props.get('a_coeff'), props.get('b_coeff'), props.get('c_coeff'),
-                     props.get('d_coeff'))}
+                    CubicFun(props.get('a_coeff'), props.get('b_coeff'), props.get('c_coeff'),
+                             props.get('d_coeff'))}
 
 
 DEF_CUSTOM_FUN_INFO = PrivateNodeInfo(
@@ -72,7 +72,6 @@ DEF_CUSTOM_FUN_INFO = PrivateNodeInfo(
         )
     }
 )
-
 
 
 class CustomFunNode(UnitNode):
@@ -99,12 +98,11 @@ DEF_PIECEWISE_FUN_INFO = PrivateNodeInfo(
             prop_type=PT_List(PT_PointsHolder(), input_multiple=True),
             display_name="Points",
             description="Points defining where the piecewise linear function passes through.",
-            default_value=List(PT_PointsHolder(),[Point(0, 0), Point(0.5, 0.5), Point(1, 1)]),
+            default_value=List(PT_PointsHolder(), [Point(0, 0), Point(0.5, 0.5), Point(1, 1)]),
             input_port_status=PortStatus.FORBIDDEN
         )
     }
 )
-
 
 
 class PiecewiseFunNode(UnitNode):

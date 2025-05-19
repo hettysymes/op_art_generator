@@ -1,14 +1,11 @@
-import copy
 from typing import Optional, cast
-
-from svgwrite.data.full11 import elements
 
 from ui.id_datatypes import PropKey
 from ui.node_graph import RefId
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PT_Element, Enum, PortStatus, String, List, Bool, PropType, PT_Enum
+from ui.nodes.prop_defs import PropDef, PT_List, PT_Element, Enum, PortStatus, List, PropType, PT_Enum
 
 DEF_ITERATOR_INFO = PrivateNodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",
@@ -50,7 +47,6 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
 )
 
 
-
 class IteratorNode(UnitNode):
     NAME = "Iterator"
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
@@ -86,7 +82,8 @@ class IteratorNode(UnitNode):
         prop_type: PropType = element_node.prop_defs[prop_change_key].prop_type
 
         if not values.item_type.is_compatible_with(prop_type):
-            raise NodeInputException(f"Values of type {values.item_type} is not compatible with expected input type {prop_type}.")
+            raise NodeInputException(
+                f"Values of type {values.item_type} is not compatible with expected input type {prop_type}.")
 
         src_port_key: PropKey = ref_querier.port(elem_ref).key
         new_elements = List(PT_Element(), vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)

@@ -12,7 +12,8 @@ from ui.reorderable_table_widget import ReorderableTableWidget
 
 
 class PortRefTableWidget(QWidget):
-    def __init__(self, list_item_type: PropType, ref_querier=None, node_manager: Optional[NodeManager] = None, table_heading=None, entries=None, text_callback=None,
+    def __init__(self, list_item_type: PropType, ref_querier=None, node_manager: Optional[NodeManager] = None,
+                 table_heading=None, entries=None, text_callback=None,
                  context_menu_callback=None, additional_actions=None, item_delegate=None, parent=None):
         super().__init__(parent)
         self.list_item_type = list_item_type

@@ -32,7 +32,6 @@ DEF_COLOUR_FILLER_INFO = PrivateNodeInfo(
 )
 
 
-
 class ColourFillerNode(UnitNode):
     NAME = "Colour Filler"
     DEFAULT_NODE_INFO = DEF_COLOUR_FILLER_INFO
@@ -45,7 +44,8 @@ class ColourFillerNode(UnitNode):
         for i in range(1, len(transformed_shapes)):
             shape1, transform_list1 = transformed_shapes[i - 1]
             shape2, transform_list2 = transformed_shapes[i]
-            points: List[PT_Point] = transform_list1.transform_points(shape1.points) + transform_list2.transform_points(shape2.points).reversed()
+            points: List[PT_Point] = transform_list1.transform_points(shape1.points) + transform_list2.transform_points(
+                shape2.points).reversed()
             fill, fill_opacity = process_rgb(next(colour_it))
             ret_group.add(Polygon(points.items, fill, fill_opacity))
         return ret_group

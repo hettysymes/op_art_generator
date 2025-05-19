@@ -15,6 +15,7 @@ from ui.vis_types import ErrorFig, Visualisable
 type ResolvedProps = dict[PropKey, list[PropValue] | PropValue]
 type ResolvedRefs = dict[PropKey, list[Optional[RefId]] | Optional[RefId]]
 
+
 class RefQuerier:
 
     def __init__(self, uid, node_querier, graph_querier):
@@ -42,17 +43,20 @@ class RefQuerier:
     def uid(self) -> NodeId:
         return self._uid
 
+
 class PrivateNodeInfo:
 
     def __init__(self, description: str, prop_defs: Optional[dict[PropKey, PropDef]] = None):
         self.description = description
         self.prop_defs: dict[PropKey, PropDef] = prop_defs if prop_defs is not None else {}
 
+
 class Node(ABC):
     NAME = ""  # To override
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None):
-        self.internal_props: dict[PropKey, PropValue] = self.default_internal_props() if internal_props is None else internal_props
+        self.internal_props: dict[
+            PropKey, PropValue] = self.default_internal_props() if internal_props is None else internal_props
 
     def default_internal_props(self):
         default_props: dict[PropKey, PropValue] = {}
@@ -62,7 +66,8 @@ class Node(ABC):
                 default_props[key] = prop_def.default_value
         return default_props
 
-    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
+    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[
+        PropKey, PropValue]:
         return self.compute(props, refs, ref_querier)
 
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
@@ -102,6 +107,7 @@ class Node(ABC):
     @abstractmethod
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
         pass
+
 
 class RuntimeNode:
     def __init__(self, uid: NodeId, graph_querier: NodeGraph, node_querier, node: Node, compute_results=None):
@@ -144,13 +150,13 @@ class RuntimeNode:
         for key in self.node.prop_defs:
             result = self.get_property(key)
             if result is not None:
-                prop_vals[key], refs[key] = result # Set
+                prop_vals[key], refs[key] = result  # Set
         return prop_vals, refs
 
     def get_property(self, prop_key: PropKey) -> (
-        None                                                    # No return if no property could be resolved
-        | tuple[List, list[Optional[RefId]]]                    # List if input port type inputs from multiple nodes
-        | tuple[PropValue, Optional[RefId]]                     # Single value otherwise
+            None  # No return if no property could be resolved
+            | tuple[List, list[Optional[RefId]]]  # List if input port type inputs from multiple nodes
+            | tuple[PropValue, Optional[RefId]]  # Single value otherwise
     ):
         prop_type: PropType = self.node.prop_defs[prop_key].prop_type
         incoming_edges: set[EdgeId] = self.graph_querier.incoming_edges(input_port(self.uid, prop_key))
@@ -172,7 +178,7 @@ class RuntimeNode:
             new_prop_value: List = List(prop_value.item_type)
             # Update existing references
             updated_refs: set[RefId] = set()
-            ret_refs: list[Optional[RefId]] = [] # References to return
+            ret_refs: list[Optional[RefId]] = []  # References to return
             i = 0
             while i < len(prop_value):
                 curr_prop = prop_value[i]
@@ -209,7 +215,8 @@ class RuntimeNode:
                         class_entry = ColourRef
                     else:
                         class_entry = PortRefTableEntry
-                    new_prop_value.append(class_entry(ref=ref, data=compute_result, group_idx=(i+1, group_len), deletable=False))
+                    new_prop_value.append(
+                        class_entry(ref=ref, data=compute_result, group_idx=(i + 1, group_len), deletable=False))
                 ret_refs.extend([ref] * group_len)
             assert len(new_prop_value) == len(ret_refs)
             # Set this as new property

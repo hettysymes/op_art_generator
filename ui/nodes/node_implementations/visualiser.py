@@ -5,12 +5,13 @@ from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid, List, PT_Point, \
-    Point, PT_Warp, PT_Number, PT_ColourHolder
+    Point, PT_Warp, PT_Number
 from ui.nodes.shape_datatypes import Group, Element, Polygon
 from ui.nodes.transforms import Scale, Translate
 from ui.nodes.utils import process_rgb
 from ui.nodes.warp_datatypes import sample_fun, PosWarp, RelWarp
 from ui.vis_types import MatplotlibFig
+
 
 def add_background(element: Element, colour: Colour):
     group = Group(debug_info="Background")
@@ -18,6 +19,7 @@ def add_background(element: Element, colour: Colour):
     if element:
         group.add(element)
     return group
+
 
 def get_grid(width=1, height=1, x_warp=None, y_warp=None) -> Grid:
     if x_warp is None:
@@ -62,7 +64,8 @@ def get_polygon(fill: PropValue, points: List[PT_Point], stroke, stroke_width):
 
 
 def get_rectangle(fill: Gradient | Colour, stroke='none', stroke_width=0):
-    return get_polygon(fill, List(PT_Point(), [Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)]), stroke, stroke_width)
+    return get_polygon(fill, List(PT_Point(), [Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)]), stroke,
+                       stroke_width)
 
 
 def visualise_in_1d_grid(elements, is_vertical=True):
@@ -87,7 +90,8 @@ def visualise_by_type(value, value_type):
             else:
                 # Draw horizontal grid
                 grid = get_grid(width=len(value))
-            elements = List(PT_Element(), [visualise_by_type(value_item, value_type.base_item_type) for value_item in value])
+            elements = List(PT_Element(),
+                            [visualise_by_type(value_item, value_type.base_item_type) for value_item in value])
             if not elements:
                 return None
             return repeat_shapes(grid, elements)

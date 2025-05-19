@@ -1,9 +1,8 @@
 from ui.id_datatypes import PropKey
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.node_implementations.visualiser import repeat_shapes
-from ui.nodes.nodes import UnitNode, SelectableNode
-from ui.nodes.prop_defs import PropDef, PT_Grid, PortStatus, PT_Element, PT_List, Grid, List, PT_TableEntry, \
-    PT_ElementHolder
+from ui.nodes.nodes import SelectableNode
+from ui.nodes.prop_defs import PropDef, PT_Grid, PortStatus, PT_Element, PT_List, Grid, List, PT_ElementHolder
 from ui.nodes.shape_datatypes import Group
 
 # from ui.nodes.nodes import SelectableNode
@@ -35,8 +34,6 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
         ),
     }
 )
-
-
 
 
 class ShapeRepeaterNode(SelectableNode):

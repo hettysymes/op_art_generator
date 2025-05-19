@@ -1,13 +1,12 @@
-from typing import Optional, cast
+from typing import cast
 
-from ui.node_graph import RefId
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.node_implementations.visualiser import get_rectangle, get_polygon
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int, PT_Int, \
-    List, PT_Polyline, PT_List, PT_Element, PT_PointsHolder, LineRef, PointsHolder
+    List, PT_List, PT_PointsHolder, LineRef, PointsHolder
 from ui.nodes.shape_datatypes import Ellipse, SineWave, Polyline
 from ui.nodes.utils import process_rgb
 
@@ -76,7 +75,6 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
         )
     }
 )
-
 
 
 class SineWaveNode(UnitNode):
@@ -186,8 +184,8 @@ class StraightLineNode(UnitNode):
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main':
-            StraightLineNode.helper(props.get('start_coord'), props.get('stop_coord'), 'black',
-                                    props.get('stroke_width'))}
+                    StraightLineNode.helper(props.get('start_coord'), props.get('stop_coord'), 'black',
+                                            props.get('stroke_width'))}
 
 
 DEF_POLYGON_INFO = PrivateNodeInfo(
@@ -221,7 +219,6 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
 )
 
 
-
 class PolygonNode(UnitNode):
     NAME = "Polygon"
     DEFAULT_NODE_INFO = DEF_POLYGON_INFO
@@ -236,7 +233,7 @@ class PolygonNode(UnitNode):
                 points.extend(points_holder.points)
         # Return polygon
         return {'_main': get_polygon(props.get('fill'), points, 'none',
-                                            props.get('stroke_width'))}
+                                     props.get('stroke_width'))}
 
 
 DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
@@ -327,9 +324,8 @@ class EllipseNode(UnitNode):
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main': EllipseNode.helper(props.get('fill'), props.get('centre'),
-                                                   (props.get('rx'), props.get('ry')),
-                                                   'none', props.get('stroke_width'))}
-
+                                            (props.get('rx'), props.get('ry')),
+                                            'none', props.get('stroke_width'))}
 
 
 DEF_CIRCLE_INFO = PrivateNodeInfo(
@@ -378,6 +374,7 @@ def ellipse_helper(fill, centre, radius, stroke='none', stroke_width=1.0):
     return Ellipse(centre, radius, fill,
                    fill_opacity, stroke, stroke_width)
 
+
 class CircleNode(UnitNode):
     NAME = "Circle"
     DEFAULT_NODE_INFO = DEF_CIRCLE_INFO
@@ -388,10 +385,10 @@ class CircleNode(UnitNode):
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main': CircleNode.helper(props.get('fill'),
-                                              props.get('centre'),
-                                              props.get('r'),
-                                              'none',
-                                              props.get('stroke_width'))}
+                                           props.get('centre'),
+                                           props.get('r'),
+                                           'none',
+                                           props.get('stroke_width'))}
 
 
 class ShapeNode(CombinationNode):

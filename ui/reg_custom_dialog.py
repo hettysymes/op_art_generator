@@ -140,9 +140,9 @@ class RegCustomDialog(QDialog):
 
     def get_inputs(self) -> tuple[str, str, list[PortId], list[PortId], NodeId]:
         return (
-            self.name_input.text().strip(),                  # Name
-            self.description_input.toPlainText(),            # Description
-            self.in_port_selector.get_selected_ports(),      # Input ports
-            self.out_port_selector.get_selected_ports(),     # Output ports
-            self.vis_selector.currentData()                  # Visualisation node
+            self.name_input.text().strip(),  # Name
+            self.description_input.toPlainText(),  # Description
+            self.in_port_selector.get_selected_ports(),  # Input ports
+            self.out_port_selector.get_selected_ports(),  # Output ports
+            self.vis_selector.currentData()  # Visualisation node
         )

@@ -5,7 +5,7 @@ from typing import Optional
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, PropValue, Point, List, \
+from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, Point, List, \
     PT_Point, PointsHolder, ElementHolder
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 from ui.vis_types import Visualisable
@@ -47,6 +47,7 @@ class Element(ElementHolder, Visualisable, ABC):
 
     def save_to_svg(self, filepath, width, height):
         ElementDrawer(filepath, width, height, self).save()
+
 
 class Group(Element, PointsHolder):
 
@@ -127,7 +128,6 @@ class Group(Element, PointsHolder):
         if transform_list:
             return transform_list.transform_points(shape.points)
         return shape.points
-
 
     def __repr__(self):
         debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""

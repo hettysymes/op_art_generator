@@ -38,7 +38,6 @@ DEF_CANVAS_NODE_INFO = PrivateNodeInfo(
 )
 
 
-
 class CanvasNode(UnitNode):
     NAME = "Canvas"
     DEFAULT_NODE_INFO = DEF_CANVAS_NODE_INFO

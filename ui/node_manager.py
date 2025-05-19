@@ -2,12 +2,12 @@ import copy
 from dataclasses import dataclass
 from typing import Optional
 
-from ui.id_datatypes import NodeId, PortId, PropKey, input_port, output_port, gen_node_id
+from ui.id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from ui.node_graph import NodeGraph
 from ui.nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier
 from ui.nodes.nodes import CombinationNode, SelectableNode
 from ui.nodes.prop_defs import PropValue, PropType, List, PT_List, PropDef, PortStatus
-from ui.nodes.shape_datatypes import Element, Group
+from ui.nodes.shape_datatypes import Group
 from ui.vis_types import Visualisable
 
 
@@ -34,6 +34,7 @@ class NodeInfo:
     def requires_property_box(self) -> bool:
         return any(prop_def.display_in_props for prop_def in self.prop_defs.values())
 
+
 class NodeManager:
 
     def __init__(self):
@@ -44,7 +45,8 @@ class NodeManager:
         return self.node_map[node]
 
     def add_node(self, node: NodeId, base_node: Node, compute_results=None):
-        self.node_map[node] = RuntimeNode(uid=node, graph_querier=self.node_graph, node_querier=self, node=base_node, compute_results=compute_results)
+        self.node_map[node] = RuntimeNode(uid=node, graph_querier=self.node_graph, node_querier=self, node=base_node,
+                                          compute_results=compute_results)
 
     def get_compute_inputs(self, node: NodeId) -> tuple[ResolvedProps, ResolvedRefs, RefQuerier]:
         return self._runtime_node(node).get_compute_inputs()
@@ -118,7 +120,8 @@ class NodeManager:
 
     def update_nodes(self, base_nodes: dict[NodeId, Node]) -> None:
         for node, base_node in base_nodes.items():
-            self.node_map[node] = RuntimeNode(uid=node, graph_querier=self.node_graph, node_querier=self, node=base_node)
+            self.node_map[node] = RuntimeNode(uid=node, graph_querier=self.node_graph, node_querier=self,
+                                              node=base_node)
 
     def randomise(self, node: NodeId, seed=None) -> None:
         random_node: Node = self._runtime_node(node).node
@@ -132,5 +135,3 @@ class NodeManager:
         runtime_node: RuntimeNode = self._runtime_node(node)
         assert isinstance(runtime_node.node, SelectableNode)
         return runtime_node.extract_element(parent_group, element_id)
-
-

@@ -18,8 +18,9 @@ from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.iterator import IteratorNode
 from ui.nodes.node_implementations.overlay import OverlayNode
+from ui.nodes.node_implementations.random_list_selector import RandomListSelectorNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
-from ui.nodes.node_implementations.shapes import CircleNode, EllipseNode, ShapeNode
+from ui.nodes.node_implementations.shapes import ShapeNode
 from ui.nodes.node_implementations.warp import WarpNode
 
 
@@ -60,7 +61,8 @@ node_settings = [(GridNode, NodeSettings()),
                  (ColourFillerNode, NodeSettings()),
                  (ColourListNode, NodeSettings()),
                  (GradientNode, NodeSettings()),
-                 (OverlayNode, NodeSettings())]
+                 (OverlayNode, NodeSettings()),
+                 (RandomListSelectorNode, NodeSettings())]
 
 
 def node_classes():
