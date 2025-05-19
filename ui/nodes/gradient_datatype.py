@@ -1,9 +1,11 @@
 import uuid
 
+from ui.nodes.prop_defs import PropValue, PropType, PT_Gradient
 from ui.nodes.utils import process_rgb
 
 
-class Gradient:
+class Gradient(PropValue):
+
     def __init__(self, start_col, stop_col):
         super().__init__()
         self.start_col = start_col
@@ -18,3 +20,7 @@ class Gradient:
         gradient.add_stop_color(offset=1, opacity=opacity2, color=fill2)  # End with white
         dwg.defs.add(gradient)
         return f'url(#{grad_id})'
+
+    @property
+    def type(self) -> PropType:
+        return PT_Gradient()
