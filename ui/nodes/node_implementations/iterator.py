@@ -67,9 +67,10 @@ class IteratorNode(UnitNode):
         display_options = []
         prop_types = {}
         for prop_key, prop_def in node_info.prop_defs.items():
-            options.append(prop_key)
-            display_options.append(prop_def.display_name)
-            prop_types[prop_key] = prop_def.prop_type
+            if cast(PropDef, prop_def).display_in_props:
+                options.append(prop_key)
+                display_options.append(prop_def.display_name)
+                prop_types[prop_key] = prop_def.prop_type
         enum.set_options(options, display_options)
         return True
 

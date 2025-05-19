@@ -134,6 +134,19 @@ class PT_Number(PT_Scalar):
         self.min_value = min_value if min_value else -999999
         self.max_value = max_value if max_value else 999999
 
+    def is_compatible_with(self, dest_type):
+        if isinstance(dest_type, PT_List):
+            # Scalar-to-list: inner types must be compatible
+            return self.is_compatible_with(dest_type.base_item_type)
+        elif isinstance(dest_type, PT_TableEntry):
+            return self.is_compatible_with(dest_type.data_type)
+        if isinstance(self, type(dest_type)):
+            if isinstance(dest_type, PT_Number):
+                # Additionally check this number has a min-max range within the dest type min-max range
+                return dest_type.min_value <= self.min_value and dest_type.max_value >= self.max_value
+            return True
+        return False
+
 
 class PT_Float(PT_Number):
     def __init__(self, min_value=None, max_value=None, decimals=3):
@@ -200,38 +213,39 @@ class List(Generic[T], PropValue):
         else:
             raise TypeError(f"Invalid item_type: {type(self.item_type)}")
 
+    @staticmethod
+    def build_nested_list(items: list[PropValue], base_item_type: PT_ListItem, depth: int) -> "List":
+        nested = items
+        for _ in range(depth):
+            nested = [List(item_type=base_item_type, items=nested)]
+            base_item_type = nested[0].type  # Promote type one level up
+        return nested[0]
+
     def extract(self, extract_type: PropType) -> PropValue:
         """
-        Normalize `self` to match the shape of `extract_type`.
-        Flatten then re-nest to match the scalar type and depth.
+        Normalize shape to match `extract_type` (depth),
+        but retain base item type from self.
         """
-        # Determine target depth (0 = scalar)
+        # Determine target depth
         target_depth = extract_type.depth if isinstance(extract_type, PT_List) else 0
 
-        # Step 1: Fully flatten the value
+        # Fully flatten this list
         flat: List = flatten(self)
 
-        # Step 2: Validate base item type compatibility
-        target_base_item_type = (
-            extract_type.base_item_type
-            if isinstance(extract_type, PT_List)
-            else extract_type
-        )
+        # Derive base item type from self (more specific)
+        self_type = self.type
+        assert isinstance(self_type, PT_List)
+        base_item_type = self_type.base_item_type
 
-        # Step 3: Return scalar if depth is 0
+        # If scalar expected, return single scalar value
         if target_depth == 0:
-            assert len(flat.items) == 1, f"Expected single base item value, got {len(flat.items)}"
+            assert len(flat.items) == 1, f"Expected single scalar, got {len(flat.items)}"
             scalar = flat.items[0]
             assert isinstance(scalar.type, PT_Scalar)
             return scalar
 
-        # Step 4: Re-nest to match target depth
-        nested = flat
-        for _ in range(target_depth - 1):
-            nested = List(item_type=nested.type, items=[nested])
-
-        # Final outer List uses scalar_type and depth to compute correct item_type
-        return List(item_type=target_base_item_type, items=nested.items)
+        # Re-nest flat items to match target depth
+        return List.build_nested_list(flat.items, base_item_type, target_depth)
 
     def append(self, item: PropValue) -> None:
         if not item.type.is_compatible_with(self.item_type):
