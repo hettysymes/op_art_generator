@@ -1,4 +1,5 @@
 import copy
+from typing import Optional
 
 from ui.id_datatypes import PropKey
 from ui.node_graph import RefId
@@ -100,7 +101,8 @@ class IteratorNode(UnitNode):
 
         new_elements = List(PT_Element(), vertical_layout=props.get('vertical_layout'))
         for value in values:
-            element_node.internal_props[prop_change_key] = value
-            elem = element_node.final_compute(*ref_querier.get_compute_inputs(elem_ref))[src_port_key]
+            in_props, in_refs, in_querier = ref_querier.get_compute_inputs(elem_ref)
+            in_props[prop_change_key] = value
+            elem = element_node.final_compute(in_props, in_refs, in_querier)[src_port_key]
             new_elements.append(elem)
         return {'_main': new_elements}
