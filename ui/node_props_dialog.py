@@ -331,6 +331,7 @@ class NodePropertiesDialog(QDialog):
                     new_entry_group = copy.deepcopy(line_ref_entry_group)
                     for entry in new_entry_group:
                         entry.toggle_reverse()
+                    new_entry_group.reverse()
                     table.set_item(new_entry_group, row)
 
                 def add_action(table):
