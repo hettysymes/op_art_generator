@@ -302,19 +302,20 @@ class NodePropertiesDialog(QDialog):
                 widget = port_ref_table
 
             elif isinstance(prop_type.base_item_type, PT_PointsHolder):
-                def text_callback(ref_port: Optional[PortId], node_manager: Optional[NodeManager], table_entry):
-                    if isinstance(table_entry, LineRef):
+                def text_callback(ref_port: Optional[PortId], node_manager: Optional[NodeManager], entry_group):
+                    first_entry = entry_group[0]
+                    if isinstance(first_entry, LineRef):
                         node_info: NodeInfo = node_manager.node_info(ref_port.node)
-                        start_x, start_y = table_entry.points[0]
-                        stop_x, stop_y = table_entry.points[-1]
-                        arrow = '←' if table_entry.is_reversed else '→'
+                        start_x, start_y = first_entry.points[0]
+                        stop_x, stop_y = entry_group[-1].points[-1]
+                        arrow = '←' if first_entry.is_reversed else '→'
                         return f"{node_info.base_name} (id: {ref_port.node})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
-                    assert isinstance(table_entry, Point)
-                    x, y = table_entry
+                    assert isinstance(first_entry, Point)
+                    x, y = first_entry
                     return f"({x:.2f}, {y:.2f})"
 
-                def custom_context_menu(menu, table_entry):
-                    if isinstance(table_entry, LineRef):
+                def custom_context_menu(menu, entry_group):
+                    if isinstance(entry_group[0], LineRef):
                         menu.actions_map = {'reverse': menu.addAction("Reverse")}
                     else:
                         # Ordinary point
@@ -324,12 +325,13 @@ class NodePropertiesDialog(QDialog):
                     point_dialog = PointDialog(*point)
                     if point_dialog.exec_() == QDialog.Accepted:
                         x, y = point_dialog.get_value()
-                        table.set_item(Point(x, y), row)
+                        table.set_item([Point(x, y)], row)
 
-                def reverse_action(table, line_ref_entry, row):
-                    new_line_ref_entry = copy.deepcopy(line_ref_entry)
-                    new_line_ref_entry.toggle_reverse()
-                    table.set_item(new_line_ref_entry, row)
+                def reverse_action(table, line_ref_entry_group, row):
+                    new_entry_group = copy.deepcopy(line_ref_entry_group)
+                    for entry in new_entry_group:
+                        entry.toggle_reverse()
+                    table.set_item(new_entry_group, row)
 
                 def add_action(table):
                     point_dialog = PointDialog()
@@ -337,7 +339,7 @@ class NodePropertiesDialog(QDialog):
                         x, y = point_dialog.get_value()
                         row = table.row_count()
                         table.set_row_count(row + 1)
-                        table.set_item(Point(x, y), row)
+                        table.set_item([Point(x, y)], row)
 
                 port_ref_table = PortRefTableWidget(
                     list_item_type=PT_PointsHolder(),
