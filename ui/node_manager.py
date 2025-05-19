@@ -43,11 +43,14 @@ class NodeManager:
     def _runtime_node(self, node: NodeId) -> RuntimeNode:
         return self.node_map[node]
 
-    def add_node(self, node: NodeId, base_node: Node):
-        self.node_map[node] = RuntimeNode(uid=node, graph_querier=self.node_graph, node_querier=self, node=base_node)
+    def add_node(self, node: NodeId, base_node: Node, compute_results=None):
+        self.node_map[node] = RuntimeNode(uid=node, graph_querier=self.node_graph, node_querier=self, node=base_node, compute_results=compute_results)
 
     def get_compute_inputs(self, node: NodeId) -> tuple[ResolvedProps, ResolvedRefs, RefQuerier]:
         return self._runtime_node(node).get_compute_inputs()
+
+    def get_compute_results(self, node: NodeId) -> dict[PropKey, PropValue]:
+        return self._runtime_node(node).compute_results
 
     def remove_node(self, node: NodeId):
         self.node_map.pop(node, None)

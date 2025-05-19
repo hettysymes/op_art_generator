@@ -32,6 +32,9 @@ class RefQuerier:
     def get_compute_inputs(self, ref: RefId):
         return self._node_querier.get_compute_inputs(self.port(ref).node)
 
+    def get_compute_results(self, ref: RefId):
+        return self._node_querier.get_compute_results(self.port(ref).node)
+
     def port(self, ref: RefId) -> PortId:
         return self._graph_querier.query_ref(self._uid, ref)
 
@@ -101,11 +104,11 @@ class Node(ABC):
         pass
 
 class RuntimeNode:
-    def __init__(self, uid: NodeId, graph_querier: NodeGraph, node_querier, node: Node):
+    def __init__(self, uid: NodeId, graph_querier: NodeGraph, node_querier, node: Node, compute_results=None):
         self.uid = uid
         self.graph_querier = graph_querier
         self.node_querier = node_querier
-        self.compute_results: dict[PropKey, PropValue] = {}
+        self.compute_results: dict[PropKey, PropValue] = {} if compute_results is None else compute_results
         self.node: Node = node
 
     def visualise(self) -> Visualisable:
@@ -229,7 +232,11 @@ class RuntimeNode:
         return results, refs
 
     def get_compute_result(self, key: PropKey) -> Optional[PropValue]:
+        print(f"Getting compute result for {key}")
+        print(self.compute_results)
         if key in self.compute_results:
+            print(f"Returning {self.compute_results[key]}")
             return self.compute_results[key]
         # Forwarding an internal property
+        print(f"Returning {self.node.internal_props.get(key)}")
         return self.node.internal_props.get(key)

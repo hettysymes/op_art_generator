@@ -122,12 +122,13 @@ class CustomNode(Node):
     DEFAULT_NODE_INFO = None
 
     @staticmethod
-    def to_custom_key(node_id, port_key):
-        return f"{node_id}_{port_key}"
+    def to_custom_key(node_id, port_key) -> PropKey:
+        return f"{node_id.value}_{port_key}"
 
     @staticmethod
-    def from_custom_key(custom_key):
-        return tuple(custom_key.split("_", 1))  # Returns node_id, port_key
+    def from_custom_key(custom_key) -> tuple[NodeId, PropKey]:
+        node_str, key = custom_key.split("_", 1)
+        return NodeId(node_str), key  # Returns node id, port_key
 
     @staticmethod
     def _get_new_prop_defs(prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]], selected_ports: dict[NodeId, list[PortId]]) -> dict[PropKey, PropDef]:
@@ -217,7 +218,7 @@ class CustomNode(Node):
         # Add source nodes and edges to internal graph and node manager
         for src_node, ref in source_nodes.items():
             self.subgraph.add_node(src_node)
-            self.sub_node_manager.add_node(src_node, ref_querier.node_copy(ref))
+            self.sub_node_manager.add_node(src_node, ref_querier.node_copy(ref), compute_results=ref_querier.get_compute_results(ref))
         for edge in edges_to_have:
             # Replace dest port id with original
             node, key = CustomNode.from_custom_key(edge.dst_key)
