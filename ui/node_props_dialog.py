@@ -376,8 +376,9 @@ class NodePropertiesDialog(QDialog):
                         super().initStyleOption(option, index)
                         option.displayAlignment = Qt.AlignCenter
 
-                def custom_context_menu(menu, _):
-                    menu.actions_map = {'edit': menu.addAction("Edit")}
+                def custom_context_menu(menu, entry_group):
+                    if isinstance(entry_group[0], Colour):
+                        menu.actions_map = {'edit': menu.addAction("Edit")}
 
                 def edit_action(port_ref_table, _, row):
                     colour_dialog = QColorDialog()

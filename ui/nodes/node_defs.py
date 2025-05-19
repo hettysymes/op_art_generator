@@ -168,16 +168,18 @@ class RuntimeNode:
             i = 0
             while i < len(prop_value):
                 if isinstance(prop_value[i], PortRefTableEntry):
+                    # Process whole group
+                    group_len: int = cast(PortRefTableEntry, prop_value[i]).group_idx[1]
                     if prop_value[i].ref in ref_result_map:
                         updated_refs.add(prop_value[i].ref)
-                        group_len: int = cast(PortRefTableEntry, prop_value[i]).group_idx[1]
                         for res_idx in range(group_len):
                             prop_value[i].data = ref_result_map[prop_value[i].ref][res_idx]
                             i += 1
-                        i -= 1
                     else:
-                        deleted_indices.append(i)
-                i += 1
+                        deleted_indices.extend(range(i, i + group_len))
+                        i += group_len
+                else:
+                    i += 1
             # Remove deleted existing refs
             deleted_indices.reverse()
             for i in deleted_indices:

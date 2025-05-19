@@ -58,13 +58,14 @@ class PortRefTableWidget(QWidget):
         new_entries = []
         i = 0
         while i < len(entries):
-            if isinstance(entries[i], PortRefTableEntry):
-                group_len: int = entries[i].group_idx[1]
-                new_entries.append([entries[i+j] for j in range(group_len)])
-                i += group_len-1
+            entry = entries[i]
+            if isinstance(entry, PortRefTableEntry):
+                group_len: int = entry.group_idx[1]
+                new_entries.append(entries[i:i + group_len])
+                i += group_len
             else:
-                new_entries.append([entries[i]])
-            i += 1
+                new_entries.append([entry])
+                i += 1
 
         self.table.setRowCount(len(new_entries))
         for row, entry in enumerate(new_entries):
