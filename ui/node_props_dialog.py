@@ -12,9 +12,9 @@ from ui.colour_prop_widget import ColorPropertyWidget
 from ui.id_datatypes import PortId, PropKey, input_port, output_port, NodeId
 from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
-from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, \
+from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, Enum, \
     LineRef, PT_Fill, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
-    PT_String, PT_Colour, List, Point, PT_List, PT_PointsHolder, PT_Element, PT_TableEntry
+    PT_String, PT_Colour, List, Point, PT_List, PT_PointsHolder, PT_Element, PT_TableEntry, PT_Enum
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -279,11 +279,12 @@ class NodePropertiesDialog(QDialog):
             widget.get_value = get_coord_value
 
         elif isinstance(prop_type, PT_Enum):
+            enum: Enum = current_value
             widget = QComboBox()
-            for display, data in prop_type.display_data_options:
+            for display, data in enum.display_data_options:
                 widget.addItem(display, userData=data)
             if current_value is not None:
-                index = prop_type.options.index(current_value) if current_value in prop_type.options else 0
+                index = enum.options.index(enum.selected_option)
                 widget.setCurrentIndex(index)
 
 
@@ -419,7 +420,10 @@ class NodePropertiesDialog(QDialog):
             elif isinstance(widget, QCheckBox):
                 value = widget.isChecked()
             elif isinstance(widget, QComboBox):
-                value = widget.itemData(widget.currentIndex())
+                display_options = [widget.itemText(i) for i in range(widget.count())]
+                options = [widget.itemData(i) for i in range(widget.count())]
+                selected_option = widget.itemData(widget.currentIndex())
+                value = Enum(options=options, display_options=display_options, selected_option=selected_option)
             elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
                 value = widget.get_value()
             else:  # QLineEdit

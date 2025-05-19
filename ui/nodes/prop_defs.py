@@ -149,37 +149,9 @@ class PT_Bool(PT_Scalar):
     pass
 
 
-class PT_PropEnum(PT_Scalar):
-    pass
-
-
-class PT_SelectorEnum(PT_Scalar):
-    pass
-
-
 class PT_Enum(PT_Scalar):
-    def __init__(self, options = None, display_options = None):
-        self._options = None
-        self._display_options = None
-        self.set_options(options, display_options)
+    pass
 
-    def set_options(self, options=None, display_options=None):
-        if options:
-            self._options = options
-            if display_options:
-                assert len(display_options) == len(options)
-            self._display_options = display_options if display_options else options
-        else:
-            self._options = [None]
-            self._display_options = ["[none]"]
-
-    @property
-    def options(self) -> list[Optional[PropKey]]:
-        return self._options
-
-    @property
-    def display_data_options(self) -> list[tuple[str, Optional[PropKey]]]:
-        return list(zip(self._display_options, self._options))
 
 class PT_String(PT_Scalar):
     pass
@@ -259,7 +231,7 @@ class List(Generic[T], PropValue):
             nested = List(item_type=nested.type, items=[nested])
 
         # Final outer List uses scalar_type and depth to compute correct item_type
-        return List(item_type=nested.type, items=nested.items)
+        return List(item_type=target_base_item_type, items=nested.items)
 
     def append(self, item: PropValue) -> None:
         if not item.type.is_compatible_with(self.item_type):
@@ -373,6 +345,42 @@ class Bool(PropValue):
 
     def __repr__(self) -> str:
         return f'Bool({self.value})'
+
+class Enum(PropValue):
+
+    def __init__(self, options = None, display_options = None, selected_option = None):
+        self._selected_option = selected_option
+        self._options = None
+        self._display_options = None
+        self.set_options(options, display_options)
+
+    def set_options(self, options=None, display_options=None):
+        if options:
+            self._options = options
+            if display_options:
+                assert len(display_options) == len(options)
+            self._display_options = display_options if display_options else options
+        else:
+            self._options = [None]
+            self._display_options = ["[none]"]
+        if self._selected_option not in self._options:
+            self._selected_option = self._options[0]
+
+    @property
+    def selected_option(self):
+        return self._selected_option
+
+    @property
+    def options(self):
+        return self._options
+
+    @property
+    def display_data_options(self):
+        return list(zip(self._display_options, self._options))
+
+    @property
+    def type(self) -> PropType:
+        return PT_Enum()
 
 
 

@@ -1,11 +1,14 @@
 import copy
-from typing import Optional
+from typing import Optional, cast
+
+from svgwrite.data.full11 import elements
 
 from ui.id_datatypes import PropKey
 from ui.node_graph import RefId
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node
+from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PT_Element, PT_Enum, PortStatus, String, List, Bool
+from ui.nodes.prop_defs import PropDef, PT_List, PT_Element, Enum, PortStatus, String, List, Bool, PropType, PT_Enum
 
 DEF_ITERATOR_INFO = PrivateNodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",
@@ -21,19 +24,19 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
             display_name="Shape",
             input_port_status=PortStatus.COMPULSORY
         ),
-        'prop_to_change': PropDef(
+        'prop_enum': PropDef(
             prop_type=PT_Enum(),
             display_name="Property to change",
             description="Property of the input shape of which to modify using the value list.",
-            default_value=None,
+            default_value=Enum(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN
         ),
-        'vertical_layout': PropDef(
-            prop_type=PT_Enum([True, False], ["Vertical", "Horizontal"]),
+        'layout_enum': PropDef(
+            prop_type=PT_Enum(),
             display_name="Visualisation layout",
             description="Iterations can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
-            default_value=Bool(True),
+            default_value=Enum([True, False], ["Vertical", "Horizontal"]),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN
         ),
@@ -53,11 +56,12 @@ class IteratorNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
 
     def _update_prop_change_enum(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> bool:
-        enum_type: PT_Enum = self.prop_defs['prop_to_change'].prop_type
-        elem_input = props.get('element')
+        enum: Enum = props.get('prop_enum')
+        elem_input: Optional[PT_Element] = props.get('element')
         if elem_input is None:
-            enum_type.set_options()
+            enum.set_options()
             return False
+        # Update enum
         node_info = ref_querier.node_info(refs.get('element'))
         options = []
         display_options = []
@@ -66,40 +70,25 @@ class IteratorNode(UnitNode):
             options.append(prop_key)
             display_options.append(prop_def.display_name)
             prop_types[prop_key] = prop_def.prop_type
-        enum_type.set_options(options, display_options)
-        # Update property to change if it is no longer an option
-        if props.get('prop_to_change') not in enum_type.options:
-            self.internal_props['prop_to_change'] = String(enum_type.options[0])
+        enum.set_options(options, display_options)
         return True
-
-    # def _validate_values(self, prop_type):
-    #     values_input = self._prop_val('value_list', get_refs=True)
-    #     if not values_input:
-    #         return None
-    #     ref_id, values = values_input
-    #     port_type = self._port_ref('value_list', ref_id).port_def.port_type
-    #     assert isinstance(port_type, PT_List)
-    #     value_type = port_type.item_type
-    #     # Check compatibility between value and property types
-    #     assert isinstance(value_type, PT_Scalar)
-    #     assert isinstance(prop_type, PT_Scalar)
-    #     return values if value_type.is_compatible_with(prop_type) else None
 
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier):
         if not self._update_prop_change_enum(props, refs, ref_querier):
             return {}
 
-        # values = self._validate_values(prop_change_type)
-        # if values is None:
-        #     print("Values not compatible")
-        #     return
-        prop_change_key: PropKey = props.get('prop_to_change')
-        elem_ref: RefId = refs.get('element')
-        src_port_key: PropKey = ref_querier.port(elem_ref).key
-        element_node: Node = ref_querier.node_copy(elem_ref)
+        prop_change_key: PropKey = cast(Enum, props.get('prop_enum')).selected_option
+        assert prop_change_key is not None
         values: List = props.get('value_list')
+        elem_ref: RefId = refs.get('element')
+        element_node: Node = ref_querier.node_copy(elem_ref)
+        prop_type: PropType = element_node.prop_defs[prop_change_key].prop_type
 
-        new_elements = List(PT_Element(), vertical_layout=props.get('vertical_layout'))
+        if not values.item_type.is_compatible_with(prop_type):
+            raise NodeInputException(f"Values of type {values.item_type} is not compatible with expected input type {prop_type}.")
+
+        src_port_key: PropKey = ref_querier.port(elem_ref).key
+        new_elements = List(PT_Element(), vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)
         for value in values:
             in_props, in_refs, in_querier = ref_querier.get_compute_inputs(elem_ref)
             in_props[prop_change_key] = value
