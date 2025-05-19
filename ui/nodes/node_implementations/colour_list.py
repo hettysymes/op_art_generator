@@ -4,11 +4,7 @@
 # DEF_COLOUR_LIST_INFO = PrivateNodeInfo(
 #     description="Define a list of colours. This can be provided as input to an Iterator or a Colour Filler.",
 #     prop_defs={
-#         'import_colours': PropDef(
-#             prop_type=PT_List(PT_Colour()),
-#             display_name="Import Colours"
-#         ),
-#         'colour_order': PropDef(
+#         'colours': PropDef(
 #             prop_type=PT_ColourRefTable('import_colours'),
 #             display_name="Colours",
 #             description="Colours to populate the colour list.",

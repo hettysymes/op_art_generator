@@ -9,6 +9,8 @@
 # from ui.nodes.node_implementations.function_sampler import FunSamplerNode
 # from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.canvas import CanvasNode
+from ui.nodes.node_implementations.colour import ColourNode
+from ui.nodes.node_implementations.colour_filler import ColourFillerNode
 from ui.nodes.node_implementations.function import FunctionNode
 from ui.nodes.node_implementations.function_sampler import FunSamplerNode
 from ui.nodes.node_implementations.grid import GridNode
@@ -63,7 +65,9 @@ node_settings = [(GridNode, NodeSettings()),
                  (FunctionNode, NodeSettings()),
                  (WarpNode, NodeSettings()),
                  (FunSamplerNode, NodeSettings()),
-                 (IteratorNode, NodeSettings())]
+                 (IteratorNode, NodeSettings()),
+                 (ColourNode, NodeSettings()),
+                 (ColourFillerNode, NodeSettings())]
 
 
 def node_classes():

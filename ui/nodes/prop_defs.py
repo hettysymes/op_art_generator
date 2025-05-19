@@ -119,6 +119,9 @@ class PT_Ellipse(PT_Shape):
 
 # Fill
 
+class PT_ColourHolder(PT_Scalar):
+    pass
+
 class PT_Fill(PT_Scalar):
     pass
 
@@ -127,7 +130,7 @@ class PT_Gradient(PT_Fill):
     pass
 
 
-class PT_Colour(PT_Fill):
+class PT_Colour(PT_Fill, PT_ColourHolder):
     pass
 
 # Other
@@ -291,21 +294,6 @@ def flatten(x: PropValue) -> List:
     else:
         assert isinstance(x.type, PT_Scalar)
         return List(item_type=x.type, items=[x])
-
-
-class Colour(tuple, PropValue):
-    def __new__(cls, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
-        return super().__new__(cls, (red, green, blue, alpha))
-
-    def __init__(self, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
-        pass  # No need to store attributes separately; values are in the tuple
-
-    def __reduce__(self):
-        return self.__class__, (self[0], self[1], self[2], self[3])
-
-    @property
-    def type(self) -> PropType:
-        return PT_Colour()
 
 class Int(int, PropValue):
     def __new__(cls, value: int):
@@ -482,6 +470,50 @@ class ElementRef(ElementHolder, PortRefTableEntry):
     @property
     def type(self) -> PropType:
         return PT_ElementHolder()
+
+
+class ColourHolder(PropValue, ABC):
+    @property
+    @abstractmethod
+    def colour(self) -> Colour:
+        pass
+
+    @property
+    def type(self) -> PropType:
+        return PT_ColourHolder()
+
+
+class ColourRef(ColourHolder, PortRefTableEntry):
+
+    def __init__(self, ref: RefId, data: ColourHolder, deletable: bool):
+        super().__init__(ref, data, deletable)
+
+    @property
+    def colour(self):
+        return cast(ColourHolder, self.data).colour
+
+    @property
+    def type(self) -> PropType:
+        return PT_ColourHolder()
+
+
+class Colour(tuple, ColourHolder):
+    def __new__(cls, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
+        return super().__new__(cls, (red, green, blue, alpha))
+
+    def __init__(self, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
+        pass  # No need to store attributes separately; values are in the tuple
+
+    def __reduce__(self):
+        return self.__class__, (self[0], self[1], self[2], self[3])
+
+    @property
+    def colour(self):
+        return self
+
+    @property
+    def type(self) -> PropType:
+        return PT_Colour()
 
 
 # Tables
