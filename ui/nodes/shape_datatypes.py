@@ -6,12 +6,12 @@ from typing import Optional
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, PropValue, Point, List, \
-    PT_Point, PointsHolder
+    PT_Point, PointsHolder, ElementHolder
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 from ui.vis_types import Visualisable
 
 
-class Element(PropValue, Visualisable, ABC):
+class Element(ElementHolder, Visualisable, ABC):
 
     def __init__(self, debug_info=None, uid=None):
         self.uid = uid if uid else str(uuid.uuid4())
@@ -40,6 +40,10 @@ class Element(PropValue, Visualisable, ABC):
     @abstractmethod
     def type(self):
         pass
+
+    @property
+    def element(self) -> "Element":
+        return self
 
     def save_to_svg(self, filepath, width, height):
         ElementDrawer(filepath, width, height, self).save()

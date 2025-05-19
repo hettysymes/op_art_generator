@@ -35,13 +35,8 @@ def get_grid(width=1, height=1, x_warp=None, y_warp=None) -> Grid:
     return Grid(v_line_xs, h_line_ys)
 
 
-def repeat_shapes(grid: Grid, elements: List[PT_Element] | Element):
+def repeat_shapes(grid: Grid, elements: List[PT_Element]):
     ret_group = Group(debug_info="Shape Repeater")
-    if isinstance(elements, Element):
-        # Ensure elements is a list
-        elements = [elements]
-    else:
-        elements = elements.items
     element_it = itertools.cycle(elements)
     for i in range(0, len(grid.h_line_ys) - 1):
         # Add row

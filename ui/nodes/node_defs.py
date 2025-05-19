@@ -8,7 +8,7 @@ from ui.node_graph import NodeGraph, RefId
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.prop_defs import PropDef, PropValue, PropType, PT_Scalar, PT_List, List, PortRefTableEntry, \
-    PT_PointsHolder, LineRef
+    PT_PointsHolder, LineRef, PT_ElementHolder, ElementRef
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig, Visualisable
 
@@ -190,8 +190,10 @@ class RuntimeNode:
             new_refs: set[RefId] = set(ref_result_map.keys()) - updated_refs
             for ref in new_refs:
                 for compute_result in ref_result_map[ref]:
-                    if isinstance(compute_result.type, PT_PointsHolder):
+                    if isinstance(prop_value.item_type, PT_PointsHolder):
                         class_entry = LineRef
+                    elif isinstance(prop_value.item_type, PT_ElementHolder):
+                        class_entry = ElementRef
                     else:
                         class_entry = PortRefTableEntry
                     prop_value.append(class_entry(ref=ref, data=compute_result, deletable=False))

@@ -94,7 +94,10 @@ class PT_Point(PT_PointsHolder):
 
 # Elements
 
-class PT_Element(PT_Scalar):
+class PT_ElementHolder(PT_Scalar):
+    pass
+
+class PT_Element(PT_ElementHolder):
     pass
 
 
@@ -456,11 +459,35 @@ class PortRefTableEntry(PropValue):
     @property
     def type(self) -> PropType:
         return PT_TableEntry(self.data.type)
+    
+class ElementHolder(PropValue, ABC):
+    @property
+    @abstractmethod
+    def element(self) -> PT_Element:
+        pass
+
+    @property
+    def type(self) -> PropType:
+        return PT_ElementHolder()
+    
+class ElementRef(ElementHolder, PortRefTableEntry):
+
+    def __init__(self, ref: RefId, data: ElementHolder, deletable: bool):
+        super().__init__(ref, data, deletable)
+
+    @property
+    def element(self):
+        return cast(ElementHolder, self.data).element
+
+    @property
+    def type(self) -> PropType:
+        return PT_ElementHolder()
+
 
 # Tables
 
 class LineRef(PointsHolder, PortRefTableEntry):
-    def __init__(self, ref: RefId, data: PT_PointsHolder, deletable: bool):
+    def __init__(self, ref: RefId, data: PointsHolder, deletable: bool):
         super().__init__(ref, data, deletable)
         self._reversed = False
 

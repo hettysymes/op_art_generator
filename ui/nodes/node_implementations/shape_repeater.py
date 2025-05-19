@@ -2,7 +2,8 @@ from ui.id_datatypes import PropKey
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.node_implementations.visualiser import repeat_shapes
 from ui.nodes.nodes import UnitNode, SelectableNode
-from ui.nodes.prop_defs import PropDef, PT_Grid, PortStatus, PT_Element, PT_List, Grid, List, PT_TableEntry
+from ui.nodes.prop_defs import PropDef, PT_Grid, PortStatus, PT_Element, PT_List, Grid, List, PT_TableEntry, \
+    PT_ElementHolder
 from ui.nodes.shape_datatypes import Group
 
 # from ui.nodes.nodes import SelectableNode
@@ -18,12 +19,12 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
             display_in_props=False
         ),
         'elements': PropDef(
-            prop_type=PT_List(PT_TableEntry(PT_Element()), input_multiple=True),
+            prop_type=PT_List(PT_ElementHolder(), input_multiple=True),
             display_name="Drawings",
             description="Order of drawings in which to repeat them within the grid. Drawings are cycled through the grid cells row by row.",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            default_value=List(PT_Element())
+            default_value=List(PT_ElementHolder())
         ),
         '_main': PropDef(
             prop_type=PT_Element(),
@@ -53,10 +54,10 @@ class ShapeRepeaterNode(SelectableNode):
 
     def compute(self, props: ResolvedProps, *args):
         grid: Grid = props.get('grid')
-        elem_entries: List[PT_TableEntry[PT_Element]] = props.get('elements')
+        elem_entries: List[PT_ElementHolder] = props.get('elements')
         if not grid or not elem_entries:
             return {}
-        main_group = repeat_shapes(grid, List(PT_Element(), [elem_entry.data for elem_entry in elem_entries]))
+        main_group = repeat_shapes(grid, List(PT_Element(), [elem_entry.element for elem_entry in elem_entries]))
         ret_result = {'_main': main_group}
         for key in self.extracted_props:
             # Compute cell

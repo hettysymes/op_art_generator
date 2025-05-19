@@ -1,22 +1,27 @@
-# from ui.nodes.node_defs import NodeInfo
-# from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
-# from ui.nodes.node_implementations.visualiser import visualise_by_type
-# from ui.nodes.nodes import SelectableNode
-# from ui.nodes.prop_defs import PortIO, PortDef, PT_Colour, PT_List, PT_ColourRefTable, PropEntry
+# from ui.nodes.node_defs import PrivateNodeInfo
+# from ui.nodes.prop_defs import PropDef, PT_List, PortStatus
 #
-# DEF_COLOUR_LIST_INFO = NodeInfo(
+# DEF_COLOUR_LIST_INFO = PrivateNodeInfo(
 #     description="Define a list of colours. This can be provided as input to an Iterator or a Colour Filler.",
-#     port_defs={
-#         (PortIO.INPUT, 'import_colours'): PortDef("Import Colours", PT_List(PT_Colour())),
-#         (PortIO.OUTPUT, '_main'): PortDef("Colours", PT_List(PT_Colour()))
-#     },
-#     prop_entries={
-#         'colour_order': PropEntry(PT_ColourRefTable('import_colours'),
-#                                   display_name="Colours",
-#                                   description="Colours to populate the colour list.",
-#                                   default_value=[(0, 0, 0, 255), (255, 0, 0, 255), (0, 255, 0, 255)])
+#     prop_defs={
+#         'import_colours': PropDef(
+#             prop_type=PT_List(PT_Colour()),
+#             display_name="Import Colours"
+#         ),
+#         'colour_order': PropDef(
+#             prop_type=PT_ColourRefTable('import_colours'),
+#             display_name="Colours",
+#             description="Colours to populate the colour list.",
+#             default_value=[(0, 0, 0, 255), (255, 0, 0, 255), (0, 255, 0, 255)]
+#         ),
+#         '_main': PropDef(
+#             input_port_status=PortStatus.FORBIDDEN,
+#             output_port_status=PortStatus.COMPULSORY,
+#             display_name="Colours"
+#         )
 #     }
 # )
+#
 #
 #
 # class ColourListNode(SelectableNode):
