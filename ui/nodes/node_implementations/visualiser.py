@@ -1,4 +1,5 @@
 import itertools
+from typing import cast
 
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
@@ -84,10 +85,15 @@ def visualise_by_type(value, value_type):
         if isinstance(value_type.base_item_type, PT_Number):
             return MatplotlibFig(create_graph_svg(value.items, scatter=True))
         else:
-            # Draw vertical grid
-            grid = get_grid(height=len(value))
-            elements = [visualise_by_type(value_item, value_type.base_item_type) for value_item in value]
-            if (not elements) or not all(isinstance(e, Element) for e in elements):
+            value = cast(List, value)
+            if value.vertical_layout:
+                # Draw vertical grid
+                grid = get_grid(height=len(value))
+            else:
+                # Draw horizontal grid
+                grid = get_grid(width=len(value))
+            elements = List(PT_Element(), [visualise_by_type(value_item, value_type.base_item_type) for value_item in value])
+            if not elements:
                 return None
             return repeat_shapes(grid, elements)
     elif isinstance(value_type, PT_Fill):

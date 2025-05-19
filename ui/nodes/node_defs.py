@@ -29,6 +29,9 @@ class RefQuerier:
         node: NodeId = self.port(ref).node
         return self._node_querier.get_node_copies({node})[node]
 
+    def get_compute_inputs(self, ref: RefId):
+        return self._node_querier.get_compute_inputs(self.port(ref).node)
+
     def port(self, ref: RefId) -> PortId:
         return self._graph_querier.query_ref(self.uid, ref)
 
@@ -118,9 +121,12 @@ class RuntimeNode:
             vis = Group(debug_info="Blank Canvas")
         return vis
 
-    def compute(self) -> None:
+    def get_compute_inputs(self) -> tuple[ResolvedProps, ResolvedRefs, RefQuerier]:
         props, refs = self.resolve_properties()
-        self.compute_results = self.node.final_compute(props, refs, RefQuerier(self.uid, self.node_querier, self.graph_querier))
+        return props, refs, RefQuerier(self.uid, self.node_querier, self.graph_querier)
+
+    def compute(self) -> None:
+        self.compute_results = self.node.final_compute(*self.get_compute_inputs())
 
     def extract_element(self, parent_group: Group, element_id: str) -> PropKey:
         return self.node.extract_element(self.resolve_properties()[0], parent_group, element_id)

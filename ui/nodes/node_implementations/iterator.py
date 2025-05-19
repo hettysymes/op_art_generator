@@ -1,6 +1,7 @@
 import copy
 
 from ui.id_datatypes import PropKey
+from ui.node_graph import RefId
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node
 from ui.nodes.nodes import UnitNode
 from ui.nodes.prop_defs import PropDef, PT_List, PT_Element, PT_Enum, PortStatus, String, List
@@ -92,19 +93,14 @@ class IteratorNode(UnitNode):
         #     print("Values not compatible")
         #     return
         prop_change_key: PropKey = props.get('prop_to_change')
-        elem_ref = refs.get('element')
-        src_port_key: PropKey = ref_querier.port(refs.get('element'))
-        element_node: Node = ref_querier.node_copy(refs.get('element'))
+        elem_ref: RefId = refs.get('element')
+        src_port_key: PropKey = ref_querier.port(elem_ref).key
+        element_node: Node = ref_querier.node_copy(elem_ref)
         values: List = props.get('value_list')
 
-        new_elements = List(PT_Element())
+        new_elements = List(PT_Element(), vertical_layout=props.get('vis_layout') == "Vertical")
         for value in values:
             element_node.internal_props[prop_change_key] = value
-            new_elements.append(element_node.final_compute(props, refs, ref_querier)[src_port_key])
+            elem = element_node.final_compute(*ref_querier.get_compute_inputs(elem_ref))[src_port_key]
+            new_elements.append(elem)
         return {'_main': new_elements}
-
-    # def visualise(self):
-    #     elements = self.get_compute_result()
-    #     if elements:
-    #         return visualise_in_1d_grid(elements, is_vertical=self._prop_val('vis_layout') == "Vertical")
-    #     return None

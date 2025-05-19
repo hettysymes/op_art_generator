@@ -4,7 +4,7 @@ from typing import Optional
 
 from ui.id_datatypes import NodeId, PortId, PropKey, input_port, output_port, gen_node_id
 from ui.node_graph import NodeGraph
-from ui.nodes.node_defs import Node, RuntimeNode
+from ui.nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier
 from ui.nodes.nodes import CombinationNode, SelectableNode
 from ui.nodes.prop_defs import PropValue, PropType, List, PT_List, PropDef, PortStatus
 from ui.nodes.shape_datatypes import Element, Group
@@ -45,6 +45,9 @@ class NodeManager:
 
     def add_node(self, node: NodeId, base_node: Node):
         self.node_map[node] = RuntimeNode(uid=node, graph_querier=self.node_graph, node_querier=self, node=base_node)
+
+    def get_compute_inputs(self, node: NodeId) -> tuple[ResolvedProps, ResolvedRefs, RefQuerier]:
+        return self._runtime_node(node).get_compute_inputs()
 
     def remove_node(self, node: NodeId):
         del self.node_map[node]
