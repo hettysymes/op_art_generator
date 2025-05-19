@@ -14,7 +14,8 @@ from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
 from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, Enum, \
     LineRef, PT_Fill, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
-    PT_String, PT_Colour, List, Point, PT_List, PT_PointsHolder, PT_Element, PT_TableEntry, PT_Enum
+    PT_String, PT_Colour, List, Point, PT_List, PT_PointsHolder, PT_Element, PT_TableEntry, PT_Enum, PT_ElementHolder, \
+    PT_ColourHolder, ColourHolder, Colour
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -289,9 +290,10 @@ class NodePropertiesDialog(QDialog):
 
 
         elif isinstance(prop_type, PT_List):
-            if isinstance(prop_type.base_item_type, PT_TableEntry) and isinstance(prop_type.base_item_type.data_type, PT_Element):
+            print(prop_type.base_item_type)
+            if isinstance(prop_type.base_item_type, PT_ElementHolder):
                 port_ref_table = PortRefTableWidget(
-                    list_item_type=PT_Element(),
+                    list_item_type=PT_ElementHolder(),
                     ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid,
                                                                                              ref=ref),
                     node_manager=self.node_item.node_manager,
@@ -300,7 +302,7 @@ class NodePropertiesDialog(QDialog):
                 )
                 widget = port_ref_table
 
-            if isinstance(prop_type.base_item_type, PT_PointsHolder):
+            elif isinstance(prop_type.base_item_type, PT_PointsHolder):
                 def text_callback(ref_port: Optional[PortId], node_manager: Optional[NodeManager], table_entry):
                     if isinstance(table_entry, LineRef):
                         node_info: NodeInfo = node_manager.node_info(ref_port.node)
@@ -350,57 +352,51 @@ class NodePropertiesDialog(QDialog):
                 )
                 widget = port_ref_table
 
-        # elif isinstance(prop_type, PT_ColourRefTable):
-        #     # Custom delegate to display colour swatches
-        #     class ColourDelegate(QStyledItemDelegate):
-        #         def paint(self, painter, option, index):
-        #             value = index.data(Qt.UserRole)
-        #
-        #             if not isinstance(value, PortRefTableEntry):
-        #                 q_colour = QColor(*value)
-        #                 painter.fillRect(option.rect, q_colour)
-        #
-        #                 # Draw a border
-        #                 painter.setPen(QPen(Qt.black, 1))
-        #                 painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
-        #             else:
-        #                 # Otherwise, fall back to the default behavior (centered text)
-        #                 super().paint(painter, option, index)
-        #
-        #         def initStyleOption(self, option, index):
-        #             super().initStyleOption(option, index)
-        #             option.displayAlignment = Qt.AlignCenter
-        #
-        #     def custom_context_menu(menu, _):
-        #         menu.actions_map = {'edit': menu.addAction("Edit")}
-        #
-        #     def edit_action(port_ref_table, _, row):
-        #         colour_dialog = QColorDialog()
-        #         colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
-        #         if colour_dialog.exec_() == QDialog.Accepted:
-        #             sel_col = colour_dialog.selectedColor().getRgb()
-        #             port_ref_table.set_item(sel_col, row)
-        #
-        #     def add_action(port_ref_table):
-        #         colour_dialog = QColorDialog()
-        #         colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
-        #         if colour_dialog.exec_() == QDialog.Accepted:
-        #             sel_col = colour_dialog.selectedColor().getRgb()
-        #             row = port_ref_table.row_count()
-        #             port_ref_table.set_row_count(row + 1)
-        #             port_ref_table.set_item(sel_col, row)
-        #
-        #     port_ref_table = PortRefTableWidget(
-        #         port_ref_getter=lambda ref_id: self.scene.graph_querier.get_port_ref(self.node_item.node_state.node,
-        #                                                                              prop_def.prop_type.linked_port_key,
-        #                                                                              ref_id),
-        #         table_heading="Colour",
-        #         entries=current_value,
-        #         context_menu_callback=custom_context_menu,
-        #         additional_actions={'edit': edit_action, 'add': add_action},
-        #         item_delegate=ColourDelegate()
-        #     )
-        #     widget = port_ref_table
+            elif isinstance(prop_type.base_item_type, PT_ColourHolder):
+                # Custom delegate to display colour swatches
+                class ColourDelegate(QStyledItemDelegate):
+                    def paint(self, painter, option, index):
+                        value = index.data(Qt.UserRole)
+
+                        assert isinstance(value, ColourHolder)
+                        q_colour = QColor(*value.colour)
+                        painter.fillRect(option.rect, q_colour)
+
+                        # Draw a border
+                        painter.setPen(QPen(Qt.black, 1))
+                        painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+
+                def custom_context_menu(menu, _):
+                    menu.actions_map = {'edit': menu.addAction("Edit")}
+
+                def edit_action(port_ref_table, _, row):
+                    colour_dialog = QColorDialog()
+                    colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+                    if colour_dialog.exec_() == QDialog.Accepted:
+                        sel_col = colour_dialog.selectedColor().getRgb()
+                        port_ref_table.set_item(Colour(*sel_col), row)
+
+                def add_action(port_ref_table):
+                    colour_dialog = QColorDialog()
+                    colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+                    if colour_dialog.exec_() == QDialog.Accepted:
+                        sel_col = colour_dialog.selectedColor().getRgb()
+                        row = port_ref_table.row_count()
+                        port_ref_table.set_row_count(row + 1)
+                        port_ref_table.set_item(Colour(*sel_col), row)
+
+                port_ref_table = PortRefTableWidget(
+                    list_item_type=PT_ColourHolder(),
+                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid,
+                                                                                             ref=ref),
+                    node_manager=self.node_item.node_manager,
+                    table_heading="Colour",
+                    entries=current_value,
+                    context_menu_callback=custom_context_menu,
+                    additional_actions={'edit': edit_action, 'add': add_action},
+                    item_delegate = ColourDelegate()
+                )
+                widget = port_ref_table
         elif isinstance(prop_type, PT_Fill):
             r, g, b, a = current_value
             widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
