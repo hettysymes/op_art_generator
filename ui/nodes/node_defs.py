@@ -35,6 +35,9 @@ class RefQuerier:
     def port(self, ref: RefId) -> PortId:
         return self._graph_querier.query_ref(self.uid, ref)
 
+    def uid(self) -> NodeId:
+        return self.uid
+
 class PrivateNodeInfo:
 
     def __init__(self, description: str, prop_defs: Optional[dict[PropKey, PropDef]] = None):

@@ -50,7 +50,7 @@ class NodeManager:
         return self._runtime_node(node).get_compute_inputs()
 
     def remove_node(self, node: NodeId):
-        del self.node_map[node]
+        self.node_map.pop(node, None)
 
     def resolve_property(self, src_port: PortId, inp_type: PropType) -> Optional[PropValue]:
         src_runtime_node = self._runtime_node(src_port.node)
@@ -92,6 +92,9 @@ class NodeManager:
 
     def visualise(self, node: NodeId) -> Visualisable:
         return self._runtime_node(node).visualise()
+
+    def compute(self, node: NodeId) -> None:
+        self._runtime_node(node).compute()
 
     def selections_w_idx(self, node: NodeId) -> tuple[list[type[Node]], int]:
         comb_node: Node = self._runtime_node(node).node
