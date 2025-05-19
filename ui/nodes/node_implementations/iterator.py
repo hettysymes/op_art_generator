@@ -4,7 +4,7 @@ from ui.id_datatypes import PropKey
 from ui.node_graph import RefId
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PT_Element, PT_Enum, PortStatus, String, List
+from ui.nodes.prop_defs import PropDef, PT_List, PT_Element, PT_Enum, PortStatus, String, List, Bool
 
 DEF_ITERATOR_INFO = PrivateNodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",
@@ -28,11 +28,11 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN
         ),
-        'vis_layout': PropDef(
-            prop_type=PT_Enum(["Vertical", "Horizontal"]),
+        'vertical_layout': PropDef(
+            prop_type=PT_Enum([True, False], ["Vertical", "Horizontal"]),
             display_name="Visualisation layout",
             description="Iterations can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
-            default_value=String("Vertical"),
+            default_value=Bool(True),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN
         ),
@@ -98,7 +98,7 @@ class IteratorNode(UnitNode):
         element_node: Node = ref_querier.node_copy(elem_ref)
         values: List = props.get('value_list')
 
-        new_elements = List(PT_Element(), vertical_layout=props.get('vis_layout') == "Vertical")
+        new_elements = List(PT_Element(), vertical_layout=props.get('vertical_layout'))
         for value in values:
             element_node.internal_props[prop_change_key] = value
             elem = element_node.final_compute(*ref_querier.get_compute_inputs(elem_ref))[src_port_key]

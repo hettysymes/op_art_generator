@@ -357,6 +357,24 @@ class String(str, PropValue):
     def __repr__(self) -> str:
         return f'String("{self}")'
 
+class Bool(PropValue):
+    def __init__(self, value: bool):
+        self.value = value
+
+    @property
+    def type(self) -> PropType:
+        return PT_Bool()
+
+    def __bool__(self) -> bool:
+        return self.value
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        return f'Bool({self.value})'
+
+
 
 class PointsHolder(PropValue, ABC):
     @property
