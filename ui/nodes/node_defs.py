@@ -36,6 +36,10 @@ class RefQuerier:
     def get_compute_results(self, ref: RefId):
         return self._node_querier.get_compute_results(self.port(ref).node)
 
+    def get_compute_result(self, ref: RefId):
+        port: PortId = self.port(ref)
+        return self._node_querier.get_compute_result(port.node, port.key)
+
     def port(self, ref: RefId) -> PortId:
         return self._graph_querier.query_ref(self._uid, ref)
 
