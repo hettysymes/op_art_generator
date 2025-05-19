@@ -78,10 +78,10 @@ class NodeGraph:
 
     def query_ref(self, node: NodeId, ref: RefId) -> PortId:
         port_ref_map: defaultdict[PortId, RefId] = self.node_to_port_ref[node]
-        return next(
-            (port for port, r in port_ref_map.items() if r == ref),
-            KeyError(f"Ref {ref} not found")
-        )
+        for port, r in port_ref_map.items():
+            if r == ref:
+                return port
+        raise KeyError(f"Ref {ref} not found")
 
     def extend_port_refs(self, more_node_to_port_refs: dict[NodeId, dict[PortId, RefId]]):
         converted_dict: defaultdict[NodeId, defaultdict[PortId, RefId]] = defaultdict(

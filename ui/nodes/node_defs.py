@@ -18,7 +18,7 @@ type ResolvedRefs = dict[PropKey, list[Optional[RefId]] | Optional[RefId]]
 class RefQuerier:
 
     def __init__(self, uid, node_querier, graph_querier):
-        self.uid = uid
+        self._uid = uid
         self._node_querier = node_querier
         self._graph_querier = graph_querier
 
@@ -33,10 +33,11 @@ class RefQuerier:
         return self._node_querier.get_compute_inputs(self.port(ref).node)
 
     def port(self, ref: RefId) -> PortId:
-        return self._graph_querier.query_ref(self.uid, ref)
+        return self._graph_querier.query_ref(self._uid, ref)
 
+    @property
     def uid(self) -> NodeId:
-        return self.uid
+        return self._uid
 
 class PrivateNodeInfo:
 

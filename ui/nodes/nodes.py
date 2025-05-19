@@ -118,7 +118,7 @@ class CombinationNode(Node, ABC):
 
 
 class CustomNode(Node):
-    NAME = None
+    NAME = "Custom"
     DEFAULT_NODE_INFO = None
 
     @staticmethod
@@ -205,7 +205,7 @@ class CustomNode(Node):
         # Get edges to have and source nodes mapped to their ref
         edges_to_have: set[EdgeId] = set()
         source_nodes: dict[NodeId, RefId] = {}
-        this_node: NodeId = ref_querier.uid()
+        this_node: NodeId = ref_querier.uid
         for dst_key, ref_set in refs_by_key.items():
             dst_port: PortId = input_port(node=this_node, key=dst_key)
             # Get edges connected to the above input port
