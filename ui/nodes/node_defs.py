@@ -232,11 +232,7 @@ class RuntimeNode:
         return results, refs
 
     def get_compute_result(self, key: PropKey) -> Optional[PropValue]:
-        print(f"Getting compute result for {key}")
-        print(self.compute_results)
         if key in self.compute_results:
-            print(f"Returning {self.compute_results[key]}")
             return self.compute_results[key]
         # Forwarding an internal property
-        print(f"Returning {self.node.internal_props.get(key)}")
         return self.node.internal_props.get(key)

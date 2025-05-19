@@ -154,7 +154,7 @@ class CustomNode(Node):
                                        description=prop_def.description,
                                        default_value=prop_def.default_value,
                                        auto_format=prop_def.auto_format,
-                                       display_in_props=prop_def.display_in_props)
+                                       display_in_props=False)
                 prop_defs[CustomNode.to_custom_key(node, key)] = new_prop_def
         return prop_defs
 
