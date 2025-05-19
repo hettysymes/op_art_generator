@@ -258,6 +258,21 @@ class List(Generic[T], PropValue):
             raise TypeError(f"Invalid type: expected {self.item_type}, got {item.type}")
         self.items.append(item)
 
+    def __add__(self, other: "List") -> "List":
+        if not isinstance(other, List):
+            return NotImplemented
+
+        # Ensure item types are compatible
+        if not (isinstance(self.item_type, type(other.item_type)) and isinstance(other.item_type, type(self.item_type))):
+            raise TypeError(f"Cannot add List with item_type {self.item_type} to List with item_type {other.item_type}")
+
+        return List(
+            item_type=self.item_type,
+            items=self.items + other.items,
+            vertical_layout=self.vertical_layout
+        )
+
+
     def reversed(self):
         return List(self.item_type, list(reversed(self.items)))
 
@@ -475,7 +490,7 @@ class ElementRef(ElementHolder, PortRefTableEntry):
 class ColourHolder(PropValue, ABC):
     @property
     @abstractmethod
-    def colour(self) -> Colour:
+    def colour(self) -> PT_Colour:
         pass
 
     @property
