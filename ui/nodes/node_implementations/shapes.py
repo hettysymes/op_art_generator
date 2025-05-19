@@ -246,8 +246,7 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
             prop_type=PT_Fill(),
             display_name="Fill",
             description="Rectangle fill colour.",
-            default_value=Colour(0, 0, 0, 255),
-            input_port_status=PortStatus.COMPULSORY
+            default_value=Colour(0, 0, 0, 255)
         ),
         '_main': PropDef(
             display_name="Drawing",

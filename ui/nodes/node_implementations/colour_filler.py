@@ -13,8 +13,6 @@ DEF_COLOUR_FILLER_INFO = PrivateNodeInfo(
         'colours': PropDef(
             prop_type=PT_List(PT_ColourHolder(), input_multiple=True),
             display_name="Colours",
-            input_port_status=PortStatus.COMPULSORY,
-            output_port_status=PortStatus.FORBIDDEN,
             default_value=List(PT_ColourHolder())
         ),
         'element': PropDef(

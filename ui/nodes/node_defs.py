@@ -162,28 +162,30 @@ class RuntimeNode:
             prop_value: List = self.node.internal_props.get(prop_key)
             assert isinstance(prop_value, List)
             ref_result_map: dict[RefId, List[PropValue]] = {ref: comp_result for ref, comp_result in zip(refs, results)}
+            new_prop_value: List = List(prop_value.item_type)
             # Update existing references
             updated_refs: set[RefId] = set()
-            deleted_indices: list[int] = []
             i = 0
             while i < len(prop_value):
-                if isinstance(prop_value[i], PortRefTableEntry):
-                    # Process whole group
-                    group_len: int = cast(PortRefTableEntry, prop_value[i]).group_idx[1]
-                    if prop_value[i].ref in ref_result_map:
-                        updated_refs.add(prop_value[i].ref)
-                        for res_idx in range(group_len):
-                            prop_value[i].data = ref_result_map[prop_value[i].ref][res_idx]
-                            i += 1
-                    else:
-                        deleted_indices.extend(range(i, i + group_len))
-                        i += group_len
+                curr_prop = prop_value[i]
+                if isinstance(curr_prop, PortRefTableEntry):
+                    old_group_len: int = cast(PortRefTableEntry, prop_value[i]).group_idx[1]
+                    if curr_prop.ref in ref_result_map:
+                        # Update with new group length
+                        updated_refs.add(curr_prop.ref)
+                        results_for_ref = ref_result_map[curr_prop.ref]
+                        new_group_len: int = len(results_for_ref)
+                        for res_idx, compute_result in enumerate(results_for_ref):
+                            new_ref_entry: PortRefTableEntry = copy.deepcopy(curr_prop)
+                            new_ref_entry.data = compute_result
+                            new_ref_entry.group_idx = (res_idx + 1, new_group_len)
+                            # Add updated entry
+                            new_prop_value.append(new_ref_entry)
+                    # Whole group has been processed
+                    i += old_group_len
                 else:
+                    new_prop_value.append(curr_prop)
                     i += 1
-            # Remove deleted existing refs
-            deleted_indices.reverse()
-            for i in deleted_indices:
-                prop_value.delete(i)
             # Add new references
             new_refs: set[RefId] = set(ref_result_map.keys()) - updated_refs
             for ref in new_refs:
@@ -197,8 +199,10 @@ class RuntimeNode:
                         class_entry = ColourRef
                     else:
                         class_entry = PortRefTableEntry
-                    prop_value.append(class_entry(ref=ref, data=compute_result, group_idx=(i+1, group_len), deletable=False))
-            return prop_value, None
+                    new_prop_value.append(class_entry(ref=ref, data=compute_result, group_idx=(i+1, group_len), deletable=False))
+            # Set this as new property
+            self.node.internal_props[prop_key] = new_prop_value
+            return new_prop_value, None
 
         elif not results:
             # No incoming edge results, default to internal property value if it exists
@@ -216,4 +220,7 @@ class RuntimeNode:
         return results, refs
 
     def get_compute_result(self, key: PropKey) -> Optional[PropValue]:
-        return self.compute_results.get(key)
+        if key in self.compute_results:
+            return self.compute_results[key]
+        # Forwarding an internal property
+        return self.node.internal_props.get(key)
