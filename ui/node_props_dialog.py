@@ -290,7 +290,6 @@ class NodePropertiesDialog(QDialog):
 
 
         elif isinstance(prop_type, PT_List):
-            print(prop_type.base_item_type)
             if isinstance(prop_type.base_item_type, PT_ElementHolder):
                 port_ref_table = PortRefTableWidget(
                     list_item_type=PT_ElementHolder(),
@@ -358,13 +357,21 @@ class NodePropertiesDialog(QDialog):
                     def paint(self, painter, option, index):
                         value = index.data(Qt.UserRole)
 
-                        assert isinstance(value, ColourHolder)
-                        q_colour = QColor(*value.colour)
-                        painter.fillRect(option.rect, q_colour)
+                        if not isinstance(value, PortRefTableEntry):
+                            assert isinstance(value, Colour)
+                            q_colour = QColor(*value)
+                            painter.fillRect(option.rect, q_colour)
 
-                        # Draw a border
-                        painter.setPen(QPen(Qt.black, 1))
-                        painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+                            # Draw a border
+                            painter.setPen(QPen(Qt.black, 1))
+                            painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+                        else:
+                            # Otherwise, fall back to the default behavior (centered text)
+                            super().paint(painter, option, index)
+
+                    def initStyleOption(self, option, index):
+                        super().initStyleOption(option, index)
+                        option.displayAlignment = Qt.AlignCenter
 
                 def custom_context_menu(menu, _):
                     menu.actions_map = {'edit': menu.addAction("Edit")}
