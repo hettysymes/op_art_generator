@@ -4,9 +4,11 @@ from PyQt5.QtWidgets import (
     QDialog, QTreeWidget, QTreeWidgetItem, QComboBox
 )
 
+from ui.id_datatypes import NodeId, PortId
+
 
 class PortSelectionTree(QWidget):
-    def __init__(self, id_to_info, is_input: bool):
+    def __init__(self, node_info: dict[NodeId, tuple[str, dict[PortId, str]]], is_input: bool):
         """
         id_to_ports: dict of node_id -> list of port
         display_names: optional dict of (node_id, port) -> str for custom labels
@@ -17,55 +19,52 @@ class PortSelectionTree(QWidget):
         self.tree = QTreeWidget()
         self.tree.setHeaderHidden(True)
         self.tree.setColumnCount(1)
-        self.check_items = {}  # {(node_id, port): QTreeWidgetItem}
+        self.check_items = {}  # {port: QTreeWidgetItem}
 
-        for node_id, (node_name, port_map) in id_to_info.items():
+        for node, (node_name, port_map) in node_info.items():
             # Filter by IO
-            filtered_ports = {
-                port_id: port_name
-                for port_id, port_name in port_map.items()
-                if port_id[0] == port_io
+            filtered_port_map = {
+                port: port_name
+                for port, port_name in port_map.items()
+                if port.is_input == is_input
             }
 
             # Skip if no ports of this IO
-            if not filtered_ports:
+            if not filtered_port_map:
                 continue
 
-            node_item = QTreeWidgetItem([f"{node_name} ({node_id})"])
+            node_item = QTreeWidgetItem([f"{node_name} ({node})"])
             node_item.setFlags(Qt.ItemIsEnabled)
             self.tree.addTopLevelItem(node_item)
 
-            for port_id, port_name in filtered_ports.items():
+            for port, port_name in filtered_port_map.items():
                 port_item = QTreeWidgetItem([port_name])
                 port_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
                 port_item.setCheckState(0, Qt.Checked)
 
                 # Store actual data
-                port_item.setData(0, Qt.UserRole, (node_id, port_id))
+                port_item.setData(0, Qt.UserRole, port)
 
                 node_item.addChild(port_item)
-                self.check_items[(node_id, port_id)] = port_item
+                self.check_items[port] = port_item
 
             node_item.setExpanded(True)
 
         layout.addWidget(self.tree)
         self.setLayout(layout)
 
-    def get_selected_ports(self):
-        selected = []
+    def get_selected_ports(self) -> list[PortId]:
+        selected: list[PortId] = []
         for item in self.check_items.values():
             if item.checkState(0) == Qt.Checked:
-                node_id, port = item.data(0, Qt.UserRole)
-                selected.append((node_id, port))
+                selected.append(item.data(0, Qt.UserRole))
         return selected
 
 
 class RegCustomDialog(QDialog):
-    def __init__(self, id_to_info, existing_names):
+    def __init__(self, node_to_info, existing_names):
         super().__init__()
         self.setWindowTitle("Create custom node")
-        self.id_to_info = id_to_info
-        self.node_ids = list(id_to_info.keys())
         self.existing_names = existing_names
 
         # Name
@@ -79,14 +78,14 @@ class RegCustomDialog(QDialog):
         self.description_input.setFixedHeight(60)
 
         # Input port selection
-        self.in_port_selector = PortSelectionTree(self.id_to_info, is_input=True)
+        self.in_port_selector = PortSelectionTree(node_to_info, is_input=True)
         in_port_selector_label = QLabel("Select input ports:")
         in_port_selector_layout = QVBoxLayout()
         in_port_selector_layout.addWidget(in_port_selector_label)
         in_port_selector_layout.addWidget(self.in_port_selector)
 
         # Output port selection
-        self.out_port_selector = PortSelectionTree(self.id_to_info, is_input=False)
+        self.out_port_selector = PortSelectionTree(node_to_info, is_input=False)
         out_port_selector_label = QLabel("Select output ports:")
         out_port_selector_layout = QVBoxLayout()
         out_port_selector_layout.addWidget(out_port_selector_label)
@@ -96,8 +95,8 @@ class RegCustomDialog(QDialog):
         self.vis_selector = QComboBox()
         vis_selector_label = QLabel(
             "Select visualisation node (your custom node's visualisation will mirror this node):")
-        for node_id, (node_name, _) in self.id_to_info.items():
-            self.vis_selector.addItem(f"{node_name} ({node_id})", userData=node_id)
+        for node, (node_name, _) in node_to_info.items():
+            self.vis_selector.addItem(f"{node_name} ({node})", userData=node)
         self.vis_selector.setCurrentIndex(self.vis_selector.count() - 1)  # Default to last list item
         vis_selector_layout = QVBoxLayout()
         vis_selector_layout.addWidget(vis_selector_label)
@@ -137,19 +136,13 @@ class RegCustomDialog(QDialog):
             self.create_warning("Name In Use",
                                 "This name is assigned to an existing custom node. Please choose another.")
             return
-        # Check start node is before stop node in the pipeline
-        # start_id = self.start_node_input.currentData()
-        # stop_id = self.stop_node_input.currentData()
-        # if self.node_ids.index(start_id) > self.node_ids.index(stop_id):
-        #     self.create_warning("Invalid Selection", "The selected input node must come before (or be) the selected output node in the pipeline. Please try again.")
-        #     return
         self.accept()
 
-    def get_inputs(self):
+    def get_inputs(self) -> tuple[str, str, list[PortId], list[PortId], NodeId]:
         return (
-            self.name_input.text().strip(),
-            self.description_input.toPlainText(),
-            self.in_port_selector.get_selected_ports(),
-            self.out_port_selector.get_selected_ports(),
-            self.vis_selector.currentData()
+            self.name_input.text().strip(),                  # Name
+            self.description_input.toPlainText(),            # Description
+            self.in_port_selector.get_selected_ports(),      # Input ports
+            self.out_port_selector.get_selected_ports(),     # Output ports
+            self.vis_selector.currentData()                  # Visualisation node
         )

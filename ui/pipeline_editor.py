@@ -18,9 +18,10 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphic
                              QUndoCommand, QGraphicsProxyWidget)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
+from numpy.ma.extras import notmasked_edges
 
 from ui.app_state import NodeState, AppState, CustomNodeDef, NodeId
-from ui.id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, PropKey
+from ui.id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, PropKey, node_changed_port
 from ui.node_graph import NodeGraph, RefId
 from ui.node_manager import NodeManager, NodeInfo
 from ui.node_props_dialog import NodePropertiesDialog
@@ -917,7 +918,6 @@ class RegisterCustomNodeCmd(QUndoCommand):
     def __init__(self, scene, name, custom_node_def, description="Register Custom Node"):
         super().__init__(description)
         self.scene = scene
-        self.node_graph: NodeGraph = scene.graph_querier
         self.name = name
         self.custom_node_def = custom_node_def
 
@@ -1640,50 +1640,63 @@ class PipelineEditor(QMainWindow):
                 item.setSelected(True)
 
     def register_custom_node(self):
-        pass
-        # node_states, base_nodes, connections, port_refs = self.identify_selected_subgraph()
-        # subgraph = NodeGraph()
-        # node_states, base_nodes, connections, port_refs, old_to_new_id_map = deep_copy_subgraph(node_states, base_nodes,
-        #                                                                                         connections, port_refs,
-        #                                                                                         node_graph=subgraph)
-        # # Set up subgraph querier
-        # subgraph.node_map = base_nodes
-        # subgraph.ref_ports = port_refs
-        # for connection in connections:
-        #     subgraph.add_edge(*connection)
-        #
-        # # Get node information for display
-        # new_ids_topo_order = subgraph.get_topo_order_subgraph()
-        # new_id_to_info = {}
-        # for new_id in new_ids_topo_order:
-        #     node = subgraph.node(new_id)
-        #     unconnected_ports = subgraph.unconnected_ports(new_id)
-        #     base_name = node.base_name
-        #     # Get port id (io, port_key) mapped to port display name
-        #     port_map = {}
-        #     ports_open = node_states[new_id].ports_open
-        #     port_defs = node.get_port_defs()
-        #     for port_id in ports_open:
-        #         if port_id in unconnected_ports:
-        #             port_map[port_id] = port_defs[port_id].display_name
-        #     if port_map:
-        #         # Add base name and port map to new_id_to_info
-        #         new_id_to_info[new_id] = (base_name, port_map)
-        # new_to_old_id_map = {v: k for k, v in old_to_new_id_map.items()}
-        # old_id_to_info = {new_to_old_id_map[k]: v for k, v in new_id_to_info.items()}
-        # # Get node information from user
-        # dialog = RegCustomDialog(old_id_to_info, self.scene.custom_node_defs.keys())
-        # if dialog.exec_():
-        #     # Get input and output node ids
-        #     name, description, input_sel_ports, output_sel_ports, vis_sel_node = dialog.get_inputs()
-        #     selected_ports = defaultdict(list)
-        #     for node_id, port_id in input_sel_ports + output_sel_ports:
-        #         selected_ports[old_to_new_id_map[node_id]].append(port_id)
-        #     selected_ports = dict(selected_ports)
-        #     vis_sel_node = old_to_new_id_map[vis_sel_node]
-        #     self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
-        #                                                      CustomNodeDef(subgraph, selected_ports,
-        #                                                                    vis_sel_node, description=description)))
+        node_states, base_nodes, edges, port_refs = self.identify_selected_subgraph()
+        node_states, base_nodes, edges, port_refs, old_to_new_id_map = deep_copy_subgraph(node_states, base_nodes, edges,
+                                                                          port_refs)
+
+        # Add nodes to sub node manager
+        sub_node_manager: NodeManager = NodeManager()
+        subgraph: NodeGraph = sub_node_manager.node_graph
+        sub_node_manager.update_nodes(base_nodes)
+
+        # Add nodes and edges to subgraph
+        for node in node_states:
+            subgraph.add_node(node)
+        for edge in edges:
+            subgraph.add_edge(edge)
+        subgraph.extend_port_refs(port_refs)
+
+        # Get set of all ports participating in edges
+        connected_ports: set[PortId] = {
+            port for edge in subgraph.edges for port in (edge.src_port, edge.dst_port)
+        }
+
+        # Get node information for display
+        new_nodes_topo_order: list[NodeId] = subgraph.get_topo_order_subgraph()
+        # Get map for mapping new node IDs to old IDs
+        new_to_old_map = {v: k for k, v in old_to_new_id_map.items()}
+        # Map old node ID to node base name and port display names
+        old_node_info: dict[NodeId, tuple[str, dict[PortId, str]]] = {}
+        for new_node in new_nodes_topo_order:
+            old_node: NodeId = new_to_old_map[new_node]
+            # Get node info and base name
+            node_info: NodeInfo = sub_node_manager.node_info(new_node)
+            base_name: str = node_info.base_name
+
+            # Get unconnected (open) ports and their display names
+            port_map: dict[PortId, str] = {}
+            ports_open: list[PortId] = node_states[new_node].ports_open
+            for port in ports_open:
+                if port not in connected_ports:
+                    port_map[node_changed_port(old_node, port)] = node_info.prop_defs[port.key].display_name
+            if port_map:
+                # Only add to new node info if it has unconnected ports
+                old_node_info[old_node] = (base_name, port_map)
+
+        # Get node information from user
+        dialog = RegCustomDialog(old_node_info, self.scene.custom_node_defs.keys())
+        if dialog.exec_():
+            # Get input and output node ids
+            name, description, input_sel_ports, output_sel_ports, vis_sel_node = dialog.get_inputs()
+            selected_ports: defaultdict[NodeId, list[PortId]] = defaultdict(list)
+            for old_port in input_sel_ports + output_sel_ports:
+                new_node: NodeId = old_to_new_id_map[old_port.node]
+                selected_ports[new_node].append(node_changed_port(new_node, old_port))
+            selected_ports: dict[NodeId, list[PortId]] = dict(selected_ports)
+            vis_sel_node: NodeId = old_to_new_id_map[vis_sel_node]
+            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
+                                                             CustomNodeDef(sub_node_manager, selected_ports,
+                                                                           vis_sel_node, description=description)))
 
     def identify_selected_items(self):
         node_states: dict[NodeId, NodeState] = {}

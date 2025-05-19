@@ -31,6 +31,9 @@ def output_port(node: NodeId, key: PropKey) -> PortId:
 def input_port(node: NodeId, key: PropKey) -> PortId:
     return PortId(node, key, True)
 
+def node_changed_port(node: NodeId, port: PortId) -> PortId:
+    return PortId(node, port.key, port.is_input)
+
 
 # Edge ID
 @dataclass(frozen=True)
