@@ -355,11 +355,11 @@ class NodePropertiesDialog(QDialog):
                 # Custom delegate to display colour swatches
                 class ColourDelegate(QStyledItemDelegate):
                     def paint(self, painter, option, index):
-                        value = index.data(Qt.UserRole)
+                        first_entry = index.data(Qt.UserRole)[0]
 
-                        if not isinstance(value, PortRefTableEntry):
-                            assert isinstance(value, Colour)
-                            q_colour = QColor(*value)
+                        if not isinstance(first_entry, PortRefTableEntry):
+                            assert isinstance(first_entry, Colour)
+                            q_colour = QColor(*first_entry)
                             painter.fillRect(option.rect, q_colour)
 
                             # Draw a border
@@ -381,7 +381,7 @@ class NodePropertiesDialog(QDialog):
                     colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
                     if colour_dialog.exec_() == QDialog.Accepted:
                         sel_col = colour_dialog.selectedColor().getRgb()
-                        port_ref_table.set_item(Colour(*sel_col), row)
+                        port_ref_table.set_item([Colour(*sel_col)], row)
 
                 def add_action(port_ref_table):
                     colour_dialog = QColorDialog()
@@ -390,7 +390,7 @@ class NodePropertiesDialog(QDialog):
                         sel_col = colour_dialog.selectedColor().getRgb()
                         row = port_ref_table.row_count()
                         port_ref_table.set_row_count(row + 1)
-                        port_ref_table.set_item(Colour(*sel_col), row)
+                        port_ref_table.set_item([Colour(*sel_col)], row)
 
                 port_ref_table = PortRefTableWidget(
                     list_item_type=PT_ColourHolder(),

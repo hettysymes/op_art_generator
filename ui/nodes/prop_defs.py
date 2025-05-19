@@ -454,10 +454,12 @@ class Grid(PropValue):
 
 
 class PortRefTableEntry(PropValue):
-    def __init__(self, ref: RefId, data: PropValue, deletable: bool = True):
+    def __init__(self, ref: RefId, data: PropValue, group_idx: tuple[int, int], deletable: bool = True):
         self.ref = ref
         self.deletable = deletable
+        self.group_idx = group_idx # (index_in_group, total_group_len), index starts from 1
         self.data = data
+
 
     @property
     def type(self) -> PropType:
@@ -475,8 +477,8 @@ class ElementHolder(PropValue, ABC):
     
 class ElementRef(ElementHolder, PortRefTableEntry):
 
-    def __init__(self, ref: RefId, data: ElementHolder, deletable: bool):
-        super().__init__(ref, data, deletable)
+    def __init__(self, ref: RefId, data: ElementHolder, group_idx: tuple[int, int], deletable: bool):
+        super().__init__(ref, data, group_idx, deletable)
 
     @property
     def element(self):
@@ -500,8 +502,8 @@ class ColourHolder(PropValue, ABC):
 
 class ColourRef(ColourHolder, PortRefTableEntry):
 
-    def __init__(self, ref: RefId, data: ColourHolder, deletable: bool):
-        super().__init__(ref, data, deletable)
+    def __init__(self, ref: RefId, data: ColourHolder, group_idx: tuple[int, int], deletable: bool):
+        super().__init__(ref, data, group_idx, deletable)
 
     @property
     def colour(self):
@@ -534,8 +536,8 @@ class Colour(tuple, ColourHolder):
 # Tables
 
 class LineRef(PointsHolder, PortRefTableEntry):
-    def __init__(self, ref: RefId, data: PointsHolder, deletable: bool):
-        super().__init__(ref, data, deletable)
+    def __init__(self, ref: RefId, data: PointsHolder, group_idx: tuple[int, int], deletable: bool):
+        super().__init__(ref, data, group_idx, deletable)
         self._reversed = False
 
     @property

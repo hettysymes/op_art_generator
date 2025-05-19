@@ -1,7 +1,7 @@
 import copy
 import traceback
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, cast
 
 from ui.id_datatypes import PropKey, NodeId, PortId, input_port, EdgeId
 from ui.node_graph import NodeGraph, RefId
@@ -169,19 +169,15 @@ class RuntimeNode:
             while i < len(prop_value):
                 if isinstance(prop_value[i], PortRefTableEntry):
                     if prop_value[i].ref in ref_result_map:
-                        ref = prop_value[i].ref
-                        updated_refs.add(ref)
-                        res_idx = 0
-                        while isinstance(prop_value[i], PortRefTableEntry) and prop_value[i].ref == ref:
+                        updated_refs.add(prop_value[i].ref)
+                        group_len: int = cast(PortRefTableEntry, prop_value[i]).group_idx[1]
+                        for res_idx in range(group_len):
                             prop_value[i].data = ref_result_map[prop_value[i].ref][res_idx]
-                            res_idx += 1
                             i += 1
-                            if i >= len(prop_value): break
+                        i -= 1
                     else:
                         deleted_indices.append(i)
-                        i += 1
-                else:
-                    i += 1
+                i += 1
             # Remove deleted existing refs
             deleted_indices.reverse()
             for i in deleted_indices:
@@ -189,7 +185,8 @@ class RuntimeNode:
             # Add new references
             new_refs: set[RefId] = set(ref_result_map.keys()) - updated_refs
             for ref in new_refs:
-                for compute_result in ref_result_map[ref]:
+                group_len: int = len(ref_result_map[ref])
+                for i, compute_result in enumerate(ref_result_map[ref]):
                     if isinstance(prop_value.item_type, PT_PointsHolder):
                         class_entry = LineRef
                     elif isinstance(prop_value.item_type, PT_ElementHolder):
@@ -198,7 +195,7 @@ class RuntimeNode:
                         class_entry = ColourRef
                     else:
                         class_entry = PortRefTableEntry
-                    prop_value.append(class_entry(ref=ref, data=compute_result, deletable=False))
+                    prop_value.append(class_entry(ref=ref, data=compute_result, group_idx=(i+1, group_len), deletable=False))
             return prop_value, None
 
         elif not results:
