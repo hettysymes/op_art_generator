@@ -3,7 +3,6 @@ import random
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ui.app_state import CustomNodeDef
 from ui.id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
 from ui.node_graph import RefId
 from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier
@@ -160,8 +159,7 @@ class CustomNode(Node):
 
     def __init__(self, internal_props=None, add_info=None):
         # Extract given information
-        self._name = add_info[0]
-        custom_node_def: CustomNodeDef = add_info[1]
+        self._name, custom_node_def = add_info
         self.sub_node_manager = custom_node_def.sub_node_manager
         self.subgraph = custom_node_def.sub_node_manager.node_graph
         self.selected_ports: dict[NodeId, list[PortId]] = custom_node_def.selected_ports
@@ -231,7 +229,7 @@ class CustomNode(Node):
 
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
         # Compute nodes in the subgraph
-        self._replace_input_nodes()
+        self._replace_input_nodes(refs, ref_querier)
         if self.randomisable:
             rng = random.Random(self.get_seed())
             seeds = [rng.random() for _ in range(len(self.randomisable_nodes))]

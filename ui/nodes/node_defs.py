@@ -145,7 +145,7 @@ class RuntimeNode:
 
     def get_property(self, prop_key: PropKey) -> (
         None                                                    # No return if no property could be resolved
-        | tuple[list[PropValue], list[Optional[RefId]]]         # List if input port type inputs from multiple nodes
+        | tuple[List, list[Optional[RefId]]]                    # List if input port type inputs from multiple nodes
         | tuple[PropValue, Optional[RefId]]                     # Single value otherwise
     ):
         prop_type: PropType = self.node.prop_defs[prop_key].prop_type
@@ -168,6 +168,7 @@ class RuntimeNode:
             new_prop_value: List = List(prop_value.item_type)
             # Update existing references
             updated_refs: set[RefId] = set()
+            ret_refs: list[Optional[RefId]] = [] # References to return
             i = 0
             while i < len(prop_value):
                 curr_prop = prop_value[i]
@@ -184,10 +185,12 @@ class RuntimeNode:
                             new_ref_entry.group_idx = (res_idx + 1, new_group_len)
                             # Add updated entry
                             new_prop_value.append(new_ref_entry)
+                        ret_refs.extend([curr_prop.ref] * new_group_len)
                     # Whole group has been processed
                     i += old_group_len
                 else:
                     new_prop_value.append(curr_prop)
+                    ret_refs.append(None)
                     i += 1
             # Add new references
             new_refs: set[RefId] = set(ref_result_map.keys()) - updated_refs
@@ -203,9 +206,11 @@ class RuntimeNode:
                     else:
                         class_entry = PortRefTableEntry
                     new_prop_value.append(class_entry(ref=ref, data=compute_result, group_idx=(i+1, group_len), deletable=False))
+                ret_refs.extend([ref] * group_len)
+            assert len(new_prop_value) == len(ret_refs)
             # Set this as new property
             self.node.internal_props[prop_key] = new_prop_value
-            return new_prop_value, None
+            return new_prop_value, ret_refs
 
         elif not results:
             # No incoming edge results, default to internal property value if it exists
