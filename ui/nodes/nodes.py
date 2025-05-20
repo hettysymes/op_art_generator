@@ -1,12 +1,12 @@
 import copy
 import random
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, cast
 
 from ui.id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
 from ui.node_graph import RefId
 from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier
-from ui.nodes.prop_defs import PropValue, PropDef, PortStatus
+from ui.nodes.prop_defs import PropValue, PropDef, PortStatus, PT_Int
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import Visualisable
 
@@ -174,12 +174,20 @@ class CustomNode(Node):
         self.randomisable_nodes: list[NodeId] = [node for node in self.node_topo_order if
                                                  self.sub_node_manager.node_info(node).randomisable]
         self._randomisable = bool(self.randomisable_nodes)
-        self._actual_seed = None
 
         # Get new prop defs
         prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]] = {node: self.sub_node_manager.node_info(node).prop_defs
                                                                 for node in self.node_topo_order}
         prop_defs: dict[PropKey, PropDef] = CustomNode._get_new_prop_defs(prop_defs_dict, self.selected_ports)
+
+        # Add seed property if randomisable
+        if self._randomisable:
+            prop_defs['seed'] = PropDef(
+            prop_type=PT_Int(min_value=0),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN,
+            display_in_props=False
+        )
 
         # Set node info
         self._node_info = PrivateNodeInfo(
@@ -238,7 +246,9 @@ class CustomNode(Node):
         # Compute nodes in the subgraph
         self._replace_input_nodes(refs, ref_querier)
         if self.randomisable:
-            rng = random.Random(self.get_seed())
+            if props.get('seed') is None:
+                self.randomise()
+            rng = random.Random(props.get('seed'))
             seeds = [rng.random() for _ in range(len(self.randomisable_nodes))]
         seed_i = 0
         for node in self.node_topo_order:
@@ -268,9 +278,9 @@ class CustomNode(Node):
         return self._randomisable
 
     def randomise(self, seed=None):
-        self._actual_seed = seed
+        min_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).min_value
+        max_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).max_value
+        self.internal_props['seed'] = seed if seed is not None else random.randint(min_seed, max_seed)
 
     def get_seed(self):
-        if self._actual_seed is None:
-            self._actual_seed = random.random()
-        return self._actual_seed
+        return self.internal_props['seed']
