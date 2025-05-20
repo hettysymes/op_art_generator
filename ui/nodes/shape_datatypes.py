@@ -1,16 +1,20 @@
 import math
+import uuid
 from abc import ABC, abstractmethod
+from typing import Optional
 
-from ui.id_generator import gen_uid, shorten_uid
+from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
-from ui.nodes.port_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element
+from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, Point, List, \
+    PT_Point, PointsHolder, ElementHolder
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
+from ui.vis_types import Visualisable
 
 
-class Element(ABC):
+class Element(ElementHolder, Visualisable, ABC):
 
     def __init__(self, debug_info=None, uid=None):
-        self.uid = uid if uid else gen_uid()
+        self.uid = uid if uid else str(uuid.uuid4())
         self.debug_info = debug_info
 
     @abstractmethod
@@ -34,11 +38,18 @@ class Element(ABC):
         pass
 
     @abstractmethod
-    def get_output_type(self):
+    def type(self):
         pass
 
+    @property
+    def element(self) -> "Element":
+        return self
 
-class Group(Element):
+    def save_to_svg(self, filepath, width, height):
+        ElementDrawer(filepath, width, height, self).save()
+
+
+class Group(Element, PointsHolder):
 
     def __init__(self, transforms=None, debug_info=None, uid=None):
         super().__init__(debug_info, uid)
@@ -55,7 +66,7 @@ class Group(Element):
             group.add(element.get(dwg))
         return group
 
-    def get_element_index_from_id(self, element_id):
+    def get_element_index_from_id(self, element_id: str) -> Optional[int]:
         for i, elem in enumerate(self.elements):
             if elem.uid == element_id:
                 return i
@@ -103,15 +114,24 @@ class Group(Element):
                 transformed_shapes.append((shape, new_transform_list))
         return transformed_shapes
 
-    def get_output_type(self):
+    @property
+    def type(self):
         shapes, _ = zip(*self.shape_transformations())
         if len(shapes) == 1:
-            return shapes[0].get_output_type()
+            return shapes[0].type
         return PT_Element()
+
+    @property
+    def points(self) -> List[PT_Point]:
+        assert isinstance(self.type, PT_Polyline)
+        shape, transform_list = self.shape_transformations()[0]
+        if transform_list:
+            return transform_list.transform_points(shape.points)
+        return shape.points
 
     def __repr__(self):
         debug_str = f"\"{self.debug_info}\"" if self.debug_info else ""
-        result = f"Group (#{shorten_uid(self.uid)}) [{repr(self.transform_list)}] {debug_str} {{\n"
+        result = f"Group ({self.uid}) [{repr(self.transform_list)}] {debug_str} {{\n"
         for elem in self.elements:
             # Get multiline representation and indent each line
             lines = repr(elem).splitlines()
@@ -141,20 +161,25 @@ class Shape(Element, ABC):
     def shape_transformations(self):
         return [(self, TransformList())]
 
-    def get_output_type(self):
+    @property
+    def type(self):
         return PT_Shape()
 
     def __repr__(self):
-        return f"Shape (#{shorten_uid(self.uid)}) {self.__class__.__name__.upper()}"
+        return f"Shape ({self.uid}) {self.__class__.__name__.upper()}"
 
 
-class Polyline(Shape):
+class Polyline(Shape, PointsHolder):
 
-    def __init__(self, points, stroke, stroke_width):
+    def __init__(self, points: List[PT_Point], stroke, stroke_width):
         super().__init__()
-        self.points = points
+        self._points = points
         self.stroke = stroke
         self.stroke_width = stroke_width
+
+    @property
+    def points(self) -> List[PT_Point]:
+        return self._points
 
     def get(self, dwg):
         return dwg.polyline(points=self.points,
@@ -164,12 +189,8 @@ class Polyline(Shape):
                             style='vector-effect: non-scaling-stroke',
                             id=self.uid)
 
-    def get_points(self, transform_list=None):
-        if transform_list:
-            return transform_list.transform_points(self.points)
-        return self.points
-
-    def get_output_type(self):
+    @property
+    def type(self):
         return PT_Polyline()
 
 
@@ -193,7 +214,8 @@ class Polygon(Shape):
                            style='vector-effect: non-scaling-stroke',
                            id=self.uid)
 
-    def get_output_type(self):
+    @property
+    def type(self):
         return PT_Polygon()
 
 
@@ -219,7 +241,8 @@ class Ellipse(Shape):
                            style='vector-effect: non-scaling-stroke',
                            id=self.uid)
 
-    def get_output_type(self):
+    @property
+    def type(self):
         return PT_Ellipse()
 
 
@@ -228,7 +251,7 @@ class SineWave(Polyline):
     def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points):
         if x_min > x_max:
             raise ValueError("Wave start position must be smaller than wave stop position.")
-        points = []
+        points = List(PT_Point())
 
         # Generate 100 evenly spaced x-values between x_min and x_max
         x_values = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
@@ -238,6 +261,6 @@ class SineWave(Polyline):
             # Standard sine wave equation: y = A * sin(2π * x / λ + φ) + centre_y
             # where A is amplitude, λ is wavelength, and φ is phase
             y = amplitude * math.sin(2 * math.pi * x / wavelength + math.radians(phase)) + centre_y
-            points.append((x, y))
+            points.append(Point(x, y))
 
         super().__init__(points, 'black', stroke_width)

@@ -1,25 +1,41 @@
 import math
 
-from ui.nodes.node_defs import NodeInfo
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Ellipse, PT_Point, PT_List, PT_Int, PT_Float, PropEntry
-from ui.nodes.shape_datatypes import Ellipse, Group
+from ui.nodes.prop_defs import PropDef, PT_Ellipse, PT_Float, Float, PT_Int, Int, PortStatus, PT_Point, List, \
+    Point
+from ui.nodes.shape_datatypes import Ellipse
 
-DEF_ELLIPSE_SAMPLER_INFO = NodeInfo(
+DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(
     description="Sample (angularly) equally-spaced points along the edge of an ellipse or circle.",
-    port_defs={
-        (PortIO.INPUT, 'ellipse'): PortDef("Ellipse", PT_Ellipse()),
-        (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_List(PT_Point()))
-    },
-    prop_entries={
-        'start_angle': PropEntry(PT_Float(),
-                                 display_name="Angle of first sample (°)",
-                                 description="Central angle (in degrees) of the first sample (point along the edge of the ellipse) with the ellipse's right-most point. The angle is measured clockwise. At 0° the first sample is at its right-most point. At 90° the first sample is at the bottom-most point.",
-                                 default_value=0),
-        'num_samples': PropEntry(PT_Int(min_value=1),
-                                 display_name="Sample number",
-                                 description="Number of samples (points along the edge of the ellipse), at most 1.",
-                                 default_value=5)
+    prop_defs={
+        'ellipse': PropDef(
+            prop_type=PT_Ellipse(),
+            display_name="Ellipse",
+            input_port_status=PortStatus.COMPULSORY
+        ),
+        'start_angle': PropDef(
+            prop_type=PT_Float(),
+            display_name="Angle of first sample (°)",
+            description=(
+                "Central angle (in degrees) of the first sample (point along the edge of the ellipse) with the ellipse's "
+                "right-most point. The angle is measured clockwise. At 0° the first sample is at its right-most point. "
+                "At 90° the first sample is at the bottom-most point."
+            ),
+            default_value=Float(0)
+        ),
+        'num_samples': PropDef(
+            prop_type=PT_Int(min_value=1),
+            display_name="Sample number",
+            description="Number of samples (points along the edge of the ellipse), at most 1.",
+            default_value=Int(5)
+        ),
+        '_main': PropDef(
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY,
+            display_name="Samples",
+            display_in_props=False
+        )
     }
 )
 
@@ -29,15 +45,15 @@ class EllipseSamplerNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_ELLIPSE_SAMPLER_INFO
 
     @staticmethod
-    def angle_to_point(angle_rad, ellipse):
+    def angle_to_point(angle_rad: float, ellipse: Ellipse) -> Point:
         x = ellipse.center[0] + ellipse.r[0] * math.cos(angle_rad)
         y = ellipse.center[1] + ellipse.r[1] * math.sin(angle_rad)
-        return x, y
+        return Point(x, y)
 
     @staticmethod
-    def helper(ellipse, start_angle, num_samples):
+    def helper(ellipse: Ellipse, start_angle: float, num_samples: int) -> List[PT_Point]:
         assert isinstance(ellipse, Ellipse)
-        samples = []
+        samples = List(PT_Point())
         angle = math.radians(start_angle)
         step = 2 * math.pi / num_samples
         for _ in range(num_samples):
@@ -45,17 +61,9 @@ class EllipseSamplerNode(UnitNode):
             angle += step
         return samples
 
-    def compute(self):
-        ellipse = self._prop_val('ellipse')
-        if ellipse:
-            self.set_compute_result(EllipseSamplerNode.helper(ellipse, self._prop_val('start_angle'),
-                                                              self._prop_val('num_samples')))
-
-    def visualise(self):
-        points = self.get_compute_result()
-        if points:
-            ret_group = Group(debug_info="Ellipse Sampler")
-            for p in points:
-                ret_group.add(Ellipse(p, (0.01, 0.01), 'black', 255, 'black', 0))
-            return ret_group
-        return None
+    def compute(self, props: ResolvedProps, *args):
+        ellipse = props.get('ellipse')
+        if ellipse is None:
+            return {}
+        return {'_main': EllipseSamplerNode.helper(ellipse, props.get('start_angle'),
+                                                   props.get('num_samples'))}

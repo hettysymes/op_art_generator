@@ -1,6 +1,19 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 
 from ui.nodes.function_datatypes import Function
+from ui.nodes.prop_defs import PropValue, PT_Warp
+
+
+class Warp(PropValue, ABC):
+    @abstractmethod
+    def sample(self, num_samples):
+        pass
+
+    @property
+    def type(self):
+        return PT_Warp()
 
 
 def normalise(l: np.ndarray):
@@ -17,7 +30,7 @@ def sample_fun(function: Function, num_samples):
     return np.array([f(i) for i in indices])
 
 
-class PosWarp:
+class PosWarp(Warp):
 
     def __init__(self, pos_function):
         self.pos_function = pos_function
@@ -28,7 +41,7 @@ class PosWarp:
         return normalise(unnorm_pos)
 
 
-class RelWarp:
+class RelWarp(Warp):
 
     def __init__(self, rel_function):
         self.rel_function = rel_function

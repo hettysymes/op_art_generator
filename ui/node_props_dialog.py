@@ -1,19 +1,23 @@
 import copy
+from typing import Optional, cast
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPen
-from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QTableWidgetItem, QHBoxLayout, QWidget, QVBoxLayout, \
-    QFormLayout, QDoubleSpinBox, QDialogButtonBox, QMenu, QStyledItemDelegate, QColorDialog, QSpinBox, QCheckBox, \
+from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidget, QVBoxLayout, \
+    QFormLayout, QDoubleSpinBox, QDialogButtonBox, QStyledItemDelegate, QColorDialog, QSpinBox, QCheckBox, \
     QGroupBox, QLabel, QLineEdit
 
+from ui.app_state import NodeState
 from ui.colour_prop_widget import ColorPropertyWidget
-from ui.id_generator import shorten_uid
-from ui.nodes.elem_ref import ElemRef
-from ui.nodes.port_defs import PortIO, PT_Int, PT_Float, PT_Bool, PT_Point, PT_Enum, PT_ElemRefTable, PT_PointRefTable, \
-    LineRef, PT_Fill, PT_Hidden, PT_Number, PT_ColourRefTable, PortRefTableEntry
+from ui.id_datatypes import PortId, PropKey, input_port, output_port, NodeId
+from ui.node_graph import NodeGraph
+from ui.node_manager import NodeInfo, NodeManager
+from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, Enum, \
+    LineRef, PT_Fill, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
+    PT_String, Point, PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
+    PT_ColourHolder, Colour
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
-from ui.reorderable_table_widget import ReorderableTableWidget
 
 
 class HelpIconLabel(QPushButton):
@@ -44,31 +48,39 @@ class HelpIconLabel(QPushButton):
         wrapped_text = f"<div style='max-width: {width_px}; white-space: normal;'>{description}</div>"
         self.setToolTip(wrapped_text)
 
+
 class ModifyPropertyPortButton(QPushButton):
-    def __init__(self, on_click_callback, port_key, adding, max_width=300, parent=None):
+    def __init__(self, on_click_callback, port: PortId, adding, max_width=300, parent=None):
         super().__init__(parent)
-        self.port_key = port_key
+        self.port = port
         self.adding = adding
-        self.text_pair = ('-', '+')
-        self.description_pair = ("Remove the input port for this property.",
-                                 "Add an input port to control this property.")
+        txt_display1 = "IN" if self.port.is_input else "OUT"
+        txt_display2 = "input" if self.port.is_input else "output"
+        self.text_pair = (f"{txt_display1} -", f"{txt_display1} +")
+        self.description_pair = (f"Remove the {txt_display2} port for this property.",
+                                 f"Add an {txt_display2} port to control this property.")
         self.setText(self.text_pair[int(self.adding)])
         self.setFixedSize(16, 16)
         self.max_width = max_width
 
         # Style the button to look like a help icon
-        self.setStyleSheet("""
-            QPushButton {
-                background-color: #b0b0b0;
+        self.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {"#4a90e2" if port.is_input else "#7ed321"};  /* Blue for input, Green for output */
                 color: white;
                 font-weight: bold;
-                border-radius: 8px;
+                border-radius: 10px;
                 border: none;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                background-color: #8a8a8a;
-            }
+                padding: 1px 4px;
+                font-size: 6px;
+                min-width: 18px;
+                min-height: 18px;
+                max-width: 22px;
+                max-height: 22px;
+            }}
+            QPushButton:hover {{
+                background-color: {"#357ABD" if port.is_input else "#5DAA1E"};
+            }}
         """)
 
         # Apply word-wrapped tooltip using HTML
@@ -92,7 +104,8 @@ class ModifyPropertyPortButton(QPushButton):
 
         # Execute user callback
         if self.user_callback:
-            self.user_callback(self.port_key, not self.adding)
+            self.user_callback(self.port, not self.adding)
+
 
 class NodePropertiesDialog(QDialog):
     """Dialog for editing node properties"""
@@ -100,8 +113,9 @@ class NodePropertiesDialog(QDialog):
     def __init__(self, node_item, parent=None):
         super().__init__(parent)
         self.node_item = node_item
+        self.node_info: NodeInfo = node_item.node_info
         self.scene = node_item.scene()
-        self.setWindowTitle(f"Properties: {node_item.node().name()}")
+        self.setWindowTitle(f"Properties: {self.node_info.name}")
         self.setMinimumWidth(400)
 
         # Main layout
@@ -115,60 +129,43 @@ class NodePropertiesDialog(QDialog):
         self.property_widgets = {}
 
         # Add custom properties based on node type
-        if node_item.node().get_prop_entries():
-            props_group = QGroupBox("Node Properties")
-            props_layout = QFormLayout()
-            props_group.setLayout(props_layout)
+        props_group = QGroupBox("Node Properties")
+        props_layout = QFormLayout()
+        props_group.setLayout(props_layout)
 
-            for prop_key, prop_entry in node_item.node().get_prop_entries().items():
-                if not isinstance(prop_entry.prop_type, PT_Hidden):
-                    widget = self.create_property_widget(prop_key, prop_entry, node_item.node().get_property(prop_key), node_item)
-
+        no_widget_keys: list[PropKey] = []
+        for key, prop_def in self.node_info.prop_defs.items():
+            if prop_def.display_in_props:
+                widget: Optional[QWidget] = self.create_property_widget(prop_def,
+                                                                        node_item.node_manager.get_internal_property(
+                                                                            node_item.uid, key))
+                if widget:
                     # Create the row with label and help icon
-                    label_container, widget_container = self.create_property_row(prop_key, prop_entry, widget, node_item)
+                    label_container, widget_container = self.create_property_row(key, prop_def, node_item, widget)
                     props_layout.addRow(label_container, widget_container)
-                    self.property_widgets[prop_key] = widget
-
-            main_layout.addWidget(props_group)
-
-        port_only_group = None
-        input_ports_open = [port_key for (io, port_key) in node_item.node_state.ports_open if io == PortIO.INPUT]
-
-        for port_key, port_def in node_item.node().port_defs_filter_by_io(PortIO.INPUT).items():
-            if port_def.optional and port_def.description and (port_key not in node_item.node().get_prop_entries()):
-                # Add label with property button
-                if not port_only_group:
-                    port_only_group = QGroupBox("Port modifiable properties")
-                    port_only_group_layout = QVBoxLayout(port_only_group)  # Create a vertical layout for the group
-                    port_only_group.setLayout(port_only_group_layout)  # Set the layout for the group
-
-                widget_container = QWidget()  # This will be a widget inside the group
-                widget_layout = QHBoxLayout(widget_container)
-                widget_layout.setContentsMargins(0, 0, 0, 0)
-                widget_layout.setSpacing(4)
-
-                text = f"{port_def.display_name}: {port_def.description}"
-
-                # Create and add label
-                label = QLabel(text)
-                widget_layout.addWidget(label)
-
-                # Add plus/minus buttons based on port state
-                if port_key in input_ports_open:
-                    # If port is open, add minus button to remove the port
-                    minus_btn = ModifyPropertyPortButton(self.change_property_port, port_key, adding=False)
-                    widget_layout.addWidget(minus_btn)
+                    self.property_widgets[key] = widget
                 else:
-                    # If port is not open, add plus button to add the port
-                    plus_btn = ModifyPropertyPortButton(self.change_property_port, port_key, adding=True)
-                    widget_layout.addWidget(plus_btn)
+                    no_widget_keys.append(key)
+        main_layout.addWidget(props_group)
 
-                # Add the widget container (with layout) to the group
-                port_only_group_layout.addWidget(widget_container)
+        if no_widget_keys:
+            no_widget_group = QGroupBox("Port modifiable properties")
+            no_widget_group_layout = QFormLayout()
+            no_widget_group.setLayout(no_widget_group_layout)
 
-        # If port_only_group was created, add it to the main layout
-        if port_only_group:
-            main_layout.addWidget(port_only_group)
+            for key in no_widget_keys:
+                prop_def: PropDef = self.node_info.prop_defs[key]
+
+                # Reuse the existing method, passing None as the widget
+                label_container, widget_container = self.create_property_row(
+                    key=key,
+                    prop_def=prop_def,
+                    node_item=node_item,
+                    widget=None
+                )
+                no_widget_group_layout.addRow(label_container, widget_container)
+
+            main_layout.addWidget(no_widget_group)
 
         # Create buttons
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -178,13 +175,13 @@ class NodePropertiesDialog(QDialog):
         main_layout.addLayout(form_layout)
         main_layout.addWidget(button_box)
 
-    def change_property_port(self, port_key, adding):
+    def change_property_port(self, port: PortId, adding):
         if adding:
-            self.node_item.add_property_port(port_key)
+            self.node_item.add_property_port(port)
         else:
-            self.node_item.remove_property_port(port_key)
+            self.node_item.remove_property_port(port)
 
-    def create_property_row(self, prop_key, prop_entry, widget, node_item):
+    def create_property_row(self, key: PropKey, prop_def: PropDef, node_item, widget=None):
         """Create a row with property label and a help icon to the right of the widget"""
 
         # Create a container widget for the label
@@ -194,8 +191,8 @@ class NodePropertiesDialog(QDialog):
         label_layout.setSpacing(4)  # Small spacing between elements
 
         # Create the label
-        add_text = ":" if prop_entry.auto_format else ""
-        label = QLabel(prop_entry.display_name + add_text)
+        add_text = ":" if prop_def.auto_format and widget else ""
+        label = QLabel(prop_def.display_name + add_text)
         label_layout.addWidget(label)
         label_layout.addStretch()
 
@@ -205,30 +202,37 @@ class NodePropertiesDialog(QDialog):
         widget_layout.setContentsMargins(0, 0, 0, 0)
         widget_layout.setSpacing(4)  # Small spacing between widget and icon
 
-        # Add the widget first
-        widget_layout.addWidget(widget)
+        if widget:
+            # Add the widget first
+            widget_layout.addWidget(widget)
 
         # Add the help icon after the widget (on the right)
-        if prop_entry.description:
-            help_icon = HelpIconLabel(prop_entry.description, max_width=300)  # Set maximum width for tooltip
+        if prop_def.description:
+            help_icon = HelpIconLabel(prop_def.description, max_width=300)  # Set maximum width for tooltip
             widget_layout.addWidget(help_icon)
-        if prop_key in node_item.node().port_defs_filter_by_io(PortIO.INPUT):
-            input_ports_open = [port_key for (io, port_key) in node_item.node_state.ports_open if io == PortIO.INPUT]
-            if prop_key in input_ports_open:
-                # Exists port to modify this property, add minus button
-                minus_btn = ModifyPropertyPortButton(self.change_property_port,
-                                                     prop_key,
-                                                     adding=False)  # Set maximum width for tooltip
-                widget_layout.addWidget(minus_btn)
-            else:
-                # Does not exist port to modify this property, add plus button
-                plus_btn = ModifyPropertyPortButton(self.change_property_port, prop_key, adding=True)  # Set maximum width for tooltip
-                widget_layout.addWidget(plus_btn)
+        # Add input and output toggle buttons
+        if input_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL,
+                                                                                            get_output=False):
+            widget_layout.addWidget(
+                self.create_toggle_plus_minus_btn(cast(NodeState, node_item.node_state).ports_open, key, node_item.uid,
+                                                  is_input=True))
+        if output_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL,
+                                                                                             get_output=True):
+            widget_layout.addWidget(
+                self.create_toggle_plus_minus_btn(cast(NodeState, node_item.node_state).ports_open, key, node_item.uid,
+                                                  is_input=False))
 
         return label_container, widget_container
 
-    def create_property_widget(self, prop_key, prop_entry, current_value, node_item):
-        prop_type = prop_entry.prop_type
+    def create_toggle_plus_minus_btn(self, ports_open: list[PortId], key: PropKey, node: NodeId, is_input=True):
+        keys_w_input = [port.key for port in ports_open if port.is_input == is_input]
+        return ModifyPropertyPortButton(self.change_property_port,
+                                        PortId(node=node, key=key, is_input=is_input),
+                                        adding=key not in keys_w_input)
+
+    def create_property_widget(self, prop_def: PropDef, current_value: Optional[PropValue]) -> Optional[QWidget]:
+        prop_type = prop_def.prop_type
+        widget: Optional[QWidget] = None
         """Create an appropriate widget for the property type"""
         if isinstance(prop_type, PT_Number):
             if isinstance(prop_type, PT_Int):
@@ -284,125 +288,139 @@ class NodePropertiesDialog(QDialog):
             widget.get_value = get_coord_value
 
         elif isinstance(prop_type, PT_Enum):
+            enum: Enum = current_value
             widget = QComboBox()
-            for display, data in prop_type.display_data_options():
+            for display, data in enum.display_data_options:
                 widget.addItem(display, userData=data)
             if current_value is not None:
-                index = prop_type.get_options().index(current_value) if current_value in prop_type.get_options() else 0
+                index = enum.options.index(enum.selected_option)
                 widget.setCurrentIndex(index)
 
-        elif isinstance(prop_type, PT_ElemRefTable):
-            port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
-                                                                                  prop_entry.prop_type.linked_port_key, ref_id),
-                table_heading="Drawing",
-                entries=current_value
-            )
-            widget = port_ref_table
 
-        elif isinstance(prop_type, PT_PointRefTable):
-            def text_callback(port_ref, table_entry):
-                if isinstance(table_entry, LineRef):
-                    points = table_entry.points()
-                    start_x, start_y = points[0]
-                    stop_x, stop_y = points[-1]
-                    arrow = '←' if table_entry.reversed() else '→'
-                    return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
-                x, y = table_entry
-                return f"({x:.2f}, {y:.2f})"
+        elif isinstance(prop_type, PT_List):
+            if isinstance(prop_type.base_item_type, PT_ElementHolder):
+                port_ref_table = PortRefTableWidget(
+                    list_item_type=PT_ElementHolder(),
+                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid,
+                                                                                             ref=ref),
+                    node_manager=self.node_item.node_manager,
+                    table_heading="Drawings",
+                    entries=current_value
+                )
+                widget = port_ref_table
 
-            def custom_context_menu(menu, table_entry):
-                if isinstance(table_entry, LineRef):
-                    menu.actions_map = {'reverse': menu.addAction("Reverse")}
-                else:
-                    # Ordinary point
-                    menu.actions_map = {'edit': menu.addAction("Edit")}
+            elif isinstance(prop_type.base_item_type, PT_PointsHolder):
+                def text_callback(ref_port: Optional[PortId], node_manager: Optional[NodeManager], entry_group):
+                    first_entry = entry_group[0]
+                    if isinstance(first_entry, LineRef):
+                        node_info: NodeInfo = node_manager.node_info(ref_port.node)
+                        start_x, start_y = first_entry.points[0]
+                        stop_x, stop_y = entry_group[-1].points[-1]
+                        arrow = '←' if first_entry.is_reversed else '→'
+                        return f"{node_info.base_name} (id: {ref_port.node})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
+                    assert isinstance(first_entry, Point)
+                    x, y = first_entry
+                    return f"({x:.2f}, {y:.2f})"
 
-            def edit_action(port_ref_table, point, row):
-                point_dialog = PointDialog(*point)
-                if point_dialog.exec_() == QDialog.Accepted:
-                    x, y = point_dialog.get_value()
-                    port_ref_table.set_item((x, y), row)
-
-            def reverse_action(port_ref_table, line_ref_entry, row):
-                new_line_ref_entry = copy.deepcopy(line_ref_entry)
-                new_line_ref_entry.toggle_reverse()
-                port_ref_table.set_item(new_line_ref_entry, row)
-
-            def add_action(port_ref_table):
-                point_dialog = PointDialog()
-                if point_dialog.exec_() == QDialog.Accepted:
-                    x, y = point_dialog.get_value()
-                    row = port_ref_table.row_count()
-                    port_ref_table.set_row_count(row + 1)
-                    port_ref_table.set_item((x, y), row)
-
-            port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
-                                                                                  prop_entry.prop_type.linked_port_key, ref_id),
-                table_heading="Points (X, Y)",
-                entries=current_value,
-                text_callback=text_callback,
-                context_menu_callback=custom_context_menu,
-                additional_actions={'edit': edit_action, 'reverse': reverse_action, 'add': add_action}
-            )
-            widget = port_ref_table
-
-        elif isinstance(prop_type, PT_ColourRefTable):
-            # Custom delegate to display colour swatches
-            class ColourDelegate(QStyledItemDelegate):
-                def paint(self, painter, option, index):
-                    value = index.data(Qt.UserRole)
-
-                    if not isinstance(value, PortRefTableEntry):
-                        q_colour = QColor(*value)
-                        painter.fillRect(option.rect, q_colour)
-
-                        # Draw a border
-                        painter.setPen(QPen(Qt.black, 1))
-                        painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+                def custom_context_menu(menu, entry_group):
+                    if isinstance(entry_group[0], LineRef):
+                        menu.actions_map = {'reverse': menu.addAction("Reverse")}
                     else:
-                        # Otherwise, fall back to the default behavior (centered text)
-                        super().paint(painter, option, index)
+                        # Ordinary point
+                        menu.actions_map = {'edit': menu.addAction("Edit")}
 
-                def initStyleOption(self, option, index):
-                    super().initStyleOption(option, index)
-                    option.displayAlignment = Qt.AlignCenter
+                def edit_action(table, entry_group, row):
+                    point_dialog = PointDialog(*entry_group[0])
+                    if point_dialog.exec_() == QDialog.Accepted:
+                        x, y = point_dialog.get_value()
+                        table.set_item([Point(x, y)], row)
 
-            def custom_context_menu(menu, _):
-                menu.actions_map = {'edit': menu.addAction("Edit")}
+                def reverse_action(table, line_ref_entry_group, row):
+                    new_entry_group = copy.deepcopy(line_ref_entry_group)
+                    for entry in new_entry_group:
+                        entry.toggle_reverse()
+                    new_entry_group.reverse()
+                    table.set_item(new_entry_group, row)
 
-            def edit_action(port_ref_table, _, row):
-                colour_dialog = QColorDialog()
-                colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
-                if colour_dialog.exec_() == QDialog.Accepted:
-                    sel_col = colour_dialog.selectedColor().getRgb()
-                    port_ref_table.set_item(sel_col, row)
+                def add_action(table):
+                    point_dialog = PointDialog()
+                    if point_dialog.exec_() == QDialog.Accepted:
+                        x, y = point_dialog.get_value()
+                        row = table.row_count()
+                        table.set_row_count(row + 1)
+                        table.set_item([Point(x, y)], row)
 
-            def add_action(port_ref_table):
-                colour_dialog = QColorDialog()
-                colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
-                if colour_dialog.exec_() == QDialog.Accepted:
-                    sel_col = colour_dialog.selectedColor().getRgb()
-                    row = port_ref_table.row_count()
-                    port_ref_table.set_row_count(row + 1)
-                    port_ref_table.set_item(sel_col, row)
+                port_ref_table = PortRefTableWidget(
+                    list_item_type=PT_PointsHolder(),
+                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid,
+                                                                                             ref=ref),
+                    node_manager=self.node_item.node_manager,
+                    table_heading="Points (X, Y)",
+                    entries=current_value,
+                    text_callback=text_callback,
+                    context_menu_callback=custom_context_menu,
+                    additional_actions={'edit': edit_action, 'reverse': reverse_action, 'add': add_action}
+                )
+                widget = port_ref_table
 
-            port_ref_table = PortRefTableWidget(
-                port_ref_getter=lambda ref_id: self.scene.node_graph.get_port_ref(self.node_item.node_state.node_id,
-                                                                                  prop_entry.prop_type.linked_port_key,
-                                                                                  ref_id),
-                table_heading="Colour",
-                entries=current_value,
-                context_menu_callback=custom_context_menu,
-                additional_actions={'edit': edit_action, 'add': add_action},
-                item_delegate=ColourDelegate()
-            )
-            widget = port_ref_table
+            elif isinstance(prop_type.base_item_type, PT_ColourHolder):
+                # Custom delegate to display colour swatches
+                class ColourDelegate(QStyledItemDelegate):
+                    def paint(self, painter, option, index):
+                        first_entry = index.data(Qt.UserRole)[0]
+
+                        if not isinstance(first_entry, PortRefTableEntry):
+                            assert isinstance(first_entry, Colour)
+                            q_colour = QColor(*first_entry)
+                            painter.fillRect(option.rect, q_colour)
+
+                            # Draw a border
+                            painter.setPen(QPen(Qt.black, 1))
+                            painter.drawRect(option.rect.adjusted(0, 0, -1, -1))
+                        else:
+                            # Otherwise, fall back to the default behavior (centered text)
+                            super().paint(painter, option, index)
+
+                    def initStyleOption(self, option, index):
+                        super().initStyleOption(option, index)
+                        option.displayAlignment = Qt.AlignCenter
+
+                def custom_context_menu(menu, entry_group):
+                    if isinstance(entry_group[0], Colour):
+                        menu.actions_map = {'edit': menu.addAction("Edit")}
+
+                def edit_action(port_ref_table, _, row):
+                    colour_dialog = QColorDialog()
+                    colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+                    if colour_dialog.exec_() == QDialog.Accepted:
+                        sel_col = colour_dialog.selectedColor().getRgb()
+                        port_ref_table.set_item([Colour(*sel_col)], row)
+
+                def add_action(port_ref_table):
+                    colour_dialog = QColorDialog()
+                    colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+                    if colour_dialog.exec_() == QDialog.Accepted:
+                        sel_col = colour_dialog.selectedColor().getRgb()
+                        row = port_ref_table.row_count()
+                        port_ref_table.set_row_count(row + 1)
+                        port_ref_table.set_item([Colour(*sel_col)], row)
+
+                port_ref_table = PortRefTableWidget(
+                    list_item_type=PT_ColourHolder(),
+                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid,
+                                                                                             ref=ref),
+                    node_manager=self.node_item.node_manager,
+                    table_heading="Colour",
+                    entries=current_value,
+                    context_menu_callback=custom_context_menu,
+                    additional_actions={'edit': edit_action, 'add': add_action},
+                    item_delegate=ColourDelegate()
+                )
+                widget = port_ref_table
         elif isinstance(prop_type, PT_Fill):
             r, g, b, a = current_value
             widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
-        else:  # Default to string type
+        elif isinstance(prop_type, PT_String):  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
 
         return widget
@@ -418,13 +436,16 @@ class NodePropertiesDialog(QDialog):
             elif isinstance(widget, QCheckBox):
                 value = widget.isChecked()
             elif isinstance(widget, QComboBox):
-                value = widget.itemData(widget.currentIndex())
+                display_options = [widget.itemText(i) for i in range(widget.count())]
+                options = [widget.itemData(i) for i in range(widget.count())]
+                selected_option = widget.itemData(widget.currentIndex())
+                value = Enum(options=options, display_options=display_options, selected_option=selected_option)
             elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
                 value = widget.get_value()
             else:  # QLineEdit
                 value = widget.text()
 
-            old_val = self.node_item.node().get_property(prop_key)
+            old_val = cast(NodeManager, self.node_item.node_manager).get_internal_property(self.node_item.uid, prop_key)
             if old_val != value:
                 props_changed[prop_key] = (copy.deepcopy(old_val), value)
 

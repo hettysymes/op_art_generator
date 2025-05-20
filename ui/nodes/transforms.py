@@ -1,11 +1,13 @@
 import math
 from abc import ABC, abstractmethod
 
+from ui.nodes.prop_defs import PT_Point, List, Point
+
 
 class Transform(ABC):
 
     @abstractmethod
-    def apply_to_point(self, point):
+    def apply_to_point(self, point: Point) -> Point:
         pass
 
     @abstractmethod
@@ -18,8 +20,8 @@ class Translate(Transform):
         self.tx = tx
         self.ty = ty
 
-    def apply_to_point(self, point):
-        return point[0] + self.tx, point[1] + self.ty
+    def apply_to_point(self, point: Point) -> Point:
+        return Point(point[0] + self.tx, point[1] + self.ty)
 
     def __repr__(self):
         return f"translate({self.tx},{self.ty})"
@@ -30,8 +32,8 @@ class Scale(Transform):
         self.sx = sx
         self.sy = sy
 
-    def apply_to_point(self, point):
-        return point[0] * self.sx, point[1] * self.sy
+    def apply_to_point(self, point: Point) -> Point:
+        return Point(point[0] * self.sx, point[1] * self.sy)
 
     def __repr__(self):
         return f"scale({self.sx},{self.sy})"
@@ -42,7 +44,7 @@ class Rotate(Transform):
         self.angle = angle
         self.centre = centre
 
-    def apply_to_point(self, point):
+    def apply_to_point(self, point: Point) -> Point:
         angle_radians = math.radians(self.angle)
 
         # Translate point back to origin
@@ -56,7 +58,7 @@ class Rotate(Transform):
         # Translate point back
         x = rotated_x + self.centre[0]
         y = rotated_y + self.centre[1]
-        return x, y
+        return Point(x, y)
 
     def __repr__(self):
         return f"rotate({self.angle},{self.centre[0]},{self.centre[1]})"
@@ -94,8 +96,8 @@ class TransformList:
         assert isinstance(self.transforms[0], Scale)
         del self.transforms[0]
 
-    def transform_points(self, points):
-        new_points = []
+    def transform_points(self, points: List[PT_Point]) -> List[PT_Point]:
+        new_points = List(PT_Point())
         for p in points:
             new_point = p
             for t in self:

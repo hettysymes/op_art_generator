@@ -1,18 +1,24 @@
 import copy
+from typing import Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyledItemDelegate, QHBoxLayout, QPushButton
 
-from ui.id_generator import shorten_uid
-from ui.nodes.port_defs import PortRefTableEntry
+from ui.id_datatypes import PortId
+from ui.node_manager import NodeManager, NodeInfo
+from ui.nodes.prop_defs import PortRefTableEntry, PropType, List
 from ui.reorderable_table_widget import ReorderableTableWidget
 
 
 class PortRefTableWidget(QWidget):
-    def __init__(self, port_ref_getter=None, table_heading=None, entries=None, text_callback=None, context_menu_callback=None, additional_actions=None, item_delegate=None, parent=None):
+    def __init__(self, list_item_type: PropType, ref_querier=None, node_manager: Optional[NodeManager] = None,
+                 table_heading=None, entries=None, text_callback=None,
+                 context_menu_callback=None, additional_actions=None, item_delegate=None, parent=None):
         super().__init__(parent)
-        self.port_ref_getter = port_ref_getter  # A function to get a port_ref given a ref_id
+        self.list_item_type = list_item_type
+        self.ref_querier = ref_querier  # A function to get a port given a ref
+        self.node_manager = node_manager
         self.text_callback = text_callback or self.default_text_callback
         self.context_menu_callback = context_menu_callback
         self.additional_actions = additional_actions
@@ -50,26 +56,35 @@ class PortRefTableWidget(QWidget):
         return self.table.setRowCount(row)
 
     def set_entries(self, entries):
-        self.table.setRowCount(len(entries))
-        for row, entry in enumerate(entries):
+        new_entries = []
+        i = 0
+        while i < len(entries):
+            entry = entries[i]
+            if isinstance(entry, PortRefTableEntry):
+                group_len: int = entry.group_idx[1]
+                new_entries.append(entries[i:i + group_len])
+                i += group_len
+            else:
+                new_entries.append([entry])
+                i += 1
+
+        self.table.setRowCount(len(new_entries))
+        for row, entry in enumerate(new_entries):
             self.set_item(entry, row)
 
-    def set_item(self, table_entry, row=None):
-        port_ref = None
-        if isinstance(table_entry, PortRefTableEntry):
-            if isinstance(table_entry.ref_id, tuple):
-                ref_id = table_entry.ref_id[0]
-            else:
-                ref_id = table_entry.ref_id
-            port_ref = self.port_ref_getter(ref_id)
+    def set_item(self, entry_group, row=None):
+        first_entry = entry_group[0]
+        ref_port: Optional[PortId] = None
+        if isinstance(first_entry, PortRefTableEntry):
+            ref_port = self.ref_querier(first_entry.ref)
         item = QTableWidgetItem()
         item.setTextAlignment(Qt.AlignCenter)
-        item.setData(Qt.UserRole, table_entry)
+        item.setData(Qt.UserRole, entry_group)
 
         # Use text_callback to determine display string
-        item.setText(self.text_callback(port_ref, table_entry))
+        item.setText(self.text_callback(ref_port, self.node_manager, entry_group))
 
-        if isinstance(table_entry, PortRefTableEntry) and not table_entry.deletable:  # non-deletable
+        if isinstance(first_entry, PortRefTableEntry) and not first_entry.deletable:  # non-deletable
             item.setBackground(QColor(237, 130, 157))
 
         if row is not None:
@@ -83,43 +98,44 @@ class PortRefTableWidget(QWidget):
             return
 
         item = self.table.item(row, 0)
-        table_entry = item.data(Qt.UserRole)
+        entry_group = item.data(Qt.UserRole)
+        first_entry = entry_group[0]
 
         menu = QMenu()
 
         # Allow external extension of the menu
         if self.context_menu_callback:
-            self.context_menu_callback(menu, table_entry)
+            self.context_menu_callback(menu, entry_group)
 
         duplicate_action = menu.addAction("Duplicate")
-        if not isinstance(table_entry, PortRefTableEntry) or table_entry.deletable:
+        if not isinstance(first_entry, PortRefTableEntry) or first_entry.deletable:
             delete_action = menu.addAction("Delete")
 
         action = menu.exec_(self.table.viewport().mapToGlobal(position))
 
-        if (not isinstance(table_entry, PortRefTableEntry) or table_entry.deletable) and action == delete_action:
+        if (not isinstance(first_entry, PortRefTableEntry) or first_entry.deletable) and action == delete_action:
             self.table.removeRow(row)
 
         if action == duplicate_action:
             self.table.insertRow(row + 1)
             new_item = QTableWidgetItem(item.text())
-            new_table_entry = copy.deepcopy(table_entry)
-            if isinstance(new_table_entry, PortRefTableEntry):
-                new_table_entry.deletable = True
-            new_item.setData(Qt.UserRole, new_table_entry)
+            new_entry_group = copy.deepcopy(entry_group)
+            if isinstance(new_entry_group[0], PortRefTableEntry):
+                # Update whole entry group
+                for entry in new_entry_group:
+                    entry.deletable = True
+            new_item.setData(Qt.UserRole, new_entry_group)
             self.table.setItem(row + 1, 0, new_item)
 
         if hasattr(menu, 'actions_map'):
             for action_key, action_def in menu.actions_map.items():
                 if action == action_def:
-                    self.additional_actions[action_key](self, table_entry, row)
+                    self.additional_actions[action_key](self, entry_group, row)
 
     def get_value(self):
-        entries = []
-        for row in range(self.table.rowCount()):
-            item = self.table.item(row, 0)
-            entries.append(item.data(Qt.UserRole))
-        return entries
+        entries = [entry for row in range(self.table.rowCount())
+                   for entry in self.table.item(row, 0).data(Qt.UserRole)]
+        return List(self.list_item_type, entries)
 
     class CenteredItemDelegate(QStyledItemDelegate):
         def initStyleOption(self, option, index):
@@ -127,7 +143,8 @@ class PortRefTableWidget(QWidget):
             option.displayAlignment = Qt.AlignCenter
 
     @staticmethod
-    def default_text_callback(port_ref, table_entry):
-        if port_ref:
-            return f"{port_ref.base_node_name} (id: #{shorten_uid(port_ref.node_id)})"
+    def default_text_callback(ref_port: Optional[PortId], node_manager: Optional[NodeManager], _):
+        if ref_port and node_manager:
+            node_info: NodeInfo = node_manager.node_info(ref_port.node)
+            return f"{node_info.base_name} (id: {node_info.uid})"
         return ""

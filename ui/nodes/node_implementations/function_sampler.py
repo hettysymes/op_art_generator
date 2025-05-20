@@ -1,21 +1,30 @@
-from ui.nodes.drawers.draw_graph import create_graph_svg
-from ui.nodes.node_defs import NodeInfo
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Function, PT_Float, PT_List, PT_Int, PropEntry
+from ui.nodes.prop_defs import PropDef, PT_Function, PT_Int, Int, PortStatus, PT_Float, List, Float
 from ui.nodes.warp_datatypes import sample_fun
-from ui.vis_types import MatplotlibFig
 
-DEF_FUN_SAMPLER_INFO = NodeInfo(
+DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
     description="Sample a function f(x) at equal intervals in the range x ∈ [0, 1].",
-    port_defs={
-        (PortIO.INPUT, 'function'): PortDef("Function", PT_Function()),
-        (PortIO.OUTPUT, '_main'): PortDef("Samples", PT_List(PT_Float()))
-    },
-    prop_entries={
-        'num_samples': PropEntry(PT_Int(min_value=1),
-                                 display_name="Sample number",
-                                 description="Number of samples (at least 1) to obtain from the function f(x), i.e. x values (between 0 & 1) to input.",
-                                 default_value=5)
+    prop_defs={
+        'function': PropDef(
+            prop_type=PT_Function(),
+            display_name="Function",
+            input_port_status=PortStatus.COMPULSORY,
+            output_port_status=PortStatus.FORBIDDEN,
+            display_in_props=False
+        ),
+        'num_samples': PropDef(
+            prop_type=PT_Int(min_value=1),
+            display_name="Sample number",
+            description="Number of samples (at least 1) to obtain from the function f(x), i.e. x values (between 0 & 1) to input.",
+            default_value=Int(5)
+        ),
+        '_main': PropDef(
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY,
+            display_name="Samples",
+            display_in_props=False
+        )
     }
 )
 
@@ -26,15 +35,10 @@ class FunSamplerNode(UnitNode):
 
     @staticmethod
     def helper(function, num_samples):
-        return sample_fun(function, num_samples)
+        return List(PT_Float(), [Float(i) for i in sample_fun(function, num_samples)])
 
-    def compute(self):
-        function = self._prop_val('function')
+    def compute(self, props: ResolvedProps, *args):
+        function = props.get('function')
         if function:
-            self.set_compute_result(FunSamplerNode.helper(function, self._prop_val('num_samples')))
-
-    def visualise(self):
-        samples = self.get_compute_result()
-        if samples is not None:
-            return MatplotlibFig(create_graph_svg(samples, scatter=True))
-        return None
+            return {'_main': FunSamplerNode.helper(function, props.get('num_samples'))}
+        return {}

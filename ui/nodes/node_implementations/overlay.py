@@ -1,20 +1,25 @@
-from ui.nodes.node_defs import NodeInfo
-from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortIO, PortDef, PT_Element, PT_List, PT_ElemRefTable, PropEntry
+from ui.nodes.prop_defs import PropDef, PT_List, PortStatus, PT_ElementHolder, List
 from ui.nodes.shape_datatypes import Group
 
-DEF_OVERLAY_INFO = NodeInfo(
+DEF_OVERLAY_INFO = PrivateNodeInfo(
     description="Overlay 2+ drawings and define their order.",
-    port_defs={
-        (PortIO.INPUT, 'elements'): PortDef("Input Drawings", PT_List(PT_Element())),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
-    },
-    prop_entries={
-        'elem_order': PropEntry(PT_ElemRefTable('elements'),
-                                display_name="Drawing order",
-                                description="Order of drawings in which to overlay them. Drawings at the top of the list are drawn first (i.e. at the bottom of the final overlayed image).",
-                                default_value=[])
+    prop_defs={
+        'elements': PropDef(
+            prop_type=PT_List(PT_ElementHolder(), input_multiple=True),
+            display_name="Drawings",
+            description="Input drawings to overlay. Drawings at the top of the table are drawn first (i.e. at the bottom of the final overlayed image).",
+            input_port_status=PortStatus.COMPULSORY,
+            output_port_status=PortStatus.FORBIDDEN,
+            default_value=List(PT_ElementHolder())
+        ),
+        '_main': PropDef(
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY,
+            display_name="Drawing",
+            display_in_props=False
+        )
     }
 )
 
@@ -23,11 +28,11 @@ class OverlayNode(UnitNode):
     NAME = "Overlay"
     DEFAULT_NODE_INFO = DEF_OVERLAY_INFO
 
-    def compute(self):
-        ref_elements = self._prop_val('elements', get_refs=True)
-        elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
+    def compute(self, props: ResolvedProps, *args):
+        elem_entries: List[PT_ElementHolder] = props.get('elements')
+        elements = [elem_entry.element for elem_entry in elem_entries]
         # Return final element
         ret_group = Group(debug_info="Overlay")
         for element in elements:
             ret_group.add(element)
-        self.set_compute_result(ret_group)
+        return {'_main': ret_group}

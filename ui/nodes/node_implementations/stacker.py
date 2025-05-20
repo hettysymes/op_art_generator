@@ -1,29 +1,47 @@
-from ui.nodes.node_defs import NodeInfo
-from ui.nodes.node_implementations.port_ref_table_handler import handle_port_ref_table
+from typing import cast
+
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
-from ui.nodes.port_defs import PortDef, PT_Element, PortIO, PT_List, PT_ElemRefTable, PT_Enum, PT_Float, PropEntry
+from ui.nodes.prop_defs import PropDef, PT_Element, PT_List, PT_Enum, PT_Float, PortStatus, PT_ElementHolder, List, \
+    Enum, Float
 from ui.nodes.shape_datatypes import Group
 from ui.nodes.transforms import Translate, Scale
 
-DEF_STACKER_NODE_INFO = NodeInfo(
+DEF_STACKER_NODE_INFO = PrivateNodeInfo(
     description="Stack multiple drawings together, either vertically or horizontally.",
-    port_defs={
-        (PortIO.INPUT, 'elements'): PortDef("Input Drawings", PT_List(PT_Element())),
-        (PortIO.OUTPUT, '_main'): PortDef("Drawing", PT_Element())
-    },
-    prop_entries={
-        'elem_order': PropEntry(PT_ElemRefTable('elements'),
-                                display_name="Drawing order",
-                                description="Order of drawings in which to stack them. Drawings at the top of the list are drawn first (i.e. at the top for vertical stacking, and at the left for horizontal stacking).",
-                                default_value=[]),
-        'stack_layout': PropEntry(PT_Enum(["Vertical", "Horizontal"]),
-                                  display_name="Stack layout",
-                                  description="Stacking of drawings can be done either top-to-bottom (vertical) or left-to-right (horizontal)",
-                                  default_value="Vertical"),
-        'wh_diff': PropEntry(PT_Float(),
-                             display_name="Height/width distance",
-                             description="Distance to place between stacked drawings, proportional to the height or width of one drawing (height for vertical stacking, width for horizontal stacking). E.g. if set to 0.5, the second drawing will be stacked halfway along the first drawing.",
-                             default_value=0.4)
+    prop_defs={
+        'elements': PropDef(
+            prop_type=PT_List(PT_ElementHolder(), input_multiple=True),
+            display_name="Drawings",
+            description="Order of drawings in which to stack them. Drawings at the top of the list are drawn first (i.e. at the top for vertical stacking, and at the left for horizontal stacking).",
+            input_port_status=PortStatus.COMPULSORY,
+            output_port_status=PortStatus.FORBIDDEN,
+            default_value=List(PT_ElementHolder())
+        ),
+        'layout_enum': PropDef(
+            prop_type=PT_Enum(),
+            display_name="Stack layout",
+            description="Stacking of drawings can be done either top-to-bottom (vertical) or left-to-right (horizontal).",
+            default_value=Enum([True, False], ["Vertical", "Horizontal"]),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN
+        ),
+        'wh_diff': PropDef(
+            prop_type=PT_Float(),
+            display_name="Height/width distance",
+            description=(
+                "Distance to place between stacked drawings, proportional to the height or width of one drawing "
+                "(height for vertical stacking, width for horizontal stacking). E.g. if set to 0.5, the second drawing "
+                "will be stacked halfway along the first drawing."
+            ),
+            default_value=Float(0.4)
+        ),
+        '_main': PropDef(
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY,
+            display_name="Drawing",
+            display_in_props=False
+        )
     }
 )
 
@@ -33,7 +51,7 @@ class StackerNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_STACKER_NODE_INFO
 
     @staticmethod
-    def helper(elements, wh_diff, vertical_layout):
+    def helper(elements: List[PT_Element], wh_diff: float, vertical_layout: bool):
         n = len(elements)
         size = n + wh_diff * (1 - n)
         group = Group(debug_info="Stacker")
@@ -47,9 +65,11 @@ class StackerNode(UnitNode):
             group.add(elem_cell)
         return group
 
-    def compute(self):
-        ref_elements = self._prop_val('elements', get_refs=True)
-        elements = handle_port_ref_table(ref_elements, self._prop_val('elem_order'))
-        # Compute final element
-        self.set_compute_result(StackerNode.helper(elements, self._prop_val('wh_diff'),
-                                                   self._prop_val('stack_layout') == 'Vertical'))
+    def compute(self, props: ResolvedProps, *args):
+        elem_entries: List[PT_ElementHolder] = props.get('elements')
+        if not elem_entries:
+            return {}
+        main_group = StackerNode.helper(List(PT_Element(), [elem_entry.element for elem_entry in elem_entries]),
+                                        props.get('wh_diff'),
+                                        cast(Enum, props.get('layout_enum')).selected_option)
+        return {'_main': main_group}

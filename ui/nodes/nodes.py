@@ -1,19 +1,23 @@
 import copy
 import random
 from abc import ABC, abstractmethod
+from typing import Optional, cast
 
-from ui.id_generator import gen_uid
-from ui.nodes.node_defs import Node, GraphQuerier, NodeInfo, BaseNode
-from ui.nodes.port_defs import PortIO
+from ui.id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
+from ui.node_graph import RefId
+from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier
+from ui.nodes.prop_defs import PropValue, PropDef, PortStatus, PT_Int
+from ui.nodes.shape_datatypes import Group
+from ui.vis_types import Visualisable
 
 
 class UnitNode(Node, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
-    def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
+    def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._node_info = self._default_node_info()
-        super().__init__(uid, graph_querier, prop_vals)
+        super().__init__(internal_props)
 
     @property
     def node_info(self):
@@ -23,60 +27,50 @@ class UnitNode(Node, ABC):
     def _default_node_info(cls):
         return cls.DEFAULT_NODE_INFO
 
-    # Functions to implement
-    @abstractmethod
-    def compute(self):
-        return
-
 
 class SelectableNode(UnitNode, ABC):
     NAME = None
     DEFAULT_NODE_INFO = None
 
-    def __init__(self, uid, graph_querier, prop_vals=None, add_info=None):
-        self._node_info = self._default_node_info()
-        self.extracted_port_ids = []
-        super().__init__(uid, graph_querier, prop_vals)
+    def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
+        self._node_info: PrivateNodeInfo = self._default_node_info()
+        self.extracted_props: set[PropKey] = set()
+        super().__init__(internal_props)
 
-    def final_compute(self):
-        self._remove_redundant_ports()
-        self.compute()
+    def final_compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[
+        PropKey, PropValue]:
+        self._remove_redundant_ports(props)
+        return self.compute(props, refs, ref_querier)
 
     @abstractmethod
-    def compute(self):
+    def extract_element(self, props: ResolvedProps, parent_group: Group, element_id: str) -> PropKey:
         pass
 
     @abstractmethod
-    def extract_element(self, parent_group, element_id):
-        return
-
-    @abstractmethod
-    def _is_port_redundant(self, port_id):
+    def _is_port_redundant(self, props: ResolvedProps, key: PropKey) -> bool:
         pass
 
-    def _add_port(self, port_id, port_def):
-        self.node_info.port_defs[port_id] = port_def
-        self.extracted_port_ids.append(port_id)
+    def _add_prop_def(self, key: PropKey, prop_def: PropDef):
+        self.prop_defs[key] = prop_def
+        self.extracted_props.add(key)
 
-    def _remove_redundant_ports(self):
-        indices_to_remove = []
-        for i, port_id in enumerate(self.extracted_port_ids):
-            if self._is_port_redundant(port_id):
-                del self.node_info.port_defs[port_id]
-                self._mark_inactive_port_id(port_id)
-                indices_to_remove.append(i)
-        indices_to_remove.reverse()
-        for i in indices_to_remove:
-            del self.extracted_port_ids[i]
+    def _remove_redundant_ports(self, props: ResolvedProps):
+        keys_to_remove: set[PropKey] = {prop_key for prop_key in self.extracted_props if
+                                        self._is_port_redundant(props, prop_key)}
+        # Remove from prop_defs
+        for key in keys_to_remove:
+            self.prop_defs.pop(key, None)
+        # Remove from extracted_props
+        self.extracted_props: set[PropKey] = {key for key in self.extracted_props if key not in keys_to_remove}
 
 
 class CombinationNode(Node, ABC):
     NAME = None
-    SELECTIONS = []  # To override
+    SELECTIONS: list[type[Node]] = []  # To override
 
-    def __init__(self, uid, graph_querier, prop_vals=None, add_info=0):
+    def __init__(self, internal_props=None, add_info=0):
         self._selection_index = add_info
-        self._node = self.selections()[add_info](uid, graph_querier, prop_vals)
+        self._node = self.selections()[add_info](internal_props)
 
     def __getattr__(self, attr):
         _node = object.__getattribute__(self, "_node")
@@ -93,128 +87,189 @@ class CombinationNode(Node, ABC):
             setattr(_node, name, value)
 
     @classmethod
-    def selections(cls):
+    def selections(cls) -> list[type[Node]]:
         return cls.SELECTIONS
 
-    def selection_index(self):
+    def selection_index(self) -> int:
         return self._selection_index
 
     def set_selection(self, index):
         self._selection_index = index
-        old_prop_vals = copy.deepcopy(self._node.prop_vals)
-        self._node = self.selections()[index](self.uid, self.graph_querier, prop_vals=None)
+        old_internal_props = copy.deepcopy(self.internal_props)
+        self._node = self.selections()[index](internal_props=None)
 
         # Copy over matching existing properties
-        for prop_key, old_value in old_prop_vals.items():
-            if prop_key in self.prop_vals:
-                self.set_property(prop_key, old_value)
+        for prop_key, old_value in old_internal_props.items():
+            if prop_key in self.internal_props:
+                self.internal_props[prop_key] = old_value
 
     # Forwarded interface
     @property
-    def base_node_name(self):
-        return self._node.base_node_name
+    def base_name(self):
+        return self._node.base_name
 
     @property
     def node_info(self):
         return self._node.node_info
 
-    def compute(self):
-        return self._node.compute()
+    def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
+        return self._node.compute(props, refs, ref_querier)
 
-    def visualise(self):
-        return self._node.visualise()
+    def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
+        return self._node.visualise(compute_results)
+
 
 class CustomNode(Node):
     NAME = "Custom"
+    DEFAULT_NODE_INFO = None
 
     @staticmethod
-    def to_custom_key(node_id, port_key):
-        return f"{node_id}_{port_key}"
+    def to_custom_key(node_id, port_key) -> PropKey:
+        return f"{node_id.value}_{port_key}"
 
     @staticmethod
-    def from_custom_key(custom_key):
-        return tuple(custom_key.split("_", 1)) # Returns node_id, port_key
+    def from_custom_key(custom_key) -> tuple[NodeId, PropKey]:
+        node_str, key = custom_key.split("_", 1)
+        return NodeId(node_str), key  # Returns node id, port_key
 
-    def __init__(self, uid, graph_querier, add_info):
-        super().__init__(uid, graph_querier, {})
+    @staticmethod
+    def _get_new_prop_defs(prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]],
+                           selected_ports: dict[NodeId, list[PortId]]) -> dict[PropKey, PropDef]:
+        prop_defs: dict[PropKey, PropDef] = {}
+        for node, ports in selected_ports.items():
+            node_prop_defs: dict[PropKey, PropDef] = prop_defs_dict[node]
+            # Collate port statuses
+            # Maps to (input port status, output port status)
+            port_statuses: dict[PropKey, list[PortStatus]] = {port.key: [PortStatus.FORBIDDEN, PortStatus.FORBIDDEN] for
+                                                              port in ports}
+            for port in ports:
+                if port.is_input:
+                    port_statuses[port.key][0] = PortStatus.COMPULSORY
+                else:
+                    port_statuses[port.key][1] = PortStatus.COMPULSORY
+            # Add relevant node definitions
+            for key, (inp_status, out_status) in port_statuses.items():
+                prop_def = node_prop_defs[key]
+                new_prop_def = PropDef(input_port_status=inp_status,
+                                       output_port_status=out_status,
+                                       prop_type=prop_def.prop_type,
+                                       display_name=prop_def.display_name,
+                                       description=prop_def.description,
+                                       default_value=prop_def.default_value,
+                                       auto_format=prop_def.auto_format,
+                                       display_in_props=False)
+                prop_defs[CustomNode.to_custom_key(node, key)] = new_prop_def
+        return prop_defs
+
+    def __init__(self, internal_props=None, add_info=None):
         # Extract given information
         self._name, custom_node_def = add_info
-        self.subgraph = custom_node_def.subgraph
-        self.selected_ports = custom_node_def.selected_ports
-        self.vis_node = self.subgraph.node(custom_node_def.vis_node_id)
+        self.sub_node_manager = custom_node_def.sub_node_manager
+        self.subgraph = custom_node_def.sub_node_manager.node_graph
+        self.selected_ports: dict[NodeId, list[PortId]] = custom_node_def.selected_ports
+        self.vis_node: NodeId = custom_node_def.vis_node
         description = custom_node_def.description or "(No help provided)"
         # Perform set up
-        self.node_topo_order = self.subgraph.get_topo_order_subgraph()
-        self.randomisable_nodes_ids = [node_id for node_id, node in self.subgraph.node_map.items() if node.randomisable]
-        self._randomisable = bool(self.randomisable_nodes_ids)
-        self._actual_seed = None
-        port_defs = {}
-        for node_id, port_ids in self.selected_ports.items():
-            node_port_defs = self.subgraph.node(node_id).get_port_defs()
-            for port_id in port_ids:
-                port_def = node_port_defs[port_id]
-                port_def.optional = False
-                # Replace with custom port key
-                io, port_key = port_id
-                port_defs[(io, CustomNode.to_custom_key(node_id, port_key))] = port_def
-        # Set node info
-        self._node_info = NodeInfo(
-            description=description,
-            port_defs=port_defs
+        self.node_topo_order: list[NodeId] = self.subgraph.get_topo_order_subgraph()
+        self.randomisable_nodes: list[NodeId] = [node for node in self.node_topo_order if
+                                                 self.sub_node_manager.node_info(node).randomisable]
+        self._randomisable = bool(self.randomisable_nodes)
+
+        # Get new prop defs
+        prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]] = {node: self.sub_node_manager.node_info(node).prop_defs
+                                                                for node in self.node_topo_order}
+        prop_defs: dict[PropKey, PropDef] = CustomNode._get_new_prop_defs(prop_defs_dict, self.selected_ports)
+
+        # Add seed property if randomisable
+        if self._randomisable:
+            prop_defs['seed'] = PropDef(
+            prop_type=PT_Int(min_value=0),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN,
+            display_in_props=False
         )
 
+        # Set node info
+        self._node_info = PrivateNodeInfo(
+            description=description,
+            prop_defs=prop_defs
+        )
+        super().__init__(internal_props)
+
     @property
-    def base_node_name(self):
+    def base_name(self):
         return self._name
 
-    def _replace_input_nodes(self):
-        # Remove existing connections
+    def _replace_input_nodes(self, refs: ResolvedRefs, ref_querier: RefQuerier):
+        # Remove existing connections and source nodes
         for edge in list(self.subgraph.edges):
-            _, (dst_node_id, dst_port_key) = edge
-            if dst_node_id in self.selected_ports and (PortIO.INPUT, dst_port_key) in self.selected_ports[dst_node_id]:
-                self.subgraph.remove_edge(*edge)
-        # Get edges input to this node
-        edges = self.graph_querier.edges_to_node(self.uid)
-        # Get participating nodes
-        source_nodes = {edge[0][0] for edge in edges}
-        # Add these nodes and edges to the subgraph
-        for src_node_id in source_nodes:
-            self.subgraph.add_existing_node(self.graph_querier.node(src_node_id))
-        for src_port_id, (_, dst_port_key) in edges:
-            # Replace dest port id with original (node_id, port_key) pair
-            self.subgraph.add_edge(src_port_id, CustomNode.from_custom_key(dst_port_key))
+            if edge.dst_node in self.selected_ports and edge.dst_port in self.selected_ports[edge.dst_node]:
+                self.subgraph.remove_edge(edge)
+                self.sub_node_manager.remove_node(edge.src_node)
+
+        # Collate references
+        refs_by_key: dict[PropKey, set[RefId]] = {}
+        for key, value in refs.items():
+            if isinstance(value, list):
+                refs = {ref for ref in value if ref is not None}
+            else:
+                refs = {value} if value is not None else set()
+            refs_by_key[key] = refs
+
+        # Get edges to have and source nodes mapped to their ref
+        edges_to_have: set[EdgeId] = set()
+        source_nodes: dict[NodeId, RefId] = {}
+        this_node: NodeId = ref_querier.uid
+        for dst_key, ref_set in refs_by_key.items():
+            dst_port: PortId = input_port(node=this_node, key=dst_key)
+            # Get edges connected to the above input port
+            for ref in ref_set:
+                src_port: PortId = ref_querier.port(ref)
+                edges_to_have.add(EdgeId(src_port, dst_port))
+                source_nodes[src_port.node] = ref
+
+        # Add source nodes and edges to internal graph and node manager
+        for src_node, ref in source_nodes.items():
+            self.subgraph.add_node(src_node)
+            self.sub_node_manager.add_node(src_node, ref_querier.node_copy(ref),
+                                           compute_results=ref_querier.get_compute_results(ref))
+        for edge in edges_to_have:
+            # Replace dest port id with original
+            node, key = CustomNode.from_custom_key(edge.dst_key)
+            self.subgraph.add_edge(EdgeId(edge.src_port, input_port(node=node, key=key)))
 
     @property
     def node_info(self):
         return self._node_info
 
-    def compute(self):
+    def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
         # Compute nodes in the subgraph
-        self._replace_input_nodes()
+        self._replace_input_nodes(refs, ref_querier)
         if self.randomisable:
-            rng = random.Random(self.get_seed())
-            seeds = [rng.random() for _ in range(len(self.randomisable_nodes_ids))]
+            if props.get('seed') is None:
+                self.randomise()
+            rng = random.Random(props.get('seed'))
+            seeds = [rng.random() for _ in range(len(self.randomisable_nodes))]
         seed_i = 0
-        for node_id in self.node_topo_order:
-            node = self.subgraph.node(node_id)
+        for node in self.node_topo_order:
             # Set random seed if appropriate
-            if node_id in self.randomisable_nodes_ids:
-                node.randomise(seeds[seed_i])
+            if self.sub_node_manager.node_info(node).randomisable:
+                self.sub_node_manager.randomise(node, seeds[seed_i])
                 seed_i += 1
-            node.clear_compute_results()
-            node.final_compute()
-        # Get and set compute results
-        self.compute_results = {}
-        for node_id, port_ids in self.selected_ports.items():
-            node = None
-            for io, port_key in port_ids:
-                if io == PortIO.INPUT: continue
-                # We have reached an output port, get and set the compute result
-                node = node or self.subgraph.node(node_id)
-                self.set_compute_result(node.get_compute_result(port_key), port_key=CustomNode.to_custom_key(node_id, port_key))
+            # Compute
+            self.sub_node_manager.compute(node)
+        # Gather and return compute results
+        compute_results = {}
+        for node, ports in self.selected_ports.items():
+            for port in ports:
+                if not port.is_input:
+                    compute_res: Optional[PropValue] = self.sub_node_manager.get_compute_result(node, port.key)
+                    if compute_res is not None:
+                        compute_results[CustomNode.to_custom_key(node, port.key)] = compute_res
+        return compute_results
 
-    def visualise(self):
-        return self.vis_node.visualise()
+    def visualise(self, *args) -> Optional[Visualisable]:
+        return self.sub_node_manager.visualise(self.vis_node)
 
     # Functions needed for randomisable node
 
@@ -223,9 +278,9 @@ class CustomNode(Node):
         return self._randomisable
 
     def randomise(self, seed=None):
-        self._actual_seed = seed
+        min_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).min_value
+        max_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).max_value
+        self.internal_props['seed'] = seed if seed is not None else random.randint(min_seed, max_seed)
 
     def get_seed(self):
-        if self._actual_seed is None:
-            self._actual_seed = random.random()
-        return self._actual_seed
+        return self.internal_props['seed']
