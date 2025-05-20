@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.figure import Figure
 
 
-def create_graph_svg(ys, xs = None, scatter=False, mirror_img_coords=False):
+def create_graph_svg(ys, xs=None, scatter=False, mirror_img_coords=False):
     # Sample the function (1000 points for smooth curve)
     xs = np.linspace(0, 1, len(ys)) if xs is None else xs
 

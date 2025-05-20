@@ -1,13 +1,10 @@
 import math
-from typing import Optional
 
-from ui.id_datatypes import PropKey
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Ellipse, PT_Float, Float, PT_Int, Int, PortStatus, PropValue, PT_Point, List, \
+from ui.nodes.prop_defs import PropDef, PT_Ellipse, PT_Float, Float, PT_Int, Int, PortStatus, PT_Point, List, \
     Point
 from ui.nodes.shape_datatypes import Ellipse
-from ui.vis_types import Visualisable
 
 DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(
     description="Sample (angularly) equally-spaced points along the edge of an ellipse or circle.",
@@ -43,7 +40,6 @@ DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(
 )
 
 
-
 class EllipseSamplerNode(UnitNode):
     NAME = "Ellipse Sampler"
     DEFAULT_NODE_INFO = DEF_ELLIPSE_SAMPLER_INFO
@@ -70,13 +66,4 @@ class EllipseSamplerNode(UnitNode):
         if ellipse is None:
             return {}
         return {'_main': EllipseSamplerNode.helper(ellipse, props.get('start_angle'),
-                                                            props.get('num_samples'))}
-
-    # def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
-    #     points = self.get_compute_result()
-    #     if points:
-    #         ret_group = Group(debug_info="Ellipse Sampler")
-    #         for p in points:
-    #             ret_group.add(Ellipse(p, (0.01, 0.01), 'black', 255, 'black', 0))
-    #         return ret_group
-    #     return None
+                                                   props.get('num_samples'))}
