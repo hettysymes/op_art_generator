@@ -255,7 +255,6 @@ class List(Generic[T], PropValue):
         """
         # Determine target depth
         target_depth = extract_type.depth if isinstance(extract_type, PT_List) else 0
-        print(f"Target depth: {target_depth}")
 
         # Fully flatten this list
         flat: List = flatten(self)

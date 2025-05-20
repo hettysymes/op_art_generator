@@ -12,6 +12,7 @@ from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.colour import ColourNode
 from ui.nodes.node_implementations.colour_filler import ColourFillerNode
 from ui.nodes.node_implementations.colour_list import ColourListNode
+from ui.nodes.node_implementations.drawing_group import DrawingGroupNode
 from ui.nodes.node_implementations.function import FunctionNode
 from ui.nodes.node_implementations.function_sampler import FunSamplerNode
 from ui.nodes.node_implementations.gradient import GradientNode
@@ -45,7 +46,6 @@ class NodeSettings:
 # node_settings = [
 #     (EllipseSamplerNode, NodeSettings()),
 #     (BlazeMakerNode, NodeSettings()),
-#     (DrawingGroupNode, NodeSettings()),
 #     (PortForwarderNode, NodeSettings()),
 # ]
 node_settings = [(GridNode, NodeSettings()),
@@ -63,7 +63,8 @@ node_settings = [(GridNode, NodeSettings()),
                  (OverlayNode, NodeSettings()),
                  (RandomListSelectorNode, NodeSettings()),
                  (RandomIteratorNode, NodeSettings()),
-                 (StackerNode, NodeSettings())]
+                 (StackerNode, NodeSettings()),
+                 (DrawingGroupNode, NodeSettings())]
 
 
 def node_classes():
