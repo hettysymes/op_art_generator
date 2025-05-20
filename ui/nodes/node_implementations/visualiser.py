@@ -91,7 +91,7 @@ def visualise_by_type(value, value_type):
                 # Draw horizontal grid
                 grid = get_grid(width=len(value))
             elements = List(PT_Element(),
-                            [visualise_by_type(value_item, value_type.base_item_type) for value_item in value])
+                            [visualise_by_type(value_item, value.item_type) for value_item in value])
             if not elements:
                 return None
             return repeat_shapes(grid, elements)

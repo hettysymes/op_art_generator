@@ -58,10 +58,10 @@ class PT_Scalar(PT_ListItem):
 # List
 class PT_List(PropType):
     def __init__(self, base_item_type: PT_ListItem = PT_ListItem(), input_multiple: bool = False,
-                 depth: Optional[int] = 1):
+                 depth: int = 1):
         self.base_item_type = base_item_type
         self.input_multiple = input_multiple
-        self.depth = depth  # Depth of None means that we accept any depth
+        self.depth = depth
 
     def is_compatible_with(self, dest_type):
         if not isinstance(self, type(dest_type)):
@@ -225,6 +225,9 @@ class List(Generic[T], PropValue):
         self.items: list[PropValue] = items if items is not None else []
         self.vertical_layout = vertical_layout
 
+        for item in self.items:
+            assert item.type.is_compatible_with(self.item_type)
+
     @property
     def type(self) -> PropType:
         if isinstance(self.item_type, PT_List):
@@ -251,13 +254,8 @@ class List(Generic[T], PropValue):
         but retain base item type from self.
         """
         # Determine target depth
-        if isinstance(extract_type, PT_List):
-            if extract_type.depth is None:
-                # Don't flatten at all, return as is
-                return copy.deepcopy(self)
-            target_depth = extract_type.depth
-        else:
-            target_depth = 0
+        target_depth = extract_type.depth if isinstance(extract_type, PT_List) else 0
+        print(f"Target depth: {target_depth}")
 
         # Fully flatten this list
         flat: List = flatten(self)

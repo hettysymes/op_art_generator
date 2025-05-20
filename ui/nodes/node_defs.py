@@ -234,13 +234,9 @@ class RuntimeNode:
                 # No value could be resolved anywhere
                 return None
             else:
-                results = [prop_value]
-                refs = [None]
-        if isinstance(prop_type, PT_Scalar) or (isinstance(prop_type, PT_List) and not prop_type.input_multiple):
-            # We know there will be at most one result, so just return the first one
-            return results[0], refs[0]
-        # Port input
-        return results, refs
+                return prop_value, None
+        # We know there will be one result, so just return the first of each list
+        return results[0], refs[0]
 
     def get_compute_result(self, key: PropKey) -> Optional[PropValue]:
         if key in self.compute_results:

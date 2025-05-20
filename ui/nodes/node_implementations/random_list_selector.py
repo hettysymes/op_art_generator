@@ -3,13 +3,13 @@ from typing import cast
 
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PT_Int, PortStatus, List
+from ui.nodes.prop_defs import PropDef, PT_Int, PortStatus, List, PropType
 
 DEF_RANDOM_LIST_SELECTOR_INFO = PrivateNodeInfo(
     description="Randomly select from a list.",
     prop_defs={
         'val_list': PropDef(
-            prop_type=PT_List(input_multiple=False, depth=None),  # None depth indicates not to flatten input List
+            prop_type=PropType(),
             display_name="List",
             description="Input list to select random item of",
             input_port_status=PortStatus.COMPULSORY
@@ -38,12 +38,16 @@ class RandomListSelectorNode(UnitNode):
         if props.get('seed') is None:
             self.randomise()
 
-        val_list: List = props.get('val_list')
+        val_list = props.get('val_list')
         if val_list is None:
             return {}
-        # Return random selection
-        rng = random.Random(props.get('seed'))
-        return {'_main': rng.choice(val_list.items)}
+        if isinstance(val_list, List):
+            # Return random selection
+            rng = random.Random(props.get('seed'))
+            return {'_main': rng.choice(val_list.items)}
+        else:
+            # Scalar input, just return it
+            return {'_main': val_list}
 
     # Functions needed for randomisable node # TODO make into interface
 

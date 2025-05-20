@@ -5,13 +5,13 @@ from ui.id_datatypes import PortId
 from ui.node_graph import RefId
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PT_Int, Int, PortStatus, List
+from ui.nodes.prop_defs import PropDef, PT_List, PT_Int, Int, PortStatus, List, PropType
 
 DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
     description="Create a specified number of random iterations, outputting a drawing.",
     prop_defs={
         'random_input': PropDef(
-            prop_type=PT_List(input_multiple=False, depth=None), # Accept any input but only from one port
+            prop_type=PropType(), # Accept any input (only from one port)
             display_name="Random node",
             input_port_status=PortStatus.COMPULSORY
         ),
@@ -46,7 +46,7 @@ class RandomIteratorNode(UnitNode):
         if props.get('seed') is None:
             self.randomise()
 
-        random_input: List = props.get('random_input')
+        random_input = props.get('random_input')
         if random_input is None:
             return {}
         random_node_ref: RefId = refs.get('random_input')
@@ -56,21 +56,19 @@ class RandomIteratorNode(UnitNode):
 
         # If input node is not randomisable, just return the input the given number of times
         if not random_node.randomisable:
-            compute_result = ref_querier.get_compute_result(random_node_ref)
-            print(compute_result)
-            print(random_input.item_type)
-            return {'_main': List(compute_result.type, [compute_result for _ in range(num_iterations)])}
+            return {'_main': List(random_input.type, [random_input for _ in range(num_iterations)])}
 
         # Get random seeds
         rng = random.Random(props.get('seed'))
         seeds = [rng.random() for _ in range(num_iterations)]
-        comp_inputs = ref_querier.get_compute_inputs(random_node_ref)
+        rprops, rrefs, rquerier = ref_querier.get_compute_inputs(random_node_ref)
 
         # Calculate and set random compute result
-        outputs = List(random_input.item_type)
+        outputs = List(random_input.type)
         for seed in seeds:
-            random_node.randomise(seed)
-            outputs.append(random_node.final_compute(*comp_inputs)[src_port.key])
+            rprops['seed'] = seed
+            rrefs['seed'] = None
+            outputs.append(random_node.final_compute(rprops, rrefs, rquerier)[src_port.key])
         return {'_main': outputs}
 
     # Functions needed for randomisable node # TODO make into interface

@@ -63,14 +63,13 @@ class NodeManager:
         if comp_result is None:
             return None
         # Check types of the result, assume they are already compatible
-        if isinstance(comp_result, List):
-            return comp_result.extract(inp_type)
-        elif isinstance(inp_type, PT_List):
-            return List(comp_result.type, [comp_result])
-        else:
-            # comp_result is scalar, and inp is either PortType or a scalar type
-            # TODO what if it is a port type?
-            return comp_result
+        if isinstance(inp_type, PT_List):
+            if isinstance(comp_result, List):
+                return comp_result.extract(inp_type)
+            else:
+                return List(comp_result.type, [comp_result])
+        # Input type is either PropType or Scalar, return value as is
+        return comp_result
 
     def node_info(self, node: NodeId) -> NodeInfo:
         runtime_node = self._runtime_node(node)
