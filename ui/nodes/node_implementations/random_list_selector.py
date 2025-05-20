@@ -3,13 +3,13 @@ from typing import cast
 
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Int, PortStatus, List, PropType
+from ui.nodes.prop_defs import PropDef, PT_Int, PortStatus, List, PropType, PropValue
 
 DEF_RANDOM_LIST_SELECTOR_INFO = PrivateNodeInfo(
-    description="Randomly select from a list.",
+    description="Randomly selects an item from a list input. If multiple inputs are given, then it randomly selects an input.",
     prop_defs={
         'val_list': PropDef(
-            prop_type=PropType(),
+            prop_type=PropType(input_multiple=True),
             display_name="List",
             description="Input list to select random item of",
             input_port_status=PortStatus.COMPULSORY
@@ -38,16 +38,18 @@ class RandomListSelectorNode(UnitNode):
         if props.get('seed') is None:
             self.randomise()
 
-        val_list = props.get('val_list')
+        val_list: list[PropValue] = props.get('val_list') # Returns list of inputs, one from each source port
         if val_list is None:
             return {}
-        if isinstance(val_list, List):
-            # Return random selection
-            rng = random.Random(props.get('seed'))
-            return {'_main': rng.choice(val_list.items)}
+        if len(val_list) == 1:
+            # One input, randomly select on its items
+            node_input = val_list[0]
+            random_choice_list: list[PropValue] = node_input.items if isinstance(node_input, List) else [node_input]
         else:
-            # Scalar input, just return it
-            return {'_main': val_list}
+            # Multiple inputs, randomly select one of the inputs
+            random_choice_list: list[PropValue] = val_list
+        rng = random.Random(props.get('seed'))
+        return {'_main': rng.choice(random_choice_list)}
 
     # Functions needed for randomisable node # TODO make into interface
 

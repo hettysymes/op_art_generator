@@ -235,6 +235,9 @@ class RuntimeNode:
                 return None
             else:
                 return prop_value, None
+
+        if prop_type.input_multiple:
+            return results, refs
         # We know there will be one result, so just return the first of each list
         return results[0], refs[0]
 

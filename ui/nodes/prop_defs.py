@@ -16,6 +16,9 @@ def get_most_general_type(types):  # Look for a type that all others are compati
 
 class PropType:
 
+    def __init__(self, input_multiple=False):
+        self.input_multiple = input_multiple
+
     def is_compatible_with(self, dest_type):
         return True
 
@@ -59,8 +62,8 @@ class PT_List(PropType):
     def __init__(self, base_item_type: PT_ListItem = PT_ListItem(), input_multiple: bool = False,
                  depth: int = 1):
         self.base_item_type = base_item_type
-        self.input_multiple = input_multiple
         self.depth = depth
+        super().__init__(input_multiple)
 
     def is_compatible_with(self, dest_type):
         if not isinstance(self, type(dest_type)):
