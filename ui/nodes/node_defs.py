@@ -7,7 +7,7 @@ from ui.id_datatypes import PropKey, NodeId, PortId, input_port, EdgeId
 from ui.node_graph import NodeGraph, RefId
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.prop_defs import PropDef, PropValue, PropType, PT_Scalar, PT_List, List, PortRefTableEntry, \
+from ui.nodes.prop_defs import PropDef, PropValue, PropType, PT_List, List, PortRefTableEntry, \
     PT_PointsHolder, LineRef, PT_ElementHolder, ElementRef, PT_ColourHolder, ColourRef
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig, Visualisable

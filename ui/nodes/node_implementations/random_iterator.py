@@ -5,13 +5,13 @@ from ui.id_datatypes import PortId
 from ui.node_graph import RefId
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PT_Int, Int, PortStatus, List, PropType
+from ui.nodes.prop_defs import PropDef, PT_Int, Int, PortStatus, List, PropType
 
 DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
     description="Create a specified number of random iterations, outputting a drawing.",
     prop_defs={
         'random_input': PropDef(
-            prop_type=PropType(), # Accept any input (only from one port)
+            prop_type=PropType(),  # Accept any input (only from one port)
             display_name="Random node",
             input_port_status=PortStatus.COMPULSORY
         ),
@@ -34,7 +34,6 @@ DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
         )
     }
 )
-
 
 
 class RandomIteratorNode(UnitNode):

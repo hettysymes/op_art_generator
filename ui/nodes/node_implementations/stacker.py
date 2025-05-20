@@ -46,7 +46,6 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
 )
 
 
-
 class StackerNode(UnitNode):
     NAME = "Stacker"
     DEFAULT_NODE_INFO = DEF_STACKER_NODE_INFO
