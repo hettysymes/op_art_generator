@@ -329,8 +329,8 @@ class NodePropertiesDialog(QDialog):
                         # Ordinary point
                         menu.actions_map = {'edit': menu.addAction("Edit")}
 
-                def edit_action(table, point, row):
-                    point_dialog = PointDialog(*point)
+                def edit_action(table, entry_group, row):
+                    point_dialog = PointDialog(*entry_group[0])
                     if point_dialog.exec_() == QDialog.Accepted:
                         x, y = point_dialog.get_value()
                         table.set_item([Point(x, y)], row)

@@ -22,6 +22,7 @@ from ui.nodes.node_implementations.random_iterator import RandomIteratorNode
 from ui.nodes.node_implementations.random_list_selector import RandomListSelectorNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.node_implementations.shapes import ShapeNode
+from ui.nodes.node_implementations.stacker import StackerNode
 from ui.nodes.node_implementations.warp import WarpNode
 
 
@@ -44,10 +45,8 @@ class NodeSettings:
 # node_settings = [
 #     (EllipseSamplerNode, NodeSettings()),
 #     (BlazeMakerNode, NodeSettings()),
-#     (StackerNode, NodeSettings()),
 #     (DrawingGroupNode, NodeSettings()),
 #     (PortForwarderNode, NodeSettings()),
-#     (RandomIteratorNode, NodeSettings())
 # ]
 node_settings = [(GridNode, NodeSettings()),
                  (ShapeNode, NodeSettings()),
@@ -63,7 +62,8 @@ node_settings = [(GridNode, NodeSettings()),
                  (GradientNode, NodeSettings()),
                  (OverlayNode, NodeSettings()),
                  (RandomListSelectorNode, NodeSettings()),
-                 (RandomIteratorNode, NodeSettings())]
+                 (RandomIteratorNode, NodeSettings()),
+                 (StackerNode, NodeSettings())]
 
 
 def node_classes():
