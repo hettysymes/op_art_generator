@@ -6,7 +6,7 @@ from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid, List, PT_Point, \
     Point, PT_Warp, PT_Number
-from ui.nodes.shape_datatypes import Group, Element, Polygon
+from ui.nodes.shape_datatypes import Group, Element, Polygon, Ellipse
 from ui.nodes.transforms import Scale, Translate
 from ui.nodes.utils import process_rgb
 from ui.nodes.warp_datatypes import sample_fun, PosWarp, RelWarp
@@ -67,21 +67,15 @@ def get_rectangle(fill: Gradient | Colour, stroke='none', stroke_width=0):
     return get_polygon(fill, List(PT_Point(), [Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)]), stroke,
                        stroke_width)
 
-
-def visualise_in_1d_grid(elements, is_vertical=True):
-    if is_vertical:
-        grid = get_grid(height=len(elements))
-    else:
-        grid = get_grid(width=len(elements))
-    return repeat_shapes(grid, elements)
-
-
 def visualise_by_type(value, value_type):
     if value is None:
         return None
     elif isinstance(value_type, PT_List):
-        if isinstance(value_type.base_item_type, PT_Number):
+        if isinstance(value_type.base_item_type, PT_Number) and value_type.depth == 1:
             return MatplotlibFig(create_graph_svg(value.items, scatter=True))
+        elif isinstance(value_type.base_item_type, PT_Point) and value_type.depth == 1:
+            xs, ys = zip(*value.items)
+            return MatplotlibFig(create_graph_svg(ys, xs=xs, scatter=True, mirror_img_coords=True))
         else:
             value = cast(List, value)
             if value.vertical_layout:
