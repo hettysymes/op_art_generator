@@ -143,6 +143,12 @@ class NodeManager:
         assert isinstance(animate_node, AnimatorNode)
         return animate_node.playing
 
+    def playing_nodes(self) -> set[NodeId]:
+        return {
+            node for node, runtime_node in self.node_map.items()
+            if isinstance(runtime_node.node, AnimatorNode) and runtime_node.node.playing
+        }
+
     def toggle_play(self, node: NodeId) -> None:
         animate_node: Node = self._runtime_node(node).node
         assert isinstance(animate_node, AnimatorNode)

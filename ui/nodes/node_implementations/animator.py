@@ -1,11 +1,13 @@
 from typing import Optional
 
 from ui.id_datatypes import PropKey
+from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.nodes import UnitNode
 from ui.nodes.prop_defs import PropDef, PortStatus, PT_Function, \
-    PT_Float, PT_Int, PropValue, Int, Float
+    PT_Float, PT_Int, PropValue, Int, Float, List
 from ui.nodes.warp_datatypes import sample_fun
+from ui.vis_types import Visualisable, MatplotlibFig
 
 DEF_ANIMATOR_INFO = PrivateNodeInfo(
     description="Animate.",
@@ -46,10 +48,15 @@ class AnimatorNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_ANIMATOR_INFO
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
-        self._curr_idx = 0
-        self._right_dir = True
+        self._curr_idx = None
+        self._right_dir = None
+        self._reset_idx()
         self._playing = False
         super().__init__(internal_props, add_info)
+
+    def _reset_idx(self):
+        self._curr_idx = 0
+        self._right_dir = False
 
     def compute(self, props: ResolvedProps, *args):
         if props.get('function') is None:
@@ -57,14 +64,13 @@ class AnimatorNode(UnitNode):
         # Reset curr index if necessary
         num_samples: int = props.get('num_samples')
         if self._curr_idx >= num_samples:
-            self._curr_idx = 0
-            self._right_dir = False
+           self._reset_idx()
 
         # Get sample from function
         samples: list[float] = sample_fun(props.get('function'), num_samples)
-        sample: float = samples[self._curr_idx]
-        assert isinstance(sample, float) and not isinstance(sample, Float)
-        ret = {'_main': Float(sample)}
+        samples_propval: List[PT_Float] = List(PT_Float(), [Float(s) for s in samples])
+        sample: Float = samples_propval[self._curr_idx]
+        ret = {'_main': Float(sample), 'samples': samples, 'curr_index': Int(self._curr_idx)}
 
         if self._playing:
             # Reverse direction at boundaries
@@ -75,6 +81,13 @@ class AnimatorNode(UnitNode):
             self._curr_idx += 1 if self._right_dir else -1
 
         return ret
+
+    def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
+        samples = compute_results.get('samples')
+        if samples is not None:
+            print(compute_results.get('curr_index'))
+            return MatplotlibFig(create_graph_svg(samples, scatter=True, highlight_index=compute_results.get('curr_index')))
+        return None
 
     @property
     def playing(self) -> bool:

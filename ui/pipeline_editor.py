@@ -217,13 +217,10 @@ class NodeItem(QGraphicsRectItem):
 
     def toggle_playback(self, node: NodeId):
         self.node_manager.toggle_play(node)
-        scene: PipelineScene = self.scene()
         if self.node_manager.is_playing(node):
             self._play_button.setText("❚❚")  # Pause symbol
-            scene.start_animation()
         else:
             self._play_button.setText("▶")  # Play symbol
-            scene.pause_animation()
 
     @property
     def uid(self) -> NodeId:
@@ -1023,22 +1020,13 @@ class PipelineScene(QGraphicsScene):
         self.timer = QTimer()
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.animate)
-        self._is_animating = False
-
-    def start_animation(self):
-        if not self._is_animating:
-            self._is_animating = True
-            self.timer.start()
-
-    def pause_animation(self):
-        if self._is_animating:
-            self._is_animating = False
-            self.timer.stop()
+        self.timer.start()
 
     def animate(self):
-        if self._is_animating:
+        for node in self.node_manager.playing_nodes():
             # Perform animation logic here
-            print("Animating...")
+            print(f"Animating {node}...")
+            self.node_item(node).update_visualisations()
 
     @property
     def node_graph(self):
