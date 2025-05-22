@@ -48,6 +48,7 @@ class AnimatorNode(UnitNode):
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._curr_idx = 0
         self._right_dir = True
+        self._playing = False
         super().__init__(internal_props, add_info)
 
     def compute(self, props: ResolvedProps, *args):
@@ -57,6 +58,7 @@ class AnimatorNode(UnitNode):
         num_samples: int = props.get('num_samples')
         if self._curr_idx >= num_samples:
             self._curr_idx = 0
+            self._right_dir = False
 
         # Get sample from function
         samples: list[float] = sample_fun(props.get('function'), num_samples)
@@ -64,11 +66,19 @@ class AnimatorNode(UnitNode):
         assert isinstance(sample, float) and not isinstance(sample, Float)
         ret = {'_main': Float(sample)}
 
-        # Reverse direction at boundaries
-        if self._curr_idx == 0 or self._curr_idx == num_samples - 1:
-            self._right_dir = not self._right_dir
+        if self._playing:
+            # Reverse direction at boundaries
+            if self._curr_idx == 0 or self._curr_idx == num_samples - 1:
+                self._right_dir = not self._right_dir
 
-        # Update current index based on direction
-        self._curr_idx += 1 if self._right_dir else -1
+            # Update current index based on direction
+            self._curr_idx += 1 if self._right_dir else -1
 
         return ret
+
+    @property
+    def playing(self) -> bool:
+        return self._playing
+
+    def toggle_play(self) -> None:
+        self._playing = not self._playing
