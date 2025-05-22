@@ -19,15 +19,15 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
             output_port_status=PortStatus.FORBIDDEN,
             display_in_props=False
         ),
-        'speed': PropDef(
-            prop_type=PT_Float(min_value=0.5),
-            display_name="Speed",
+        'jump_time': PropDef(
+            prop_type=PT_Float(min_value=10),
+            display_name="Time between animate change / ms",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN,
-            default_value=Float(1)
+            default_value=Float(100)
         ),
         'num_samples': PropDef(
-            prop_type=PT_Int(min_value=1),
+            prop_type=PT_Int(min_value=2),
             display_name="Number of Samples",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN,
@@ -50,6 +50,7 @@ class AnimatorNode(UnitNode):
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._curr_idx = None
         self._right_dir = None
+        self._time_left = 0 # In milliseconds
         self._reset_idx()
         self._playing = False
         super().__init__(internal_props, add_info)
@@ -70,17 +71,7 @@ class AnimatorNode(UnitNode):
         samples: list[float] = sample_fun(props.get('function'), num_samples)
         samples_propval: List[PT_Float] = List(PT_Float(), [Float(s) for s in samples])
         sample: Float = samples_propval[self._curr_idx]
-        ret = {'_main': Float(sample), 'samples': samples, 'curr_index': Int(self._curr_idx)}
-
-        if self._playing:
-            # Reverse direction at boundaries
-            if self._curr_idx == 0 or self._curr_idx == num_samples - 1:
-                self._right_dir = not self._right_dir
-
-            # Update current index based on direction
-            self._curr_idx += 1 if self._right_dir else -1
-
-        return ret
+        return {'_main': Float(sample), 'samples': samples, 'curr_index': Int(self._curr_idx)}
 
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
         samples = compute_results.get('samples')
@@ -92,6 +83,24 @@ class AnimatorNode(UnitNode):
     @property
     def playing(self) -> bool:
         return self._playing
+
+    def reanimate(self, time: float) -> bool:
+        # time is time in milliseconds that has passed
+        # Returns True if it moved to the next animation step
+        assert self.playing
+        self._time_left -= time
+        if self._time_left <= 0:
+            # Reset time left
+            self._time_left: float = self.internal_props['jump_time'] # Time in milliseconds
+
+            # Reverse direction at boundaries
+            if self._curr_idx == 0 or self._curr_idx == self.internal_props['num_samples'] - 1:
+                self._right_dir = not self._right_dir
+
+            # Update current index based on direction
+            self._curr_idx += 1 if self._right_dir else -1
+            return True
+        return False
 
     def toggle_play(self) -> None:
         self._playing = not self._playing

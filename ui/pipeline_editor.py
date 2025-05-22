@@ -1018,15 +1018,16 @@ class PipelineScene(QGraphicsScene):
 
         # Animation
         self.timer = QTimer()
-        self.timer.setInterval(1000)
+        self.timer_interval_ms = 1
+        self.timer.setInterval(self.timer_interval_ms)
         self.timer.timeout.connect(self.animate)
         self.timer.start()
 
     def animate(self):
         for node in self.node_manager.playing_nodes():
             # Perform animation logic here
-            print(f"Animating {node}...")
-            self.node_item(node).update_visualisations()
+            if self.node_manager.reanimate(node, self.timer_interval_ms):
+                self.node_item(node).update_visualisations()
 
     @property
     def node_graph(self):
