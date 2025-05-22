@@ -176,6 +176,30 @@ class NodeItem(QGraphicsRectItem):
             self._randomise_proxy.setWidget(self._randomise_button)
             self._randomise_proxy.setZValue(101)
 
+        # Add play button
+        self._play_button = None
+        if node_info.animatable:
+            self._play_button = QPushButton("▶")
+            self._play_button.setFixedSize(20, 20)
+            self._play_button.setToolTip("Play animation")
+            self._play_button.setStyleSheet("""
+                        QPushButton {
+                            background-color: #f0f0f0;
+                            border: 1px solid #646464;
+                            border-radius: 4px;
+                            font-weight: bold;
+                        }
+                        QPushButton:hover {
+                            background-color: #cccccc;
+                        }
+                    """)
+            self._play_button.clicked.connect(lambda: self.toggle_playback(self.uid))
+
+            # Proxy
+            self._play_proxy = QGraphicsProxyWidget(self)
+            self._play_proxy.setWidget(self._play_button)
+            self._play_proxy.setZValue(101)
+
         self._help_icon_rect = QRectF()
         self._help_hover_timer = QTimer()
         self._help_hover_timer.setSingleShot(True)
@@ -190,6 +214,13 @@ class NodeItem(QGraphicsRectItem):
         if node_setting(node_info.name).resizable:
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
+
+    def toggle_playback(self, node: NodeId):
+        self.node_manager.toggle_play(node)
+        if self.node_manager.is_playing(node):
+            self._play_button.setText("❚❚")  # Pause symbol
+        else:
+            self._play_button.setText("▶")  # Play symbol
 
     @property
     def uid(self) -> NodeId:
@@ -522,6 +553,10 @@ class NodeItem(QGraphicsRectItem):
         # If randomise button exists, place it to the left of property or take its place
         if self._randomise_button:
             self._randomise_proxy.setPos(QPointF(x_offset, self.rect().top() + 5))
+
+        # If play button exists, place it to the left of randomise or take its place
+        if self._play_button:
+            self._play_proxy.setPos(QPointF(x_offset, self.rect().top() + 5))
 
         # Draw port labels if there are multiple
         painter.setFont(NodeItem.LABEL_FONT)
@@ -980,6 +1015,19 @@ class PipelineScene(QGraphicsScene):
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
         self.connection_signals.connectionMade.connect(self.finish_connection)
+
+        # Animation
+        self.timer = QTimer()
+        self.timer_interval_ms = 1
+        self.timer.setInterval(self.timer_interval_ms)
+        self.timer.timeout.connect(self.animate)
+        self.timer.start()
+
+    def animate(self):
+        for node in self.node_manager.playing_nodes():
+            # Perform animation logic here
+            if self.node_manager.reanimate(node, self.timer_interval_ms):
+                self.node_item(node).update_visualisations()
 
     @property
     def node_graph(self):

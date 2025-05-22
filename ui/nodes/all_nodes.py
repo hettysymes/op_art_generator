@@ -1,3 +1,4 @@
+from ui.nodes.node_implementations.animator import AnimatorNode
 from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.node_implementations.colour import ColourNode
 from ui.nodes.node_implementations.colour_filler import ColourFillerNode
@@ -45,7 +46,8 @@ node_settings = [(GridNode, NodeSettings()),
                  (StackerNode, NodeSettings()),
                  (DrawingGroupNode, NodeSettings()),
                  (PortForwarderNode, NodeSettings()),
-                 (EllipseSamplerNode, NodeSettings())]
+                 (EllipseSamplerNode, NodeSettings()),
+                 (AnimatorNode, NodeSettings())]
 
 
 def node_classes():

@@ -2,7 +2,8 @@ import numpy as np
 from matplotlib.figure import Figure
 
 
-def create_graph_svg(ys, xs=None, scatter=False, mirror_img_coords=False):
+def create_graph_svg(ys, xs=None, scatter=False, mirror_img_coords=False, highlight_index=None):
+
     # Sample the function (1000 points for smooth curve)
     xs = np.linspace(0, 1, len(ys)) if xs is None else xs
 
@@ -11,7 +12,12 @@ def create_graph_svg(ys, xs=None, scatter=False, mirror_img_coords=False):
     ax = fig.add_subplot(111)
 
     if scatter:
-        ax.scatter(xs, ys, color='blue', s=2)  # s controls the marker size
+        # Plot all points in blue
+        ax.scatter(xs, ys, color='blue', s=2)
+
+        # Highlight the specific point in orange
+        if highlight_index is not None and 0 <= highlight_index < len(xs):
+            ax.scatter(xs[highlight_index], ys[highlight_index], color='orange', s=10)
     else:
         ax.plot(xs, ys, 'b-', linewidth=2)
 
@@ -29,3 +35,4 @@ def create_graph_svg(ys, xs=None, scatter=False, mirror_img_coords=False):
         ax.invert_yaxis()
 
     return fig
+

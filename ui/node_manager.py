@@ -5,6 +5,7 @@ from typing import Optional
 from ui.id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from ui.node_graph import NodeGraph
 from ui.nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier
+from ui.nodes.node_implementations.animator import AnimatorNode
 from ui.nodes.nodes import CombinationNode, SelectableNode
 from ui.nodes.prop_defs import PropValue, PropType, List, PT_List, PropDef, PortStatus
 from ui.nodes.shape_datatypes import Group
@@ -21,6 +22,7 @@ class NodeInfo:
     randomisable: bool
     selectable: bool
     combination: bool
+    animatable: bool
 
     def filter_ports_by_status(self, port_status: PortStatus, get_input=True, get_output=True) -> list[PortId]:
         results = []
@@ -81,7 +83,8 @@ class NodeManager:
             prop_defs=runtime_node.node.prop_defs,
             randomisable=runtime_node.node.randomisable,
             selectable=isinstance(runtime_node.node, SelectableNode),
-            combination=isinstance(runtime_node.node, CombinationNode)
+            combination=isinstance(runtime_node.node, CombinationNode),
+            animatable=isinstance(runtime_node.node, AnimatorNode)
         )
 
     def get_compute_result(self, node: NodeId, key: PropKey) -> Optional[PropValue]:
@@ -134,3 +137,24 @@ class NodeManager:
         runtime_node: RuntimeNode = self._runtime_node(node)
         assert isinstance(runtime_node.node, SelectableNode)
         return runtime_node.extract_element(parent_group, element_id)
+
+    def is_playing(self, node: NodeId) -> bool:
+        animate_node: Node = self._runtime_node(node).node
+        assert isinstance(animate_node, AnimatorNode)
+        return animate_node.playing
+
+    def playing_nodes(self) -> set[NodeId]:
+        return {
+            node for node, runtime_node in self.node_map.items()
+            if isinstance(runtime_node.node, AnimatorNode) and runtime_node.node.playing
+        }
+
+    def reanimate(self, node:NodeId, time: float) -> bool:
+        animate_node: Node = self._runtime_node(node).node
+        assert isinstance(animate_node, AnimatorNode)
+        return animate_node.reanimate(time)
+
+    def toggle_play(self, node: NodeId) -> None:
+        animate_node: Node = self._runtime_node(node).node
+        assert isinstance(animate_node, AnimatorNode)
+        animate_node.toggle_play()

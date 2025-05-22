@@ -151,6 +151,7 @@ class PT_Colour(PT_Fill, PT_ColourHolder):
 
 class PT_Number(PT_Scalar):
     def __init__(self, min_value=None, max_value=None):
+        super().__init__()
         self.min_value = min_value if min_value is not None else -999999
         self.max_value = max_value if max_value is not None else 999999
 
