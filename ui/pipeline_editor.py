@@ -8,10 +8,10 @@ from collections import defaultdict
 from functools import partial
 from typing import cast, Optional
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData, QSize
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QKeySequence, \
-    QFontMetrics, QImage
+    QFontMetrics
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack,
@@ -30,7 +30,7 @@ from ui.nodes.node_defs import Node
 from ui.nodes.nodes import CombinationNode, CustomNode
 from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, \
     PropValue, PropType
-from ui.nodes.shape_datatypes import Group
+from ui.nodes.shape_datatypes import Group, Element
 from ui.reg_custom_dialog import RegCustomDialog
 from ui.selectable_renderer import SelectableSvgElement
 from ui.vis_types import Visualisable
@@ -194,7 +194,7 @@ class NodeItem(QGraphicsRectItem):
                             background-color: #cccccc;
                         }
                     """)
-            self._play_button.clicked.connect(lambda: self.toggle_playback(self.uid))
+            self._play_button.clicked.connect(self.toggle_playback)
 
             # Proxy
             self._play_proxy = QGraphicsProxyWidget(self)
@@ -218,7 +218,7 @@ class NodeItem(QGraphicsRectItem):
                                         background-color: #cccccc;
                                     }
                                 """)
-            self._export_button.clicked.connect(lambda: self.export_image(self.uid))
+            self._export_button.clicked.connect(self.export_image)
 
             # Proxy
             self._export_proxy = QGraphicsProxyWidget(self)
@@ -240,17 +240,19 @@ class NodeItem(QGraphicsRectItem):
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
 
-    # TODO: move these to the scene
-    def export_image(self, node: NodeId):
-        svg_path: str = os.path.join(self.scene().temp_dir, f"{node}.svg")
-        width: int = self.node_manager.get_internal_property(node, 'width')
-        height: int = self.node_manager.get_internal_property(node, 'height')
-        dialog = ExportWithAspectRatio(svg_path, width, height)
-        dialog.exec_()
+    def export_image(self):
+        vis: Visualisable = self.visualise()
+        if isinstance(vis, Element):
+            svg_path: str = os.path.join(self.scene().temp_dir, f"{self.uid}_export.svg")
+            width: int = self.node_manager.get_internal_property(self.uid, 'width')
+            height: int = self.node_manager.get_internal_property(self.uid, 'height')
+            dialog = ExportWithAspectRatio(svg_path, vis, width, height)
+            dialog.exec_()
+        # TODO: put warning here
 
-    def toggle_playback(self, node: NodeId):
-        self.node_manager.toggle_play(node)
-        if self.node_manager.is_playing(node):
+    def toggle_playback(self):
+        self.node_manager.toggle_play(self.uid)
+        if self.node_manager.is_playing(self.uid):
             self._play_button.setText("❚❚")  # Pause symbol
         else:
             self._play_button.setText("▶")  # Play symbol
@@ -1119,8 +1121,9 @@ class PipelineScene(QGraphicsScene):
 
                 # Check if target port already has a connection
                 target_has_connection = len(dest_port_item.edge_items) > 0
-                if not connection_exists and (not target_has_connection or dest_port_item.port_type.input_multiple) and self.is_edge_type_valid(
-                    source_port_item.port, dest_port_item.port):
+                if not connection_exists and (
+                        not target_has_connection or dest_port_item.port_type.input_multiple) and self.is_edge_type_valid(
+                        source_port_item.port, dest_port_item.port):
                     # Add the connection
                     self.undo_stack.push(
                         AddNewEdgeCmd(self, edge))
