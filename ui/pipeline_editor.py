@@ -8,10 +8,10 @@ from collections import defaultdict
 from functools import partial
 from typing import cast, Optional
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData, QSize
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QKeySequence, \
-    QFontMetrics
+    QFontMetrics, QImage
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack,
@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 
 from ui.app_state import NodeState, AppState, CustomNodeDef, NodeId
+from ui.export_w_aspect_ratio import ExportWithAspectRatio
 from ui.id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, PropKey, node_changed_port
 from ui.node_graph import NodeGraph, RefId
 from ui.node_manager import NodeManager, NodeInfo
@@ -201,11 +202,11 @@ class NodeItem(QGraphicsRectItem):
             self._play_proxy.setZValue(101)
 
         # Add export button
-        self._export_button  = None
+        self._export_button = None
         if node_info.is_canvas:
             self._export_button = QPushButton("⬆")
             self._export_button.setFixedSize(20, 20)
-            self._export_button.setToolTip("Play animation")
+            self._export_button.setToolTip("Export to SVG or PNG")
             self._export_button.setStyleSheet("""
                                     QPushButton {
                                         background-color: #f0f0f0;
@@ -239,8 +240,13 @@ class NodeItem(QGraphicsRectItem):
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
 
+    # TODO: move these to the scene
     def export_image(self, node: NodeId):
-        print(f"Export node {node}")
+        svg_path: str = os.path.join(self.scene().temp_dir, f"{node}.svg")
+        width: int = self.node_manager.get_internal_property(node, 'width')
+        height: int = self.node_manager.get_internal_property(node, 'height')
+        dialog = ExportWithAspectRatio(svg_path, width, height)
+        dialog.exec_()
 
     def toggle_playback(self, node: NodeId):
         self.node_manager.toggle_play(node)

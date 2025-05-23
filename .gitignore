@@ -3,6 +3,7 @@ ui/tmp
 .idea/
 ui/*.pipeline
 ui/*.svg
+ui/*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
