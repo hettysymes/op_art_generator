@@ -1,8 +1,11 @@
+from typing import cast
+
 from ui.id_datatypes import PropKey
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.node_implementations.visualiser import repeat_shapes
 from ui.nodes.nodes import SelectableNode
-from ui.nodes.prop_defs import PropDef, PT_Grid, PortStatus, PT_Element, PT_List, Grid, List, PT_ElementHolder
+from ui.nodes.prop_defs import PropDef, PT_Grid, PortStatus, PT_Element, PT_List, Grid, List, PT_ElementHolder, PT_Enum, \
+    Enum
 from ui.nodes.shape_datatypes import Group
 
 # from ui.nodes.nodes import SelectableNode
@@ -25,6 +28,14 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
             output_port_status=PortStatus.FORBIDDEN,
             default_value=List(PT_ElementHolder())
         ),
+        'row_iter_enum': PropDef(
+            prop_type=PT_Enum(),
+            display_name="Iteration direction",
+            description="Drawings can be placed into the grid either row-by-row or column-by-column.",
+            default_value=Enum([True, False], ["Row-by-row", "Column-by-column"]),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN
+        ),
         '_main': PropDef(
             prop_type=PT_Element(),
             display_name="Drawing",
@@ -37,7 +48,7 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
 
 
 class ShapeRepeaterNode(SelectableNode):
-    NAME = "Shape Repeater"
+    NAME = "Grid Repeater"
     DEFAULT_NODE_INFO = DEF_SHAPE_REPEATER_NODE_INFO
 
     @staticmethod
@@ -54,7 +65,7 @@ class ShapeRepeaterNode(SelectableNode):
         elem_entries: List[PT_ElementHolder] = props.get('elements')
         if not grid or not elem_entries:
             return {}
-        main_group = repeat_shapes(grid, List(PT_Element(), [elem_entry.element for elem_entry in elem_entries]))
+        main_group = repeat_shapes(grid, List(PT_Element(), [elem_entry.element for elem_entry in elem_entries]), row_iter=cast(Enum, props.get('row_iter_enum')).selected_option)
         ret_result = {'_main': main_group}
         for key in self.extracted_props:
             # Compute cell

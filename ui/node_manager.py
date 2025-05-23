@@ -6,6 +6,7 @@ from ui.id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from ui.node_graph import NodeGraph
 from ui.nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier
 from ui.nodes.node_implementations.animator import AnimatorNode
+from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.nodes import CombinationNode, SelectableNode
 from ui.nodes.prop_defs import PropValue, PropType, List, PT_List, PropDef, PortStatus
 from ui.nodes.shape_datatypes import Group
@@ -23,6 +24,7 @@ class NodeInfo:
     selectable: bool
     combination: bool
     animatable: bool
+    is_canvas: bool
 
     def filter_ports_by_status(self, port_status: PortStatus, get_input=True, get_output=True) -> list[PortId]:
         results = []
@@ -84,7 +86,8 @@ class NodeManager:
             randomisable=runtime_node.node.randomisable,
             selectable=isinstance(runtime_node.node, SelectableNode),
             combination=isinstance(runtime_node.node, CombinationNode),
-            animatable=isinstance(runtime_node.node, AnimatorNode)
+            animatable=isinstance(runtime_node.node, AnimatorNode),
+            is_canvas=isinstance(runtime_node.node, CanvasNode)
         )
 
     def get_compute_result(self, node: NodeId, key: PropKey) -> Optional[PropValue]:

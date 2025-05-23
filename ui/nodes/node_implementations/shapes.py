@@ -237,12 +237,12 @@ class PolygonNode(UnitNode):
 
 
 DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
-    description="Create a rectangle shape by deciding the fill colour. Optionally a gradient can be used to fill the shape.",
+    description="Create a square shape by deciding the fill colour. Optionally a gradient can be used to fill the shape.",
     prop_defs={
         'fill': PropDef(
             prop_type=PT_Fill(),
             display_name="Fill",
-            description="Rectangle fill colour.",
+            description="Square fill colour.",
             default_value=Colour(0, 0, 0, 255)
         ),
         '_main': PropDef(
@@ -256,7 +256,7 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
 
 
 class RectangleNode(UnitNode):
-    NAME = "Rectangle"
+    NAME = "Square"
     DEFAULT_NODE_INFO = DEF_RECTANGLE_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):

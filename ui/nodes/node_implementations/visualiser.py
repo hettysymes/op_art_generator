@@ -37,19 +37,28 @@ def get_grid(width=1, height=1, x_warp=None, y_warp=None) -> Grid:
     return Grid(v_line_xs, h_line_ys)
 
 
-def repeat_shapes(grid: Grid, elements: List[PT_Element]):
+def repeat_shapes(grid: Grid, elements: List[PT_Element], row_iter=True):
     ret_group = Group(debug_info="Shape Repeater")
     element_it = itertools.cycle(elements)
-    for i in range(0, len(grid.h_line_ys) - 1):
-        # Add row
-        for j in range(0, len(grid.v_line_xs) - 1):
-            x1 = grid.v_line_xs[j]
-            x2 = grid.v_line_xs[j + 1]
-            y1 = grid.h_line_ys[i]
-            y2 = grid.h_line_ys[i + 1]
-            cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({i},{j})")
-            cell_group.add(next(element_it))
-            ret_group.add(cell_group)
+
+    rows = len(grid.h_line_ys) - 1
+    cols = len(grid.v_line_xs) - 1
+
+    total_cells = rows * cols
+    for idx in range(total_cells):
+        if row_iter:
+            i, j = divmod(idx, cols)
+        else:
+            j, i = divmod(idx, rows)
+
+        x1 = grid.v_line_xs[j]
+        x2 = grid.v_line_xs[j + 1]
+        y1 = grid.h_line_ys[i]
+        y2 = grid.h_line_ys[i + 1]
+        cell_group = Group([Scale(x2 - x1, y2 - y1), Translate(x1, y1)], debug_info=f"Cell ({i},{j})")
+        cell_group.add(next(element_it))
+        ret_group.add(cell_group)
+
     return ret_group
 
 

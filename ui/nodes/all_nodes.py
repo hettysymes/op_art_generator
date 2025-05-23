@@ -19,50 +19,25 @@ from ui.nodes.node_implementations.shapes import ShapeNode
 from ui.nodes.node_implementations.stacker import StackerNode
 from ui.nodes.node_implementations.warp import WarpNode
 
-
-class NodeSettings:
-    def __init__(self, resizable=True):
-        self.resizable = resizable
-
-
-# node_settings = [
-#     (BlazeMakerNode, NodeSettings()),
-# ]
-node_settings = [(GridNode, NodeSettings()),
-                 (ShapeNode, NodeSettings()),
-                 (CanvasNode, NodeSettings(resizable=False)),
-                 (ShapeRepeaterNode, NodeSettings()),
-                 (FunctionNode, NodeSettings()),
-                 (WarpNode, NodeSettings()),
-                 (FunSamplerNode, NodeSettings()),
-                 (IteratorNode, NodeSettings()),
-                 (ColourNode, NodeSettings()),
-                 (ColourFillerNode, NodeSettings()),
-                 (ColourListNode, NodeSettings()),
-                 (GradientNode, NodeSettings()),
-                 (OverlayNode, NodeSettings()),
-                 (RandomListSelectorNode, NodeSettings()),
-                 (RandomIteratorNode, NodeSettings()),
-                 (StackerNode, NodeSettings()),
-                 (DrawingGroupNode, NodeSettings()),
-                 (PortForwarderNode, NodeSettings()),
-                 (EllipseSamplerNode, NodeSettings()),
-                 (AnimatorNode, NodeSettings())]
-
-
-def node_classes():
-    node_classes = []
-    for node_setting in node_settings:
-        node = node_setting[0]
-        node_classes.append(node)
-    return node_classes
-
-
-def node_setting(name):
-    if name == "Custom":
-        return NodeSettings()
-    for node_setting in node_settings:
-        node, setting = node_setting
-        if node.name() == name:
-            return setting
-    raise KeyError("Node setting not found for given node name.")
+node_classes = [
+    GridNode,
+    ShapeNode,
+    CanvasNode,
+    ShapeRepeaterNode,
+    FunctionNode,
+    WarpNode,
+    FunSamplerNode,
+    IteratorNode,
+    ColourNode,
+    ColourFillerNode,
+    ColourListNode,
+    GradientNode,
+    OverlayNode,
+    RandomListSelectorNode,
+    RandomIteratorNode,
+    StackerNode,
+    DrawingGroupNode,
+    PortForwarderNode,
+    EllipseSamplerNode,
+    AnimatorNode
+]

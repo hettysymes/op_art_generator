@@ -24,7 +24,7 @@ from ui.id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port
 from ui.node_graph import NodeGraph, RefId
 from ui.node_manager import NodeManager, NodeInfo
 from ui.node_props_dialog import NodePropertiesDialog
-from ui.nodes.all_nodes import node_setting, node_classes
+from ui.nodes.all_nodes import node_classes
 from ui.nodes.node_defs import Node
 from ui.nodes.nodes import CombinationNode, CustomNode
 from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, \
@@ -200,6 +200,30 @@ class NodeItem(QGraphicsRectItem):
             self._play_proxy.setWidget(self._play_button)
             self._play_proxy.setZValue(101)
 
+        # Add export button
+        self._export_button  = None
+        if node_info.is_canvas:
+            self._export_button = QPushButton("⬆")
+            self._export_button.setFixedSize(20, 20)
+            self._export_button.setToolTip("Play animation")
+            self._export_button.setStyleSheet("""
+                                    QPushButton {
+                                        background-color: #f0f0f0;
+                                        border: 1px solid #646464;
+                                        border-radius: 4px;
+                                        font-weight: bold;
+                                    }
+                                    QPushButton:hover {
+                                        background-color: #cccccc;
+                                    }
+                                """)
+            self._export_button.clicked.connect(lambda: self.export_image(self.uid))
+
+            # Proxy
+            self._export_proxy = QGraphicsProxyWidget(self)
+            self._export_proxy.setWidget(self._export_button)
+            self._export_proxy.setZValue(101)
+
         self._help_icon_rect = QRectF()
         self._help_hover_timer = QTimer()
         self._help_hover_timer.setSingleShot(True)
@@ -211,9 +235,12 @@ class NodeItem(QGraphicsRectItem):
         self._help_text = f"{node_info.base_name} Help:\n{node_info.description}"
 
         self.resize_handle = None
-        if node_setting(node_info.name).resizable:
+        if not node_info.is_canvas:
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
+
+    def export_image(self, node: NodeId):
+        print(f"Export node {node}")
 
     def toggle_playback(self, node: NodeId):
         self.node_manager.toggle_play(node)
@@ -545,18 +572,22 @@ class NodeItem(QGraphicsRectItem):
         self._help_icon_rect = help_rect
         x_offset = self.rect().right() - 25  # Right edge - 20px width - 5px padding
 
-        # If property button exists, place it rightmost
+        # Place optional buttons
         if self._property_button:
             self._property_proxy.setPos(QPointF(x_offset, self.rect().top() + 5))
             x_offset -= 25  # Move left for next button
 
-        # If randomise button exists, place it to the left of property or take its place
         if self._randomise_button:
             self._randomise_proxy.setPos(QPointF(x_offset, self.rect().top() + 5))
+            x_offset -= 25  # Move left for next button
 
-        # If play button exists, place it to the left of randomise or take its place
         if self._play_button:
             self._play_proxy.setPos(QPointF(x_offset, self.rect().top() + 5))
+            x_offset -= 25  # Move left for next button
+
+        if self._export_button:
+            self._export_proxy.setPos(QPointF(x_offset, self.rect().top() + 5))
+            x_offset -= 25  # Move left for next button
 
         # Draw port labels if there are multiple
         painter.setFont(NodeItem.LABEL_FONT)
@@ -843,7 +874,7 @@ class ChangePropertiesCmd(QUndoCommand):
     def update_properties(self, props):
         for prop_key, value in props.items():
             self.node_manager.set_internal_property(self.node_item.uid, prop_key, value)
-            if (not node_setting(self.node_item.node_info.name).resizable) and (
+            if self.node_manager.node_info(self.node_item.uid).is_canvas and (
                     prop_key == 'width' or prop_key == 'height'):
                 svg_width = self.node_manager.get_internal_property(self.node_item.uid, 'width')
                 svg_height = self.node_manager.get_internal_property(self.node_item.uid, 'height')
@@ -1021,7 +1052,8 @@ class PipelineScene(QGraphicsScene):
         self.timer_interval_ms = 1
         self.timer.setInterval(self.timer_interval_ms)
         self.timer.timeout.connect(self.animate)
-        self.timer.start()
+        # TODO: uncomment this when figure out efficiency
+        # self.timer.start()
 
     def animate(self):
         for node in self.node_manager.playing_nodes():
@@ -1195,7 +1227,7 @@ class PipelineScene(QGraphicsScene):
             menu = QMenu()
 
             # Add actions for each node type
-            for node_class in node_classes():
+            for node_class in node_classes:
                 if issubclass(node_class, CombinationNode):
                     submenu = menu.addMenu(node_class.name())
                     for i in range(len(node_class.selections())):
