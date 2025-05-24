@@ -48,7 +48,7 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
 
 
 class IteratorNode(UnitNode):
-    NAME = "Iterator"
+    NAME = "Property Iterator"
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
 
     def _update_prop_change_enum(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> bool:

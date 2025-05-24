@@ -39,14 +39,14 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
         ),
         'stop_coord': PropDef(
             prop_type=PT_Point(),
-            display_name="Gradient stop coordinate",
-            description="Coordinate of the gradient stop. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
+            display_name="Gradient end coordinate",
+            description="Coordinate of the gradient end. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Point(1, 0)
         ),
         'grad_offsets': PropDef(
             prop_type=PT_List(PT_GradOffset()),
-            display_name="Colour offsets",
-            description="Colours at different offsets",
+            display_name="Colour stops",
+            description="Specify solid colours and their respective offsets in the gradient.",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN,
             default_value=List(PT_GradOffset(), [GradOffset(0, Colour(255, 255, 255, 0)), GradOffset(1, Colour(255, 255, 255, 255))])

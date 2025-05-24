@@ -62,7 +62,7 @@ class SelectableSvgElement(QGraphicsItem):
         menu = QMenu()
 
         # Add "Extract into node" action
-        extract_action = QAction("Extract into node", menu)
+        extract_action = QAction("Extract into port", menu)
         extract_action.triggered.connect(self.extractElement)
         menu.addAction(extract_action)
 
