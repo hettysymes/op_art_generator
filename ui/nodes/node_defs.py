@@ -67,7 +67,7 @@ class Node(ABC):
         prop_defs: dict[PropKey, PropDef] = self.prop_defs
         for key, prop_def in prop_defs.items():
             if prop_def.default_value is not None:
-                default_props[key] = prop_def.default_value
+                default_props[key] = copy.deepcopy(prop_def.default_value)
         return default_props
 
     def final_compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[

@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 
 from PyQt5.QtCore import Qt
@@ -33,7 +34,7 @@ class GradOffsetColourWidget(QWidget):
     def set_entries(self, entries):
         self.table.setRowCount(len(entries))
         for row, entry in enumerate(entries):
-            self.set_item(entry, row)
+            self.set_item(copy.deepcopy(entry), row)
 
     def show_context_menu(self, position):
         index = self.table.indexAt(position)

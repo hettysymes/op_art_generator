@@ -211,7 +211,6 @@ class Polygon(Shape):
         self.fill = fill
         self.stroke = stroke
         self.stroke_width = stroke_width
-        print(self.fill.type)
 
     def get(self, dwg):
         fill, fill_opacity = process_fill(self.fill, dwg)
