@@ -41,6 +41,4 @@ class GradientNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_GRADIENT_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
-        print("Grad offset:")
-        print(props.get('grad_offset'))
         return {'_main': Gradient(props.get('start_col'), props.get('stop_col'))}

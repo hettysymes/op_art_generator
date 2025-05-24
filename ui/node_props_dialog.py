@@ -444,7 +444,6 @@ class NodePropertiesDialog(QDialog):
                 value = Enum(options=options, display_options=display_options, selected_option=selected_option)
             elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
                 value = widget.get_value()
-                print(value)
             else:  # QLineEdit
                 value = widget.text()
 
