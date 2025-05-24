@@ -9,13 +9,14 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidge
 
 from ui.app_state import NodeState
 from ui.colour_prop_widget import ColorPropertyWidget
+from ui.gradient_colour_table import GradOffsetColourWidget
 from ui.id_datatypes import PortId, PropKey, input_port, output_port, NodeId
 from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
 from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, Enum, \
     LineRef, PT_Fill, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
     PT_String, Point, PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
-    PT_ColourHolder, Colour
+    PT_ColourHolder, Colour, PT_GradOffset, PT_Colour
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 
@@ -417,9 +418,10 @@ class NodePropertiesDialog(QDialog):
                     item_delegate=ColourDelegate()
                 )
                 widget = port_ref_table
-        elif isinstance(prop_type, PT_Fill):
-            r, g, b, a = current_value
-            widget = ColorPropertyWidget(QColor(r, g, b, a) or QColor(0, 0, 0, 255))
+            elif isinstance(prop_type.base_item_type, PT_GradOffset):
+                widget = GradOffsetColourWidget(entries=current_value)
+        elif isinstance(prop_type, PT_Colour):
+            widget = ColorPropertyWidget(current_value)
         elif isinstance(prop_type, PT_String):  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
 
@@ -442,6 +444,7 @@ class NodePropertiesDialog(QDialog):
                 value = Enum(options=options, display_options=display_options, selected_option=selected_option)
             elif isinstance(widget, QWidget) and hasattr(widget.layout(), 'itemAt') and widget.layout().count() > 0:
                 value = widget.get_value()
+                print(value)
             else:  # QLineEdit
                 value = widget.text()
 

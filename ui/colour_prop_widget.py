@@ -9,8 +9,9 @@ class ColorPreviewWidget(QWidget):
     """Widget that displays a color preview and handles clicks."""
     clicked = pyqtSignal()
 
-    def __init__(self, color, parent=None):
+    def __init__(self, color: Colour, parent=None):
         super().__init__(parent)
+        assert isinstance(color, Colour)
         self.color = color
         self.setFixedSize(80, 20)
         # Make it clear this is clickable
@@ -19,10 +20,10 @@ class ColorPreviewWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setPen(Qt.black)
-        painter.setBrush(self.color)
+        painter.setBrush(QColor(*self.color))
         painter.drawRect(0, 0, self.width() - 1, self.height() - 1)
 
-    def setColor(self, color):
+    def setColor(self, color: Colour):
         self.color = color
         self.update()
 
@@ -36,29 +37,30 @@ class ColorPropertyWidget(QWidget):
     """Widget for selecting colors in property editor."""
     colorChanged = pyqtSignal(QColor)
 
-    def __init__(self, initial_color, parent=None):
+    def __init__(self, initial_color: Colour, parent=None):
         super().__init__(parent)
-        self.color = initial_color if isinstance(initial_color, QColor) else QColor(initial_color)
+        self.colour = initial_color
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Color preview (now clickable)
-        self.preview = ColorPreviewWidget(self.color)
+        self.preview = ColorPreviewWidget(self.colour)
         self.preview.clicked.connect(self.showColorDialog)
 
         layout.addWidget(self.preview)
         layout.setStretch(0, 1)
 
     def showColorDialog(self):
-        color = QColorDialog.getColor(self.color, self, "Select Color", options=QColorDialog.ShowAlphaChannel)
-        if color.isValid():
-            self.setColor(color)
-            self.colorChanged.emit(self.color)
+        qcolour = QColorDialog.getColor(QColor(*self.colour), self, "Select Color", options=QColorDialog.ShowAlphaChannel)
+        if qcolour.isValid():
+            colour: Colour = Colour(*qcolour.getRgb())
+            self.set_colour(colour)
+            self.colorChanged.emit(qcolour)
 
-    def setColor(self, color):
-        self.color = color if isinstance(color, QColor) else QColor(color)
-        self.preview.setColor(self.color)
+    def set_colour(self, colour: Colour):
+        self.colour = colour
+        self.preview.setColor(self.colour)
 
-    def get_value(self):
-        return Colour(*self.color.getRgb())
+    def get_value(self) -> Colour:
+        return self.colour

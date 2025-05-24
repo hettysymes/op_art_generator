@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Optional, TypeVar, cast, Generic
 
-from ui.node_graph import RefId
-
 
 def get_most_general_type(types):  # Look for a type that all others are compatible with
     for candidate in types:
@@ -144,6 +142,9 @@ class PT_Gradient(PT_Fill):
 
 
 class PT_Colour(PT_Fill, PT_ColourHolder):
+    pass
+
+class PT_GradOffset(PT_Scalar):
     pass
 
 
@@ -483,7 +484,7 @@ class Grid(PropValue):
 
 
 class PortRefTableEntry(PropValue):
-    def __init__(self, ref: RefId, data: PropValue, group_idx: tuple[int, int], deletable: bool = True):
+    def __init__(self, ref, data: PropValue, group_idx: tuple[int, int], deletable: bool = True):
         self.ref = ref
         self.deletable = deletable
         self.group_idx = group_idx  # (index_in_group, total_group_len), index starts from 1
@@ -507,7 +508,7 @@ class ElementHolder(PropValue, ABC):
 
 class ElementRef(ElementHolder, PortRefTableEntry):
 
-    def __init__(self, ref: RefId, data: ElementHolder, group_idx: tuple[int, int], deletable: bool):
+    def __init__(self, ref, data: ElementHolder, group_idx: tuple[int, int], deletable: bool):
         super().__init__(ref, data, group_idx, deletable)
 
     @property
@@ -532,7 +533,7 @@ class ColourHolder(PropValue, ABC):
 
 class ColourRef(ColourHolder, PortRefTableEntry):
 
-    def __init__(self, ref: RefId, data: ColourHolder, group_idx: tuple[int, int], deletable: bool):
+    def __init__(self, ref, data: ColourHolder, group_idx: tuple[int, int], deletable: bool):
         super().__init__(ref, data, group_idx, deletable)
 
     @property
@@ -562,11 +563,21 @@ class Colour(tuple, ColourHolder):
     def type(self) -> PropType:
         return PT_Colour()
 
+class GradOffset(PropValue):
+
+    def __init__(self, offset: float, colour: Colour):
+        self.offset = offset
+        self.colour = colour
+
+    @property
+    def type(self) -> PropType:
+        return PT_GradOffset()
+
 
 # Tables
 
 class LineRef(PointsHolder, PortRefTableEntry):
-    def __init__(self, ref: RefId, data: PointsHolder, group_idx: tuple[int, int], deletable: bool):
+    def __init__(self, ref, data: PointsHolder, group_idx: tuple[int, int], deletable: bool):
         super().__init__(ref, data, group_idx, deletable)
         self._reversed = False
 
