@@ -3,7 +3,6 @@ from typing import cast
 
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
-from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid, List, PT_Point, \
     Point, PT_Warp, PT_Number, Fill
 from ui.nodes.shape_datatypes import Group, Element, Polygon

@@ -1,6 +1,5 @@
 from typing import cast
 
-from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.node_implementations.visualiser import get_rectangle
 from ui.nodes.node_input_exception import NodeInputException
@@ -306,26 +305,12 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
     }
 )
 
-
-#
 class EllipseNode(UnitNode):
     NAME = "Ellipse"
     DEFAULT_NODE_INFO = DEF_ELLIPSE_INFO
 
-    @staticmethod
-    def helper(colour, centre, radius, stroke='none', stroke_width=1):
-        if isinstance(colour, Gradient):
-            fill = colour
-            fill_opacity = 255
-        else:
-            fill, fill_opacity = process_rgb(colour)
-        return Ellipse(centre, radius, fill,
-                       fill_opacity, stroke, stroke_width)
-
     def compute(self, props: ResolvedProps, *args):
-        return {'_main': EllipseNode.helper(props.get('fill'), props.get('centre'),
-                                            (props.get('rx'), props.get('ry')),
-                                            'none', props.get('stroke_width'))}
+        return {'_main': Ellipse(props.get('centre'), (props.get('rx'), props.get('ry')), props.get('fill'), 'none', props.get('stroke_width'))}
 
 
 DEF_CIRCLE_INFO = PrivateNodeInfo(
@@ -365,30 +350,13 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
 )
 
 
-def ellipse_helper(fill, centre, radius, stroke='none', stroke_width=1.0):
-    if isinstance(fill, Gradient):
-        fill = fill
-        fill_opacity = 255
-    else:
-        fill, fill_opacity = process_rgb(fill)
-    return Ellipse(centre, radius, fill,
-                   fill_opacity, stroke, stroke_width)
-
-
 class CircleNode(UnitNode):
     NAME = "Circle"
     DEFAULT_NODE_INFO = DEF_CIRCLE_INFO
 
-    @staticmethod
-    def helper(colour, centre, radius, stroke='none', stroke_width=Float(1.0)):
-        return ellipse_helper(colour, centre, (radius, radius), stroke, stroke_width)
-
     def compute(self, props: ResolvedProps, *args):
-        return {'_main': CircleNode.helper(props.get('fill'),
-                                           props.get('centre'),
-                                           props.get('r'),
-                                           'none',
-                                           props.get('stroke_width'))}
+        r = props.get('r')
+        return {'_main': Ellipse(props.get('centre'), (r, r), props.get('fill'), 'none', props.get('stroke_width'))}
 
 
 class ShapeNode(CombinationNode):

@@ -1,8 +1,32 @@
-from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
-from ui.nodes.nodes import UnitNode
+from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.prop_defs import PropDef, PortStatus, Colour, PT_Colour, PT_List, PT_GradOffset, List, PT_Point, Point, \
-    GradOffset
+    GradOffset, Gradient
+
+DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
+    description="Outputs a desired solid colour.",
+    prop_defs={
+        'colour': PropDef(
+            prop_type=PT_Colour(),
+            display_name="Colour",
+            description="Solid colour.",
+            default_value=Colour(0, 0, 0, 255)
+        ),
+        '_main': PropDef(
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.COMPULSORY,
+            display_name="Colour",
+            display_in_props=False
+        )
+    }
+)
+
+class ColourNode(UnitNode):
+    NAME = "Colour"
+    DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO
+
+    def compute(self, props: ResolvedProps, *args):
+        return {'_main': props.get('colour')}
 
 DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
     description="Define a linear gradient. This can be passed to a shape node as its fill.",
@@ -36,10 +60,13 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
     }
 )
 
-
 class GradientNode(UnitNode):
     NAME = "Linear Gradient"
     DEFAULT_NODE_INFO = DEF_GRADIENT_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main': Gradient(props.get('start_coord'), props.get('stop_coord'), props.get('grad_offsets'))}
+
+class FillNode(CombinationNode):
+    NAME = "Fill"
+    SELECTIONS = [ColourNode, GradientNode]

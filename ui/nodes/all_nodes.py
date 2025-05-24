@@ -1,13 +1,12 @@
 from ui.nodes.node_implementations.animator import AnimatorNode
 from ui.nodes.node_implementations.canvas import CanvasNode
-from ui.nodes.node_implementations.colour import ColourNode
 from ui.nodes.node_implementations.colour_filler import ColourFillerNode
 from ui.nodes.node_implementations.colour_list import ColourListNode
+from ui.nodes.node_implementations.colours import FillNode
 from ui.nodes.node_implementations.drawing_group import DrawingGroupNode
 from ui.nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
 from ui.nodes.node_implementations.function import FunctionNode
 from ui.nodes.node_implementations.function_sampler import FunSamplerNode
-from ui.nodes.node_implementations.gradient import GradientNode
 from ui.nodes.node_implementations.grid import GridNode
 from ui.nodes.node_implementations.iterator import IteratorNode
 from ui.nodes.node_implementations.overlay import OverlayNode
@@ -28,10 +27,9 @@ node_classes = [
     WarpNode,
     FunSamplerNode,
     IteratorNode,
-    ColourNode,
+    FillNode,
     ColourFillerNode,
     ColourListNode,
-    GradientNode,
     OverlayNode,
     RandomListSelectorNode,
     RandomIteratorNode,
