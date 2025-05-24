@@ -22,7 +22,7 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
 )
 
 class ColourNode(UnitNode):
-    NAME = "Colour"
+    NAME = "Solid Colour"
     DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -68,5 +68,5 @@ class GradientNode(UnitNode):
         return {'_main': Gradient(props.get('start_coord'), props.get('stop_coord'), props.get('grad_offsets'))}
 
 class FillNode(CombinationNode):
-    NAME = "Fill"
+    NAME = "Colour"
     SELECTIONS = [ColourNode, GradientNode]
