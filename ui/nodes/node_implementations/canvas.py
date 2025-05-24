@@ -4,7 +4,7 @@ from ui.id_datatypes import PropKey
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
 from ui.nodes.node_implementations.visualiser import get_rectangle
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Int, Int, PT_Fill, PT_Element, PortStatus, Colour, PropValue
+from ui.nodes.prop_defs import PropDef, PT_Int, Int, PT_Fill, PT_Element, PortStatus, Colour, PropValue, Fill
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import Visualisable
 
@@ -43,9 +43,9 @@ class CanvasNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_CANVAS_NODE_INFO
 
     @staticmethod
-    def helper(colour, element=None):
+    def helper(fill: Fill, element=None):
         group = Group(debug_info="Canvas")
-        group.add(get_rectangle(colour))
+        group.add(get_rectangle(fill))
         if element:
             group.add(element)
         return group

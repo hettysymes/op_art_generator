@@ -8,7 +8,7 @@ from ui.node_graph import NodeGraph, RefId
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.prop_defs import PropDef, PropValue, PropType, PT_List, List, PortRefTableEntry, \
-    PT_PointsHolder, LineRef, PT_ElementHolder, ElementRef, PT_ColourHolder, ColourRef
+    PT_PointsHolder, LineRef, PT_ElementHolder, ElementRef, PT_FillHolder, FillRef
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig, Visualisable
 
@@ -215,8 +215,8 @@ class RuntimeNode:
                         class_entry = LineRef
                     elif isinstance(prop_value.item_type, PT_ElementHolder):
                         class_entry = ElementRef
-                    elif isinstance(prop_value.item_type, PT_ColourHolder):
-                        class_entry = ColourRef
+                    elif isinstance(prop_value.item_type, PT_FillHolder):
+                        class_entry = FillRef
                     else:
                         class_entry = PortRefTableEntry
                     new_prop_value.append(

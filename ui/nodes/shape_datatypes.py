@@ -1,15 +1,24 @@
 import math
 import uuid
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, cast
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, Point, List, \
-    PT_Point, PointsHolder, ElementHolder
+    PT_Point, PointsHolder, ElementHolder, Fill, Colour
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 from ui.vis_types import Visualisable
 
+def process_fill(fill: Fill, dwg):
+    if isinstance(fill, Gradient):
+        colour = fill.get(dwg)
+        opacity = 1
+    else:
+        assert isinstance(fill, Colour)
+        colour = fill.colour
+        opacity = fill.opacity
+    return colour, opacity
 
 class Element(ElementHolder, Visualisable, ABC):
 
@@ -196,19 +205,19 @@ class Polyline(Shape, PointsHolder):
 
 class Polygon(Shape):
 
-    def __init__(self, points, fill, fill_opacity, stroke='none', stroke_width=1.0):
+    def __init__(self, points, fill: Fill, stroke='none', stroke_width=1.0):
         super().__init__()
         self.points = points
         self.fill = fill
-        self.fill_opacity = fill_opacity
         self.stroke = stroke
         self.stroke_width = stroke_width
+        print(self.fill.type)
 
     def get(self, dwg):
-        fill = self.fill.get(dwg) if isinstance(self.fill, Gradient) else self.fill
+        fill, fill_opacity = process_fill(self.fill, dwg)
         return dwg.polygon(points=self.points,
                            fill=fill,
-                           fill_opacity=self.fill_opacity,
+                           fill_opacity=fill_opacity,
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
@@ -221,21 +230,20 @@ class Polygon(Shape):
 
 class Ellipse(Shape):
 
-    def __init__(self, center, r, fill, fill_opacity, stroke, stroke_width):
+    def __init__(self, center, r, fill: Fill, stroke, stroke_width):
         super().__init__()
         self.center = center
         self.r = r
         self.fill = fill
-        self.fill_opacity = fill_opacity
         self.stroke = stroke
         self.stroke_width = stroke_width
 
     def get(self, dwg):
-        fill = self.fill.get(dwg) if isinstance(self.fill, Gradient) else self.fill
+        fill, fill_opacity = process_fill(self.fill, dwg)
         return dwg.ellipse(center=self.center,
                            r=self.r,
                            fill=fill,
-                           fill_opacity=self.fill_opacity,
+                           fill_opacity=fill_opacity,
                            stroke=self.stroke,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',

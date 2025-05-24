@@ -129,11 +129,11 @@ class PT_Ellipse(PT_Shape):
 
 # Fill
 
-class PT_ColourHolder(PT_Scalar):
+class PT_FillHolder(PT_Scalar):
     pass
 
 
-class PT_Fill(PT_Scalar):
+class PT_Fill(PT_FillHolder):
     pass
 
 
@@ -141,7 +141,7 @@ class PT_Gradient(PT_Fill):
     pass
 
 
-class PT_Colour(PT_Fill, PT_ColourHolder):
+class PT_Colour(PT_Fill):
     pass
 
 class PT_GradOffset(PT_Scalar):
@@ -520,32 +520,42 @@ class ElementRef(ElementHolder, PortRefTableEntry):
         return PT_ElementHolder()
 
 
-class ColourHolder(PropValue, ABC):
+class FillHolder(PropValue, ABC):
     @property
     @abstractmethod
-    def colour(self) -> PT_Colour:
+    def fill(self):
         pass
 
     @property
     def type(self) -> PropType:
-        return PT_ColourHolder()
+        return PT_FillHolder()
 
 
-class ColourRef(ColourHolder, PortRefTableEntry):
+class FillRef(FillHolder, PortRefTableEntry):
 
-    def __init__(self, ref, data: ColourHolder, group_idx: tuple[int, int], deletable: bool):
+    def __init__(self, ref, data: FillHolder, group_idx: tuple[int, int], deletable: bool):
         super().__init__(ref, data, group_idx, deletable)
 
     @property
-    def colour(self):
-        return cast(ColourHolder, self.data).colour
+    def fill(self):
+        return cast(FillHolder, self.data).fill
 
     @property
     def type(self) -> PropType:
-        return PT_ColourHolder()
+        return PT_FillHolder()
+
+class Fill(FillHolder):
+
+    @property
+    def fill(self):
+        return self
+
+    @property
+    def type(self) -> PropType:
+        return PT_Fill()
 
 
-class Colour(tuple, ColourHolder):
+class Colour(tuple, Fill):
     def __new__(cls, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
         return super().__new__(cls, (red, green, blue, alpha))
 
@@ -556,11 +566,7 @@ class Colour(tuple, ColourHolder):
         return self.__class__, (self[0], self[1], self[2], self[3])
 
     @property
-    def colour(self):
-        return self
-
-    @property
-    def fill(self) -> str:
+    def colour(self) -> str:
         return f'rgb({self[0]},{self[1]},{self[2]})'
 
     @property

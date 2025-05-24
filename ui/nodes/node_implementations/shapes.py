@@ -2,12 +2,12 @@ from typing import cast
 
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
-from ui.nodes.node_implementations.visualiser import get_rectangle, get_polygon
+from ui.nodes.node_implementations.visualiser import get_rectangle
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
 from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int, PT_Int, \
     List, PT_List, PT_PointsHolder, LineRef, PointsHolder
-from ui.nodes.shape_datatypes import Ellipse, SineWave, Polyline
+from ui.nodes.shape_datatypes import Ellipse, SineWave, Polyline, Polygon
 from ui.nodes.utils import process_rgb
 
 DEF_SINE_WAVE_INFO = PrivateNodeInfo(
@@ -232,7 +232,7 @@ class PolygonNode(UnitNode):
             else:
                 points.extend(points_holder.points)
         # Return polygon
-        return {'_main': get_polygon(props.get('fill'), points, 'none',
+        return {'_main': Polygon(points, props.get('fill'),'none',
                                      props.get('stroke_width'))}
 
 

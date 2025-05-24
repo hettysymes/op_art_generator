@@ -5,7 +5,7 @@ from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
 from ui.nodes.gradient_datatype import Gradient
 from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid, List, PT_Point, \
-    Point, PT_Warp, PT_Number
+    Point, PT_Warp, PT_Number, Fill
 from ui.nodes.shape_datatypes import Group, Element, Polygon
 from ui.nodes.transforms import Scale, Translate
 from ui.nodes.utils import process_rgb
@@ -62,19 +62,8 @@ def repeat_shapes(grid: Grid, elements: List[PT_Element], row_iter=True):
     return ret_group
 
 
-def get_polygon(fill: PropValue, points: List[PT_Point], stroke, stroke_width):
-    if isinstance(fill, Gradient):
-        fill_opacity = 255
-    elif isinstance(fill, Colour):
-        fill, fill_opacity = process_rgb(fill)
-    else:
-        assert False
-    return Polygon(points, fill, fill_opacity, stroke, stroke_width)
-
-
-def get_rectangle(fill: Gradient | Colour, stroke='none', stroke_width=0):
-    return get_polygon(fill, List(PT_Point(), [Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)]), stroke,
-                       stroke_width)
+def get_rectangle(fill: Fill, stroke='none', stroke_width=0):
+    return Polygon([Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)], fill, stroke, stroke_width)
 
 
 def visualise_by_type(value, value_type):
