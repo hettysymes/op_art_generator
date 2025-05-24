@@ -420,7 +420,8 @@ class NodePropertiesDialog(QDialog):
                 widget = port_ref_table
             elif isinstance(prop_type.base_item_type, PT_GradOffset):
                 widget = GradOffsetColourWidget(entries=current_value)
-        elif isinstance(prop_type, PT_Colour):
+        elif isinstance(prop_type, PT_Fill):
+            assert isinstance(current_value, Colour)
             widget = ColorPropertyWidget(current_value)
         elif isinstance(prop_type, PT_String):  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
