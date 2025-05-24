@@ -560,6 +560,14 @@ class Colour(tuple, ColourHolder):
         return self
 
     @property
+    def fill(self) -> str:
+        return f'rgb({self[0]},{self[1]},{self[2]})'
+
+    @property
+    def opacity(self) -> float:
+        return self[3]/255
+
+    @property
     def type(self) -> PropType:
         return PT_Colour()
 

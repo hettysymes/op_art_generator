@@ -3,7 +3,7 @@ from functools import partial
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QLabel,
-    QSlider, QTableWidgetItem, QTableWidget, QHeaderView
+    QSlider, QTableWidgetItem, QTableWidget, QHeaderView, QMenu, QAction
 )
 
 from ui.colour_prop_widget import ColorPropertyWidget
@@ -20,11 +20,13 @@ class GradOffsetColourWidget(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
 
-        add_button = QPushButton("Add Row")
+        add_button = QPushButton("+")
         add_button.clicked.connect(self.add_row)
         layout.addWidget(add_button)
 
         self.table.itemChanged.connect(self.on_item_changed)
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.show_context_menu)
 
         self.set_entries(entries or [])
 
@@ -32,6 +34,21 @@ class GradOffsetColourWidget(QWidget):
         self.table.setRowCount(len(entries))
         for row, entry in enumerate(entries):
             self.set_item(entry, row)
+
+    def show_context_menu(self, position):
+        index = self.table.indexAt(position)
+        if not index.isValid():
+            return  # Do nothing if not clicking on a valid item
+
+        menu = QMenu()
+        delete_action = QAction("Delete Row", self)
+        delete_action.triggered.connect(lambda: self.delete_row(index.row()))
+        menu.addAction(delete_action)
+
+        menu.exec_(self.table.viewport().mapToGlobal(position))
+
+    def delete_row(self, row):
+        self.table.removeRow(row)
 
     def set_item(self, grad_offset: GradOffset, row):
         offset_item = QTableWidgetItem(f"{grad_offset.offset:.2f}")
@@ -67,8 +84,10 @@ class GradOffsetColourWidget(QWidget):
                 item.setText(f"{grad_offset.offset:.2f}")
 
     def get_value(self):
-        values = []
+        # Return sorted by offset
+        grad_offsets: list[GradOffset] = []
         for row in range(self.table.rowCount()):
             grad_offset: GradOffset = self.table.item(row, 0).data(Qt.UserRole)
-            values.append(grad_offset)
-        return values
+            grad_offsets.append(grad_offset)
+        sorted_offsets = sorted(grad_offsets, key=lambda grad_offset: grad_offset.offset)
+        return List(PT_GradOffset(), sorted_offsets)
