@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from ui.id_datatypes import NodeId, PortId
+from ui.id_datatypes import NodeId, PortId, PropKey
 from ui.node_manager import NodeManager
 
 
@@ -18,6 +18,7 @@ class NodeState:
 class CustomNodeDef:
     sub_node_manager: NodeManager
     selected_ports: dict[NodeId, list[PortId]]
+    custom_names: dict[tuple[NodeId, PropKey], str]
     vis_node: NodeId
     description: Optional[str] = None
 

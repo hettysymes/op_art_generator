@@ -134,7 +134,7 @@ class CustomNode(Node):
 
     @staticmethod
     def _get_new_prop_defs(prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]],
-                           selected_ports: dict[NodeId, list[PortId]]) -> dict[PropKey, PropDef]:
+                           selected_ports: dict[NodeId, list[PortId]], custom_names: dict[tuple[NodeId, PropKey], str]) -> dict[PropKey, PropDef]:
         prop_defs: dict[PropKey, PropDef] = {}
         for node, ports in selected_ports.items():
             node_prop_defs: dict[PropKey, PropDef] = prop_defs_dict[node]
@@ -153,7 +153,7 @@ class CustomNode(Node):
                 new_prop_def = PropDef(input_port_status=inp_status,
                                        output_port_status=out_status,
                                        prop_type=prop_def.prop_type,
-                                       display_name=prop_def.display_name,
+                                       display_name=custom_names[(node, key)],
                                        description=prop_def.description,
                                        default_value=prop_def.default_value,
                                        auto_format=prop_def.auto_format,
@@ -178,7 +178,7 @@ class CustomNode(Node):
         # Get new prop defs
         prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]] = {node: self.sub_node_manager.node_info(node).prop_defs
                                                                 for node in self.node_topo_order}
-        prop_defs: dict[PropKey, PropDef] = CustomNode._get_new_prop_defs(prop_defs_dict, self.selected_ports)
+        prop_defs: dict[PropKey, PropDef] = CustomNode._get_new_prop_defs(prop_defs_dict, self.selected_ports, custom_node_def.custom_names)
 
         # Add seed property if randomisable
         if self._randomisable:

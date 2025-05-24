@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QSplitter, QHeaderView
 )
 
-from ui.id_datatypes import NodeId, PortId
+from ui.id_datatypes import NodeId, PortId, PropKey
 
 
 class PortSelectionTree(QWidget):
@@ -294,7 +294,7 @@ class RegCustomDialog(QDialog):
             return
         self.accept()
 
-    def get_inputs(self) -> tuple[str, str, list[PortId], list[PortId], NodeId, dict[tuple[NodeId, str], str]]:
+    def get_inputs(self) -> tuple[str, str, list[PortId], list[PortId], NodeId, dict[tuple[NodeId, PropKey], str]]:
         """
         Returns: (name, description, input_ports, output_ports, vis_node, port_key_names)
         where port_key_names maps (node_id, port_key) -> custom_display_name

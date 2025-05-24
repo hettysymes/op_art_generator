@@ -1785,15 +1785,20 @@ class PipelineEditor(QMainWindow):
         dialog = RegCustomDialog(old_node_info, self.scene.custom_node_defs.keys())
         if dialog.exec_():
             # Get input and output node ids
-            name, description, input_sel_ports, output_sel_ports, vis_sel_node = dialog.get_inputs()
+            name, description, input_sel_ports, output_sel_ports, vis_sel_node, custom_names_dict = dialog.get_inputs()
+            # Update selected ports
             selected_ports: defaultdict[NodeId, list[PortId]] = defaultdict(list)
             for old_port in input_sel_ports + output_sel_ports:
                 new_node: NodeId = old_to_new_id_map[old_port.node]
                 selected_ports[new_node].append(node_changed_port(new_node, old_port))
             selected_ports: dict[NodeId, list[PortId]] = dict(selected_ports)
+            # Update visualisation node
             vis_sel_node: NodeId = old_to_new_id_map[vis_sel_node]
+            # Update custom names
+            custom_names_dict = {(old_to_new_id_map[node], key): name for (node, key), name in custom_names_dict.items()}
+            # Register the custom node
             self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
-                                                             CustomNodeDef(sub_node_manager, selected_ports,
+                                                             CustomNodeDef(sub_node_manager, selected_ports, custom_names_dict,
                                                                            vis_sel_node, description=description)))
 
     def identify_selected_items(self):
