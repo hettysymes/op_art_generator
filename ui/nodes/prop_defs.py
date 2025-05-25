@@ -148,6 +148,9 @@ class PT_Colour(PT_Fill):
 class PT_GradOffset(PT_Scalar):
     pass
 
+class PT_ValProbPair(PT_Scalar):
+    pass
+
 
 # Other
 
@@ -607,6 +610,16 @@ class GradOffset(PropValue):
     @property
     def type(self) -> PropType:
         return PT_GradOffset()
+
+class ValProbPair(PropValue):
+
+    def __init__(self, value: PropValue, probability: float):
+        self.value = value
+        self.probability = probability
+
+    @property
+    def type(self) -> PropType:
+        return PT_ValProbPair()
 
 
 # Tables
