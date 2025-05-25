@@ -53,24 +53,26 @@ class Conversation(Drawing):
     def draw_rhombus(self, col, x, y):
         self.dwg_add(self.dwg.polygon(points=[(x,y), (x,y+self.rh), (x-self.rw,y+self.rdh+self.rh), (x-self.rw,y+self.rdh)], 
                                       fill=col,
-                                      stroke=col))
+                                      stroke=col,
+                                      stroke_width=1))
         return y + self.rh
         
     def draw_column(self, x, y):
         while y < self.height:
             block_choice = random.random()
-            if block_choice < 0.5:
-                # 6 block
+            if block_choice <= 0.52:
+                # 0.52 probability of alternating (6) block
                 col1, col2 = random.sample(list(self.palette.values()), 2)
                 y = self.draw_6_block(col1, col2, x, y)
             else:
                 col = random.choice(list(self.palette.values()))
-                if block_choice < 0.8:
-                    # medium block
-                    y = self.draw_medium_block(col, x, y)
-                else:
-                    # large block
+                if block_choice <= 0.79:
+                    # 0.27 probability of large (6) block
                     y = self.draw_large_block(col, x, y)
+                else:
+                    # 0.21 probability of medium (3) block
+                    y = self.draw_medium_block(col, x, y)
+
 
 
 if __name__ == '__main__':
