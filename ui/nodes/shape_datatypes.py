@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Optional, cast
 
 from ui.nodes.drawers.element_drawer import ElementDrawer
-from ui.nodes.prop_defs import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, Point, List, \
-    PT_Point, PointsHolder, ElementHolder, Fill, Colour, Gradient
+from ui.nodes.prop_types import PT_Ellipse, PT_Polyline, PT_Shape, PT_Polygon, PT_Element, PT_Point
+from ui.nodes.prop_values import List, PointsHolder, Point, ElementHolder, Fill, Colour, Gradient
 from ui.nodes.transforms import TransformList, Translate, Scale, Rotate
 from ui.vis_types import Visualisable
 

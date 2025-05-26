@@ -1,10 +1,10 @@
 import sympy as sp
 
 from ui.nodes.function_datatypes import CubicFun, CustomFun, PiecewiseFun
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode, CombinationNode
-from ui.nodes.prop_defs import PropDef, PT_Function, PortStatus, PT_Float, Float, PT_String, PT_PointsHolder, List, \
-    PT_List, Point
+from ui.nodes.prop_types import PT_Function, PT_Float, PT_String, PT_PointsHolder, PT_List
+from ui.nodes.prop_values import List, Float, Point
 
 DEF_CUBIC_FUN_INFO = PrivateNodeInfo(
     description="Define a cubic function.",

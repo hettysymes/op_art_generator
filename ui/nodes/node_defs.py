@@ -1,19 +1,37 @@
 import copy
 import traceback
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Optional, cast
 
 from ui.id_datatypes import PropKey, NodeId, PortId, input_port, EdgeId
 from ui.node_graph import NodeGraph, RefId
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.prop_defs import PropDef, PropValue, PropType, PT_List, List, PortRefTableEntry, \
-    PT_PointsHolder, LineRef, PT_ElementHolder, ElementRef, PT_FillHolder, FillRef
+from ui.nodes.prop_types import PropType, PT_List, PT_PointsHolder, PT_ElementHolder, PT_FillHolder
+from ui.nodes.prop_values import PropValue, List, PortRefTableEntry, ElementRef, FillRef, LineRef
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig, Visualisable
 
 type ResolvedProps = dict[PropKey, list[PropValue] | PropValue]
 type ResolvedRefs = dict[PropKey, list[Optional[RefId]] | Optional[RefId]]
+
+class PortStatus(Enum):
+    COMPULSORY = auto()
+    OPTIONAL = auto()
+    FORBIDDEN = auto()
+
+@dataclass(frozen=True)
+class PropDef:
+    input_port_status: PortStatus = PortStatus.OPTIONAL
+    output_port_status: PortStatus = PortStatus.OPTIONAL
+    prop_type: PropType = PropType()
+    display_name: str = ""
+    description: str = ""
+    default_value: Optional[PropValue] = None
+    auto_format: bool = True
+    display_in_props: bool = True
 
 
 class RefQuerier:
@@ -161,6 +179,7 @@ class RuntimeNode:
             None  # No return if no property could be resolved
             | tuple[List, list[Optional[RefId]]]  # List if input port type inputs from multiple nodes
             | tuple[PropValue, Optional[RefId]]  # Single value otherwise
+            | tuple[list[PropValue], list[Optional[RefId]]] # Return the raw inputs if input multiple but not List prop_type
     ):
         prop_type: PropType = self.node.prop_defs[prop_key].prop_type
         incoming_edges: set[EdgeId] = self.graph_querier.incoming_edges(input_port(self.uid, prop_key))

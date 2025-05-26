@@ -1,6 +1,7 @@
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PortStatus, PT_ElementHolder, List
+from ui.nodes.prop_types import PT_List, PT_ElementHolder
+from ui.nodes.prop_values import List
 from ui.nodes.shape_datatypes import Group
 
 DEF_OVERLAY_INFO = PrivateNodeInfo(

@@ -5,8 +5,9 @@ from typing import Optional, cast
 
 from ui.id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
 from ui.node_graph import RefId
-from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier
-from ui.nodes.prop_defs import PropValue, PropDef, PortStatus, PT_Int
+from ui.nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus
+from ui.nodes.prop_types import PT_Int
+from ui.nodes.prop_values import PropValue
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import Visualisable
 

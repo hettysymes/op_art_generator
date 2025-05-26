@@ -1,7 +1,8 @@
 import math
 from abc import ABC, abstractmethod
 
-from ui.nodes.prop_defs import PT_Point, List, Point
+from ui.nodes.prop_types import PT_Point
+from ui.nodes.prop_values import List, Point
 
 
 class Transform(ABC):

@@ -1,205 +1,10 @@
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from enum import Enum, auto
-from typing import Optional, TypeVar, cast, Generic
-
-
-def get_most_general_type(types):  # Look for a type that all others are compatible with
-    for candidate in types:
-        if all(other.is_compatible_with(candidate) for other in types):
-            return candidate
-
-    return PropType()  # Default to most general type
-
-
-class PropType:
-
-    def __init__(self, input_multiple=False):
-        self.input_multiple = input_multiple
-
-    def is_compatible_with(self, dest_type):
-        return True
-
-    def __repr__(self):
-        return self.__class__.__name__
-
-
-class PT_ListItem(PropType):
-    pass
-
-
-T = TypeVar('T', bound=PropType)
-
-
-class PT_TableEntry(Generic[T], PT_ListItem):
-    def __init__(self, data_type: T):
-        self.data_type = data_type
-
-    def is_compatible_with(self, dest_type: PropType) -> bool:
-        if isinstance(dest_type, PT_TableEntry):
-            return self.data_type.is_compatible_with(dest_type.data_type)
-        if isinstance(dest_type, PT_Scalar):
-            return self.data_type.is_compatible_with(dest_type)
-        return False
-
-
-# Scalar
-class PT_Scalar(PT_ListItem):
-
-    def is_compatible_with(self, dest_type):
-        if isinstance(dest_type, PT_List):
-            # Scalar-to-list: inner types must be compatible
-            return self.is_compatible_with(dest_type.base_item_type)
-        elif isinstance(dest_type, PT_TableEntry):
-            return self.is_compatible_with(dest_type.data_type)
-        return isinstance(self, type(dest_type))
-
-
-# List
-class PT_List(PropType):
-    def __init__(self, base_item_type: PT_ListItem = PT_ListItem(), input_multiple: bool = False,
-                 depth: int = 1):
-        self.base_item_type = base_item_type
-        self.depth = depth
-        super().__init__(input_multiple)
-
-    def is_compatible_with(self, dest_type):
-        if not isinstance(self, type(dest_type)):
-            return False
-        if isinstance(dest_type, PT_List):
-            return self.base_item_type.is_compatible_with(dest_type.base_item_type)
-        return True  # Connected to PropType()
-
-    def __repr__(self):
-        return f"List({repr(self.base_item_type)}, depth={self.depth})"
-
-
-# Function
-
-class PT_Function(PT_Scalar):
-    pass
-
-
-# Warp
-
-class PT_Warp(PT_Scalar):
-    pass
-
-
-# Grid
-class PT_Grid(PT_Scalar):
-    pass
-
-
-# Sampling
-
-class PT_PointsHolder(PT_Scalar):
-    pass
-
-
-class PT_Point(PT_PointsHolder):
-    pass
-
-
-# Elements
-
-class PT_ElementHolder(PT_Scalar):
-    pass
-
-
-class PT_Element(PT_ElementHolder):
-    pass
-
-
-class PT_Shape(PT_Element):
-    pass
-
-
-class PT_Polyline(PT_Shape, PT_PointsHolder):
-    pass
-
-
-class PT_Polygon(PT_Shape):
-    pass
-
-
-class PT_Ellipse(PT_Shape):
-    pass
-
-
-# Fill
-
-class PT_FillHolder(PT_Scalar):
-    pass
-
-
-class PT_Fill(PT_FillHolder):
-    pass
-
-
-class PT_Gradient(PT_Fill):
-    pass
-
-
-class PT_Colour(PT_Fill):
-    pass
-
-class PT_GradOffset(PT_Scalar):
-    pass
-
-class PT_ValProbPair(PT_Scalar):
-    pass
-
-
-# Other
-
-class PT_Number(PT_Scalar):
-    def __init__(self, min_value=None, max_value=None):
-        super().__init__()
-        self.min_value = min_value if min_value is not None else -999999
-        self.max_value = max_value if max_value is not None else 999999
-
-    def is_compatible_with(self, dest_type):
-        if isinstance(dest_type, PT_List):
-            # Scalar-to-list: inner types must be compatible
-            return self.is_compatible_with(dest_type.base_item_type)
-        elif isinstance(dest_type, PT_TableEntry):
-            return self.is_compatible_with(dest_type.data_type)
-        if isinstance(self, type(dest_type)):
-            if isinstance(dest_type, PT_Number):
-                # Additionally check this number has a min-max range within the dest type min-max range
-                return dest_type.min_value <= self.min_value and dest_type.max_value >= self.max_value
-            return True
-        return False
-
-
-class PT_Float(PT_Number):
-    def __init__(self, min_value=None, max_value=None, decimals=3):
-        super().__init__(min_value, max_value)
-        self.decimals = decimals
-
-
-class PT_Int(PT_Number):
-    pass
-
-
-class PT_Bool(PT_Scalar):
-    pass
-
-
-class PT_Enum(PT_Scalar):
-    pass
-
-
-class PT_String(PT_Scalar):
-    pass
-
-
-class PortStatus(Enum):
-    COMPULSORY = auto()
-    OPTIONAL = auto()
-    FORBIDDEN = auto()
+from typing import TypeVar, Generic, Optional, cast
+
+from ui.nodes.prop_types import PropType, PT_List, PT_ListItem, PT_Scalar, PT_Int, PT_Float, PT_String, PT_Bool, PT_Enum, \
+    PT_Point, PT_PointsHolder, PT_Grid, PT_TableEntry, PT_Element, PT_ElementHolder, PT_FillHolder, PT_Fill, PT_Colour, \
+    PT_GradOffset, PT_Gradient, PT_ValProbPair
 
 
 class PropValue(ABC):
@@ -209,20 +14,6 @@ class PropValue(ABC):
     def type(self) -> PropType:
         pass
 
-
-@dataclass(frozen=True)
-class PropDef:
-    input_port_status: PortStatus = PortStatus.OPTIONAL
-    output_port_status: PortStatus = PortStatus.OPTIONAL
-    prop_type: PropType = PropType()
-    display_name: str = ""
-    description: str = ""
-    default_value: Optional[PropValue] = None
-    auto_format: bool = True
-    display_in_props: bool = True
-
-
-# PROP VALUES
 
 T = TypeVar('T', bound='PropType')
 
@@ -548,6 +339,7 @@ class FillRef(FillHolder, PortRefTableEntry):
     def type(self) -> PropType:
         return PT_FillHolder()
 
+
 class Fill(FillHolder):
 
     @property
@@ -581,6 +373,7 @@ class Colour(tuple, Fill):
     def type(self) -> PropType:
         return PT_Colour()
 
+
 class Gradient(Fill):
 
     def __init__(self, start_coord: Point, end_coord: Point, stops: List[PT_GradOffset]):
@@ -601,6 +394,7 @@ class Gradient(Fill):
     def type(self) -> PropType:
         return PT_Gradient()
 
+
 class GradOffset(PropValue):
 
     def __init__(self, offset: float, colour: Colour):
@@ -610,6 +404,7 @@ class GradOffset(PropValue):
     @property
     def type(self) -> PropType:
         return PT_GradOffset()
+
 
 class ValProbPair(PropValue):
 
@@ -621,8 +416,6 @@ class ValProbPair(PropValue):
     def type(self) -> PropType:
         return PT_ValProbPair()
 
-
-# Tables
 
 class LineRef(PointsHolder, PortRefTableEntry):
     def __init__(self, ref, data: PointsHolder, group_idx: tuple[int, int], deletable: bool):

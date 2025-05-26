@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 import sympy as sp
 
-from ui.nodes.prop_defs import PropValue, PT_Function
+from ui.nodes.prop_types import PT_Function
+from ui.nodes.prop_values import PropValue
 
 
 class Function(PropValue, ABC):

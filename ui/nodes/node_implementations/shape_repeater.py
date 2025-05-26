@@ -1,11 +1,11 @@
 from typing import cast
 
 from ui.id_datatypes import PropKey
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.node_implementations.visualiser import repeat_shapes
 from ui.nodes.nodes import SelectableNode
-from ui.nodes.prop_defs import PropDef, PT_Grid, PortStatus, PT_Element, PT_List, Grid, List, PT_ElementHolder, PT_Enum, \
-    Enum
+from ui.nodes.prop_types import PT_Grid, PT_Element, PT_List, PT_ElementHolder, PT_Enum
+from ui.nodes.prop_values import List, Enum, Grid
 from ui.nodes.shape_datatypes import Group
 
 # from ui.nodes.nodes import SelectableNode

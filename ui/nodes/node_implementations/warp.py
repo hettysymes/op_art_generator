@@ -1,7 +1,7 @@
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
-from ui.nodes.prop_defs import PropDef, PT_Function, PortStatus, PT_Warp
+from ui.nodes.prop_types import PT_Function, PT_Warp
 from ui.nodes.warp_datatypes import PosWarp, RelWarp
 
 DEF_POS_WARP_NODE_INFO = PrivateNodeInfo(

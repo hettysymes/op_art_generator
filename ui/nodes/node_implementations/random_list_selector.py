@@ -1,9 +1,10 @@
 import random
 from typing import cast
 
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Int, PortStatus, List, PropType, PropValue, PT_ValProbPair, PT_List
+from ui.nodes.prop_types import PT_Int, PropType, PT_ValProbPair, PT_List
+from ui.nodes.prop_values import PropValue, List
 
 DEF_RANDOM_LIST_SELECTOR_INFO = PrivateNodeInfo(
     description="Randomly selects an item from a list input. If multiple inputs are given, then it randomly selects an input.",

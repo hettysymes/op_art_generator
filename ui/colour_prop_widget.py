@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPainter
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QColorDialog
 
-from ui.nodes.prop_defs import Colour
+from ui.nodes.prop_values import Colour
 
 
 class ColorPreviewWidget(QWidget):

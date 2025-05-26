@@ -1,6 +1,7 @@
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PortStatus, PT_Colour, Colour, List, PT_FillHolder, PT_Fill
+from ui.nodes.prop_types import PT_List, PT_Colour, PT_FillHolder, PT_Fill
+from ui.nodes.prop_values import List, Colour
 
 DEF_COLOUR_LIST_INFO = PrivateNodeInfo(
     description="Define a list of colours. This can be provided as input to an Iterator or a Colour Filler.",

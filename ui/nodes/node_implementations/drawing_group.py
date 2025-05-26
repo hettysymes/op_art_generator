@@ -1,8 +1,9 @@
 from typing import cast
 
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Enum, PortStatus, Enum, PT_ElementHolder, PT_List, List, PT_Element
+from ui.nodes.prop_types import PT_Enum, PT_ElementHolder, PT_List, PT_Element
+from ui.nodes.prop_values import List, Enum
 
 DEF_DRAWING_GROUP_INFO = PrivateNodeInfo(
     description="Create a group from input drawings.",

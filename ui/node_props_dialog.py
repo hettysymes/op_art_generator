@@ -13,10 +13,11 @@ from ui.gradient_colour_table import GradOffsetColourWidget
 from ui.id_datatypes import PortId, PropKey, input_port, output_port, NodeId
 from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
-from ui.nodes.prop_defs import PT_Int, PT_Float, PT_Bool, PT_Point, Enum, \
-    LineRef, PT_Fill, PT_Number, PortRefTableEntry, PortStatus, PropDef, PropValue, \
-    PT_String, Point, PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
-    PT_FillHolder, Colour, PT_GradOffset, PT_Colour
+from ui.nodes.prop_types import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
+    PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
+    PT_FillHolder, PT_GradOffset, PT_Colour
+from ui.nodes.node_defs import PropDef, PortStatus
+from ui.nodes.prop_values import PropValue, Enum, Point, PortRefTableEntry, Colour, LineRef
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
 

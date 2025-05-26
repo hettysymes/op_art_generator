@@ -1,6 +1,6 @@
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PropType, PortStatus
+from ui.nodes.prop_types import PropType
 
 DEF_PORT_FORWARDER_INFO = PrivateNodeInfo(
     description="Forward a port to multiple ports. Useful when making custom nodes.",

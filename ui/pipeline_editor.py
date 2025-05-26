@@ -26,10 +26,10 @@ from ui.node_graph import NodeGraph, RefId
 from ui.node_manager import NodeManager, NodeInfo
 from ui.node_props_dialog import NodePropertiesDialog
 from ui.nodes.all_nodes import node_classes
-from ui.nodes.node_defs import Node
+from ui.nodes.node_defs import Node, PropDef, PortStatus
 from ui.nodes.nodes import CombinationNode, CustomNode
-from ui.nodes.prop_defs import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PortStatus, PropDef, \
-    PropValue, PropType
+from ui.nodes.prop_types import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PropType
+from ui.nodes.prop_values import PropValue
 from ui.nodes.shape_datatypes import Group, Element
 from ui.reg_custom_dialog import RegCustomDialog
 from ui.selectable_renderer import SelectableSvgElement

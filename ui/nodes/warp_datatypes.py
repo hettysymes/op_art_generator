@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from ui.nodes.function_datatypes import Function
-from ui.nodes.prop_defs import PropValue, PT_Warp
+from ui.nodes.prop_types import PT_Warp
+from ui.nodes.prop_values import PropValue
 
 
 class Warp(PropValue, ABC):

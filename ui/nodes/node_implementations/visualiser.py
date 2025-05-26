@@ -3,8 +3,9 @@ from typing import cast
 
 from ui.nodes.drawers.draw_graph import create_graph_svg
 from ui.nodes.function_datatypes import IdentityFun
-from ui.nodes.prop_defs import PT_Element, PT_List, PT_Function, PT_Fill, PropValue, Colour, Grid, List, PT_Point, \
-    Point, PT_Warp, PT_Number, Fill
+from ui.nodes.prop_types import PT_Element, PT_List, PT_Function, PT_Fill, PT_Point, \
+    PT_Warp, PT_Number
+from ui.nodes.prop_values import PropValue, List, Point, Grid, Fill, Colour
 from ui.nodes.shape_datatypes import Group, Element, Polygon
 from ui.nodes.transforms import Scale, Translate
 from ui.nodes.utils import process_rgb

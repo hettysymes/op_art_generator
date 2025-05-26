@@ -8,7 +8,9 @@ from PyQt5.QtWidgets import (
 )
 
 from ui.colour_prop_widget import ColorPropertyWidget
-from ui.nodes.prop_defs import PT_GradOffset, List, Colour, GradOffset
+from ui.nodes.prop_types import PT_GradOffset
+from ui.nodes.prop_values import List, Colour, GradOffset
+
 
 class GradOffsetColourWidget(QWidget):
     def __init__(self, entries=None, parent=None):
