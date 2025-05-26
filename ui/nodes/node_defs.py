@@ -237,7 +237,7 @@ class RuntimeNode:
                     elif isinstance(prop_value.item_type, PT_FillHolder):
                         class_entry = FillRef
                     else:
-                        class_entry = PortRefTableEntry
+                        assert False
                     new_prop_value.append(
                         class_entry(ref=ref, data=compute_result, group_idx=(i + 1, group_len), deletable=False))
                 ret_refs.extend([ref] * group_len)

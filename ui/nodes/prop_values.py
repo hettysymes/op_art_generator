@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Optional, cast
 
 from ui.nodes.prop_types import PropType, PT_List, PT_ListItem, PT_Scalar, PT_Int, PT_Float, PT_String, PT_Bool, PT_Enum, \
-    PT_Point, PT_PointsHolder, PT_Grid, PT_TableEntry, PT_Element, PT_ElementHolder, PT_FillHolder, PT_Fill, PT_Colour, \
+    PT_Point, PT_PointsHolder, PT_Grid, PT_Element, PT_ElementHolder, PT_FillHolder, PT_Fill, PT_Colour, \
     PT_GradOffset, PT_Gradient, PT_ValProbPair
 
 
@@ -47,6 +47,18 @@ class List(Generic[T], PropValue):
             base_item_type = nested[0].type  # Promote type one level up
         return nested[0]
 
+    @staticmethod
+    def flatten(x: PropValue) -> "List":
+        if isinstance(x, List):
+            flat_items = []
+            for item in x.items:
+                flat_items.extend(List.flatten(item).items)
+            item_type = x.item_type.base_item_type if isinstance(x.item_type, PT_List) else x.item_type
+            return List(item_type=item_type, items=flat_items)
+        else:
+            assert isinstance(x.type, PT_Scalar)
+            return List(item_type=x.type, items=[x])
+
     def extract(self, extract_type: PropType) -> PropValue:
         """
         Normalize shape to match `extract_type` (depth),
@@ -56,7 +68,7 @@ class List(Generic[T], PropValue):
         target_depth = extract_type.depth if isinstance(extract_type, PT_List) else 0
 
         # Fully flatten this list
-        flat: List = flatten(self)
+        flat: List = List.flatten(self)
 
         # Derive base item type from self (more specific)
         self_type = self.type
@@ -117,18 +129,6 @@ class List(Generic[T], PropValue):
 
     def __repr__(self):
         return f"List({repr(self.item_type)}, items={self.items})"
-
-
-def flatten(x: PropValue) -> List:
-    if isinstance(x, List):
-        flat_items = []
-        for item in x.items:
-            flat_items.extend(flatten(item).items)
-        item_type = x.item_type.base_item_type if isinstance(x.item_type, PT_List) else x.item_type
-        return List(item_type=item_type, items=flat_items)
-    else:
-        assert isinstance(x.type, PT_Scalar)
-        return List(item_type=x.type, items=[x])
 
 
 class Int(int, PropValue):
@@ -278,16 +278,12 @@ class Grid(PropValue):
         return Int(len(self.h_line_ys) - 1)
 
 
-class PortRefTableEntry(PropValue):
+class PortRefTableEntry(PropValue, ABC):
     def __init__(self, ref, data: PropValue, group_idx: tuple[int, int], deletable: bool = True):
         self.ref = ref
         self.deletable = deletable
         self.group_idx = group_idx  # (index_in_group, total_group_len), index starts from 1
         self.data = data
-
-    @property
-    def type(self) -> PropType:
-        return PT_TableEntry(self.data.type)
 
 
 class ElementHolder(PropValue, ABC):

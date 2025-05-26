@@ -1,6 +1,3 @@
-from typing import TypeVar, Generic
-
-
 class PropType:
 
     def __init__(self, input_multiple=False):
@@ -17,21 +14,6 @@ class PT_ListItem(PropType):
     pass
 
 
-T = TypeVar('T', bound=PropType)
-
-
-class PT_TableEntry(Generic[T], PT_ListItem):
-    def __init__(self, data_type: T):
-        self.data_type = data_type
-
-    def is_compatible_with(self, dest_type: PropType) -> bool:
-        if isinstance(dest_type, PT_TableEntry):
-            return self.data_type.is_compatible_with(dest_type.data_type)
-        if isinstance(dest_type, PT_Scalar):
-            return self.data_type.is_compatible_with(dest_type)
-        return False
-
-
 # Scalar
 class PT_Scalar(PT_ListItem):
 
@@ -39,8 +21,6 @@ class PT_Scalar(PT_ListItem):
         if isinstance(dest_type, PT_List):
             # Scalar-to-list: inner types must be compatible
             return self.is_compatible_with(dest_type.base_item_type)
-        elif isinstance(dest_type, PT_TableEntry):
-            return self.is_compatible_with(dest_type.data_type)
         return isinstance(self, type(dest_type))
 
 
@@ -152,8 +132,6 @@ class PT_Number(PT_Scalar):
         if isinstance(dest_type, PT_List):
             # Scalar-to-list: inner types must be compatible
             return self.is_compatible_with(dest_type.base_item_type)
-        elif isinstance(dest_type, PT_TableEntry):
-            return self.is_compatible_with(dest_type.data_type)
         if isinstance(self, type(dest_type)):
             if isinstance(dest_type, PT_Number):
                 # Additionally check this number has a min-max range within the dest type min-max range
