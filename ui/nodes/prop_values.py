@@ -2,7 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Optional, cast
 
-from ui.nodes.prop_types import PropType, PT_List, PT_ListItem, PT_Scalar, PT_Int, PT_Float, PT_String, PT_Bool, PT_Enum, \
+from ui.nodes.prop_types import PropType, PT_List, PT_Scalar, PT_Int, PT_Float, PT_String, PT_Bool, PT_Enum, \
     PT_Point, PT_PointsHolder, PT_Grid, PT_Element, PT_ElementHolder, PT_FillHolder, PT_Fill, PT_Colour, \
     PT_GradOffset, PT_Gradient, PT_ValProbPair
 
@@ -34,13 +34,13 @@ class List(Generic[T], PropValue):
                 base_item_type=self.item_type.base_item_type,
                 depth=self.item_type.depth + 1
             )
-        elif isinstance(self.item_type, PT_ListItem):
+        elif isinstance(self.item_type, PT_Scalar):
             return PT_List(base_item_type=self.item_type, depth=1)
         else:
             raise TypeError(f"Invalid item_type: {type(self.item_type)}")
 
     @staticmethod
-    def build_nested_list(items: list[PropValue], base_item_type: PT_ListItem, depth: int) -> "List":
+    def build_nested_list(items: list[PropValue], base_item_type: PT_Scalar, depth: int) -> "List":
         nested = items
         for _ in range(depth):
             nested = [List(item_type=base_item_type, items=nested)]

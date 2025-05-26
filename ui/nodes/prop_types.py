@@ -10,12 +10,8 @@ class PropType:
         return self.__class__.__name__
 
 
-class PT_ListItem(PropType):
-    pass
-
-
 # Scalar
-class PT_Scalar(PT_ListItem):
+class PT_Scalar(PropType):
 
     def is_compatible_with(self, dest_type):
         if isinstance(dest_type, PT_List):
@@ -26,7 +22,7 @@ class PT_Scalar(PT_ListItem):
 
 # List
 class PT_List(PropType):
-    def __init__(self, base_item_type: PT_ListItem = PT_ListItem(), input_multiple: bool = False,
+    def __init__(self, base_item_type: PT_Scalar = PT_Scalar(), input_multiple: bool = False,
                  depth: int = 1):
         self.base_item_type = base_item_type
         self.depth = depth
