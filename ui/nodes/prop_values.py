@@ -193,10 +193,11 @@ class Bool(PropValue):
 
 class Enum(PropValue):
 
-    def __init__(self, options=None, display_options=None, selected_option=None):
+    def __init__(self, options=None, display_options=None, selected_option=None, default_first=True):
         self._selected_option = selected_option
         self._options = None
         self._display_options = None
+        self._default_first = default_first
         self.set_options(options, display_options)
 
     def set_options(self, options=None, display_options=None):
@@ -209,7 +210,7 @@ class Enum(PropValue):
             self._options = [None]
             self._display_options = ["[none]"]
         if self._selected_option not in self._options:
-            self._selected_option = self._options[0]
+            self._selected_option = self._options[0] if self._default_first else self._options[-1]
 
     @property
     def selected_option(self):

@@ -34,7 +34,13 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
                 "(height for vertical stacking, width for horizontal stacking). E.g. if set to 0.5, the second drawing "
                 "will be stacked halfway along the first drawing."
             ),
-            default_value=Float(0.4)
+            default_value=Float(0)
+        ),
+        'shift': PropDef(
+            prop_type=PT_Float(),
+            display_name="Right/descent shift",
+            description="Shift to the right or down (for horizontal and vertical stack respectively).",
+            default_value=Float(0)
         ),
         '_main': PropDef(
             input_port_status=PortStatus.FORBIDDEN,
@@ -51,15 +57,15 @@ class StackerNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_STACKER_NODE_INFO
 
     @staticmethod
-    def helper(elements: List[PT_Element], wh_diff: float, vertical_layout: bool):
+    def helper(elements: List[PT_Element], wh_diff: float, vertical_layout: bool, shift: float):
         n = len(elements)
         size = n + wh_diff * (1 - n)
         group = Group(debug_info="Stacker")
         for i, e in enumerate(elements):
             if vertical_layout:
-                transform = [Scale(1, 1 / size), Translate(0, i * (1 - wh_diff) / size)]
+                transform = [Translate(0, -i*shift), Scale(1, 1 / size), Translate(0, i * (1 - wh_diff) / size)]
             else:
-                transform = [Scale(1 / size, 1), Translate(i * (1 - wh_diff) / size, 0)]
+                transform = [Translate(0, -i*shift), Scale(1 / size, 1), Translate(i * (1 - wh_diff) / size, 0)]
             elem_cell = Group(transform, debug_info=f"Stack element {i}")
             elem_cell.add(e)
             group.add(elem_cell)
@@ -71,5 +77,6 @@ class StackerNode(UnitNode):
             return {}
         main_group = StackerNode.helper(List(PT_Element(), [elem_entry.element for elem_entry in elem_entries]),
                                         props.get('wh_diff'),
-                                        cast(Enum, props.get('layout_enum')).selected_option)
+                                        cast(Enum, props.get('layout_enum')).selected_option,
+                                        props.get('shift'))
         return {'_main': main_group}

@@ -268,7 +268,9 @@ class NodePropertiesDialog(QDialog):
 
             # Create the spinboxes
             x_spinbox = QDoubleSpinBox()
+            x_spinbox.setDecimals(3)
             y_spinbox = QDoubleSpinBox()
+            y_spinbox.setDecimals(3)
 
             # Set initial values
             x, y = (current_value or (0.5, 0.5))
@@ -320,10 +322,10 @@ class NodePropertiesDialog(QDialog):
                         start_x, start_y = first_entry.points[0]
                         stop_x, stop_y = entry_group[-1].points[-1]
                         arrow = '←' if first_entry.is_reversed else '→'
-                        return f"{node_info.base_name} (id: {ref_port.node})\n({start_x:.2f}, {start_y:.2f}) {arrow} ({stop_x:.2f}, {stop_y:.2f})"
+                        return f"{node_info.base_name} (id: {ref_port.node})\n({start_x:.3f}, {start_y:.3f}) {arrow} ({stop_x:.3f}, {stop_y:.3f})"
                     assert isinstance(first_entry, Point)
                     x, y = first_entry
-                    return f"({x:.2f}, {y:.2f})"
+                    return f"({x:.3f}, {y:.3f})"
 
                 def custom_context_menu(menu, entry_group):
                     if isinstance(entry_group[0], LineRef):

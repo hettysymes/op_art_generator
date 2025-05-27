@@ -11,11 +11,11 @@ class PointDialog(QDialog):
         self.setWindowTitle("Coordinate Point")
 
         self.x_input = QDoubleSpinBox()
-        self.x_input.setDecimals(2)
+        self.x_input.setDecimals(3)
         self.x_input.setValue(initial_x)
 
         self.y_input = QDoubleSpinBox()
-        self.y_input.setDecimals(2)
+        self.y_input.setDecimals(3)
         self.y_input.setValue(initial_y)
 
         form_layout = QFormLayout()
