@@ -13,6 +13,7 @@ from ui.nodes.node_implementations.overlay import OverlayNode
 from ui.nodes.node_implementations.port_forwarder import PortForwarderNode
 from ui.nodes.node_implementations.random_iterator import RandomIteratorNode
 from ui.nodes.node_implementations.random_list_selector import RandomListSelectorNode
+from ui.nodes.node_implementations.random_port_selector import RandomPortSelectorNode
 from ui.nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from ui.nodes.node_implementations.shapes import ShapeNode
 from ui.nodes.node_implementations.stacker import StackerNode
@@ -31,6 +32,7 @@ node_classes = [
     ColourFillerNode,
     ColourListNode,
     OverlayNode,
+    RandomPortSelectorNode,
     RandomListSelectorNode,
     RandomIteratorNode,
     StackerNode,

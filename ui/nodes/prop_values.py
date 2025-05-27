@@ -4,7 +4,7 @@ from typing import TypeVar, Generic, Optional, cast
 
 from ui.nodes.prop_types import PropType, PT_List, PT_Scalar, PT_Int, PT_Float, PT_String, PT_Bool, PT_Enum, \
     PT_Point, PT_PointsHolder, PT_Grid, PT_Element, PT_ElementHolder, PT_FillHolder, PT_Fill, PT_Colour, \
-    PT_GradOffset, PT_Gradient, PT_ValProbPair
+    PT_GradOffset, PT_Gradient, PT_ValProbPairHolder
 
 
 class PropValue(ABC):
@@ -401,16 +401,19 @@ class GradOffset(PropValue):
     def type(self) -> PropType:
         return PT_GradOffset()
 
+class ValProbPairRef(PortRefTableEntry):
 
-class ValProbPair(PropValue):
+    def __init__(self, ref, data: PropValue, group_idx: tuple[int, int], deletable: bool):
+        super().__init__(ref, data, group_idx, deletable)
+        self.probability = 1
 
-    def __init__(self, value: PropValue, probability: float):
-        self.value = value
-        self.probability = probability
+    @property
+    def value(self) -> PropValue:
+        return self.data
 
     @property
     def type(self) -> PropType:
-        return PT_ValProbPair()
+        return PT_ValProbPairHolder()
 
 
 class LineRef(PointsHolder, PortRefTableEntry):

@@ -14,6 +14,8 @@ class PropType:
 class PT_Scalar(PropType):
 
     def is_compatible_with(self, dest_type):
+        if isinstance(dest_type, PT_ValProbPairHolder):
+            return True
         if isinstance(dest_type, PT_List):
             # Scalar-to-list: inner types must be compatible
             return self.is_compatible_with(dest_type.base_item_type)
@@ -29,6 +31,8 @@ class PT_List(PropType):
         super().__init__(input_multiple)
 
     def is_compatible_with(self, dest_type):
+        if isinstance(dest_type, PT_ValProbPairHolder):
+            return True
         if not isinstance(self, type(dest_type)):
             return False
         if isinstance(dest_type, PT_List):
@@ -112,9 +116,8 @@ class PT_Colour(PT_Fill):
 class PT_GradOffset(PT_Scalar):
     pass
 
-class PT_ValProbPair(PT_Scalar):
+class PT_ValProbPairHolder(PT_Scalar):
     pass
-
 
 # Other
 
@@ -125,6 +128,8 @@ class PT_Number(PT_Scalar):
         self.max_value = max_value if max_value is not None else 999999
 
     def is_compatible_with(self, dest_type):
+        if isinstance(dest_type, PT_ValProbPairHolder):
+            return True
         if isinstance(dest_type, PT_List):
             # Scalar-to-list: inner types must be compatible
             return self.is_compatible_with(dest_type.base_item_type)

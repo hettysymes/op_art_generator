@@ -9,8 +9,9 @@ from ui.id_datatypes import PropKey, NodeId, PortId, input_port, EdgeId
 from ui.node_graph import NodeGraph, RefId
 from ui.nodes.node_implementations.visualiser import visualise_by_type
 from ui.nodes.node_input_exception import NodeInputException
-from ui.nodes.prop_types import PropType, PT_List, PT_PointsHolder, PT_ElementHolder, PT_FillHolder
-from ui.nodes.prop_values import PropValue, List, PortRefTableEntry, ElementRef, FillRef, LineRef
+from ui.nodes.prop_types import PropType, PT_List, PT_PointsHolder, PT_ElementHolder, PT_FillHolder, \
+    PT_ValProbPairHolder
+from ui.nodes.prop_values import PropValue, List, PortRefTableEntry, ElementRef, FillRef, LineRef, ValProbPairRef
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import ErrorFig, Visualisable
 
@@ -236,6 +237,8 @@ class RuntimeNode:
                         class_entry = ElementRef
                     elif isinstance(prop_value.item_type, PT_FillHolder):
                         class_entry = FillRef
+                    elif isinstance(prop_value.item_type, PT_ValProbPairHolder):
+                        class_entry = ValProbPairRef
                     else:
                         assert False
                     new_prop_value.append(

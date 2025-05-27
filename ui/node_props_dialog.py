@@ -15,11 +15,12 @@ from ui.node_graph import NodeGraph
 from ui.node_manager import NodeInfo, NodeManager
 from ui.nodes.prop_types import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
     PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
-    PT_FillHolder, PT_GradOffset, PT_Colour
+    PT_FillHolder, PT_GradOffset, PT_ValProbPairHolder
 from ui.nodes.node_defs import PropDef, PortStatus
 from ui.nodes.prop_values import PropValue, Enum, Point, PortRefTableEntry, Colour, LineRef
 from ui.point_dialog import PointDialog
 from ui.port_ref_table_widget import PortRefTableWidget
+from ui.random_probability_table import RandomProbabilityWidget
 
 
 class HelpIconLabel(QPushButton):
@@ -421,6 +422,13 @@ class NodePropertiesDialog(QDialog):
                 widget = port_ref_table
             elif isinstance(prop_type.base_item_type, PT_GradOffset):
                 widget = GradOffsetColourWidget(entries=current_value)
+            elif isinstance(prop_type.base_item_type, PT_ValProbPairHolder):
+                widget = RandomProbabilityWidget(
+                    ref_querier=lambda ref: cast(NodeGraph, self.scene.node_graph).query_ref(node=self.node_item.uid,
+                                                                                             ref=ref),
+                    node_manager=self.node_item.node_manager,
+                    entries=current_value
+                )
         elif isinstance(prop_type, PT_Fill):
             assert isinstance(current_value, Colour)
             widget = ColorPropertyWidget(current_value)

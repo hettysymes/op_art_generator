@@ -77,8 +77,8 @@ class GradOffsetColourWidget(QWidget):
             grad_offset: GradOffset = item.data(Qt.UserRole)
             try:
                 new_offset = float(item.text())
-                if new_offset < 0 or new_offset > 1:
-                    raise ValueError("Offset needs to be in range [0,1]")
+                if new_offset <= 0 or new_offset > 1:
+                    raise ValueError("Offset needs to be in range (0,1]")
                 grad_offset.offset = new_offset
                 # Update the item text to a formatted value
                 item.setText(f"{new_offset:.2f}")
