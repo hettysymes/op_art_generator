@@ -10,7 +10,7 @@ DEF_RANDOM_PORT_SELECTOR_INFO = PrivateNodeInfo(
     description="Randomly selects an item from a list input. If multiple inputs are given, then it randomly selects an input.",
     prop_defs={
         'val_prob_list': PropDef(
-            prop_type=PT_List(PT_ValProbPairHolder(), input_multiple=True),
+            prop_type=PT_List(PT_ValProbPairHolder(), input_multiple=True, extract=False),
             display_name="Nodes",
             description="Input nodes to select randomly.",
             input_port_status=PortStatus.COMPULSORY,

@@ -69,7 +69,7 @@ class NodeManager:
             return None
         # Check types of the result, assume they are already compatible
         if isinstance(inp_type, PT_List):
-            if isinstance(comp_result, List):
+            if isinstance(comp_result, List) and (not hasattr(inp_type, 'extract') or inp_type.extract):
                 return comp_result.extract(inp_type)
             else:
                 return List(comp_result.type, [comp_result])

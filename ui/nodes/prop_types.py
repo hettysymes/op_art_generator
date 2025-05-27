@@ -25,9 +25,10 @@ class PT_Scalar(PropType):
 # List
 class PT_List(PropType):
     def __init__(self, base_item_type: PT_Scalar = PT_Scalar(), input_multiple: bool = False,
-                 depth: int = 1):
+                 depth: int = 1, extract=True):
         self.base_item_type = base_item_type
         self.depth = depth
+        self.extract = extract
         super().__init__(input_multiple)
 
     def is_compatible_with(self, dest_type):
