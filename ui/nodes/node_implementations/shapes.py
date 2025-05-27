@@ -1,11 +1,12 @@
 from typing import cast
 
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.node_implementations.visualiser import get_rectangle
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode, CombinationNode
-from ui.nodes.prop_defs import PropDef, PT_Float, Float, PT_Point, Point, PT_Fill, Colour, PortStatus, Int, PT_Int, \
-    List, PT_List, PT_PointsHolder, LineRef, PointsHolder
+from ui.nodes.prop_types import PT_Float, PT_Point, PT_Fill, PT_Int, \
+    PT_List, PT_PointsHolder
+from ui.nodes.prop_values import List, Int, Float, PointsHolder, Point, Colour, LineRef
 from ui.nodes.shape_datatypes import Ellipse, SineWave, Polyline, Polygon
 from ui.nodes.utils import process_rgb
 

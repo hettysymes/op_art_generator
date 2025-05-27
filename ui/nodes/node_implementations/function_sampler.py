@@ -1,6 +1,7 @@
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Function, PT_Int, Int, PortStatus, PT_Float, List, Float
+from ui.nodes.prop_types import PT_Function, PT_Int, PT_Float
+from ui.nodes.prop_values import List, Int, Float
 from ui.nodes.warp_datatypes import sample_fun
 
 DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(

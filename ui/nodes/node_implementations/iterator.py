@@ -2,10 +2,11 @@ from typing import Optional, cast
 
 from ui.id_datatypes import PropKey
 from ui.node_graph import RefId
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_List, PT_Element, Enum, PortStatus, List, PropType, PT_Enum
+from ui.nodes.prop_types import PT_List, PT_Element, PropType, PT_Enum
+from ui.nodes.prop_values import List, Enum
 
 DEF_ITERATOR_INFO = PrivateNodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",

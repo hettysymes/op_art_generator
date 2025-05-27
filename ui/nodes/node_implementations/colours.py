@@ -1,7 +1,7 @@
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode, CombinationNode
-from ui.nodes.prop_defs import PropDef, PortStatus, Colour, PT_Colour, PT_List, PT_GradOffset, List, PT_Point, Point, \
-    GradOffset, Gradient
+from ui.nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point
+from ui.nodes.prop_values import List, Point, Colour, Gradient, GradOffset
 
 DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
     description="Outputs a desired solid colour.",

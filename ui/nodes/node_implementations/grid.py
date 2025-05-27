@@ -1,10 +1,11 @@
 from typing import Optional
 
 from ui.id_datatypes import PropKey
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.node_implementations.visualiser import get_grid, add_background
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PT_Warp, PT_Int, PropDef, Colour, PortStatus, Int, PropValue, Grid
+from ui.nodes.prop_types import PT_Warp, PT_Int
+from ui.nodes.prop_values import PropValue, Int, Grid, Colour
 from ui.nodes.shape_datatypes import Group, Polyline
 from ui.vis_types import Visualisable
 

@@ -1,10 +1,11 @@
 from typing import Optional
 
 from ui.id_datatypes import PropKey
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.node_implementations.visualiser import get_rectangle
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Int, Int, PT_Fill, PT_Element, PortStatus, Colour, PropValue, Fill
+from ui.nodes.prop_types import PT_Int, PT_Fill, PT_Element
+from ui.nodes.prop_values import PropValue, Int, Fill, Colour
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import Visualisable
 

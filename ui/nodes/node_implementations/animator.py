@@ -2,10 +2,11 @@ from typing import Optional
 
 from ui.id_datatypes import PropKey
 from ui.nodes.drawers.draw_graph import create_graph_svg
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PortStatus, PT_Function, \
-    PT_Float, PT_Int, PropValue, Int, Float, List
+from ui.nodes.prop_types import PT_Function, \
+    PT_Float, PT_Int
+from ui.nodes.prop_values import PropValue, List, Int, Float
 from ui.nodes.warp_datatypes import sample_fun
 from ui.vis_types import Visualisable, MatplotlibFig
 

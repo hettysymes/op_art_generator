@@ -1,9 +1,9 @@
 from typing import cast
 
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Element, PT_List, PT_Enum, PT_Float, PortStatus, PT_ElementHolder, List, \
-    Enum, Float
+from ui.nodes.prop_types import PT_Element, PT_List, PT_Enum, PT_Float, PT_ElementHolder
+from ui.nodes.prop_values import List, Float, Enum
 from ui.nodes.shape_datatypes import Group
 from ui.nodes.transforms import Translate, Scale
 

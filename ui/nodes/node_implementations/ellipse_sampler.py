@@ -1,9 +1,9 @@
 import math
 
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Ellipse, PT_Float, Float, PT_Int, Int, PortStatus, PT_Point, List, \
-    Point
+from ui.nodes.prop_types import PT_Ellipse, PT_Float, PT_Int, PT_Point
+from ui.nodes.prop_values import List, Int, Float, Point
 from ui.nodes.shape_datatypes import Ellipse
 
 DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(

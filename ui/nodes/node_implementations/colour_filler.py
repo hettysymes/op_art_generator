@@ -1,10 +1,11 @@
 import itertools
 
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from ui.nodes.node_input_exception import NodeInputException
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Element, PortStatus, PT_List, PT_Colour, List, PT_FillHolder, PT_Point, \
+from ui.nodes.prop_types import PT_Element, PT_List, PT_Colour, PT_FillHolder, PT_Point, \
     PT_Fill
+from ui.nodes.prop_values import List
 from ui.nodes.shape_datatypes import Group, Polygon, Element, Polyline
 from ui.nodes.utils import process_rgb
 

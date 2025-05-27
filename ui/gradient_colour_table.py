@@ -8,7 +8,9 @@ from PyQt5.QtWidgets import (
 )
 
 from ui.colour_prop_widget import ColorPropertyWidget
-from ui.nodes.prop_defs import PT_GradOffset, List, Colour, GradOffset
+from ui.nodes.prop_types import PT_GradOffset
+from ui.nodes.prop_values import List, Colour, GradOffset
+
 
 class GradOffsetColourWidget(QWidget):
     def __init__(self, entries=None, parent=None):
@@ -75,8 +77,8 @@ class GradOffsetColourWidget(QWidget):
             grad_offset: GradOffset = item.data(Qt.UserRole)
             try:
                 new_offset = float(item.text())
-                if new_offset < 0 or new_offset > 1:
-                    raise ValueError("Offset needs to be in range [0,1]")
+                if new_offset <= 0 or new_offset > 1:
+                    raise ValueError("Offset needs to be in range (0,1]")
                 grad_offset.offset = new_offset
                 # Update the item text to a formatted value
                 item.setText(f"{new_offset:.2f}")

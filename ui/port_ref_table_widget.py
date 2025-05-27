@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QMenu, QStyl
 
 from ui.id_datatypes import PortId
 from ui.node_manager import NodeManager, NodeInfo
-from ui.nodes.prop_defs import PortRefTableEntry, PropType, List
+from ui.nodes.prop_types import PropType
+from ui.nodes.prop_values import List, PortRefTableEntry
 from ui.reorderable_table_widget import ReorderableTableWidget
 
 

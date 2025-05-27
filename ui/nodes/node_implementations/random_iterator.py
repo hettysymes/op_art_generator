@@ -3,9 +3,10 @@ from typing import cast
 
 from ui.id_datatypes import PortId
 from ui.node_graph import RefId
-from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node
+from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_defs import PropDef, PT_Int, Int, PortStatus, List, PropType
+from ui.nodes.prop_types import PT_Int, PropType
+from ui.nodes.prop_values import List, Int
 
 DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
     description="Create a specified number of random iterations, outputting a drawing.",

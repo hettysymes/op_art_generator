@@ -4,11 +4,12 @@ from typing import Optional
 
 from ui.id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from ui.node_graph import NodeGraph
-from ui.nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier
+from ui.nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus
 from ui.nodes.node_implementations.animator import AnimatorNode
 from ui.nodes.node_implementations.canvas import CanvasNode
 from ui.nodes.nodes import CombinationNode, SelectableNode
-from ui.nodes.prop_defs import PropValue, PropType, List, PT_List, PropDef, PortStatus
+from ui.nodes.prop_types import PropType, PT_List
+from ui.nodes.prop_values import PropValue, List
 from ui.nodes.shape_datatypes import Group
 from ui.vis_types import Visualisable
 
