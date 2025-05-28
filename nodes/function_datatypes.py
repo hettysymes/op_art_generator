@@ -39,7 +39,11 @@ class CustomFun(Function):
         self.parsed_expr = parsed_expr
 
     def get(self):
-        return sp.lambdify(self.symbols, self.parsed_expr)
+        try:
+            f = sp.lambdify(self.symbols, self.parsed_expr)
+        except:
+            f = lambda x: x
+        return f
 
 
 class PiecewiseFun(Function):

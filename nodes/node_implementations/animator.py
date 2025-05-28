@@ -77,7 +77,6 @@ class AnimatorNode(UnitNode):
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
         samples = compute_results.get('samples')
         if samples is not None:
-            print(compute_results.get('curr_index'))
             return MatplotlibFig(create_graph_svg(samples, scatter=True, highlight_index=compute_results.get('curr_index')))
         return None
 
