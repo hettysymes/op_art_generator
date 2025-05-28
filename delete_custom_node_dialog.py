@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton, QApplication
+    QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
 )
-import sys
+
 
 class DeleteCustomNodeDialog(QDialog):
     def __init__(self, node_list, parent=None):

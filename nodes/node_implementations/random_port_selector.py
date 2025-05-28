@@ -45,7 +45,8 @@ class RandomPortSelectorNode(UnitNode):
         if not val_prob_list:
             return {}
 
-        values_weights: list[tuple[PropValue, float]] = [(val_prob.value, val_prob.probability) for val_prob in val_prob_list]
+        values_weights: list[tuple[PropValue, float]] = [(val_prob.value, val_prob.probability) for val_prob in
+                                                         val_prob_list]
         values, weights = zip(*values_weights)
         rng = random.Random(props.get('seed'))
         return {'_main': rng.choices(list(values), weights=list(weights), k=1)[0]}

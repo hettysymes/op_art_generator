@@ -1,9 +1,9 @@
 from nodes.node_defs import PrivateNodeInfo, PropDef, PortStatus, ResolvedProps
 from nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_BlazeCircleDef, PT_List, PT_Int, PT_Float, PT_Colour
+from nodes.prop_types import PT_BlazeCircleDef, PT_List, PT_Int, PT_Float, PT_Fill
 from nodes.prop_values import List, Int, Float, Colour, Fill, BlazeCircleDef
-from nodes.shape_datatypes import Group, Ellipse, Polygon
+from nodes.shape_datatypes import Group, Polygon
 
 DEF_BLAZE_MAKER_INFO = PrivateNodeInfo(
     description="Create an image similar to those in the Blaze series by Bridget Riley.",
@@ -15,11 +15,11 @@ DEF_BLAZE_MAKER_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN,
             default_value=List(PT_BlazeCircleDef(), [
-                                                            BlazeCircleDef(-0.026, 0.030, 0.033),
-                                                            BlazeCircleDef(-0.079, 0.031, 0.189),
-                                                            BlazeCircleDef(-0.037, -0.038, 0.379),
-                                                            BlazeCircleDef(0.000, 0.000, 0.500)
-                                                        ])
+                BlazeCircleDef(-0.026, 0.030, 0.033),
+                BlazeCircleDef(-0.079, 0.031, 0.189),
+                BlazeCircleDef(-0.037, -0.038, 0.379),
+                BlazeCircleDef(0.000, 0.000, 0.500)
+            ])
         ),
         'num_polygons': PropDef(
             prop_type=PT_Int(min_value=1),
@@ -34,7 +34,7 @@ DEF_BLAZE_MAKER_INFO = PrivateNodeInfo(
             default_value=Float(20)
         ),
         'colour': PropDef(
-            prop_type=PT_Colour(),
+            prop_type=PT_Fill(),
             display_name="Zig-zag colour",
             description="Zig-zag colour.",
             default_value=Colour(0, 0, 0, 255)
@@ -48,10 +48,10 @@ DEF_BLAZE_MAKER_INFO = PrivateNodeInfo(
     }
 )
 
+
 class BlazeMakerNode(UnitNode):
     NAME = "Blaze Maker"
     DEFAULT_NODE_INFO = DEF_BLAZE_MAKER_INFO
-
 
     def compute(self, props: ResolvedProps, *args):
         circle_defs: List[PT_BlazeCircleDef] = props.get('circle_defs')
@@ -67,7 +67,9 @@ class BlazeMakerNode(UnitNode):
         for circle_def in circle_defs:
             start_angle += angle_diff
             angle_diff *= -1
-            samples_list.append(EllipseSamplerNode.helper((0.5 + circle_def.x_offset, 0.5 + circle_def.y_offset), (circle_def.radius, circle_def.radius), start_angle, num_samples))
+            samples_list.append(EllipseSamplerNode.helper((0.5 + circle_def.x_offset, 0.5 + circle_def.y_offset),
+                                                          (circle_def.radius, circle_def.radius), start_angle,
+                                                          num_samples))
         # Obtain lines
         lines = [[] for _ in range(num_samples)]
         for samples in samples_list:
@@ -78,7 +80,6 @@ class BlazeMakerNode(UnitNode):
             points = lines[i - 1] + list(reversed(lines[i]))
             ret_group.add(Polygon(points, fill))
         return {'_main': ret_group}
-
 
 # class BlazeMakerNode(UnitNode):
 #     NAME = "Blaze Maker"

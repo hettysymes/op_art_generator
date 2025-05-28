@@ -14,10 +14,10 @@ from gradient_colour_table import GradOffsetColourWidget
 from id_datatypes import PortId, PropKey, input_port, output_port, NodeId
 from node_graph import NodeGraph
 from node_manager import NodeInfo, NodeManager
+from nodes.node_defs import PropDef, PortStatus
 from nodes.prop_types import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
     PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
     PT_FillHolder, PT_GradOffset, PT_ValProbPairHolder, PT_BlazeCircleDef
-from nodes.node_defs import PropDef, PortStatus
 from nodes.prop_values import PropValue, Enum, Point, PortRefTableEntry, Colour, LineRef
 from point_dialog import PointDialog
 from port_ref_table_widget import PortRefTableWidget

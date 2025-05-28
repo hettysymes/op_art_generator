@@ -72,7 +72,7 @@ class RandomProbabilityWidget(QWidget):
         # Column 1: Editable Probability
         prob_item = QTableWidgetItem(f"{first_entry.probability:.2f}")
         prob_item.setTextAlignment(Qt.AlignCenter)
-        prob_item.setData(Qt.UserRole, entry_group) # Set data
+        prob_item.setData(Qt.UserRole, entry_group)  # Set data
         prob_item.setFlags(prob_item.flags() | Qt.ItemIsEditable)
 
         if row is not None:

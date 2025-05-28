@@ -51,7 +51,8 @@ class EllipseSamplerNode(UnitNode):
         return Point(x, y)
 
     @staticmethod
-    def helper(centre: tuple[float, float], radius: tuple[float, float], start_angle: float, num_samples: int) -> List[PT_Point]:
+    def helper(centre: tuple[float, float], radius: tuple[float, float], start_angle: float, num_samples: int) -> List[
+        PT_Point]:
         samples = List(PT_Point())
         angle = math.radians(start_angle)
         step = 2 * math.pi / num_samples

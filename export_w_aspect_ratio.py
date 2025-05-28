@@ -1,11 +1,11 @@
 import shutil
 
+from PyQt5.QtGui import QImage, QPainter
+from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import (
     QDialog, QLabel, QComboBox, QPushButton, QVBoxLayout,
     QFileDialog, QMessageBox, QSpinBox
 )
-from PyQt5.QtSvg import QSvgRenderer
-from PyQt5.QtGui import QImage, QPainter
 
 from nodes.shape_datatypes import Element
 

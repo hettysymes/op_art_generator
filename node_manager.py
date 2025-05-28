@@ -153,7 +153,7 @@ class NodeManager:
             if isinstance(runtime_node.node, AnimatorNode) and runtime_node.node.playing
         }
 
-    def reanimate(self, node:NodeId, time: float) -> bool:
+    def reanimate(self, node: NodeId, time: float) -> bool:
         animate_node: Node = self._runtime_node(node).node
         assert isinstance(animate_node, AnimatorNode)
         return animate_node.reanimate(time)

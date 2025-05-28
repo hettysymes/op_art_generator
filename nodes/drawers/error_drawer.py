@@ -7,7 +7,7 @@ class ErrorDrawer(Drawing):
         super().__init__(filepath, width, height)
         self.title, self.content = inputs
 
-    def draw(self):# Add the title in bold, centered at the top third
+    def draw(self):  # Add the title in bold, centered at the top third
         self.dwg_add(self.dwg.text(
             self.title,
             insert=(self.width / 2, self.height / 3),

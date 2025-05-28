@@ -114,11 +114,14 @@ class PT_Gradient(PT_Fill):
 class PT_Colour(PT_Fill):
     pass
 
+
 class PT_GradOffset(PT_Scalar):
     pass
 
+
 class PT_ValProbPairHolder(PT_Scalar):
     pass
+
 
 # Other
 
@@ -162,6 +165,7 @@ class PT_Enum(PT_Scalar):
 
 class PT_String(PT_Scalar):
     pass
+
 
 class PT_BlazeCircleDef(PT_Scalar):
     pass

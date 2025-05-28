@@ -135,7 +135,8 @@ class CustomNode(Node):
 
     @staticmethod
     def _get_new_prop_defs(prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]],
-                           selected_ports: dict[NodeId, list[PortId]], custom_names: dict[tuple[NodeId, PropKey], str]) -> dict[PropKey, PropDef]:
+                           selected_ports: dict[NodeId, list[PortId]],
+                           custom_names: dict[tuple[NodeId, PropKey], str]) -> dict[PropKey, PropDef]:
         prop_defs: dict[PropKey, PropDef] = {}
         for node, ports in selected_ports.items():
             node_prop_defs: dict[PropKey, PropDef] = prop_defs_dict[node]
@@ -179,16 +180,17 @@ class CustomNode(Node):
         # Get new prop defs
         prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]] = {node: self.sub_node_manager.node_info(node).prop_defs
                                                                 for node in self.node_topo_order}
-        prop_defs: dict[PropKey, PropDef] = CustomNode._get_new_prop_defs(prop_defs_dict, self.selected_ports, custom_node_def.custom_names)
+        prop_defs: dict[PropKey, PropDef] = CustomNode._get_new_prop_defs(prop_defs_dict, self.selected_ports,
+                                                                          custom_node_def.custom_names)
 
         # Add seed property if randomisable
         if self._randomisable:
             prop_defs['seed'] = PropDef(
-            prop_type=PT_Int(min_value=0),
-            input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
-        )
+                prop_type=PT_Int(min_value=0),
+                input_port_status=PortStatus.FORBIDDEN,
+                output_port_status=PortStatus.FORBIDDEN,
+                display_in_props=False
+            )
 
         # Set node info
         self._node_info = PrivateNodeInfo(

@@ -51,7 +51,7 @@ class AnimatorNode(UnitNode):
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._curr_idx = None
         self._right_dir = None
-        self._time_left = 0 # In milliseconds
+        self._time_left = 0  # In milliseconds
         self._reset_idx()
         self._playing = False
         super().__init__(internal_props, add_info)
@@ -66,7 +66,7 @@ class AnimatorNode(UnitNode):
         # Reset curr index if necessary
         num_samples: int = props.get('num_samples')
         if self._curr_idx >= num_samples:
-           self._reset_idx()
+            self._reset_idx()
 
         # Get sample from function
         samples: list[float] = sample_fun(props.get('function'), num_samples)
@@ -77,7 +77,8 @@ class AnimatorNode(UnitNode):
     def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
         samples = compute_results.get('samples')
         if samples is not None:
-            return MatplotlibFig(create_graph_svg(samples, scatter=True, highlight_index=compute_results.get('curr_index')))
+            return MatplotlibFig(
+                create_graph_svg(samples, scatter=True, highlight_index=compute_results.get('curr_index')))
         return None
 
     @property
@@ -91,7 +92,7 @@ class AnimatorNode(UnitNode):
         self._time_left -= time
         if self._time_left <= 0:
             # Reset time left
-            self._time_left: float = self.internal_props['jump_time'] # Time in milliseconds
+            self._time_left: float = self.internal_props['jump_time']  # Time in milliseconds
 
             # Reverse direction at boundaries
             if self._curr_idx == 0 or self._curr_idx == self.internal_props['num_samples'] - 1:

@@ -15,21 +15,21 @@ DEF_DRAWING_GROUP_SUBSET_INFO = PrivateNodeInfo(
             display_in_props=False
         ),
         'start_idx_enum': PropDef(
-                    prop_type=PT_Enum(),
-                    display_name="Start index",
-                    description="Start of drawing group subset.",
-                    default_value=Enum(),
-                    input_port_status=PortStatus.FORBIDDEN,
-                    output_port_status=PortStatus.FORBIDDEN
-                ),
+            prop_type=PT_Enum(),
+            display_name="Start index",
+            description="Start of drawing group subset.",
+            default_value=Enum(),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN
+        ),
         'stop_idx_enum': PropDef(
-                    prop_type=PT_Enum(),
-                    display_name="Stop index",
-                    description="Stop of drawing group subset.",
-                    default_value=Enum(default_first=False),
-                    input_port_status=PortStatus.FORBIDDEN,
-                    output_port_status=PortStatus.FORBIDDEN
-                ),
+            prop_type=PT_Enum(),
+            display_name="Stop index",
+            description="Stop of drawing group subset.",
+            default_value=Enum(default_first=False),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN
+        ),
         '_main': PropDef(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -55,7 +55,7 @@ class DrawingGroupSubsetNode(UnitNode):
 
         # Update enum
         new_options = list(range(len(drawing_group)))
-        new_display_options = [str(i+1) for i in new_options]
+        new_display_options = [str(i + 1) for i in new_options]
         start_enum.set_options(new_options, new_display_options)
         stop_enum.set_options(new_options, new_display_options)
 
@@ -65,5 +65,5 @@ class DrawingGroupSubsetNode(UnitNode):
         if start_idx > stop_idx:
             raise ValueError("Start index must be less or equal to stop index")
 
-        subset = [drawing_group[i] for i in range(start_idx, stop_idx+1)]
+        subset = [drawing_group[i] for i in range(start_idx, stop_idx + 1)]
         return {'_main': List(PT_Element(), subset)}

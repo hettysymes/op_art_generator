@@ -18,10 +18,12 @@ from vis_types import ErrorFig, Visualisable
 type ResolvedProps = dict[PropKey, list[PropValue] | PropValue]
 type ResolvedRefs = dict[PropKey, list[Optional[RefId]] | Optional[RefId]]
 
+
 class PortStatus(Enum):
     COMPULSORY = auto()
     OPTIONAL = auto()
     FORBIDDEN = auto()
+
 
 @dataclass(frozen=True)
 class PropDef:
@@ -180,7 +182,8 @@ class RuntimeNode:
             None  # No return if no property could be resolved
             | tuple[List, list[Optional[RefId]]]  # List if input port type inputs from multiple nodes
             | tuple[PropValue, Optional[RefId]]  # Single value otherwise
-            | tuple[list[PropValue], list[Optional[RefId]]] # Return the raw inputs if input multiple but not List prop_type
+            | tuple[list[PropValue], list[Optional[RefId]]]
+    # Return the raw inputs if input multiple but not List prop_type
     ):
         prop_type: PropType = self.node.prop_defs[prop_key].prop_type
         incoming_edges: set[EdgeId] = self.graph_querier.incoming_edges(input_port(self.uid, prop_key))

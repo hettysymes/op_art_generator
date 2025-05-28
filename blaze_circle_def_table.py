@@ -1,14 +1,12 @@
 import copy
-from functools import partial
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QTableWidgetItem, QTableWidget, QHeaderView, QMenu, QAction
 )
 
-from colour_prop_widget import ColorPropertyWidget
-from nodes.prop_types import PT_GradOffset, PT_BlazeCircleDef
-from nodes.prop_values import List, Colour, GradOffset, BlazeCircleDef
+from nodes.prop_types import PT_BlazeCircleDef
+from nodes.prop_values import List, BlazeCircleDef
 
 
 class BlazeCircleDefWidget(QWidget):

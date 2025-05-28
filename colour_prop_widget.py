@@ -52,7 +52,8 @@ class ColorPropertyWidget(QWidget):
         layout.setStretch(0, 1)
 
     def showColorDialog(self):
-        qcolour = QColorDialog.getColor(QColor(*self.colour), self, "Select Color", options=QColorDialog.ShowAlphaChannel)
+        qcolour = QColorDialog.getColor(QColor(*self.colour), self, "Select Color",
+                                        options=QColorDialog.ShowAlphaChannel)
         if qcolour.isValid():
             colour: Colour = Colour(*qcolour.getRgb())
             self.set_colour(colour)

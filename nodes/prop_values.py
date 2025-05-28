@@ -364,7 +364,7 @@ class Colour(tuple, Fill):
 
     @property
     def opacity(self) -> float:
-        return self[3]/255
+        return self[3] / 255
 
     @property
     def type(self) -> PropType:
@@ -377,7 +377,7 @@ class Gradient(Fill):
         super().__init__()
         self.start_coord = start_coord
         self.end_coord = end_coord
-        self.stops = stops # Assume this is sorted by ascending offset
+        self.stops = stops  # Assume this is sorted by ascending offset
 
     def get(self, dwg):
         grad_id = str(uuid.uuid4())
@@ -401,6 +401,7 @@ class GradOffset(PropValue):
     @property
     def type(self) -> PropType:
         return PT_GradOffset()
+
 
 class ValProbPairRef(PortRefTableEntry):
 
@@ -439,6 +440,7 @@ class LineRef(PointsHolder, PortRefTableEntry):
     @property
     def type(self) -> PropType:
         return PT_PointsHolder()
+
 
 class BlazeCircleDef(PropValue):
     def __init__(self, x_offset, y_offset, radius):

@@ -231,8 +231,8 @@ class PolygonNode(UnitNode):
             else:
                 points.extend(points_holder.points)
         # Return polygon
-        return {'_main': Polygon(points, props.get('fill'),'none',
-                                     props.get('stroke_width'))}
+        return {'_main': Polygon(points, props.get('fill'), 'none',
+                                 props.get('stroke_width'))}
 
 
 DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
@@ -305,12 +305,14 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
     }
 )
 
+
 class EllipseNode(UnitNode):
     NAME = "Ellipse"
     DEFAULT_NODE_INFO = DEF_ELLIPSE_INFO
 
     def compute(self, props: ResolvedProps, *args):
-        return {'_main': Ellipse(props.get('centre'), (props.get('rx'), props.get('ry')), props.get('fill'), 'none', props.get('stroke_width'))}
+        return {'_main': Ellipse(props.get('centre'), (props.get('rx'), props.get('ry')), props.get('fill'), 'none',
+                                 props.get('stroke_width'))}
 
 
 DEF_CIRCLE_INFO = PrivateNodeInfo(

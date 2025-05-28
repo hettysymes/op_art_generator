@@ -1123,7 +1123,7 @@ class PipelineScene(QGraphicsScene):
                 target_has_connection = len(dest_port_item.edge_items) > 0
                 if not connection_exists and (
                         not target_has_connection or dest_port_item.port_type.input_multiple) and self.is_edge_type_valid(
-                        source_port_item.port, dest_port_item.port):
+                    source_port_item.port, dest_port_item.port):
                     # Add the connection
                     self.undo_stack.push(
                         AddNewEdgeCmd(self, edge))
@@ -1808,10 +1808,12 @@ class PipelineEditor(QMainWindow):
             # Update visualisation node
             vis_sel_node: NodeId = old_to_new_id_map[vis_sel_node]
             # Update custom names
-            custom_names_dict = {(old_to_new_id_map[node], key): name for (node, key), name in custom_names_dict.items()}
+            custom_names_dict = {(old_to_new_id_map[node], key): name for (node, key), name in
+                                 custom_names_dict.items()}
             # Register the custom node
             self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
-                                                             CustomNodeDef(sub_node_manager, selected_ports, custom_names_dict,
+                                                             CustomNodeDef(sub_node_manager, selected_ports,
+                                                                           custom_names_dict,
                                                                            vis_sel_node, description=description)))
 
     def identify_selected_items(self):

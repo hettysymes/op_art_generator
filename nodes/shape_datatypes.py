@@ -9,6 +9,7 @@ from nodes.prop_values import List, PointsHolder, Point, ElementHolder, Fill, Co
 from nodes.transforms import TransformList, Translate, Scale, Rotate
 from vis_types import Visualisable
 
+
 def process_fill(fill: Fill, dwg):
     if isinstance(fill, Gradient):
         colour = fill.get(dwg)
@@ -18,6 +19,7 @@ def process_fill(fill: Fill, dwg):
         colour = fill.colour
         opacity = fill.opacity
     return colour, opacity
+
 
 class Element(ElementHolder, Visualisable, ABC):
 
