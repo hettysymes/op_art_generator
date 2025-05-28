@@ -45,25 +45,24 @@ class EllipseSamplerNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_ELLIPSE_SAMPLER_INFO
 
     @staticmethod
-    def angle_to_point(angle_rad: float, ellipse: Ellipse) -> Point:
-        x = ellipse.center[0] + ellipse.r[0] * math.cos(angle_rad)
-        y = ellipse.center[1] + ellipse.r[1] * math.sin(angle_rad)
+    def angle_to_point(angle_rad: float, centre: tuple[float, float], radius: tuple[float, float]) -> Point:
+        x = centre[0] + radius[0] * math.cos(angle_rad)
+        y = centre[1] + radius[1] * math.sin(angle_rad)
         return Point(x, y)
 
     @staticmethod
-    def helper(ellipse: Ellipse, start_angle: float, num_samples: int) -> List[PT_Point]:
-        assert isinstance(ellipse, Ellipse)
+    def helper(centre: tuple[float, float], radius: tuple[float, float], start_angle: float, num_samples: int) -> List[PT_Point]:
         samples = List(PT_Point())
         angle = math.radians(start_angle)
         step = 2 * math.pi / num_samples
         for _ in range(num_samples):
-            samples.append(EllipseSamplerNode.angle_to_point(angle, ellipse))
+            samples.append(EllipseSamplerNode.angle_to_point(angle, centre, radius))
             angle += step
         return samples
 
     def compute(self, props: ResolvedProps, *args):
-        ellipse = props.get('ellipse')
+        ellipse: Ellipse = props.get('ellipse')
         if ellipse is None:
             return {}
-        return {'_main': EllipseSamplerNode.helper(ellipse, props.get('start_angle'),
+        return {'_main': EllipseSamplerNode.helper(ellipse.center, ellipse.r, props.get('start_angle'),
                                                    props.get('num_samples'))}

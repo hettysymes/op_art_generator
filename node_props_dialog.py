@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QComboBox, QHBoxLayout, QWidge
     QGroupBox, QLabel, QLineEdit
 
 from app_state import NodeState
+from blaze_circle_def_table import BlazeCircleDefWidget
 from colour_prop_widget import ColorPropertyWidget
 from gradient_colour_table import GradOffsetColourWidget
 from id_datatypes import PortId, PropKey, input_port, output_port, NodeId
@@ -15,7 +16,7 @@ from node_graph import NodeGraph
 from node_manager import NodeInfo, NodeManager
 from nodes.prop_types import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
     PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
-    PT_FillHolder, PT_GradOffset, PT_ValProbPairHolder
+    PT_FillHolder, PT_GradOffset, PT_ValProbPairHolder, PT_BlazeCircleDef
 from nodes.node_defs import PropDef, PortStatus
 from nodes.prop_values import PropValue, Enum, Point, PortRefTableEntry, Colour, LineRef
 from point_dialog import PointDialog
@@ -269,8 +270,13 @@ class NodePropertiesDialog(QDialog):
             # Create the spinboxes
             x_spinbox = QDoubleSpinBox()
             x_spinbox.setDecimals(3)
+            x_spinbox.setMinimum(-999999)
+            x_spinbox.setMaximum(999999)
+
             y_spinbox = QDoubleSpinBox()
             y_spinbox.setDecimals(3)
+            y_spinbox.setMinimum(-999999)
+            y_spinbox.setMaximum(999999)
 
             # Set initial values
             x, y = (current_value or (0.5, 0.5))
@@ -431,6 +437,8 @@ class NodePropertiesDialog(QDialog):
                     node_manager=self.node_item.node_manager,
                     entries=current_value
                 )
+            elif isinstance(prop_type.base_item_type, PT_BlazeCircleDef):
+                widget = BlazeCircleDefWidget(entries=current_value)
         elif isinstance(prop_type, PT_Fill):
             assert isinstance(current_value, Colour)
             widget = ColorPropertyWidget(current_value)

@@ -162,3 +162,6 @@ class PT_Enum(PT_Scalar):
 
 class PT_String(PT_Scalar):
     pass
+
+class PT_BlazeCircleDef(PT_Scalar):
+    pass

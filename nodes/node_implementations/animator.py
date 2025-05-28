@@ -45,7 +45,7 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
 
 
 class AnimatorNode(UnitNode):
-    NAME = "Animator"
+    NAME = "Function Animator"
     DEFAULT_NODE_INFO = DEF_ANIMATOR_INFO
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):

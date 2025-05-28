@@ -4,7 +4,7 @@ from typing import TypeVar, Generic, Optional, cast
 
 from nodes.prop_types import PropType, PT_List, PT_Scalar, PT_Int, PT_Float, PT_String, PT_Bool, PT_Enum, \
     PT_Point, PT_PointsHolder, PT_Grid, PT_Element, PT_ElementHolder, PT_FillHolder, PT_Fill, PT_Colour, \
-    PT_GradOffset, PT_Gradient, PT_ValProbPairHolder
+    PT_GradOffset, PT_Gradient, PT_ValProbPairHolder, PT_BlazeCircleDef
 
 
 class PropValue(ABC):
@@ -439,3 +439,13 @@ class LineRef(PointsHolder, PortRefTableEntry):
     @property
     def type(self) -> PropType:
         return PT_PointsHolder()
+
+class BlazeCircleDef(PropValue):
+    def __init__(self, x_offset, y_offset, radius):
+        self.x_offset = x_offset
+        self.y_offset = y_offset
+        self.radius = radius
+
+    @property
+    def type(self) -> PropType:
+        return PT_BlazeCircleDef()
