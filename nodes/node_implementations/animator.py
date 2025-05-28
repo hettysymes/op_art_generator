@@ -82,6 +82,10 @@ class AnimatorNode(UnitNode):
         return None
 
     @property
+    def animatable(self) -> bool:
+        return True
+
+    @property
     def playing(self) -> bool:
         return self._playing
 

@@ -5,7 +5,6 @@ from typing import Optional
 from id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from node_graph import NodeGraph
 from nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus
-from nodes.node_implementations.animator import AnimatorNode
 from nodes.node_implementations.canvas import CanvasNode
 from nodes.nodes import CombinationNode, SelectableNode
 from nodes.prop_types import PropType, PT_List
@@ -87,7 +86,7 @@ class NodeManager:
             randomisable=runtime_node.node.randomisable,
             selectable=isinstance(runtime_node.node, SelectableNode),
             combination=isinstance(runtime_node.node, CombinationNode),
-            animatable=isinstance(runtime_node.node, AnimatorNode),
+            animatable=runtime_node.node.animatable,
             is_canvas=isinstance(runtime_node.node, CanvasNode)
         )
 
@@ -144,21 +143,21 @@ class NodeManager:
 
     def is_playing(self, node: NodeId) -> bool:
         animate_node: Node = self._runtime_node(node).node
-        assert isinstance(animate_node, AnimatorNode)
+        assert animate_node.animatable
         return animate_node.playing
 
     def playing_nodes(self) -> set[NodeId]:
         return {
             node for node, runtime_node in self.node_map.items()
-            if isinstance(runtime_node.node, AnimatorNode) and runtime_node.node.playing
+            if runtime_node.node.animatable and runtime_node.node.playing
         }
 
     def reanimate(self, node: NodeId, time: float) -> bool:
         animate_node: Node = self._runtime_node(node).node
-        assert isinstance(animate_node, AnimatorNode)
+        assert animate_node.animatable
         return animate_node.reanimate(time)
 
     def toggle_play(self, node: NodeId) -> None:
         animate_node: Node = self._runtime_node(node).node
-        assert isinstance(animate_node, AnimatorNode)
+        assert animate_node.animatable
         animate_node.toggle_play()

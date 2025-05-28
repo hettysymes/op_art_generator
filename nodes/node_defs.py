@@ -115,6 +115,10 @@ class Node(ABC):
         return False
 
     @property
+    def animatable(self) -> bool:
+        return False
+
+    @property
     def description(self) -> str:
         return self.node_info.description
 
