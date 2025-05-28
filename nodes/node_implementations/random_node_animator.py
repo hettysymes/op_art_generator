@@ -37,7 +37,7 @@ DEF_RANDOM_ANIMATOR_INFO = PrivateNodeInfo(
 
 
 class RandomAnimatorNode(UnitNode):
-    NAME = "Random Node Animator"
+    NAME = "Random Animator"
     DEFAULT_NODE_INFO = DEF_RANDOM_ANIMATOR_INFO
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
