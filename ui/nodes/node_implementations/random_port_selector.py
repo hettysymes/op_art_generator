@@ -45,16 +45,10 @@ class RandomPortSelectorNode(UnitNode):
         if not val_prob_list:
             return {}
 
-        prob_sum = sum([val_prob.probability for val_prob in val_prob_list])
-        values: list[PropValue] = []
-        probabilities: list[float] = []
-        for val_prob in cast(List, self.internal_props['val_prob_list']):
-            val_prob.probability /= prob_sum # Normalise probabilities to sum to 1
-            values.append(val_prob.value)
-            probabilities.append(val_prob.probability)
-
+        values_weights: list[tuple[PropValue, float]] = [(val_prob.value, val_prob.probability) for val_prob in val_prob_list]
+        values, weights = zip(*values_weights)
         rng = random.Random(props.get('seed'))
-        return {'_main': rng.choices(values, weights=probabilities, k=1)[0]}
+        return {'_main': rng.choices(list(values), weights=list(weights), k=1)[0]}
 
     # Functions needed for randomisable node # TODO make into interface
 

@@ -28,7 +28,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
         ),
         'wh_diff': PropDef(
             prop_type=PT_Float(),
-            display_name="Height/width distance",
+            display_name="Overlap distance",
             description=(
                 "Distance to place between stacked drawings, proportional to the height or width of one drawing "
                 "(height for vertical stacking, width for horizontal stacking). E.g. if set to 0.5, the second drawing "
@@ -38,8 +38,8 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
         ),
         'shift': PropDef(
             prop_type=PT_Float(),
-            display_name="Right/descent shift",
-            description="Shift to the right or down (for horizontal and vertical stack respectively).",
+            display_name="Ascent/Right shift",
+            description="Shift to the right or up (for horizontal and vertical stack respectively).",
             default_value=Float(0)
         ),
         '_main': PropDef(

@@ -15,11 +15,12 @@ from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestu
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack,
-                             QUndoCommand, QGraphicsProxyWidget)
+                             QUndoCommand, QGraphicsProxyWidget, QDialog)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 
 from ui.app_state import NodeState, AppState, CustomNodeDef, NodeId
+from ui.delete_custom_node_dialog import DeleteCustomNodeDialog
 from ui.export_w_aspect_ratio import ExportWithAspectRatio
 from ui.id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, PropKey, node_changed_port
 from ui.node_graph import NodeGraph, RefId
@@ -1057,11 +1058,11 @@ class PipelineScene(QGraphicsScene):
 
         # Animation
         self.timer = QTimer()
-        self.timer_interval_ms = 1
+        self.timer_interval_ms = 10
         self.timer.setInterval(self.timer_interval_ms)
         self.timer.timeout.connect(self.animate)
         # TODO: uncomment this when figure out efficiency
-        # self.timer.start()
+        self.timer.start()
 
     def animate(self):
         for node in self.node_manager.playing_nodes():
@@ -1690,6 +1691,19 @@ class PipelineEditor(QMainWindow):
         centre.setShortcut("Ctrl+1")
         centre.triggered.connect(lambda: self.view.centerOn(0, 0))
         scene_menu.addAction(centre)
+
+        custom_node_menu = menu_bar.addMenu("Custom Nodes")
+
+        # Add Delete action
+        delete_custom_node = QAction("Delete Custom Node", self)
+        delete_custom_node.triggered.connect(self.delete_custom_node)
+        custom_node_menu.addAction(delete_custom_node)
+
+    def delete_custom_node(self):
+        dialog = DeleteCustomNodeDialog(list(self.scene.custom_node_defs.keys()))
+        if dialog.exec_() == QDialog.Accepted:
+            selected_node = dialog.get_selected_node()
+            del self.scene.custom_node_defs[selected_node]
 
     def new_scene(self):
         self.scene.filepath = None

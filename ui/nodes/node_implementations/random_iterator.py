@@ -5,8 +5,8 @@ from ui.id_datatypes import PortId
 from ui.node_graph import RefId
 from ui.nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
 from ui.nodes.nodes import UnitNode
-from ui.nodes.prop_types import PT_Int, PropType
-from ui.nodes.prop_values import List, Int
+from ui.nodes.prop_types import PT_Int, PropType, PT_Enum
+from ui.nodes.prop_values import List, Int, Enum
 
 DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
     description="Create a specified number of random iterations, outputting a drawing.",
@@ -26,6 +26,14 @@ DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
             prop_type=PT_Int(min_value=0),
             display_name="Random seed",
             description="Random seed used."
+        ),
+        'layout_enum': PropDef(
+            prop_type=PT_Enum(),
+            display_name="Visualisation layout",
+            description="Iterations can be visualised in either a vertical or horizontal layout. This only affects the visualisation for this node and not the output itself.",
+            default_value=Enum([True, False], ["Vertical", "Horizontal"]),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN
         ),
         '_main': PropDef(
             input_port_status=PortStatus.FORBIDDEN,
@@ -64,7 +72,7 @@ class RandomIteratorNode(UnitNode):
         rprops, rrefs, rquerier = ref_querier.get_compute_inputs(random_node_ref)
 
         # Calculate and set random compute result
-        outputs = List(random_input.type)
+        outputs = List(random_input.type, vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)
         for seed in seeds:
             rprops['seed'] = seed
             rrefs['seed'] = None
