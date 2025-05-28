@@ -1,7 +1,6 @@
 # op_art_generator
-To get `svgwrite`, run `pip install svgwrite`
-To get `cairosvg`, run `brew install cairo` then `pip install cairosvg`
-cairosvg example.svg -o example.png
 
-# Packages to install for visualiser
-rm -rf .venv && deactivate && python3 -m venv .venv && source .venv/bin/activate && pip install PyQt5 PyQtWebEngine svgwrite numpy cairosvg sympy
+## How to run
+First install the necessary Python packages. These are listed in `requirements.txt`. Simply run `pip install -r requirements.txt` to automatically install the necessary dependencies.
+
+After installation, run the Pipeline Editor GUI with the command `python3 pipeline_editor.py`. This will cause the PyQt application to open in another window.

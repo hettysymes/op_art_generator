@@ -1,9 +1,7 @@
-out/
-ui/tmp
-.idea/
-ui/*.pipeline
-ui/*.svg
-ui/*.png
+*.png
+*.svg
+*.pipeline
+.idea
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
