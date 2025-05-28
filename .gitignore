@@ -1,6 +1,5 @@
 *.png
 *.svg
-*.pipeline
 .idea
 
 # Byte-compiled / optimized / DLL files
