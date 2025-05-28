@@ -1,4 +1,5 @@
 from nodes.node_implementations.animator import AnimatorNode
+from nodes.node_implementations.blaze_maker import BlazeMakerNode
 from nodes.node_implementations.canvas import CanvasNode
 from nodes.node_implementations.colour_filler import ColourFillerNode
 from nodes.node_implementations.colour_list import ColourListNode
@@ -43,5 +44,6 @@ node_classes = [
     PortForwarderNode,
     EllipseSamplerNode,
     DrawingCropperNode,
+    BlazeMakerNode,
     AnimatorNode
 ]

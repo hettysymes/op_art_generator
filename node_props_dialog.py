@@ -270,8 +270,13 @@ class NodePropertiesDialog(QDialog):
             # Create the spinboxes
             x_spinbox = QDoubleSpinBox()
             x_spinbox.setDecimals(3)
+            x_spinbox.setMinimum(-999999)
+            x_spinbox.setMaximum(999999)
+
             y_spinbox = QDoubleSpinBox()
             y_spinbox.setDecimals(3)
+            y_spinbox.setMinimum(-999999)
+            y_spinbox.setMaximum(999999)
 
             # Set initial values
             x, y = (current_value or (0.5, 0.5))
