@@ -7,8 +7,8 @@ from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from nodes.node_implementations.visualiser import visualise_by_type
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Function, \
-    PT_Float, PT_Int, PT_List, PT_Number
-from nodes.prop_values import PropValue, List, Int, Float
+    PT_Float, PT_Int, PT_List, PT_Number, PT_Enum
+from nodes.prop_values import PropValue, List, Int, Float, Enum
 from nodes.warp_datatypes import sample_fun
 from vis_types import Visualisable, MatplotlibFig
 
@@ -27,6 +27,14 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN,
             default_value=Float(100)
+        ),
+        'iter_type_enum': PropDef(
+            prop_type=PT_Enum(),
+            display_name="Iteration Type",
+            description="When reaching the end of the list, the animation can either 'reflect' back (i.e. ABCBA) or cycle back from the start (i.e. ABCABC).",
+            default_value=Enum([True, False], ["Reflective", "Cyclic"]),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN
         ),
         '_main': PropDef(
             input_port_status=PortStatus.FORBIDDEN,
@@ -52,7 +60,7 @@ class AnimatorNode(UnitNode):
 
     def _reset_idx(self):
         self._curr_idx = 0
-        self._right_dir = False
+        self._right_dir = True
 
     def compute(self, props: ResolvedProps, *args):
         val_list: List = props.get('val_list')
@@ -64,9 +72,14 @@ class AnimatorNode(UnitNode):
         output = val_list[self._curr_idx]
         old_idx = self._curr_idx
 
-        # Reverse direction at boundaries and update index
-        if self._curr_idx == 0 or self._curr_idx == len(val_list) - 1:
-            self._right_dir = not self._right_dir
+        if props.get('iter_type_enum').selected_option:
+            # Reverse direction at boundaries and update index
+            if self._curr_idx == 0:
+                self._right_dir = True
+            elif self._curr_idx == len(val_list) - 1:
+                self._right_dir = False
+        else:
+            self._right_dir = True
         self._curr_idx += 1 if self._right_dir else -1
 
         return {'_main': output, 'curr_index': old_idx, 'val_list': val_list}
