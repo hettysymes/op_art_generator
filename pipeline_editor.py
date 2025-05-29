@@ -22,7 +22,7 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 from app_state import NodeState, AppState, CustomNodeDef, NodeId
 from delete_custom_node_dialog import DeleteCustomNodeDialog
 from export_w_aspect_ratio import ExportWithAspectRatio
-from id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, PropKey, node_changed_port
+from id_datatypes import PortId, EdgeId, output_port, input_port, PropKey, node_changed_port, NodeIdGenerator
 from node_graph import NodeGraph, RefId
 from node_manager import NodeManager, NodeInfo
 from node_props_dialog import NodePropertiesDialog
@@ -251,12 +251,15 @@ class NodeItem(QGraphicsRectItem):
             dialog.exec_()
         # TODO: put warning here
 
+    def update_play_btn_text(self):
+        text = "❚❚" if self.node_manager.is_playing(self.uid) else "▶"
+        self._play_button.setText(text)
+
     def toggle_playback(self):
-        self.node_manager.toggle_play(self.uid)
         if self.node_manager.is_playing(self.uid):
-            self._play_button.setText("❚❚")  # Pause symbol
+            self.scene().undo_stack.push(PauseNodesCmd(self.scene(), {self.uid}))
         else:
-            self._play_button.setText("▶")  # Play symbol
+            self.scene().undo_stack.push(PlayNodesCmd(self.scene(), {self.uid}))
 
     @property
     def uid(self) -> NodeId:
@@ -274,14 +277,8 @@ class NodeItem(QGraphicsRectItem):
     def node_info(self) -> NodeInfo:
         return self.node_manager.node_info(self.uid)
 
-    def add_property_port(self, port: PortId):
-        self.scene().undo_stack.push(AddPropertyPortCmd(self, port))
-
-    def remove_property_port(self, port: PortId):
-        self.scene().undo_stack.push(RemovePropertyPortCmd(self, port))
-
-    def change_properties(self, props_changed):
-        self.scene().undo_stack.push(ChangePropertiesCmd(self, props_changed))
+    def change_properties(self, props_changed, ports_toggled: dict[PortId, bool]):
+        self.scene().undo_stack.push(ChangePropertiesCmd(self, props_changed, ports_toggled))
 
     def hoverMoveEvent(self, event):
         if self._help_icon_rect.contains(event.pos()):
@@ -728,7 +725,7 @@ class PortItem(QGraphicsPathItem):
             elif port_type.is_compatible_with(PT_Fill()):
                 # Rounded rectangle for fill type
                 path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
-            elif port_type.is_compatible_with(PT_Function()) or port_type.is_compatible_with(PT_Warp):
+            elif port_type.is_compatible_with(PT_Function()) or port_type.is_compatible_with(PT_Warp()):
                 # Diamond for function or warp type
                 points = [
                     QPointF(0, -half_size),  # Top
@@ -851,7 +848,7 @@ class AddNewNodeCmd(QUndoCommand):
         node_item.remove_from_scene()
 
     def redo(self):
-        node: NodeId = self.node_state.node if self.node_state else gen_node_id()
+        node: NodeId = self.node_state.node if self.node_state else self.scene.gen_node_id()
         base_node: Node = self.node_class(add_info=self.add_info)
         self.node_graph.add_node(node)
         self.node_manager.add_node(node, base_node)
@@ -880,11 +877,13 @@ class AddNewEdgeCmd(QUndoCommand):
 
 
 class ChangePropertiesCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, props_changed, description="Change properties"):
+    def __init__(self, node_item: NodeItem, props_changed, ports_toggled: dict[PortId, bool], description="Change properties"):
         super().__init__(description)
         self.node_item = node_item
         self.node_manager: NodeManager = node_item.node_manager
         self.props_changed = props_changed
+        self.ports_toggled = ports_toggled
+        self.opened_ports_exist = True
 
     def update_properties(self, props):
         for prop_key, value in props.items():
@@ -897,43 +896,31 @@ class ChangePropertiesCmd(QUndoCommand):
         # Update the node's appearance
         self.node_item.update_visualisations()
 
+    def open_ports(self, reverse: bool):
+        for port, is_open in self.ports_toggled.items():
+            actually_open = not is_open if reverse else is_open
+            if actually_open:
+                self.node_item.add_port(port)
+            else:
+                self.node_item.remove_port(port)
+
     def undo(self):
         props = {}
         for prop_name, value in self.props_changed.items():
             props[prop_name] = value[0]  # Take the old value
         self.update_properties(props)
+        assert self.opened_ports_exist
+        self.open_ports(reverse=True)
+        self.opened_ports_exist = False
 
     def redo(self):
         props = {}
         for prop_name, value in self.props_changed.items():
             props[prop_name] = value[1]  # Take the new value
         self.update_properties(props)
-
-
-class AddPropertyPortCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, port: PortId, description="Add property port"):
-        super().__init__(description)
-        self.node_item = node_item
-        self.port = port
-
-    def undo(self):
-        self.node_item.remove_port(self.port)
-
-    def redo(self):
-        self.node_item.add_port(self.port)
-
-
-class RemovePropertyPortCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, port: PortId, description="Remove property port"):
-        super().__init__(description)
-        self.node_item = node_item
-        self.port = port
-
-    def undo(self):
-        self.node_item.add_port(self.port)
-
-    def redo(self):
-        self.node_item.remove_port(self.port)
+        if not self.opened_ports_exist:
+            self.open_ports(reverse=False)
+            self.opened_ports_exist = True
 
 
 class ExtractElementCmd(QUndoCommand):
@@ -943,7 +930,7 @@ class ExtractElementCmd(QUndoCommand):
         self.prop_key = prop_key
 
     def undo(self):
-        pass
+        self.node_item.remove_port(output_port(self.node_item.uid, self.prop_key))
 
     def redo(self):
         self.node_item.add_port(output_port(self.node_item.uid, self.prop_key))
@@ -956,7 +943,7 @@ class RemoveExtractedElementCmd(QUndoCommand):
         self.prop_key = prop_key
 
     def undo(self):
-        pass
+        self.node_item.add_port(output_port(self.node_item.uid, self.prop_key))
 
     def redo(self):
         self.node_item.remove_port(output_port(self.node_item.uid, self.prop_key))
@@ -996,24 +983,6 @@ class DeleteCmd(QUndoCommand):
         self.scene.remove_from_graph_and_scene(self.node_states.keys(), self.edges)
 
 
-class RegisterCustomNodeCmd(QUndoCommand):
-    def __init__(self, scene, name, custom_node_def, description="Register Custom Node"):
-        super().__init__(description)
-        self.scene = scene
-        self.name = name
-        self.custom_node_def = custom_node_def
-
-    def undo(self):
-        pass
-
-    def redo(self):
-        # Register custom node definition
-        if self.name not in self.scene.custom_node_defs:
-            self.scene.custom_node_defs[self.name] = self.custom_node_def
-        else:
-            print("Error: custom node definition with same name already exists.")
-
-
 class RandomiseNodesCmd(QUndoCommand):
     def __init__(self, scene, nodes: set[NodeId], description="Randomise node(s)"):
         super().__init__(description)
@@ -1032,6 +1001,50 @@ class RandomiseNodesCmd(QUndoCommand):
             self.prev_seeds[node] = self.node_manager.get_seed(node)
             self.node_manager.randomise(node)  # TODO: store new seed for redo
             self.scene.node_item(node).update_visualisations()
+
+class PlayNodesCmd(QUndoCommand):
+    def __init__(self, scene, nodes: set[NodeId], description="Play node(s)"):
+        super().__init__(description)
+        self.scene = scene
+        self.node_manager: NodeManager = scene.node_manager
+        self.nodes = nodes  # Assumes these nodes are animatable
+        self.play_states: dict[NodeId, bool] = {} # Boolean is True if the node was playing
+
+    def undo(self):
+        for node in self.nodes:
+            if not self.play_states[node]:
+                self.node_manager.toggle_play(node)
+                cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
+
+    def redo(self):
+        for node in self.nodes:
+            playing: bool = self.node_manager.is_playing(node)
+            self.play_states[node] = playing
+            if not playing:
+                self.node_manager.toggle_play(node)
+                cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
+
+class PauseNodesCmd(QUndoCommand):
+    def __init__(self, scene, nodes: set[NodeId], description="Pause node(s)"):
+        super().__init__(description)
+        self.scene = scene
+        self.node_manager: NodeManager = scene.node_manager
+        self.nodes = nodes  # Assumes these nodes are animatable
+        self.play_states: dict[NodeId, bool] = {} # Boolean is True if the node was playing
+
+    def undo(self):
+        for node in self.nodes:
+            if self.play_states[node]:
+                self.node_manager.toggle_play(node)
+                cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
+
+    def redo(self):
+        for node in self.nodes:
+            playing: bool = self.node_manager.is_playing(node)
+            self.play_states[node] = playing
+            if playing:
+                self.node_manager.toggle_play(node)
+                cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
 
 
 class PipelineScene(QGraphicsScene):
@@ -1052,6 +1065,7 @@ class PipelineScene(QGraphicsScene):
         self.node_items = {}
         self.custom_node_defs: dict[str, CustomNodeDef] = {}
         self.node_manager: NodeManager = NodeManager()
+        self.node_id_generator: NodeIdGenerator = NodeIdGenerator()
 
         self.temp_dir = temp_dir
         self.undo_stack = QUndoStack()
@@ -1068,6 +1082,9 @@ class PipelineScene(QGraphicsScene):
         self.timer.timeout.connect(self.animate)
         # TODO: uncomment this when figure out efficiency
         self.timer.start()
+
+    def gen_node_id(self) -> NodeId:
+        return self.node_id_generator.gen_node_id()
 
     def animate(self):
         for node in self.node_manager.playing_nodes():
@@ -1277,7 +1294,8 @@ class PipelineScene(QGraphicsScene):
                                  zoom=zoom,
                                  node_states=[node_item.node_state for node_item in self.node_items.values()],
                                  node_manager=self.node_manager,
-                                 custom_node_defs=self.custom_node_defs), f)
+                                 custom_node_defs=self.custom_node_defs,
+                                 next_node_id=self.node_id_generator.next_id), f)
 
     # Item getter functions
     def node_item(self, node: NodeId) -> NodeItem:
@@ -1370,12 +1388,13 @@ class PipelineScene(QGraphicsScene):
         self.clear_scene()
 
         with open(filepath, "rb") as f:
-            app_state = pickle.load(f)
+            app_state: AppState = pickle.load(f)
 
         self.view().centerOn(*app_state.view_pos)
         self.view().set_zoom(app_state.zoom)
         self.node_manager = app_state.node_manager
         self.custom_node_defs = app_state.custom_node_defs
+        self.node_id_generator = NodeIdGenerator(app_state.next_node_id)
         self.load_from_node_states(app_state.node_states, self.node_graph.edges)
         self.undo_stack.clear()
         self.filepath = filepath
@@ -1539,41 +1558,6 @@ class PipelineView(QGraphicsView):
         super().mouseMoveEvent(event)
 
 
-def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
-                       port_refs: dict[NodeId, dict[PortId, RefId]]):
-    old_to_new_id_map = {}
-    # Update node states
-    new_node_states: dict[NodeId, NodeState] = {}
-    new_base_nodes: dict[NodeId, Node] = {}
-    for node, node_state in node_states.items():
-        new_node: NodeId = gen_node_id()
-        # Copy node state
-        new_node_state: NodeState = copy.deepcopy(node_state)
-        new_node_state.node = new_node  # Update id in node state
-        new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in
-                                     node_state.ports_open]
-        new_node_states[new_node] = new_node_state  # Add to new node states
-        # Copy node
-        new_base_node = copy.deepcopy(base_nodes[node])
-        new_base_nodes[new_node] = new_base_node
-        # Add id to conversion map
-        old_to_new_id_map[node_state.node] = new_node
-    # Update ids in connections
-    new_edges: set[EdgeId] = set()
-    for edge in edges:
-        new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key),
-                             input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
-    # Update ids in port refs
-    new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
-    for dst_node in port_refs:
-        new_entry: dict[PortId, RefId] = {}
-        for port, ref in port_refs[dst_node].items():
-            new_entry[PortId(node=old_to_new_id_map[port.node], key=port.key, is_input=port.is_input)] = ref
-        new_port_refs[old_to_new_id_map[dst_node]] = new_entry
-    # Return results
-    return new_node_states, new_base_nodes, new_edges, new_port_refs, old_to_new_id_map
-
-
 class PipelineEditor(QMainWindow):
     """Main application window"""
 
@@ -1659,6 +1643,16 @@ class PipelineEditor(QMainWindow):
         randomise.triggered.connect(self.randomise_selected)
         scene_menu.addAction(randomise)
 
+        play_animate = QAction("Play Selected Animatable Nodes", self)
+        play_animate.setShortcut("Ctrl+P")
+        play_animate.triggered.connect(self.play_selected)
+        scene_menu.addAction(play_animate)
+
+        pause_animate = QAction("Pause Selected Animatable Nodes", self)
+        pause_animate.setShortcut("Ctrl+Shift+P")
+        pause_animate.triggered.connect(self.pause_selected)
+        scene_menu.addAction(pause_animate)
+
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
@@ -1723,6 +1717,8 @@ class PipelineEditor(QMainWindow):
         self.view.centerOn(0, 0)
         self.scene.custom_node_defs = {}
         self.update_delete_custom_action_enabled()
+        self.scene.node_id_generator = NodeIdGenerator()
+        self.scene.undo_stack.clear()
 
     def save_as_scene(self):
         filepath, _ = QFileDialog.getSaveFileName(
@@ -1765,7 +1761,7 @@ class PipelineEditor(QMainWindow):
 
     def register_custom_node(self):
         node_states, base_nodes, edges, port_refs = self.identify_selected_subgraph()
-        node_states, base_nodes, edges, port_refs, old_to_new_id_map = deep_copy_subgraph(node_states, base_nodes,
+        node_states, base_nodes, edges, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, base_nodes,
                                                                                           edges,
                                                                                           port_refs)
 
@@ -1825,10 +1821,12 @@ class PipelineEditor(QMainWindow):
             custom_names_dict = {(old_to_new_id_map[node], key): name for (node, key), name in
                                  custom_names_dict.items()}
             # Register the custom node
-            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
-                                                             CustomNodeDef(sub_node_manager, selected_ports,
+            if name not in self.scene.custom_node_defs:
+                self.scene.custom_node_defs[name] = CustomNodeDef(sub_node_manager, selected_ports,
                                                                            custom_names_dict,
-                                                                           vis_sel_node, description=description)))
+                                                                           vis_sel_node, description=description)
+            else:
+                print("Error: custom node definition with same name already exists.")
             self.update_delete_custom_action_enabled()
 
     def identify_selected_items(self):
@@ -1896,6 +1894,40 @@ class PipelineEditor(QMainWindow):
             clipboard = QApplication.clipboard()
             clipboard.setMimeData(mime_data)
 
+    def deep_copy_subgraph(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
+                           port_refs: dict[NodeId, dict[PortId, RefId]]):
+        old_to_new_id_map = {}
+        # Update node states
+        new_node_states: dict[NodeId, NodeState] = {}
+        new_base_nodes: dict[NodeId, Node] = {}
+        for node, node_state in node_states.items():
+            new_node: NodeId = self.scene.gen_node_id()
+            # Copy node state
+            new_node_state: NodeState = copy.deepcopy(node_state)
+            new_node_state.node = new_node  # Update id in node state
+            new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in
+                                         node_state.ports_open]
+            new_node_states[new_node] = new_node_state  # Add to new node states
+            # Copy node
+            new_base_node = copy.deepcopy(base_nodes[node])
+            new_base_nodes[new_node] = new_base_node
+            # Add id to conversion map
+            old_to_new_id_map[node_state.node] = new_node
+        # Update ids in connections
+        new_edges: set[EdgeId] = set()
+        for edge in edges:
+            new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key),
+                                 input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
+        # Update ids in port refs
+        new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
+        for dst_node in port_refs:
+            new_entry: dict[PortId, RefId] = {}
+            for port, ref in port_refs[dst_node].items():
+                new_entry[PortId(node=old_to_new_id_map[port.node], key=port.key, is_input=port.is_input)] = ref
+            new_port_refs[old_to_new_id_map[dst_node]] = new_entry
+        # Return results
+        return new_node_states, new_base_nodes, new_edges, new_port_refs, old_to_new_id_map
+
     def paste_subgraph(self):
         clipboard = QApplication.clipboard()
         mime = clipboard.mimeData()
@@ -1904,7 +1936,7 @@ class PipelineEditor(QMainWindow):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
             node_states, base_nodes, edges, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
-            node_states, base_nodes, edges, port_refs, _ = deep_copy_subgraph(node_states, base_nodes, edges,
+            node_states, base_nodes, edges, port_refs, _ = self.deep_copy_subgraph(node_states, base_nodes, edges,
                                                                               port_refs)
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
@@ -1921,6 +1953,21 @@ class PipelineEditor(QMainWindow):
                 if node_info.randomisable:
                     randomisable_nodes.add(item.uid)
         self.scene.undo_stack.push(RandomiseNodesCmd(self.scene, randomisable_nodes))
+
+    def get_selected_animatable_nodes(self) -> set[NodeId]:
+        animatable_nodes: set[NodeId] = set()
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                node_info: NodeInfo = self.scene.node_manager.node_info(item.uid)
+                if node_info.animatable:
+                    animatable_nodes.add(item.uid)
+        return animatable_nodes
+
+    def play_selected(self):
+        self.scene.undo_stack.push(PlayNodesCmd(self.scene, self.get_selected_animatable_nodes()))
+
+    def pause_selected(self):
+        self.scene.undo_stack.push(PauseNodesCmd(self.scene, self.get_selected_animatable_nodes()))
 
 
 if __name__ == "__main__":

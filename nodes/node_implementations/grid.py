@@ -46,8 +46,8 @@ class GridNode(UnitNode):
         grid_group = Group(debug_info="Grid")
         for x in grid.v_line_xs:
             # Draw horizontal lines
-            grid_group.add(Polyline([(x, 0), (x, 1)], stroke='black', stroke_width=2))
+            grid_group.add(Polyline([(x, 0), (x, 1)], stroke=Colour(0,0,0,255), stroke_width=2))
         for y in grid.h_line_ys:
             # Draw vertical lines
-            grid_group.add(Polyline([(0, y), (1, y)], stroke='black', stroke_width=2))
+            grid_group.add(Polyline([(0, y), (1, y)], stroke=Colour(0,0,0,255), stroke_width=2))
         return add_background(grid_group, Colour(255, 255, 255, 255))

@@ -181,7 +181,7 @@ class Shape(Element, ABC):
 
 class Polyline(Shape, PointsHolder):
 
-    def __init__(self, points: List[PT_Point], stroke, stroke_width):
+    def __init__(self, points: List[PT_Point], stroke: Fill = Colour(0,0,0,255), stroke_width=1):
         super().__init__()
         self._points = points
         self.stroke = stroke
@@ -192,8 +192,10 @@ class Polyline(Shape, PointsHolder):
         return self._points
 
     def get(self, dwg):
+        stroke, stroke_opacity = process_fill(self.stroke, dwg)
         return dwg.polyline(points=self.points,
-                            stroke=self.stroke,
+                            stroke=stroke,
+                            stroke_opacity=stroke_opacity,
                             stroke_width=self.stroke_width,
                             fill='none',
                             style='vector-effect: non-scaling-stroke',
@@ -206,7 +208,7 @@ class Polyline(Shape, PointsHolder):
 
 class Polygon(Shape):
 
-    def __init__(self, points, fill: Fill, stroke='none', stroke_width=1.0):
+    def __init__(self, points, fill: Fill, stroke: Fill = Colour(), stroke_width=0):
         super().__init__()
         self.points = points
         self.fill = fill
@@ -215,10 +217,12 @@ class Polygon(Shape):
 
     def get(self, dwg):
         fill, fill_opacity = process_fill(self.fill, dwg)
+        stroke, stroke_opacity = process_fill(self.stroke, dwg)
         return dwg.polygon(points=self.points,
                            fill=fill,
                            fill_opacity=fill_opacity,
-                           stroke=self.stroke,
+                           stroke=stroke,
+                           stroke_opacity=stroke_opacity,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
                            id=self.uid)
@@ -230,7 +234,7 @@ class Polygon(Shape):
 
 class Ellipse(Shape):
 
-    def __init__(self, center, r, fill: Fill, stroke, stroke_width):
+    def __init__(self, center, r, fill: Fill, stroke: Fill = Colour(), stroke_width=0):
         super().__init__()
         self.center = center
         self.r = r
@@ -240,11 +244,13 @@ class Ellipse(Shape):
 
     def get(self, dwg):
         fill, fill_opacity = process_fill(self.fill, dwg)
+        stroke, stroke_opacity = process_fill(self.stroke, dwg)
         return dwg.ellipse(center=self.center,
                            r=self.r,
                            fill=fill,
                            fill_opacity=fill_opacity,
-                           stroke=self.stroke,
+                           stroke=stroke,
+                           stroke_opacity=stroke_opacity,
                            stroke_width=self.stroke_width,
                            style='vector-effect: non-scaling-stroke',
                            id=self.uid)
@@ -256,7 +262,7 @@ class Ellipse(Shape):
 
 class SineWave(Polyline):
 
-    def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points):
+    def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, stroke, num_points):
         if x_min > x_max:
             raise ValueError("Wave start position must be smaller than wave stop position.")
         points = List(PT_Point())
@@ -271,4 +277,4 @@ class SineWave(Polyline):
             y = amplitude * math.sin(2 * math.pi * x / wavelength + math.radians(phase)) + centre_y
             points.append(Point(x, y))
 
-        super().__init__(points, 'black', stroke_width)
+        super().__init__(points, stroke, stroke_width)

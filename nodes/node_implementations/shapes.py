@@ -5,7 +5,7 @@ from nodes.node_implementations.visualiser import get_rectangle
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Float, PT_Point, PT_Fill, PT_Int, \
-    PT_List, PT_PointsHolder, PT_Element
+    PT_List, PT_PointsHolder, PT_Element, PT_Polyline, PT_Polygon, PT_Ellipse
 from nodes.prop_values import List, Int, Float, PointsHolder, Point, Colour, LineRef
 from nodes.shape_datatypes import Ellipse, SineWave, Polyline, Polygon
 
@@ -48,12 +48,6 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
             description="Stop position of the sine wave. With 0° rotation, this is the x-coordinate of the end of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(1)
         ),
-        'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
-            display_name="Line thickness",
-            description="Thickness of the line drawing the sine wave.",
-            default_value=Float(1)
-        ),
         'orientation': PropDef(
             prop_type=PT_Float(),
             display_name="Rotation (°)",
@@ -66,7 +60,20 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
             description="Number of points used to draw the line, (at least 2). The more points used, the more accurate the line is to a sine wave.",
             default_value=Int(100)
         ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Line thickness",
+            description="Thickness of the line drawing the sine wave.",
+            default_value=Float(1)
+        ),
+        'stroke_colour': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Line colour",
+            description="Colour of the line.",
+            default_value=Colour(0,0,0,255)
+        ),
         '_main': PropDef(
+            prop_type=PT_Polyline(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -81,8 +88,8 @@ class SineWaveNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_SINE_WAVE_INFO
 
     @staticmethod
-    def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, num_points=100, orientation=0):
-        return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, num_points).rotate(
+    def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, stroke=Colour(), num_points=100, orientation=0):
+        return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, stroke, num_points).rotate(
             orientation, (0.5, 0.5))
 
     def compute(self, props: ResolvedProps, *args):
@@ -91,7 +98,7 @@ class SineWaveNode(UnitNode):
                                             props.get('centre_y'),
                                             props.get('phase'), props.get('x_min'),
                                             props.get('x_max'),
-                                            props.get('stroke_width'), props.get('num_points'),
+                                            props.get('stroke_width'), props.get('stroke_colour'), props.get('num_points'),
                                             props.get('orientation'))
         except ValueError as e:
             raise NodeInputException(e)
@@ -113,7 +120,14 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
             description="Thickness of the line drawing.",
             default_value=Float(1)
         ),
+        'stroke_colour': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Line colour",
+            description="Colour of the line.",
+            default_value=Colour(0,0,0,255)
+        ),
         '_main': PropDef(
+            prop_type=PT_Polyline(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -128,7 +142,7 @@ class CustomLineNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
 
     @staticmethod
-    def helper(points, stroke='black', stroke_width=1):
+    def helper(points, stroke=Colour(0,0,0,255), stroke_width=1):
         return Polyline(points, stroke, stroke_width)
 
     def compute(self, props: ResolvedProps, *args):
@@ -139,7 +153,7 @@ class CustomLineNode(UnitNode):
                 points.extend(points_holder.points_w_reversal())
             else:
                 points.extend(points_holder.points)
-        return {'_main': CustomLineNode.helper(points, 'black', props.get('stroke_width'))}
+        return {'_main': CustomLineNode.helper(points, props.get('stroke_colour'), props.get('stroke_width'))}
 
 
 DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
@@ -163,7 +177,14 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
             description="Thickness of the straight line.",
             default_value=Float(1)
         ),
+        'stroke_colour': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Line colour",
+            description="Colour of the line.",
+            default_value=Colour(0,0,0,255)
+        ),
         '_main': PropDef(
+            prop_type=PT_Polyline(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -178,12 +199,12 @@ class StraightLineNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_STRAIGHT_LINE_NODE_INFO
 
     @staticmethod
-    def helper(start_coord: Point, stop_coord: Point, stroke='black', stroke_width=1):
+    def helper(start_coord: Point, stop_coord: Point, stroke=Colour(0,0,0,255), stroke_width=1):
         return Polyline(List(PT_Point(), [start_coord, stop_coord]), stroke, stroke_width)
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main':
-                    StraightLineNode.helper(props.get('start_coord'), props.get('stop_coord'), 'black',
+                    StraightLineNode.helper(props.get('start_coord'), props.get('stop_coord'), props.get('stroke_colour'),
                                             props.get('stroke_width'))}
 
 
@@ -206,9 +227,16 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
             prop_type=PT_Float(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the polygon border.",
-            default_value=Float(1)
+            default_value=Float(0)
+        ),
+        'stroke_colour': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Border colour",
+            description="Colour of the polygon border.",
+            default_value=Colour()
         ),
         '_main': PropDef(
+            prop_type=PT_Polygon(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -231,7 +259,7 @@ class PolygonNode(UnitNode):
             else:
                 points.extend(points_holder.points)
         # Return polygon
-        return {'_main': Polygon(points, props.get('fill'), 'none',
+        return {'_main': Polygon(points, props.get('fill'), props.get('stroke_colour'),
                                  props.get('stroke_width'))}
 
 
@@ -244,7 +272,20 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
             description="Square fill colour.",
             default_value=Colour(0, 0, 0, 255)
         ),
+        'stroke_width': PropDef(
+            prop_type=PT_Float(min_value=0),
+            display_name="Border thickness",
+            description="Thickness of the line drawing the square border.",
+            default_value=Float(0)
+        ),
+        'stroke_colour': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Border colour",
+            description="Colour of the square border.",
+            default_value=Colour()
+        ),
         '_main': PropDef(
+            prop_type=PT_Polygon(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -259,7 +300,7 @@ class RectangleNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_RECTANGLE_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
-        return {'_main': get_rectangle(props.get('fill'), 'none', 1)}
+        return {'_main': get_rectangle(props.get('fill'), props.get('stroke_colour'), props.get('stroke_width'))}
 
 
 DEF_ELLIPSE_INFO = PrivateNodeInfo(
@@ -269,7 +310,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             prop_type=PT_Float(min_value=0),
             display_name="Horizontal radius (rx)",
             description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-            default_value=Float(0.5)
+            default_value=Float(0.3)
         ),
         'ry': PropDef(
             prop_type=PT_Float(min_value=0),
@@ -283,6 +324,12 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Point(0.5, 0.5)
         ),
+        'orientation': PropDef(
+            prop_type=PT_Float(),
+            display_name="Rotation (°)",
+            description="Clockwise rotation applied to the ellipse.",
+            default_value=Float(0)
+        ),
         'fill': PropDef(
             prop_type=PT_Fill(),
             display_name="Colour",
@@ -294,9 +341,16 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             prop_type=PT_Float(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the ellipse border.",
-            default_value=Float(1)
+            default_value=Float(0)
+        ),
+        'stroke_colour': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Border colour",
+            description="Colour of the ellipse border.",
+            default_value=Colour()
         ),
         '_main': PropDef(
+            prop_type=PT_Ellipse(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -311,8 +365,8 @@ class EllipseNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_ELLIPSE_INFO
 
     def compute(self, props: ResolvedProps, *args):
-        return {'_main': Ellipse(props.get('centre'), (props.get('rx'), props.get('ry')), props.get('fill'), 'none',
-                                 props.get('stroke_width'))}
+        return {'_main': Ellipse(props.get('centre'), (props.get('rx'), props.get('ry')), props.get('fill'), props.get('stroke_colour'),
+                                 props.get('stroke_width')).rotate(props.get('orientation'), (0.5, 0.5))}
 
 
 DEF_CIRCLE_INFO = PrivateNodeInfo(
@@ -340,10 +394,16 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
             prop_type=PT_Float(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the circle border.",
-            default_value=Float(0.5)
+            default_value=Float(0)
+        ),
+        'stroke_colour': PropDef(
+            prop_type=PT_Fill(),
+            display_name="Border colour",
+            description="Colour of the circle border.",
+            default_value=Colour()
         ),
         '_main': PropDef(
-            prop_type=PT_Element(),
+            prop_type=PT_Ellipse(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -359,7 +419,7 @@ class CircleNode(UnitNode):
 
     def compute(self, props: ResolvedProps, *args):
         r = props.get('r')
-        return {'_main': Ellipse(props.get('centre'), (r, r), props.get('fill'), 'none', props.get('stroke_width'))}
+        return {'_main': Ellipse(props.get('centre'), (r, r), props.get('fill'), props.get('stroke_colour'), props.get('stroke_width'))}
 
 
 class ShapeNode(CombinationNode):

@@ -61,7 +61,7 @@ def repeat_shapes(grid: Grid, elements: List[PT_Element], row_iter=True):
     return ret_group
 
 
-def get_rectangle(fill: Fill, stroke='none', stroke_width=0):
+def get_rectangle(fill: Fill, stroke: Fill = Colour(), stroke_width=0):
     return Polygon([Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)], fill, stroke, stroke_width)
 
 

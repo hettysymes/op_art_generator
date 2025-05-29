@@ -21,6 +21,7 @@ class ExportWithAspectRatio(QDialog):
 
     def init_ui(self):
         self.setWindowTitle("Export Image with Aspect Ratio")
+        self.setMinimumWidth(300)
 
         self.input_label = QLabel("Width (pixels):")
         self.input_field = QSpinBox()
