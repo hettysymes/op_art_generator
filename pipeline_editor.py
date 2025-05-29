@@ -274,14 +274,8 @@ class NodeItem(QGraphicsRectItem):
     def node_info(self) -> NodeInfo:
         return self.node_manager.node_info(self.uid)
 
-    def add_property_port(self, port: PortId):
-        self.scene().undo_stack.push(AddPropertyPortCmd(self, port))
-
-    def remove_property_port(self, port: PortId):
-        self.scene().undo_stack.push(RemovePropertyPortCmd(self, port))
-
-    def change_properties(self, props_changed):
-        self.scene().undo_stack.push(ChangePropertiesCmd(self, props_changed))
+    def change_properties(self, props_changed, ports_toggled: dict[PortId, bool]):
+        self.scene().undo_stack.push(ChangePropertiesCmd(self, props_changed, ports_toggled))
 
     def hoverMoveEvent(self, event):
         if self._help_icon_rect.contains(event.pos()):
@@ -880,11 +874,13 @@ class AddNewEdgeCmd(QUndoCommand):
 
 
 class ChangePropertiesCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, props_changed, description="Change properties"):
+    def __init__(self, node_item: NodeItem, props_changed, ports_toggled: dict[PortId, bool], description="Change properties"):
         super().__init__(description)
         self.node_item = node_item
         self.node_manager: NodeManager = node_item.node_manager
         self.props_changed = props_changed
+        self.ports_toggled = ports_toggled
+        self.opened_ports_exist = True
 
     def update_properties(self, props):
         for prop_key, value in props.items():
@@ -897,43 +893,31 @@ class ChangePropertiesCmd(QUndoCommand):
         # Update the node's appearance
         self.node_item.update_visualisations()
 
+    def open_ports(self, reverse: bool):
+        for port, is_open in self.ports_toggled.items():
+            actually_open = not is_open if reverse else is_open
+            if actually_open:
+                self.node_item.add_port(port)
+            else:
+                self.node_item.remove_port(port)
+
     def undo(self):
         props = {}
         for prop_name, value in self.props_changed.items():
             props[prop_name] = value[0]  # Take the old value
         self.update_properties(props)
+        assert self.opened_ports_exist
+        self.open_ports(reverse=True)
+        self.opened_ports_exist = False
 
     def redo(self):
         props = {}
         for prop_name, value in self.props_changed.items():
             props[prop_name] = value[1]  # Take the new value
         self.update_properties(props)
-
-
-class AddPropertyPortCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, port: PortId, description="Add property port"):
-        super().__init__(description)
-        self.node_item = node_item
-        self.port = port
-
-    def undo(self):
-        self.node_item.remove_port(self.port)
-
-    def redo(self):
-        self.node_item.add_port(self.port)
-
-
-class RemovePropertyPortCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, port: PortId, description="Remove property port"):
-        super().__init__(description)
-        self.node_item = node_item
-        self.port = port
-
-    def undo(self):
-        self.node_item.add_port(self.port)
-
-    def redo(self):
-        self.node_item.remove_port(self.port)
+        if not self.opened_ports_exist:
+            self.open_ports(reverse=False)
+            self.opened_ports_exist = True
 
 
 class ExtractElementCmd(QUndoCommand):
@@ -943,7 +927,7 @@ class ExtractElementCmd(QUndoCommand):
         self.prop_key = prop_key
 
     def undo(self):
-        pass
+        self.node_item.remove_port(output_port(self.node_item.uid, self.prop_key))
 
     def redo(self):
         self.node_item.add_port(output_port(self.node_item.uid, self.prop_key))
@@ -956,7 +940,7 @@ class RemoveExtractedElementCmd(QUndoCommand):
         self.prop_key = prop_key
 
     def undo(self):
-        pass
+        self.node_item.add_port(output_port(self.node_item.uid, self.prop_key))
 
     def redo(self):
         self.node_item.remove_port(output_port(self.node_item.uid, self.prop_key))
@@ -994,24 +978,6 @@ class DeleteCmd(QUndoCommand):
 
     def redo(self):
         self.scene.remove_from_graph_and_scene(self.node_states.keys(), self.edges)
-
-
-class RegisterCustomNodeCmd(QUndoCommand):
-    def __init__(self, scene, name, custom_node_def, description="Register Custom Node"):
-        super().__init__(description)
-        self.scene = scene
-        self.name = name
-        self.custom_node_def = custom_node_def
-
-    def undo(self):
-        pass
-
-    def redo(self):
-        # Register custom node definition
-        if self.name not in self.scene.custom_node_defs:
-            self.scene.custom_node_defs[self.name] = self.custom_node_def
-        else:
-            print("Error: custom node definition with same name already exists.")
 
 
 class RandomiseNodesCmd(QUndoCommand):
@@ -1797,10 +1763,12 @@ class PipelineEditor(QMainWindow):
             custom_names_dict = {(old_to_new_id_map[node], key): name for (node, key), name in
                                  custom_names_dict.items()}
             # Register the custom node
-            self.scene.undo_stack.push(RegisterCustomNodeCmd(self.scene, name,
-                                                             CustomNodeDef(sub_node_manager, selected_ports,
+            if name not in self.scene.custom_node_defs:
+                self.scene.custom_node_defs[name] = CustomNodeDef(sub_node_manager, selected_ports,
                                                                            custom_names_dict,
-                                                                           vis_sel_node, description=description)))
+                                                                           vis_sel_node, description=description)
+            else:
+                print("Error: custom node definition with same name already exists.")
             self.update_delete_custom_action_enabled()
 
     def identify_selected_items(self):

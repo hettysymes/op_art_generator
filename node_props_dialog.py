@@ -121,6 +121,7 @@ class NodePropertiesDialog(QDialog):
         self.scene = node_item.scene()
         self.setWindowTitle(f"Properties: {self.node_info.name}")
         self.setMinimumWidth(400)
+        self.ports_toggled: dict[PortId, bool] = {} # bool is True if port opened
 
         # Main layout
         main_layout = QVBoxLayout()
@@ -181,9 +182,10 @@ class NodePropertiesDialog(QDialog):
 
     def change_property_port(self, port: PortId, adding):
         if adding:
-            self.node_item.add_property_port(port)
+            self.node_item.add_port(port)
         else:
-            self.node_item.remove_property_port(port)
+            self.node_item.remove_port(port)
+        self.ports_toggled[port] = adding
 
     def create_property_row(self, key: PropKey, prop_def: PropDef, node_item, widget=None):
         """Create a row with property label and a help icon to the right of the widget"""
@@ -475,5 +477,5 @@ class NodePropertiesDialog(QDialog):
                 props_changed[prop_key] = (copy.deepcopy(old_val), value)
 
         if props_changed:
-            self.node_item.change_properties(props_changed)
+            self.node_item.change_properties(props_changed, self.ports_toggled)
         super().accept()
