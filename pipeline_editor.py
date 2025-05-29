@@ -1003,7 +1003,7 @@ class RandomiseNodesCmd(QUndoCommand):
             self.scene.node_item(node).update_visualisations()
 
 class PlayNodesCmd(QUndoCommand):
-    def __init__(self, scene, nodes: set[NodeId], description="Animate node(s)"):
+    def __init__(self, scene, nodes: set[NodeId], description="Play node(s)"):
         super().__init__(description)
         self.scene = scene
         self.node_manager: NodeManager = scene.node_manager
@@ -1025,7 +1025,7 @@ class PlayNodesCmd(QUndoCommand):
                 cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
 
 class PauseNodesCmd(QUndoCommand):
-    def __init__(self, scene, nodes: set[NodeId], description="Animate node(s)"):
+    def __init__(self, scene, nodes: set[NodeId], description="Pause node(s)"):
         super().__init__(description)
         self.scene = scene
         self.node_manager: NodeManager = scene.node_manager
