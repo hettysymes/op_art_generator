@@ -22,7 +22,8 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 from app_state import NodeState, AppState, CustomNodeDef, NodeId
 from delete_custom_node_dialog import DeleteCustomNodeDialog
 from export_w_aspect_ratio import ExportWithAspectRatio
-from id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, PropKey, node_changed_port
+from id_datatypes import PortId, EdgeId, output_port, input_port, PropKey, node_changed_port, \
+    NodeIdGenerator
 from node_graph import NodeGraph, RefId
 from node_manager import NodeManager, NodeInfo
 from node_props_dialog import NodePropertiesDialog
@@ -852,7 +853,7 @@ class AddNewNodeCmd(QUndoCommand):
         node_item.remove_from_scene()
 
     def redo(self):
-        node: NodeId = self.node_state.node if self.node_state else gen_node_id()
+        node: NodeId = self.node_state.node if self.node_state else self.scene.gen_node_id()
         base_node: Node = self.node_class(add_info=self.add_info)
         self.node_graph.add_node(node)
         self.node_manager.add_node(node, base_node)
@@ -1053,6 +1054,7 @@ class PipelineScene(QGraphicsScene):
         self.node_items = {}
         self.custom_node_defs: dict[str, CustomNodeDef] = {}
         self.node_manager: NodeManager = NodeManager()
+        self.node_id_generator: NodeIdGenerator = NodeIdGenerator()
 
         self.temp_dir = temp_dir
         self.undo_stack = QUndoStack()
@@ -1069,6 +1071,9 @@ class PipelineScene(QGraphicsScene):
         self.timer.timeout.connect(self.animate)
         # TODO: uncomment this when figure out efficiency
         self.timer.start()
+
+    def gen_node_id(self) -> NodeId:
+        return self.node_id_generator.gen_node_id()
 
     def animate(self):
         for node in self.node_manager.playing_nodes():
@@ -1277,7 +1282,8 @@ class PipelineScene(QGraphicsScene):
                                  zoom=zoom,
                                  node_states=[node_item.node_state for node_item in self.node_items.values()],
                                  node_manager=self.node_manager,
-                                 custom_node_defs=self.custom_node_defs), f)
+                                 custom_node_defs=self.custom_node_defs,
+                                 next_node_id=self.node_id_generator.next_id), f)
 
     # Item getter functions
     def node_item(self, node: NodeId) -> NodeItem:
@@ -1370,12 +1376,13 @@ class PipelineScene(QGraphicsScene):
         self.clear_scene()
 
         with open(filepath, "rb") as f:
-            app_state = pickle.load(f)
+            app_state: AppState = pickle.load(f)
 
         self.view().centerOn(*app_state.view_pos)
         self.view().set_zoom(app_state.zoom)
         self.node_manager = app_state.node_manager
         self.custom_node_defs = app_state.custom_node_defs
+        self.node_id_generator = NodeIdGenerator(app_state.next_node_id)
         self.load_from_node_states(app_state.node_states, self.node_graph.edges)
         self.undo_stack.clear()
         self.filepath = filepath
@@ -1539,41 +1546,6 @@ class PipelineView(QGraphicsView):
         super().mouseMoveEvent(event)
 
 
-def deep_copy_subgraph(node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
-                       port_refs: dict[NodeId, dict[PortId, RefId]]):
-    old_to_new_id_map = {}
-    # Update node states
-    new_node_states: dict[NodeId, NodeState] = {}
-    new_base_nodes: dict[NodeId, Node] = {}
-    for node, node_state in node_states.items():
-        new_node: NodeId = gen_node_id()
-        # Copy node state
-        new_node_state: NodeState = copy.deepcopy(node_state)
-        new_node_state.node = new_node  # Update id in node state
-        new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in
-                                     node_state.ports_open]
-        new_node_states[new_node] = new_node_state  # Add to new node states
-        # Copy node
-        new_base_node = copy.deepcopy(base_nodes[node])
-        new_base_nodes[new_node] = new_base_node
-        # Add id to conversion map
-        old_to_new_id_map[node_state.node] = new_node
-    # Update ids in connections
-    new_edges: set[EdgeId] = set()
-    for edge in edges:
-        new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key),
-                             input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
-    # Update ids in port refs
-    new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
-    for dst_node in port_refs:
-        new_entry: dict[PortId, RefId] = {}
-        for port, ref in port_refs[dst_node].items():
-            new_entry[PortId(node=old_to_new_id_map[port.node], key=port.key, is_input=port.is_input)] = ref
-        new_port_refs[old_to_new_id_map[dst_node]] = new_entry
-    # Return results
-    return new_node_states, new_base_nodes, new_edges, new_port_refs, old_to_new_id_map
-
-
 class PipelineEditor(QMainWindow):
     """Main application window"""
 
@@ -1717,6 +1689,7 @@ class PipelineEditor(QMainWindow):
         self.view.reset_zoom()
         self.view.centerOn(0, 0)
         self.scene.custom_node_defs = {}
+        self.scene.node_id_generator = NodeIdGenerator()
 
     def save_as_scene(self):
         filepath, _ = QFileDialog.getSaveFileName(
@@ -1756,9 +1729,43 @@ class PipelineEditor(QMainWindow):
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
                 item.setSelected(True)
 
+    def deep_copy_subgraph(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
+                           port_refs: dict[NodeId, dict[PortId, RefId]]):
+        old_to_new_id_map = {}
+        # Update node states
+        new_node_states: dict[NodeId, NodeState] = {}
+        new_base_nodes: dict[NodeId, Node] = {}
+        for node, node_state in node_states.items():
+            new_node: NodeId = self.scene.gen_node_id()
+            # Copy node state
+            new_node_state: NodeState = copy.deepcopy(node_state)
+            new_node_state.node = new_node  # Update id in node state
+            new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in
+                                         node_state.ports_open]
+            new_node_states[new_node] = new_node_state  # Add to new node states
+            # Copy node
+            new_base_node = copy.deepcopy(base_nodes[node])
+            new_base_nodes[new_node] = new_base_node
+            # Add id to conversion map
+            old_to_new_id_map[node_state.node] = new_node
+        # Update ids in connections
+        new_edges: set[EdgeId] = set()
+        for edge in edges:
+            new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key),
+                                 input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
+        # Update ids in port refs
+        new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
+        for dst_node in port_refs:
+            new_entry: dict[PortId, RefId] = {}
+            for port, ref in port_refs[dst_node].items():
+                new_entry[PortId(node=old_to_new_id_map[port.node], key=port.key, is_input=port.is_input)] = ref
+            new_port_refs[old_to_new_id_map[dst_node]] = new_entry
+        # Return results
+        return new_node_states, new_base_nodes, new_edges, new_port_refs, old_to_new_id_map
+
     def register_custom_node(self):
         node_states, base_nodes, edges, port_refs = self.identify_selected_subgraph()
-        node_states, base_nodes, edges, port_refs, old_to_new_id_map = deep_copy_subgraph(node_states, base_nodes,
+        node_states, base_nodes, edges, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, base_nodes,
                                                                                           edges,
                                                                                           port_refs)
 
@@ -1896,7 +1903,7 @@ class PipelineEditor(QMainWindow):
             raw_data = mime.data("application/pipeline_editor_items")
             # Deserialize with pickle
             node_states, base_nodes, edges, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
-            node_states, base_nodes, edges, port_refs, _ = deep_copy_subgraph(node_states, base_nodes, edges,
+            node_states, base_nodes, edges, port_refs, _ = self.deep_copy_subgraph(node_states, base_nodes, edges,
                                                                               port_refs)
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre

@@ -5,15 +5,24 @@ from dataclasses import dataclass
 # Node ID
 @dataclass(frozen=True)
 class NodeId:
-    value: str
+    value: int
 
     def __str__(self):
-        return f"#{self.value[:3]}"
+        return f"#{self.value}"
 
+class NodeIdGenerator:
 
-def gen_node_id() -> NodeId:
-    return NodeId(str(uuid.uuid4()))
+    def __init__(self, next_id=1):
+        self._next_id = next_id
 
+    @property
+    def next_id(self) -> int:
+        return self._next_id
+
+    def gen_node_id(self) -> NodeId:
+        curr_id = self._next_id
+        self._next_id += 1
+        return NodeId(curr_id)
 
 # Port ID
 type PropKey = str

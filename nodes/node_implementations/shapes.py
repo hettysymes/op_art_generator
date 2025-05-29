@@ -5,7 +5,7 @@ from nodes.node_implementations.visualiser import get_rectangle
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Float, PT_Point, PT_Fill, PT_Int, \
-    PT_List, PT_PointsHolder, PT_Element
+    PT_List, PT_PointsHolder, PT_Element, PT_Polyline, PT_Polygon, PT_Ellipse
 from nodes.prop_values import List, Int, Float, PointsHolder, Point, Colour, LineRef
 from nodes.shape_datatypes import Ellipse, SineWave, Polyline, Polygon
 
@@ -67,6 +67,7 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
             default_value=Int(100)
         ),
         '_main': PropDef(
+            prop_type=PT_Polyline(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -114,6 +115,7 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
             default_value=Float(1)
         ),
         '_main': PropDef(
+            prop_type=PT_Polyline(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -164,6 +166,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
             default_value=Float(1)
         ),
         '_main': PropDef(
+            prop_type=PT_Polyline(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -209,6 +212,7 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
             default_value=Float(1)
         ),
         '_main': PropDef(
+            prop_type=PT_Polygon(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -245,6 +249,7 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         '_main': PropDef(
+            prop_type=PT_Polygon(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -297,6 +302,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             default_value=Float(1)
         ),
         '_main': PropDef(
+            prop_type=PT_Ellipse(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
@@ -343,7 +349,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
             default_value=Float(0.5)
         ),
         '_main': PropDef(
-            prop_type=PT_Element(),
+            prop_type=PT_Ellipse(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,

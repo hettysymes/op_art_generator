@@ -30,3 +30,4 @@ class AppState:
     node_states: list[NodeState]
     node_manager: NodeManager
     custom_node_defs: dict[str, CustomNodeDef]
+    next_node_id: int
