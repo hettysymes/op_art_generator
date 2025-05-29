@@ -730,7 +730,7 @@ class PortItem(QGraphicsPathItem):
             elif port_type.is_compatible_with(PT_Fill()):
                 # Rounded rectangle for fill type
                 path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
-            elif port_type.is_compatible_with(PT_Function()) or port_type.is_compatible_with(PT_Warp):
+            elif port_type.is_compatible_with(PT_Function()) or port_type.is_compatible_with(PT_Warp()):
                 # Diamond for function or warp type
                 points = [
                     QPointF(0, -half_size),  # Top
