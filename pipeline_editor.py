@@ -22,8 +22,7 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 from app_state import NodeState, AppState, CustomNodeDef, NodeId
 from delete_custom_node_dialog import DeleteCustomNodeDialog
 from export_w_aspect_ratio import ExportWithAspectRatio
-from id_datatypes import PortId, EdgeId, output_port, input_port, PropKey, node_changed_port, \
-    NodeIdGenerator
+from id_datatypes import PortId, EdgeId, output_port, input_port, PropKey, node_changed_port, NodeIdGenerator
 from node_graph import NodeGraph, RefId
 from node_manager import NodeManager, NodeInfo
 from node_props_dialog import NodePropertiesDialog
@@ -1632,11 +1631,6 @@ class PipelineEditor(QMainWindow):
         randomise.triggered.connect(self.randomise_selected)
         scene_menu.addAction(randomise)
 
-        create_custom = QAction("Group Nodes to Custom Node", self)
-        create_custom.setShortcut("Ctrl+G")
-        create_custom.triggered.connect(self.register_custom_node)
-        scene_menu.addAction(create_custom)
-
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
@@ -1673,16 +1667,26 @@ class PipelineEditor(QMainWindow):
 
         custom_node_menu = menu_bar.addMenu("Custom Nodes")
 
+        create_custom = QAction("Register Custom Node", self)
+        create_custom.setShortcut("Ctrl+G")
+        create_custom.triggered.connect(self.register_custom_node)
+        custom_node_menu.addAction(create_custom)
+
         # Add Delete action
-        delete_custom_node = QAction("Delete Custom Node", self)
-        delete_custom_node.triggered.connect(self.delete_custom_node)
-        custom_node_menu.addAction(delete_custom_node)
+        self.delete_custom_node_action = QAction("Unregister Custom Node", self)
+        self.delete_custom_node_action.triggered.connect(self.delete_custom_node)
+        self.update_delete_custom_action_enabled()
+        custom_node_menu.addAction(self.delete_custom_node_action)
+
+    def update_delete_custom_action_enabled(self):
+        self.delete_custom_node_action.setEnabled(len(self.scene.custom_node_defs) > 0)
 
     def delete_custom_node(self):
         dialog = DeleteCustomNodeDialog(list(self.scene.custom_node_defs.keys()))
         if dialog.exec_() == QDialog.Accepted:
             selected_node = dialog.get_selected_node()
             del self.scene.custom_node_defs[selected_node]
+            self.update_delete_custom_action_enabled()
 
     def new_scene(self):
         self.scene.filepath = None
@@ -1690,6 +1694,7 @@ class PipelineEditor(QMainWindow):
         self.view.reset_zoom()
         self.view.centerOn(0, 0)
         self.scene.custom_node_defs = {}
+        self.update_delete_custom_action_enabled()
         self.scene.node_id_generator = NodeIdGenerator()
 
     def save_as_scene(self):
@@ -1724,45 +1729,12 @@ class PipelineEditor(QMainWindow):
             # Update the view to reflect the loaded scene
             self.view.update()
             self.statusBar().showMessage(f"Scene loaded from {file_path}", 3000)
+            self.update_delete_custom_action_enabled()
 
     def select_all(self):
         for item in self.scene.items():
             if isinstance(item, NodeItem) or isinstance(item, EdgeItem):
                 item.setSelected(True)
-
-    def deep_copy_subgraph(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
-                           port_refs: dict[NodeId, dict[PortId, RefId]]):
-        old_to_new_id_map = {}
-        # Update node states
-        new_node_states: dict[NodeId, NodeState] = {}
-        new_base_nodes: dict[NodeId, Node] = {}
-        for node, node_state in node_states.items():
-            new_node: NodeId = self.scene.gen_node_id()
-            # Copy node state
-            new_node_state: NodeState = copy.deepcopy(node_state)
-            new_node_state.node = new_node  # Update id in node state
-            new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in
-                                         node_state.ports_open]
-            new_node_states[new_node] = new_node_state  # Add to new node states
-            # Copy node
-            new_base_node = copy.deepcopy(base_nodes[node])
-            new_base_nodes[new_node] = new_base_node
-            # Add id to conversion map
-            old_to_new_id_map[node_state.node] = new_node
-        # Update ids in connections
-        new_edges: set[EdgeId] = set()
-        for edge in edges:
-            new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key),
-                                 input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
-        # Update ids in port refs
-        new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
-        for dst_node in port_refs:
-            new_entry: dict[PortId, RefId] = {}
-            for port, ref in port_refs[dst_node].items():
-                new_entry[PortId(node=old_to_new_id_map[port.node], key=port.key, is_input=port.is_input)] = ref
-            new_port_refs[old_to_new_id_map[dst_node]] = new_entry
-        # Return results
-        return new_node_states, new_base_nodes, new_edges, new_port_refs, old_to_new_id_map
 
     def register_custom_node(self):
         node_states, base_nodes, edges, port_refs = self.identify_selected_subgraph()

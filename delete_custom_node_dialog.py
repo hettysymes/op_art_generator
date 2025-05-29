@@ -6,13 +6,13 @@ from PyQt5.QtWidgets import (
 class DeleteCustomNodeDialog(QDialog):
     def __init__(self, node_list, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Delete Custom Node")
+        self.setWindowTitle("Unregister Custom Node")
 
         # Layout
         layout = QVBoxLayout()
 
         # Label
-        label = QLabel("Select custom node to delete:")
+        label = QLabel("Select custom node to unregister:")
         layout.addWidget(label)
 
         # ComboBox
@@ -21,7 +21,7 @@ class DeleteCustomNodeDialog(QDialog):
         layout.addWidget(self.combo)
 
         # Delete Button
-        self.delete_button = QPushButton("Delete")
+        self.delete_button = QPushButton("Unregister")
         self.delete_button.clicked.connect(self.accept)
         layout.addWidget(self.delete_button)
 
