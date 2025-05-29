@@ -5,7 +5,7 @@ from nodes.node_implementations.visualiser import get_rectangle
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Float, PT_Point, PT_Fill, PT_Int, \
-    PT_List, PT_PointsHolder
+    PT_List, PT_PointsHolder, PT_Element
 from nodes.prop_values import List, Int, Float, PointsHolder, Point, Colour, LineRef
 from nodes.shape_datatypes import Ellipse, SineWave, Polyline, Polygon
 
@@ -343,6 +343,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
             default_value=Float(0.5)
         ),
         '_main': PropDef(
+            prop_type=PT_Element(),
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,

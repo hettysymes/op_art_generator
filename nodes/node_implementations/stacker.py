@@ -43,6 +43,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
             default_value=Float(0)
         ),
         '_main': PropDef(
+            prop_type=PT_Element(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing",

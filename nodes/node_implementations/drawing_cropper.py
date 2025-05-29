@@ -31,6 +31,7 @@ DEF_DRAWING_CROPPER_INFO = PrivateNodeInfo(
             default_value=Point(1, 1)
         ),
         '_main': PropDef(
+            prop_type=PT_Element(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing Group",

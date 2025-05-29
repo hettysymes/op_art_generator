@@ -5,7 +5,7 @@ from id_datatypes import PortId
 from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Int, PropType, PT_Enum
+from nodes.prop_types import PT_Int, PropType, PT_Enum, PT_List
 from nodes.prop_values import List, Int, Enum
 
 DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
@@ -36,6 +36,7 @@ DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
             output_port_status=PortStatus.FORBIDDEN
         ),
         '_main': PropDef(
+            prop_type=PT_List(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Random iterations",

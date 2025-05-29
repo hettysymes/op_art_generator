@@ -1,6 +1,6 @@
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from nodes.nodes import UnitNode, CombinationNode
-from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point
+from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient
 from nodes.prop_values import List, Point, Colour, Gradient, GradOffset
 
 DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
@@ -13,6 +13,7 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         '_main': PropDef(
+            prop_type=PT_Colour(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Colour",
@@ -55,6 +56,7 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
                                [GradOffset(0, Colour(255, 255, 255, 0)), GradOffset(1, Colour(255, 255, 255, 255))])
         ),
         '_main': PropDef(
+            prop_type=PT_Gradient(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Gradient",

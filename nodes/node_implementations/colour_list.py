@@ -15,6 +15,7 @@ DEF_COLOUR_LIST_INFO = PrivateNodeInfo(
                                [Colour(0, 0, 0, 255), Colour(255, 0, 0, 255), Colour(0, 255, 0, 255)])
         ),
         '_main': PropDef(
+            prop_type=PT_List(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Colours",

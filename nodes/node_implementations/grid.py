@@ -4,7 +4,7 @@ from id_datatypes import PropKey
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from nodes.node_implementations.visualiser import get_grid, add_background
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Warp, PT_Int
+from nodes.prop_types import PT_Warp, PT_Int, PT_Grid
 from nodes.prop_values import PropValue, Int, Grid, Colour
 from nodes.shape_datatypes import Group, Polyline
 from vis_types import Visualisable
@@ -25,7 +25,8 @@ DEF_GRID_INFO = PrivateNodeInfo(
                'y_warp': PropDef(prop_type=PT_Warp(),
                                  display_name="Y Warp",
                                  description="By default horizontal grid lines are spaced equally."),
-               '_main': PropDef(input_port_status=PortStatus.FORBIDDEN,
+               '_main': PropDef(prop_type=PT_Grid(),
+                                input_port_status=PortStatus.FORBIDDEN,
                                 output_port_status=PortStatus.COMPULSORY,
                                 display_name="Grid",
                                 display_in_props=False)

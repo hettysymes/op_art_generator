@@ -25,6 +25,7 @@ DEF_DRAWING_GROUP_INFO = PrivateNodeInfo(
             output_port_status=PortStatus.FORBIDDEN
         ),
         '_main': PropDef(
+            prop_type=PT_List(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing Group",

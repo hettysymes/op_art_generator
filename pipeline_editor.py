@@ -29,7 +29,7 @@ from node_props_dialog import NodePropertiesDialog
 from nodes.all_nodes import node_classes
 from nodes.node_defs import Node, PropDef, PortStatus
 from nodes.nodes import CombinationNode, CustomNode
-from nodes.prop_types import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PropType
+from nodes.prop_types import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PropType, PT_Fill
 from nodes.prop_values import PropValue
 from nodes.shape_datatypes import Group, Element
 from reg_custom_dialog import RegCustomDialog
@@ -721,43 +721,50 @@ class PortItem(QGraphicsPathItem):
         path = QPainterPath()
         half_size = self.size / 2
         port_type = self.port_type
-        if port_type.is_compatible_with(PT_Element()):
-            # Circle for number type
-            path.addEllipse(-half_size, -half_size, self.size, self.size)
-        elif port_type.is_compatible_with(PT_Grid()):
-            # Rounded rectangle for string type
-            path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
-        elif port_type.is_compatible_with(PT_Function()):
-            # Diamond for boolean type
-            points = [
-                QPointF(0, -half_size),  # Top
-                QPointF(half_size, 0),  # Right
-                QPointF(0, half_size),  # Bottom
-                QPointF(-half_size, 0)  # Left
-            ]
-            path.moveTo(points[0])
-            for i in range(1, 4):
-                path.lineTo(points[i])
-            path.closeSubpath()
+        match_success = True
+        if type(port_type) != PropType:
+            if port_type.is_compatible_with(PT_Element()):
+                # Circle for element type
+                path.addEllipse(-half_size, -half_size, self.size, self.size)
+            elif port_type.is_compatible_with(PT_Fill()):
+                # Rounded rectangle for fill type
+                path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
+            elif port_type.is_compatible_with(PT_Function()) or port_type.is_compatible_with(PT_Warp):
+                # Diamond for function or warp type
+                points = [
+                    QPointF(0, -half_size),  # Top
+                    QPointF(half_size, 0),  # Right
+                    QPointF(0, half_size),  # Bottom
+                    QPointF(-half_size, 0)  # Left
+                ]
+                path.moveTo(points[0])
+                for i in range(1, 4):
+                    path.lineTo(points[i])
+                path.closeSubpath()
 
-        elif port_type.is_compatible_with(PT_Warp()):
-            # Square for array type
-            path.addRect(-half_size, -half_size, self.size, self.size)
+            elif port_type.is_compatible_with(PT_Grid()):
+                # Square for grid type
+                path.addRect(-half_size, -half_size, self.size, self.size)
 
-        elif port_type.is_compatible_with(PT_List(PT_Scalar())):
-            # Hexagon for object type
-            points = []
-            for i in range(6):
-                angle = i * (360 / 6) * (3.14159 / 180)
-                points.append(QPointF(half_size * 0.9 * math.cos(angle),
-                                      half_size * 0.9 * math.sin(angle)))
+            elif port_type.is_compatible_with(PT_List(PT_Scalar())):
+                # Hexagon for list type
+                points = []
+                for i in range(6):
+                    angle = i * (360 / 6) * (3.14159 / 180)
+                    points.append(QPointF(half_size * 0.9 * math.cos(angle),
+                                          half_size * 0.9 * math.sin(angle)))
 
-            path.moveTo(points[0])
-            for i in range(1, 6):
-                path.lineTo(points[i])
-            path.closeSubpath()
+                path.moveTo(points[0])
+                for i in range(1, 6):
+                    path.lineTo(points[i])
+                path.closeSubpath()
 
+            else:
+                match_success = False
         else:
+            match_success = False
+
+        if not match_success:
             # Default to triangle for other types
             points = [
                 QPointF(0, -half_size),  # Top

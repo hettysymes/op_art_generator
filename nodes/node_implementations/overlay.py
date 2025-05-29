@@ -1,6 +1,6 @@
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_List, PT_ElementHolder
+from nodes.prop_types import PT_List, PT_ElementHolder, PT_Element
 from nodes.prop_values import List
 from nodes.shape_datatypes import Group
 
@@ -16,6 +16,7 @@ DEF_OVERLAY_INFO = PrivateNodeInfo(
             default_value=List(PT_ElementHolder())
         ),
         '_main': PropDef(
+            prop_type=PT_Element(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing",

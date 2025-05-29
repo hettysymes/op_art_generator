@@ -2,7 +2,7 @@ import math
 
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Ellipse, PT_Float, PT_Int, PT_Point
+from nodes.prop_types import PT_Ellipse, PT_Float, PT_Int, PT_Point, PT_List
 from nodes.prop_values import List, Int, Float, Point
 from nodes.shape_datatypes import Ellipse
 
@@ -31,6 +31,7 @@ DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(
             default_value=Int(5)
         ),
         '_main': PropDef(
+            prop_type=PT_List(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Samples",
