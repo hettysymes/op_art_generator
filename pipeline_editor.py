@@ -1867,6 +1867,40 @@ class PipelineEditor(QMainWindow):
             clipboard = QApplication.clipboard()
             clipboard.setMimeData(mime_data)
 
+    def deep_copy_subgraph(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
+                           port_refs: dict[NodeId, dict[PortId, RefId]]):
+        old_to_new_id_map = {}
+        # Update node states
+        new_node_states: dict[NodeId, NodeState] = {}
+        new_base_nodes: dict[NodeId, Node] = {}
+        for node, node_state in node_states.items():
+            new_node: NodeId = self.scene.gen_node_id()
+            # Copy node state
+            new_node_state: NodeState = copy.deepcopy(node_state)
+            new_node_state.node = new_node  # Update id in node state
+            new_node_state.ports_open = [PortId(node=new_node, key=port.key, is_input=port.is_input) for port in
+                                         node_state.ports_open]
+            new_node_states[new_node] = new_node_state  # Add to new node states
+            # Copy node
+            new_base_node = copy.deepcopy(base_nodes[node])
+            new_base_nodes[new_node] = new_base_node
+            # Add id to conversion map
+            old_to_new_id_map[node_state.node] = new_node
+        # Update ids in connections
+        new_edges: set[EdgeId] = set()
+        for edge in edges:
+            new_edges.add(EdgeId(output_port(node=old_to_new_id_map[edge.src_node], key=edge.src_key),
+                                 input_port(node=old_to_new_id_map[edge.dst_node], key=edge.dst_key)))
+        # Update ids in port refs
+        new_port_refs: dict[NodeId, dict[PortId, RefId]] = {}
+        for dst_node in port_refs:
+            new_entry: dict[PortId, RefId] = {}
+            for port, ref in port_refs[dst_node].items():
+                new_entry[PortId(node=old_to_new_id_map[port.node], key=port.key, is_input=port.is_input)] = ref
+            new_port_refs[old_to_new_id_map[dst_node]] = new_entry
+        # Return results
+        return new_node_states, new_base_nodes, new_edges, new_port_refs, old_to_new_id_map
+
     def paste_subgraph(self):
         clipboard = QApplication.clipboard()
         mime = clipboard.mimeData()
