@@ -15,7 +15,7 @@ from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestu
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack,
-                             QUndoCommand, QGraphicsProxyWidget, QDialog)
+                             QUndoCommand, QGraphicsProxyWidget, QDialog, QLabel, QWidgetAction)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 
@@ -26,7 +26,7 @@ from id_datatypes import PortId, EdgeId, gen_node_id, output_port, input_port, P
 from node_graph import NodeGraph, RefId
 from node_manager import NodeManager, NodeInfo
 from node_props_dialog import NodePropertiesDialog
-from nodes.all_nodes import node_classes
+from nodes.all_nodes import node_classes, get_node_classes
 from nodes.node_defs import Node, PropDef, PortStatus
 from nodes.nodes import CombinationNode, CustomNode
 from nodes.prop_types import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PropType, PT_Fill
@@ -1243,7 +1243,7 @@ class PipelineScene(QGraphicsScene):
             menu = QMenu()
 
             # Add actions for each node type
-            for node_class in node_classes:
+            for node_class in get_node_classes():
                 if issubclass(node_class, CombinationNode):
                     submenu = menu.addMenu(node_class.name())
                     for i in range(len(node_class.selections())):
@@ -1258,13 +1258,14 @@ class PipelineScene(QGraphicsScene):
                     menu.addAction(action)
             # Add custom nodes
             if self.custom_node_defs:
-                submenu = menu.addMenu("Custom Node")
-                for name, node_def in self.custom_node_defs.items():
+                menu.addSeparator()
+                sorted_custom_node_defs = sorted(self.custom_node_defs.items(), key=lambda item: item[0])
+                for name, node_def in sorted_custom_node_defs:
                     action = QAction(name, menu)
                     handler = partial(self.add_new_node, event.scenePos(), CustomNode,
                                       add_info=(name, copy.deepcopy(node_def)))
                     action.triggered.connect(handler)
-                    submenu.addAction(action)
+                    menu.addAction(action)
 
             menu.exec_(event.screenPos())
 

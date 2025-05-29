@@ -282,7 +282,7 @@ class RegCustomDialog(QDialog):
         box.exec_()
 
     def validate_inputs(self):
-        name = self.name_input.text().strip()
+        name = self.name_input.text().strip().capitalize()
         # Check name exists
         if not name:
             self.create_warning("Missing Name", "Please enter a name for your custom node.")
@@ -300,7 +300,7 @@ class RegCustomDialog(QDialog):
         where port_key_names maps (node_id, port_key) -> custom_display_name
         """
         return (
-            self.name_input.text().strip(),  # Name
+            self.name_input.text().strip().capitalize(),  # Name
             self.description_input.toPlainText(),  # Description
             self.in_port_selector.get_selected_ports(),  # Input ports
             self.out_port_selector.get_selected_ports(),  # Output ports
