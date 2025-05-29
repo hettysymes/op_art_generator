@@ -444,6 +444,7 @@ class NodePropertiesDialog(QDialog):
             widget = ColorPropertyWidget(current_value)
         elif isinstance(prop_type, PT_String):  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
+            widget.setMinimumWidth(250)
 
         return widget
 
