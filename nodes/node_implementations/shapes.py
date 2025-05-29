@@ -310,7 +310,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             prop_type=PT_Float(min_value=0),
             display_name="Horizontal radius (rx)",
             description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
-            default_value=Float(0.5)
+            default_value=Float(0.3)
         ),
         'ry': PropDef(
             prop_type=PT_Float(min_value=0),
@@ -323,6 +323,12 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             display_name="Centre coordinate",
             description="Coordinate of the ellipse centre. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Point(0.5, 0.5)
+        ),
+        'orientation': PropDef(
+            prop_type=PT_Float(),
+            display_name="Rotation (°)",
+            description="Clockwise rotation applied to the ellipse.",
+            default_value=Float(0)
         ),
         'fill': PropDef(
             prop_type=PT_Fill(),
@@ -360,7 +366,7 @@ class EllipseNode(UnitNode):
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main': Ellipse(props.get('centre'), (props.get('rx'), props.get('ry')), props.get('fill'), props.get('stroke_colour'),
-                                 props.get('stroke_width'))}
+                                 props.get('stroke_width')).rotate(props.get('orientation'), (0.5, 0.5))}
 
 
 DEF_CIRCLE_INFO = PrivateNodeInfo(
