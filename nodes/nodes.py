@@ -131,7 +131,7 @@ class CustomNode(Node):
     @staticmethod
     def from_custom_key(custom_key) -> tuple[NodeId, PropKey]:
         node_str, key = custom_key.split("_", 1)
-        return NodeId(node_str), key  # Returns node id, port_key
+        return NodeId(int(node_str)), key  # Returns node id, port_key
 
     @staticmethod
     def _get_new_prop_defs(prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]],

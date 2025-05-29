@@ -1801,6 +1801,7 @@ class PipelineEditor(QMainWindow):
                                                              CustomNodeDef(sub_node_manager, selected_ports,
                                                                            custom_names_dict,
                                                                            vis_sel_node, description=description)))
+            self.update_delete_custom_action_enabled()
 
     def identify_selected_items(self):
         node_states: dict[NodeId, NodeState] = {}
