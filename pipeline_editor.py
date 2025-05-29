@@ -501,23 +501,22 @@ class NodeItem(QGraphicsRectItem):
         self.update_label_port_positions(update_vis=update_vis)
 
     def reset_ports_open(self, new_ports_open: list[PortId]):
-        pass
-        # # Remove ports no longer in use
-        # port_ids = list(self.port_items.keys())
-        # for port_id in port_ids:
-        #     if port_id not in new_ports_open:
-        #         # Update layout at the end for efficiency
-        #         self.remove_port(port_id, update_layout=False)
-        # # Add new ports
-        # new_port_items = {}
-        # for port_id in new_ports_open:
-        #     if port_id not in self.node_state.ports_open:
-        #         # Update layout at the end for efficiency
-        #         self.add_port(port_id, self.node().get_port_defs()[port_id], update_layout=False)
-        #     new_port_items[port_id] = self.port_items[port_id]
-        # # Set new port item order
-        # self.port_items = new_port_items
-        # self.update_label_port_positions()
+        # Remove ports no longer in use
+        ports_open = self.node_state.ports_open
+        for port in ports_open:
+            if port not in new_ports_open:
+                # Update layout at the end for efficiency
+                self.remove_port(port, update_layout=False)
+        # Add new ports
+        new_port_items = {}
+        for port in new_ports_open:
+            if port not in self.node_state.ports_open:
+                # Update layout at the end for efficiency
+                self.add_port(port, update_layout=False)
+            new_port_items[port] = self.port_items[port]
+        # Set new port item order
+        self.port_items = new_port_items
+        self.update_label_port_positions()
 
     def add_port(self, port: PortId, update_layout=True) -> None:
         # Add port to scene
