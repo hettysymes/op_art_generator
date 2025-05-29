@@ -251,12 +251,15 @@ class NodeItem(QGraphicsRectItem):
             dialog.exec_()
         # TODO: put warning here
 
+    def update_play_btn_text(self):
+        text = "❚❚" if self.node_manager.is_playing(self.uid) else "▶"
+        self._play_button.setText(text)
+
     def toggle_playback(self):
-        self.node_manager.toggle_play(self.uid)
         if self.node_manager.is_playing(self.uid):
-            self._play_button.setText("❚❚")  # Pause symbol
+            self.scene().undo_stack.push(PauseNodesCmd(self.scene(), {self.uid}))
         else:
-            self._play_button.setText("▶")  # Play symbol
+            self.scene().undo_stack.push(PlayNodesCmd(self.scene(), {self.uid}))
 
     @property
     def uid(self) -> NodeId:
@@ -999,6 +1002,50 @@ class RandomiseNodesCmd(QUndoCommand):
             self.node_manager.randomise(node)  # TODO: store new seed for redo
             self.scene.node_item(node).update_visualisations()
 
+class PlayNodesCmd(QUndoCommand):
+    def __init__(self, scene, nodes: set[NodeId], description="Animate node(s)"):
+        super().__init__(description)
+        self.scene = scene
+        self.node_manager: NodeManager = scene.node_manager
+        self.nodes = nodes  # Assumes these nodes are animatable
+        self.play_states: dict[NodeId, bool] = {} # Boolean is True if the node was playing
+
+    def undo(self):
+        for node in self.nodes:
+            if not self.play_states[node]:
+                self.node_manager.toggle_play(node)
+                cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
+
+    def redo(self):
+        for node in self.nodes:
+            playing: bool = self.node_manager.is_playing(node)
+            self.play_states[node] = playing
+            if not playing:
+                self.node_manager.toggle_play(node)
+                cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
+
+class PauseNodesCmd(QUndoCommand):
+    def __init__(self, scene, nodes: set[NodeId], description="Animate node(s)"):
+        super().__init__(description)
+        self.scene = scene
+        self.node_manager: NodeManager = scene.node_manager
+        self.nodes = nodes  # Assumes these nodes are animatable
+        self.play_states: dict[NodeId, bool] = {} # Boolean is True if the node was playing
+
+    def undo(self):
+        for node in self.nodes:
+            if self.play_states[node]:
+                self.node_manager.toggle_play(node)
+                cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
+
+    def redo(self):
+        for node in self.nodes:
+            playing: bool = self.node_manager.is_playing(node)
+            self.play_states[node] = playing
+            if playing:
+                self.node_manager.toggle_play(node)
+                cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
+
 
 class PipelineScene(QGraphicsScene):
     """Scene that contains all pipeline elements"""
@@ -1596,6 +1643,16 @@ class PipelineEditor(QMainWindow):
         randomise.triggered.connect(self.randomise_selected)
         scene_menu.addAction(randomise)
 
+        play_animate = QAction("Play Selected Animatable Nodes", self)
+        play_animate.setShortcut("Ctrl+P")
+        play_animate.triggered.connect(self.play_selected)
+        scene_menu.addAction(play_animate)
+
+        pause_animate = QAction("Pause Selected Animatable Nodes", self)
+        pause_animate.setShortcut("Ctrl+Shift+P")
+        pause_animate.triggered.connect(self.pause_selected)
+        scene_menu.addAction(pause_animate)
+
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
@@ -1661,6 +1718,7 @@ class PipelineEditor(QMainWindow):
         self.scene.custom_node_defs = {}
         self.update_delete_custom_action_enabled()
         self.scene.node_id_generator = NodeIdGenerator()
+        self.scene.undo_stack.clear()
 
     def save_as_scene(self):
         filepath, _ = QFileDialog.getSaveFileName(
@@ -1895,6 +1953,21 @@ class PipelineEditor(QMainWindow):
                 if node_info.randomisable:
                     randomisable_nodes.add(item.uid)
         self.scene.undo_stack.push(RandomiseNodesCmd(self.scene, randomisable_nodes))
+
+    def get_selected_animatable_nodes(self) -> set[NodeId]:
+        animatable_nodes: set[NodeId] = set()
+        for item in self.scene.selectedItems():
+            if isinstance(item, NodeItem):
+                node_info: NodeInfo = self.scene.node_manager.node_info(item.uid)
+                if node_info.animatable:
+                    animatable_nodes.add(item.uid)
+        return animatable_nodes
+
+    def play_selected(self):
+        self.scene.undo_stack.push(PlayNodesCmd(self.scene, self.get_selected_animatable_nodes()))
+
+    def pause_selected(self):
+        self.scene.undo_stack.push(PauseNodesCmd(self.scene, self.get_selected_animatable_nodes()))
 
 
 if __name__ == "__main__":
