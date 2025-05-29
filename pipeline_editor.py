@@ -1660,11 +1660,6 @@ class PipelineEditor(QMainWindow):
         randomise.triggered.connect(self.randomise_selected)
         scene_menu.addAction(randomise)
 
-        create_custom = QAction("Group Nodes to Custom Node", self)
-        create_custom.setShortcut("Ctrl+G")
-        create_custom.triggered.connect(self.register_custom_node)
-        scene_menu.addAction(create_custom)
-
         # Add Undo action
         undo = self.scene.undo_stack.createUndoAction(self, "Undo")
         undo.setShortcut(QKeySequence.Undo)
@@ -1701,16 +1696,26 @@ class PipelineEditor(QMainWindow):
 
         custom_node_menu = menu_bar.addMenu("Custom Nodes")
 
+        create_custom = QAction("Register Custom Node", self)
+        create_custom.setShortcut("Ctrl+G")
+        create_custom.triggered.connect(self.register_custom_node)
+        custom_node_menu.addAction(create_custom)
+
         # Add Delete action
-        delete_custom_node = QAction("Delete Custom Node", self)
-        delete_custom_node.triggered.connect(self.delete_custom_node)
-        custom_node_menu.addAction(delete_custom_node)
+        self.delete_custom_node_action = QAction("Unregister Custom Node", self)
+        self.delete_custom_node_action.triggered.connect(self.delete_custom_node)
+        self.update_delete_custom_action_enabled()
+        custom_node_menu.addAction(self.delete_custom_node_action)
+
+    def update_delete_custom_action_enabled(self):
+        self.delete_custom_node_action.setEnabled(len(self.scene.custom_node_defs) > 0)
 
     def delete_custom_node(self):
         dialog = DeleteCustomNodeDialog(list(self.scene.custom_node_defs.keys()))
         if dialog.exec_() == QDialog.Accepted:
             selected_node = dialog.get_selected_node()
             del self.scene.custom_node_defs[selected_node]
+            self.update_delete_custom_action_enabled()
 
     def new_scene(self):
         self.scene.filepath = None
@@ -1718,6 +1723,7 @@ class PipelineEditor(QMainWindow):
         self.view.reset_zoom()
         self.view.centerOn(0, 0)
         self.scene.custom_node_defs = {}
+        self.update_delete_custom_action_enabled()
 
     def save_as_scene(self):
         filepath, _ = QFileDialog.getSaveFileName(
@@ -1751,6 +1757,7 @@ class PipelineEditor(QMainWindow):
             # Update the view to reflect the loaded scene
             self.view.update()
             self.statusBar().showMessage(f"Scene loaded from {file_path}", 3000)
+            self.update_delete_custom_action_enabled()
 
     def select_all(self):
         for item in self.scene.items():
@@ -1823,6 +1830,7 @@ class PipelineEditor(QMainWindow):
                                                              CustomNodeDef(sub_node_manager, selected_ports,
                                                                            custom_names_dict,
                                                                            vis_sel_node, description=description)))
+            self.update_delete_custom_action_enabled()
 
     def identify_selected_items(self):
         node_states: dict[NodeId, NodeState] = {}
