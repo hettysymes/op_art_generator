@@ -400,8 +400,10 @@ class NodePropertiesDialog(QDialog):
                     if isinstance(entry_group[0], Colour):
                         menu.actions_map = {'edit': menu.addAction("Edit")}
 
-                def edit_action(port_ref_table, _, row):
-                    colour_dialog = QColorDialog()
+                def edit_action(port_ref_table, entry_group, row):
+                    first_entry = entry_group[0]
+                    assert isinstance(first_entry, Colour)
+                    colour_dialog = QColorDialog(QColor(*first_entry))
                     colour_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
                     if colour_dialog.exec_() == QDialog.Accepted:
                         sel_col = colour_dialog.selectedColor().getRgb()
@@ -444,6 +446,7 @@ class NodePropertiesDialog(QDialog):
             widget = ColorPropertyWidget(current_value)
         elif isinstance(prop_type, PT_String):  # Default to string type
             widget = QLineEdit(str(current_value) if current_value is not None else "")
+            widget.setMinimumWidth(250)
 
         return widget
 
