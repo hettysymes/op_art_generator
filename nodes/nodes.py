@@ -194,9 +194,10 @@ class CustomNode(Node):
         if self._randomisable:
             prop_defs['seed'] = PropDef(
                 prop_type=PT_Int(min_value=0),
+                display_name="Random seed",
+                description="Random seed used.",
                 input_port_status=PortStatus.FORBIDDEN,
-                output_port_status=PortStatus.FORBIDDEN,
-                display_in_props=False
+                output_port_status=PortStatus.FORBIDDEN
             )
 
         if self._animatable:
