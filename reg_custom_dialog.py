@@ -175,6 +175,8 @@ class PortRenameTable(QWidget):
                     result[(node_id, port_key)] = custom_name
         return result
 
+def process_name(name: str) -> str:
+    return name.strip().title()
 
 class RegCustomDialog(QDialog):
     def __init__(self, node_to_info, existing_names):
@@ -282,7 +284,7 @@ class RegCustomDialog(QDialog):
         box.exec_()
 
     def validate_inputs(self):
-        name = self.name_input.text().strip().capitalize()
+        name = process_name(self.name_input.text())
         # Check name exists
         if not name:
             self.create_warning("Missing Name", "Please enter a name for your custom node.")
@@ -300,7 +302,7 @@ class RegCustomDialog(QDialog):
         where port_key_names maps (node_id, port_key) -> custom_display_name
         """
         return (
-            self.name_input.text().strip().capitalize(),  # Name
+            process_name(self.name_input.text()),  # Name
             self.description_input.toPlainText(),  # Description
             self.in_port_selector.get_selected_ports(),  # Input ports
             self.out_port_selector.get_selected_ports(),  # Output ports
