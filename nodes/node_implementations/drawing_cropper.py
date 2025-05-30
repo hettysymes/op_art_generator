@@ -20,14 +20,14 @@ DEF_DRAWING_CROPPER_INFO = PrivateNodeInfo(
         ),
         'top_left': PropDef(
             prop_type=PT_Point(),
-            display_name="Top-left crop",
-            description="The top-left corner of the cropping rectangle over the drawing.",
+            display_name="Top-left of frame",
+            description="The top-left corner of the framing rectangle over the drawing.",
             default_value=Point(0, 0)
         ),
         'bot_right': PropDef(
             prop_type=PT_Point(),
-            display_name="Bottom-right crop.",
-            description="The bottom-right corner of the cropping rectangle over the drawing.",
+            display_name="Bottom-right of frame",
+            description="The bottom-right corner of the framing rectangle over the drawing.",
             default_value=Point(1, 1)
         ),
         '_main': PropDef(
