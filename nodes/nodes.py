@@ -6,8 +6,8 @@ from typing import Optional, cast
 from id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
 from node_graph import RefId
 from nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus
-from nodes.prop_types import PT_Int
-from nodes.prop_values import PropValue
+from nodes.prop_types import PT_Int, PT_Float
+from nodes.prop_values import PropValue, Float
 from nodes.shape_datatypes import Group
 from vis_types import Visualisable
 
@@ -199,6 +199,16 @@ class CustomNode(Node):
                 display_in_props=False
             )
 
+        if self._animatable:
+            prop_defs['speed'] = PropDef(
+                prop_type=PT_Float(min_value=0.001, max_value=10),
+                display_name="Animation speed",
+                description="Relative playback speed of the animation (1 = normal speed, 2 = twice as fast, 0.5 = half speed).",
+                input_port_status=PortStatus.FORBIDDEN,
+                output_port_status=PortStatus.FORBIDDEN,
+                default_value=Float(1)
+            )
+
         # Set node info
         self._node_info = PrivateNodeInfo(
             description=description,
@@ -314,9 +324,10 @@ class CustomNode(Node):
         # time is time in milliseconds that has passed
         # Returns True if it moved to the next animation step
         assert self.playing
+        rel_time: float = self.internal_props['speed'] * time
         update: bool = False
         for node in self.animatable_nodes:
-            update = update or self.sub_node_manager.reanimate(node, time)
+            update = update or self.sub_node_manager.reanimate(node, rel_time)
         return update
 
     def toggle_play(self) -> None:
