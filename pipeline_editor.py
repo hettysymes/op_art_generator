@@ -415,6 +415,31 @@ class NodeItem(QGraphicsRectItem):
         for key in invalid_keys:
             self.scene().undo_stack.push(RemoveExtractedElementCmd(self, key))
 
+        # Update output port shapes
+        for port, port_item in self.port_items.items():
+            if port.is_input:
+                # Update input port shape
+                incoming_edges: set[EdgeId] = self.node_graph.incoming_edges(port)
+                if not incoming_edges:
+                    # No incoming edges, defer to default
+                    port_item.create_shape_for_port_type()
+                elif len(incoming_edges) > 1:
+                    # More than one edge
+                    port_item.create_shape_for_port_type(PT_List())
+                else:
+                    # One edge, match port shape of source port
+                    edge: EdgeId = next(iter(incoming_edges))
+                    src_port_item: PortItem = self.scene().port_item(edge.src_port)
+                    port_item.draw_port(src_port_item.curr_port_shape)
+            else:
+                # Update output port shape
+                value: Optional[PropValue] = self.node_manager.get_compute_result(port.node, port.key)
+                if value is None:
+                    port_item.create_shape_for_port_type()
+                else:
+                    assert isinstance(value, PropValue)
+                    port_item.create_shape_for_port_type(value.type)
+
         svg_filepath = os.path.join(self.scene().temp_dir, f"{self.node_state.node}.svg")
         # Base position for all SVG elements
         svg_pos_x = self.left_max_width + NodeItem.MARGIN_X + NodeItem.LABEL_SVG_DIST
@@ -688,6 +713,7 @@ class PortItem(QGraphicsPathItem):
     def __init__(self, port: PortId, parent: NodeItem):
         super().__init__(parent)
         self.port = port
+        self.curr_port_shape: Optional[str] = None
         self.edge_items: dict[PortId, EdgeItem] = {}  # Key is the port that it is connected to by the edge
 
         self.size = 12  # Base size for the port
@@ -713,55 +739,41 @@ class PortItem(QGraphicsPathItem):
         prop_def: PropDef = cast(NodeItem, self.parentItem()).node_info.prop_defs[self.port.key]
         return prop_def.prop_type
 
-    def create_shape_for_port_type(self):
+    def draw_port(self, shape: str):
+        if shape == self.curr_port_shape:
+            return
+        self.curr_port_shape = shape
         path = QPainterPath()
         half_size = self.size / 2
-        port_type = self.port_type
-        match_success = True
-        if type(port_type) != PropType:
-            if port_type.is_compatible_with(PT_Element()):
-                # Circle for element type
-                path.addEllipse(-half_size, -half_size, self.size, self.size)
-            elif port_type.is_compatible_with(PT_Fill()):
-                # Rounded rectangle for fill type
-                path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
-            elif port_type.is_compatible_with(PT_Function()) or port_type.is_compatible_with(PT_Warp()):
-                # Diamond for function or warp type
-                points = [
-                    QPointF(0, -half_size),  # Top
-                    QPointF(half_size, 0),  # Right
-                    QPointF(0, half_size),  # Bottom
-                    QPointF(-half_size, 0)  # Left
-                ]
-                path.moveTo(points[0])
-                for i in range(1, 4):
-                    path.lineTo(points[i])
-                path.closeSubpath()
+        if shape == 'circle':
+            path.addEllipse(-half_size, -half_size, self.size, self.size)
+        elif shape == 'rounded_square':
+            path.addRoundedRect(-half_size, -half_size, self.size, self.size, 3, 3)
+        elif shape == 'diamond':
+            points = [
+                QPointF(0, -half_size),  # Top
+                QPointF(half_size, 0),  # Right
+                QPointF(0, half_size),  # Bottom
+                QPointF(-half_size, 0)  # Left
+            ]
+            path.moveTo(points[0])
+            for i in range(1, 4):
+                path.lineTo(points[i])
+            path.closeSubpath()
+        elif shape == 'square':
+            path.addRect(-half_size, -half_size, self.size, self.size)
+        elif shape == 'hexagon':
+            points = []
+            for i in range(6):
+                angle = i * (360 / 6) * (3.14159 / 180)
+                points.append(QPointF(half_size * 0.9 * math.cos(angle),
+                                      half_size * 0.9 * math.sin(angle)))
 
-            elif port_type.is_compatible_with(PT_Grid()):
-                # Square for grid type
-                path.addRect(-half_size, -half_size, self.size, self.size)
-
-            elif port_type.is_compatible_with(PT_List(PT_Scalar())):
-                # Hexagon for list type
-                points = []
-                for i in range(6):
-                    angle = i * (360 / 6) * (3.14159 / 180)
-                    points.append(QPointF(half_size * 0.9 * math.cos(angle),
-                                          half_size * 0.9 * math.sin(angle)))
-
-                path.moveTo(points[0])
-                for i in range(1, 6):
-                    path.lineTo(points[i])
-                path.closeSubpath()
-
-            else:
-                match_success = False
+            path.moveTo(points[0])
+            for i in range(1, 6):
+                path.lineTo(points[i])
+            path.closeSubpath()
         else:
-            match_success = False
-
-        if not match_success:
-            # Default to triangle for other types
             points = [
                 QPointF(0, -half_size),  # Top
                 QPointF(half_size * 0.866, half_size / 2),  # Bottom right
@@ -771,8 +783,29 @@ class PortItem(QGraphicsPathItem):
             path.lineTo(points[1])
             path.lineTo(points[2])
             path.closeSubpath()
-
         self.setPath(path)
+
+    def create_shape_for_port_type(self, temp_port_type=None):
+        port_type = self.port_type if temp_port_type is None else temp_port_type
+        port_shape = 'triangle'
+        if type(port_type) != PropType:
+            if port_type.is_compatible_with(PT_Element()):
+                # Circle for element type
+                port_shape = 'circle'
+            elif port_type.is_compatible_with(PT_Fill()):
+                # Rounded square for fill type
+                port_shape = 'rounded_square'
+            elif port_type.is_compatible_with(PT_Function()) or port_type.is_compatible_with(PT_Warp()):
+                # Diamond for function or warp type
+                port_shape = 'diamond'
+            elif port_type.is_compatible_with(PT_Grid()):
+                # Square for grid type
+                port_shape = 'square'
+            elif port_type.is_compatible_with(PT_List(PT_Scalar())):
+                # Hexagon for list type
+                port_shape = 'hexagon'
+        # Update port shape
+        self.draw_port(port_shape)
 
     def get_center_scene_pos(self):
         # For a path item, we need to calculate the center differently
