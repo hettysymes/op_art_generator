@@ -773,7 +773,7 @@ class PortItem(QGraphicsPathItem):
             for i in range(1, 6):
                 path.lineTo(points[i])
             path.closeSubpath()
-        else:
+        elif shape == 'triangle':
             points = [
                 QPointF(0, -half_size),  # Top
                 QPointF(half_size * 0.866, half_size / 2),  # Bottom right
@@ -783,11 +783,24 @@ class PortItem(QGraphicsPathItem):
             path.lineTo(points[1])
             path.lineTo(points[2])
             path.closeSubpath()
+        else:
+            # Draw a star
+            points = []
+            for i in range(10):
+                angle = i * (360 / 10) * (3.14159 / 180)
+                radius = half_size * 0.9 if i % 2 == 0 else half_size * 0.4
+                points.append(QPointF(radius * math.cos(angle),
+                                      radius * math.sin(angle)))
+
+            path.moveTo(points[0])
+            for i in range(1, 10):
+                path.lineTo(points[i])
+            path.closeSubpath()
         self.setPath(path)
 
     def create_shape_for_port_type(self, temp_port_type=None):
         port_type = self.port_type if temp_port_type is None else temp_port_type
-        port_shape = 'triangle'
+        port_shape = 'star'
         if type(port_type) != PropType:
             if port_type.is_compatible_with(PT_Element()):
                 # Circle for element type
@@ -801,6 +814,9 @@ class PortItem(QGraphicsPathItem):
             elif port_type.is_compatible_with(PT_Grid()):
                 # Square for grid type
                 port_shape = 'square'
+            elif port_type.is_compatible_with(PT_Scalar()):
+                # Triangle for scalar type
+                port_shape = 'triangle'
             elif port_type.is_compatible_with(PT_List(PT_Scalar())):
                 # Hexagon for list type
                 port_shape = 'hexagon'

@@ -39,7 +39,7 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
         '_main': PropDef(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_name="Function Output",
+            display_name="List item",
             display_in_props=False
         )
     }

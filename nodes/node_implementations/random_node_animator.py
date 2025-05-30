@@ -29,7 +29,7 @@ DEF_RANDOM_ANIMATOR_INFO = PrivateNodeInfo(
         '_main': PropDef(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_name="Function Output",
+            display_name="Random Output",
             display_in_props=False
         )
     }
