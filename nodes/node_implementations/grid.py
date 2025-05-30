@@ -40,14 +40,3 @@ class GridNode(UnitNode):
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main': get_grid(props.get('width'), props.get('height'), props.get('x_warp'), props.get('y_warp'))}
-
-    def visualise(self, compute_results: dict[PropKey, PropValue]) -> Optional[Visualisable]:
-        grid: Grid = compute_results.get('_main')
-        grid_group = Group(debug_info="Grid")
-        for x in grid.v_line_xs:
-            # Draw horizontal lines
-            grid_group.add(Polyline([(x, 0), (x, 1)], stroke=Colour(0,0,0,255), stroke_width=2))
-        for y in grid.h_line_ys:
-            # Draw vertical lines
-            grid_group.add(Polyline([(0, y), (1, y)], stroke=Colour(0,0,0,255), stroke_width=2))
-        return add_background(grid_group, Colour(255, 255, 255, 255))

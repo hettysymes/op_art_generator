@@ -4,9 +4,9 @@ from typing import cast
 from nodes.drawers.draw_graph import create_graph_svg
 from nodes.function_datatypes import IdentityFun
 from nodes.prop_types import PT_Element, PT_List, PT_Function, PT_Fill, PT_Point, \
-    PT_Warp, PT_Number
+    PT_Warp, PT_Number, PT_Grid
 from nodes.prop_values import List, Point, Grid, Fill, Colour
-from nodes.shape_datatypes import Group, Element, Polygon
+from nodes.shape_datatypes import Group, Element, Polygon, Polyline
 from nodes.transforms import Scale, Translate
 from nodes.warp_datatypes import sample_fun, PosWarp, RelWarp
 from vis_types import MatplotlibFig
@@ -64,6 +64,15 @@ def repeat_shapes(grid: Grid, elements: List[PT_Element], row_iter=True):
 def get_rectangle(fill: Fill, stroke: Fill = Colour(), stroke_width=0):
     return Polygon([Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)], fill, stroke, stroke_width)
 
+def draw_grid(grid: Grid) -> Element:
+    grid_group = Group(debug_info="Grid")
+    for x in grid.v_line_xs:
+        # Draw horizontal lines
+        grid_group.add(Polyline([(x, 0), (x, 1)], stroke=Colour(0, 0, 0, 255), stroke_width=2))
+    for y in grid.h_line_ys:
+        # Draw vertical lines
+        grid_group.add(Polyline([(0, y), (1, y)], stroke=Colour(0, 0, 0, 255), stroke_width=2))
+    return add_background(grid_group, Colour(255, 255, 255, 255))
 
 def visualise_by_type(value, value_type):
     if value is None:
@@ -76,17 +85,22 @@ def visualise_by_type(value, value_type):
             return MatplotlibFig(create_graph_svg(ys, xs=xs, scatter=True, mirror_img_coords=True))
         else:
             value = cast(List, value)
+            to_draw = [visualise_by_type(value_item, value_item.type) for value_item in value]
+            # If nothing to draw, return None
+            if not to_draw:
+                return None
+            # If not all elements, return None
+            for val in to_draw:
+                if not isinstance(val, Element):
+                    return None
+            # Draw elements in a grid
             if value.vertical_layout:
                 # Draw vertical grid
                 grid = get_grid(height=len(value))
             else:
                 # Draw horizontal grid
                 grid = get_grid(width=len(value))
-            elements = List(PT_Element(),
-                            [visualise_by_type(value_item, value.item_type) for value_item in value])
-            if not elements:
-                return None
-            return repeat_shapes(grid, elements)
+            return repeat_shapes(grid, List(PT_Element(), to_draw))
     elif isinstance(value_type, PT_Fill):
         return get_rectangle(value)
     elif isinstance(value_type, PT_Element):
@@ -95,5 +109,7 @@ def visualise_by_type(value, value_type):
         return MatplotlibFig(create_graph_svg(sample_fun(value, 1000)))
     elif isinstance(value_type, PT_Warp):
         return MatplotlibFig(create_graph_svg(value.sample(1000)))
+    elif isinstance(value_type, PT_Grid):
+        return draw_grid(value)
     else:
         return None
