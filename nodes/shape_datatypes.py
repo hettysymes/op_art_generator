@@ -126,9 +126,11 @@ class Group(Element, PointsHolder):
 
     @property
     def type(self):
-        shapes, _ = zip(*self.shape_transformations())
-        if len(shapes) == 1:
-            return shapes[0].type
+        transformed_shapes = self.shape_transformations()
+        if transformed_shapes:
+            shapes, _ = zip(*transformed_shapes)
+            if len(shapes) == 1:
+                return shapes[0].type
         return PT_Element()
 
     @property

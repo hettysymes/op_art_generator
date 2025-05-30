@@ -42,7 +42,7 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
             prop_type=PT_List(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_name="Iterator",
+            display_name="Iterations",
             display_in_props=False
         )
     }
