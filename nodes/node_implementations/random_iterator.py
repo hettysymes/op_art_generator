@@ -5,7 +5,7 @@ from id_datatypes import PortId
 from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Int, PropType, PT_Enum, PT_List
+from nodes.prop_types import PT_Int, PropType, PT_Enum, PT_List, find_closest_common_base
 from nodes.prop_values import List, Int, Enum
 
 DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
@@ -73,12 +73,15 @@ class RandomIteratorNode(UnitNode):
         rprops, rrefs, rquerier = ref_querier.get_compute_inputs(random_node_ref)
 
         # Calculate and set random compute result
-        outputs = List(random_input.type, vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)
+        items = []
         for seed in seeds:
             rprops['seed'] = seed
             rrefs['seed'] = None
-            outputs.append(random_node.final_compute(rprops, rrefs, rquerier)[src_port.key])
-        return {'_main': outputs}
+            items.append(random_node.final_compute(rprops, rrefs, rquerier)[src_port.key])
+        common_base: type[PropType] = find_closest_common_base([item.type for item in items])
+        return {'_main': List(item_type=common_base(),
+                              items=items,
+                              vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)}
 
     # Functions needed for randomisable node # TODO make into interface
 

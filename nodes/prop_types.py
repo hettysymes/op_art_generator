@@ -10,6 +10,21 @@ class PropType:
         return self.__class__.__name__
 
 
+def find_closest_common_base(types):
+    # Convert instances to types if needed
+    types = [t if isinstance(t, type) else type(t) for t in types]
+
+    # Get MROs for all types
+    mro_lists = [t.mro() for t in types]
+
+    # Iterate through the MRO of the first type
+    for cls in mro_lists[0]:
+        # Check if this cls is in the MROs of all other types
+        if all(cls in mro for mro in mro_lists[1:]):
+            return cls  # Found the closest common base
+
+    return object  # Fallback if no common base
+
 # Scalar
 class PT_Scalar(PropType):
 
