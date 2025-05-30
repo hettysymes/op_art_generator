@@ -173,9 +173,16 @@ class CustomNode(Node):
         description = custom_node_def.description or "(No help provided)"
         # Perform set up
         self.node_topo_order: list[NodeId] = self.subgraph.get_topo_order_subgraph()
+        # Randomisable nodes
         self.randomisable_nodes: list[NodeId] = [node for node in self.node_topo_order if
                                                  self.sub_node_manager.node_info(node).randomisable]
         self._randomisable = bool(self.randomisable_nodes)
+        # Animatable nodes
+        self.animatable_nodes: list[NodeId] = [node for node in self.node_topo_order if
+                                                 self.sub_node_manager.node_info(node).animatable]
+        self._animatable = bool(self.animatable_nodes)
+        self._playing = None
+        self.set_playing(False)
 
         # Get new prop defs
         prop_defs_dict: dict[NodeId, dict[PropKey, PropDef]] = {node: self.sub_node_manager.node_info(node).prop_defs
@@ -287,3 +294,30 @@ class CustomNode(Node):
 
     def get_seed(self):
         return self.internal_props['seed']
+
+    # Functions needed for animatable node
+    def set_playing(self, is_playing: bool):
+        for node in self.animatable_nodes:
+            if self.sub_node_manager.is_playing(node) != is_playing:
+                self.sub_node_manager.toggle_play(node)
+        self._playing = is_playing
+
+    @property
+    def animatable(self) -> bool:
+        return self._animatable
+
+    @property
+    def playing(self) -> bool:
+        return self._playing
+
+    def reanimate(self, time: float) -> bool:
+        # time is time in milliseconds that has passed
+        # Returns True if it moved to the next animation step
+        assert self.playing
+        update: bool = False
+        for node in self.animatable_nodes:
+            update = update or self.sub_node_manager.reanimate(node, time)
+        return update
+
+    def toggle_play(self) -> None:
+        self.set_playing(not self._playing)
