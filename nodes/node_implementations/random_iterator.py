@@ -78,8 +78,16 @@ class RandomIteratorNode(UnitNode):
             rprops['seed'] = seed
             rrefs['seed'] = None
             items.append(random_node.final_compute(rprops, rrefs, rquerier)[src_port.key])
-        common_base: type[PropType] = find_closest_common_base([item.type for item in items])
-        return {'_main': List(item_type=common_base(),
+        my_type = random_input.type
+        for item in items:
+            if not item.type.is_compatible_with(my_type):
+                if my_type.is_compatible_with(item.type):
+                    my_type = item.type
+                else:
+                    common_base: type[PropType] = find_closest_common_base([item.type for item in items])
+                    my_type = common_base()
+
+        return {'_main': List(item_type=my_type,
                               items=items,
                               vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)}
 
