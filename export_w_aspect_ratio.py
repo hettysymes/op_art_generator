@@ -33,11 +33,7 @@ class ExportWithAspectRatio(QDialog):
         self.format_combo = QComboBox()
         self.format_combo.addItems(["SVG", "PNG"])
 
-        self.browse_button = QPushButton("Choose Save Location")
-        self.path_label = QLabel("No file chosen")
-
-        self.save_button = QPushButton("Save")
-        self.save_button.setEnabled(False)
+        self.browse_button = QPushButton("Save")
 
         layout = QVBoxLayout()
         layout.addWidget(self.input_label)
@@ -46,14 +42,11 @@ class ExportWithAspectRatio(QDialog):
         layout.addWidget(QLabel("Format:"))
         layout.addWidget(self.format_combo)
         layout.addWidget(self.browse_button)
-        layout.addWidget(self.path_label)
-        layout.addWidget(self.save_button)
         self.setLayout(layout)
 
         # Connect signals
         self.input_field.textChanged.connect(self.update_dimensions)
         self.browse_button.clicked.connect(self.choose_file)
-        self.save_button.clicked.connect(self.save_image)
 
         # Update height text
         self.update_dimensions()
@@ -65,26 +58,19 @@ class ExportWithAspectRatio(QDialog):
             self.dimension_label.setText(f"Height (pixels): {int(height)}")
         except ValueError:
             self.dimension_label.setText("Height (pixels): —")
-        self.save_button.setEnabled(bool(self.input_field.text() and self.path_label.text() != "No file chosen"))
 
     def choose_file(self):
         ext = self.format_combo.currentText().lower()
         path, _ = QFileDialog.getSaveFileName(self, "Save As", f"untitled.{ext}", f"{ext.upper()} Files (*.{ext})")
         if path:
-            self.path_label.setText(path)
-            self.update_dimensions()
+            self.save_image(path)
 
-    def save_image(self):
+    def save_image(self, path):
         try:
             width = int(float(self.input_field.text()))
             height = int(width / self.aspect_ratio)
         except ValueError:
             QMessageBox.warning(self, "Invalid Input", "Please enter a valid width.")
-            return
-
-        path = self.path_label.text()
-        if not path:
-            QMessageBox.warning(self, "No Path", "Please choose a save location.")
             return
 
         self.element.save_to_svg(self.svg_path, width, height)
