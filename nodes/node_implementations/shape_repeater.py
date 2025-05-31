@@ -4,8 +4,8 @@ from id_datatypes import PropKey
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from nodes.node_implementations.visualiser import repeat_shapes
 from nodes.nodes import SelectableNode
-from nodes.prop_types import PT_Grid, PT_Element, PT_List, PT_ElementHolder, PT_Enum
-from nodes.prop_values import List, Enum, Grid
+from nodes.prop_types import PT_Grid, PT_Element, PT_List, PT_ElementHolder, PT_Enum, PT_Bool
+from nodes.prop_values import List, Enum, Grid, Bool
 from nodes.shape_datatypes import Group
 
 # from ui.nodes.nodes import SelectableNode
@@ -33,6 +33,22 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
             display_name="Iteration direction",
             description="Drawings can be placed into the grid either row-by-row or column-by-column.",
             default_value=Enum([True, False], ["Row-by-row", "Column-by-column"]),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN
+        ),
+        'scale_x': PropDef(
+            prop_type=PT_Bool(),
+            display_name="Scale X",
+            description="If ticked (default), each drawing will be scaled to fit the cell width. Otherwise the width of each drawing will stay the same relative to each other.",
+            default_value=Bool(True),
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.FORBIDDEN
+        ),
+        'scale_y': PropDef(
+            prop_type=PT_Bool(),
+            display_name="Scale Y",
+            description="If ticked (default), each drawing will be scaled to fit the cell height. Otherwise the height of each drawing will stay the same relative to each other.",
+            default_value=Bool(True),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.FORBIDDEN
         ),
@@ -66,7 +82,7 @@ class ShapeRepeaterNode(SelectableNode):
         if not grid or not elem_entries:
             return {}
         main_group = repeat_shapes(grid, List(PT_Element(), [elem_entry.element for elem_entry in elem_entries]),
-                                   row_iter=cast(Enum, props.get('row_iter_enum')).selected_option)
+                                   row_iter=cast(Enum, props.get('row_iter_enum')).selected_option, scale_x=bool(props.get('scale_x')), scale_y=bool(props.get('scale_y')))
         ret_result = {'_main': main_group}
         for key in self.extracted_props:
             # Compute cell

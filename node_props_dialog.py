@@ -206,7 +206,6 @@ class NodePropertiesDialog(QDialog):
         widget_container = QWidget()
         widget_layout = QHBoxLayout(widget_container)
         widget_layout.setContentsMargins(0, 0, 0, 0)
-        widget_layout.setSpacing(4)  # Small spacing between widget and icon
 
         if widget:
             # Add the widget first
@@ -215,6 +214,7 @@ class NodePropertiesDialog(QDialog):
         # Add the help icon after the widget (on the right)
         if prop_def.description:
             help_icon = HelpIconLabel(prop_def.description, max_width=300)  # Set maximum width for tooltip
+            widget_layout.addSpacing(1)
             widget_layout.addWidget(help_icon)
         # Add input and output toggle buttons
         if input_port(node=node_item.uid, key=key) in self.node_info.filter_ports_by_status(PortStatus.OPTIONAL,
