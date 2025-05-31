@@ -18,7 +18,7 @@ from nodes.node_defs import PropDef, PortStatus
 from nodes.prop_types import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
     PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
     PT_FillHolder, PT_GradOffset, PT_ValProbPairHolder, PT_BlazeCircleDef
-from nodes.prop_values import PropValue, Enum, Point, PortRefTableEntry, Colour, LineRef
+from nodes.prop_values import PropValue, Enum, Point, PortRefTableEntry, Colour, LineRef, Bool
 from point_dialog import PointDialog
 from port_ref_table_widget import PortRefTableWidget
 from random_probability_table import RandomProbabilityWidget
@@ -255,7 +255,7 @@ class NodePropertiesDialog(QDialog):
 
         elif isinstance(prop_type, PT_Bool):
             widget = QCheckBox()
-            widget.setChecked(current_value or False)
+            widget.setChecked(bool(current_value) or False)
 
         elif isinstance(prop_type, PT_Point):
             # Create the widget
@@ -461,7 +461,7 @@ class NodePropertiesDialog(QDialog):
             if isinstance(widget, QSpinBox) or isinstance(widget, QDoubleSpinBox):
                 value = widget.value()
             elif isinstance(widget, QCheckBox):
-                value = widget.isChecked()
+                value = Bool(widget.isChecked())
             elif isinstance(widget, QComboBox):
                 display_options = [widget.itemText(i) for i in range(widget.count())]
                 options = [widget.itemData(i) for i in range(widget.count())]

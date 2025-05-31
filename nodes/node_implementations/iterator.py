@@ -19,7 +19,7 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
         ),
         'element': PropDef(
             prop_type=PT_Element(),
-            display_name="Shape",
+            display_name="Drawing",
             input_port_status=PortStatus.COMPULSORY
         ),
         'prop_enum': PropDef(

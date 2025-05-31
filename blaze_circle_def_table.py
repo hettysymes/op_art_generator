@@ -53,7 +53,7 @@ class BlazeCircleDefWidget(QWidget):
     def set_item(self, circle_def: BlazeCircleDef, row):
         values = [circle_def.x_offset, circle_def.y_offset, circle_def.radius]
         for i, value in enumerate(values):
-            item = QTableWidgetItem(f"{value:.2f}")
+            item = QTableWidgetItem(f"{value:.3f}")
             item.setFlags(item.flags() | Qt.ItemIsEditable)
             item.setData(Qt.UserRole, value)
             self.table.setItem(row, i, item)
@@ -72,7 +72,7 @@ class BlazeCircleDefWidget(QWidget):
                 if new_offset <= 0 or new_offset > 1:
                     raise ValueError("Radius needs to be in range (0,1]")
             # Update item
-            item.setText(f"{new_offset:.2f}")
+            item.setText(f"{new_offset:.3f}")
             item.setData(Qt.UserRole, new_offset)
         except ValueError:
             # TODO: Show error or revert if input is invalid
