@@ -1280,13 +1280,13 @@ class PipelineScene(QGraphicsScene):
 
         clicked_item = self.itemAt(event.scenePos(), QGraphicsView.transform(self.view()))
 
-        if isinstance(clicked_item, PortItem):
-            # Print type for debugging
-            port: PortId = clicked_item.port
-            print(
-                f"Node {port.node} ({"Input" if port.is_input else "Output"}, {port.key}): {clicked_item.port_type}")
+        # if isinstance(clicked_item, PortItem):
+        #     # Print type for debugging
+        #     port: PortId = clicked_item.port
+        #     print(
+        #         f"Node {port.node} ({'Input' if port.is_input else 'Output'}, {port.key}): {clicked_item.port_type}")
 
-        elif isinstance(clicked_item, NodeItem):
+        if isinstance(clicked_item, NodeItem):
             node_info: NodeInfo = clicked_item.node_info
             # Context menu for nodes
             menu = QMenu()
