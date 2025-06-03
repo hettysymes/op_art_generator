@@ -4,7 +4,7 @@ from typing import cast
 from id_datatypes import PortId
 from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
-from nodes.nodes import UnitNode
+from nodes.nodes import UnitNode, RandomisableNode
 from nodes.prop_types import PT_Int, PropType, PT_Enum, PT_List, find_closest_common_base
 from nodes.prop_values import List, Int, Enum
 
@@ -21,11 +21,6 @@ DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
             display_name="Number of iterations",
             description="Number of random iterations of a node output to create, at least 1.",
             default_value=Int(3)
-        ),
-        'seed': PropDef(
-            prop_type=PT_Int(min_value=0),
-            display_name="Random seed",
-            description="Random seed used."
         ),
         'layout_enum': PropDef(
             prop_type=PT_Enum(),
@@ -46,15 +41,11 @@ DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
 )
 
 
-class RandomIteratorNode(UnitNode):
+class RandomIteratorNode(RandomisableNode):
     NAME = "Random Iterator"
     DEFAULT_NODE_INFO = DEF_RANDOM_ITERATOR_INFO
 
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier):
-        # Get random seed if first time computing
-        if props.get('seed') is None:
-            self.randomise()
-
         random_input = props.get('random_input')
         if random_input is None:
             return {}
@@ -68,7 +59,7 @@ class RandomIteratorNode(UnitNode):
             return {'_main': List(random_input.type, [random_input for _ in range(num_iterations)])}
 
         # Get random seeds
-        rng = random.Random(props.get('seed'))
+        rng = self.get_random_obj(props.get('seed'))
         seeds = [rng.random() for _ in range(num_iterations)]
         rprops, rrefs, rquerier = ref_querier.get_compute_inputs(random_node_ref)
 
@@ -90,17 +81,3 @@ class RandomIteratorNode(UnitNode):
         return {'_main': List(item_type=my_type,
                               items=items,
                               vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)}
-
-    # Functions needed for randomisable node # TODO make into interface
-
-    def randomise(self, seed=None):
-        min_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).min_value
-        max_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).max_value
-        self.internal_props['seed'] = seed if seed is not None else random.randint(min_seed, max_seed)
-
-    def get_seed(self):
-        return self.internal_props['seed']
-
-    @property
-    def randomisable(self):
-        return True

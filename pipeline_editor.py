@@ -237,6 +237,7 @@ class NodeItem(QGraphicsRectItem):
         self._help_text = f"{node_info.base_name} Help:\n{node_info.description}"
 
         self.resize_handle = None
+
         if not node_info.is_canvas:
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
