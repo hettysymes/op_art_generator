@@ -133,13 +133,13 @@ class NodeItem(QGraphicsRectItem):
         # Change node colour based on category:
         if node_info.category == NodeCategory.SOURCE or node_info.category == NodeCategory.CANVAS:
             # Purple
-            node_colour = QColor(225, 215, 235)
+            node_colour = QColor(199, 205, 237)
         elif node_info.category == NodeCategory.SHAPE_COMPOUNDER:
             # Blue
             node_colour = QColor(220, 230, 250)
         elif node_info.category == NodeCategory.PROPERTY_MODIFIER:
             # Peach
-            node_colour = QColor(240, 215, 205)
+            node_colour = QColor(237, 218, 209)
         else:
             # Green
             node_colour = QColor(200, 230, 220)
@@ -1328,12 +1328,12 @@ class PipelineScene(QGraphicsScene):
             # Add actions for each node type
             for category, node_classes in get_node_classes():
                 if len(node_classes) > 1:
-                    category_menu = menu.addMenu(f"{category.value[1]} Nodes")
+                    category_menu = menu.addMenu(f"{category.value[1]}s")
                 else:
                     category_menu = menu
                 for node_class in node_classes:
                     if issubclass(node_class, CombinationNode):
-                        submenu = category_menu.addMenu(f"{node_class.name()} Nodes")
+                        submenu = category_menu.addMenu(f"{node_class.name()}s")
                         for i in range(len(node_class.selections())):
                             change_action = QAction(node_class.selections()[i].name(), submenu)
                             handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=i)
