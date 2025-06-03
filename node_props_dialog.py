@@ -121,7 +121,7 @@ class NodePropertiesDialog(QDialog):
         self.scene = node_item.scene()
         self.setWindowTitle(f"Properties: {self.node_info.name}")
         self.setMinimumWidth(400)
-        self.ports_toggled: dict[PortId, bool] = {} # bool is True if port opened
+        self.ports_toggled: dict[PortId, bool] = {}  # bool is True if port opened
 
         # Main layout
         main_layout = QVBoxLayout()

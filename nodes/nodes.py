@@ -70,12 +70,11 @@ class RandomisableNode(UnitNode, ABC):
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._node_info: PrivateNodeInfo = self._default_node_info()
         self._node_info.prop_defs['seed'] = PropDef(
-                                                prop_type=PT_Int(min_value=0),
-                                                display_name="Random seed",
-                                                description="Random seed used."
-                                            )
+            prop_type=PT_Int(min_value=0),
+            display_name="Random seed",
+            description="Random seed used."
+        )
         super().__init__(internal_props)
-
 
     def randomise(self, seed=None):
         min_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).min_value
@@ -96,15 +95,16 @@ class RandomisableNode(UnitNode, ABC):
             seed = self.randomise()
         return random.Random(seed)
 
+
 class AnimatableNode(UnitNode, ABC):
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._node_info: PrivateNodeInfo = self._default_node_info()
         self._node_info.prop_defs['jump_time'] = PropDef(
-                                                    prop_type=PT_Float(min_value=10),
-                                                    display_name="Time between animate change / ms",
-                                                    default_value=Float(200)
-                                                )
-        self._time_left = 0 # In milliseconds
+            prop_type=PT_Float(min_value=10),
+            display_name="Time between animate change / ms",
+            default_value=Float(200)
+        )
+        self._time_left = 0  # In milliseconds
         self._playing = False
         super().__init__(internal_props)
 
@@ -129,6 +129,7 @@ class AnimatableNode(UnitNode, ABC):
 
     def toggle_play(self) -> None:
         self._playing = not self._playing
+
 
 class CombinationNode(Node, ABC):
     NAME = None
@@ -244,7 +245,7 @@ class CustomNode(Node):
         self._randomisable = bool(self.randomisable_nodes)
         # Animatable nodes
         self.animatable_nodes: list[NodeId] = [node for node in self.node_topo_order if
-                                                 self.sub_node_manager.node_info(node).animatable]
+                                               self.sub_node_manager.node_info(node).animatable]
         self._animatable = bool(self.animatable_nodes)
         self._playing = None
         self.set_playing(False)

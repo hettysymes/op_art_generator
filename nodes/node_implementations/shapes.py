@@ -5,7 +5,7 @@ from nodes.node_implementations.visualiser import get_rectangle
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Float, PT_Point, PT_Fill, PT_Int, \
-    PT_List, PT_PointsHolder, PT_Element, PT_Polyline, PT_Polygon, PT_Ellipse
+    PT_List, PT_PointsHolder, PT_Polyline, PT_Polygon, PT_Ellipse
 from nodes.prop_values import List, Int, Float, PointsHolder, Point, Colour, LineRef
 from nodes.shape_datatypes import Ellipse, SineWave, Polyline, Polygon
 
@@ -70,7 +70,7 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
             prop_type=PT_Fill(),
             display_name="Line colour",
             description="Colour of the line.",
-            default_value=Colour(0,0,0,255)
+            default_value=Colour(0, 0, 0, 255)
         ),
         '_main': PropDef(
             prop_type=PT_Polyline(),
@@ -88,7 +88,8 @@ class SineWaveNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_SINE_WAVE_INFO
 
     @staticmethod
-    def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, stroke=Colour(), num_points=100, orientation=0):
+    def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, stroke=Colour(), num_points=100,
+               orientation=0):
         return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, stroke, num_points).rotate(
             orientation, (0.5, 0.5))
 
@@ -98,7 +99,8 @@ class SineWaveNode(UnitNode):
                                             props.get('centre_y'),
                                             props.get('phase'), props.get('x_min'),
                                             props.get('x_max'),
-                                            props.get('stroke_width'), props.get('stroke_colour'), props.get('num_points'),
+                                            props.get('stroke_width'), props.get('stroke_colour'),
+                                            props.get('num_points'),
                                             props.get('orientation'))
         except ValueError as e:
             raise NodeInputException(e)
@@ -124,7 +126,7 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
             prop_type=PT_Fill(),
             display_name="Line colour",
             description="Colour of the line.",
-            default_value=Colour(0,0,0,255)
+            default_value=Colour(0, 0, 0, 255)
         ),
         '_main': PropDef(
             prop_type=PT_Polyline(),
@@ -142,7 +144,7 @@ class CustomLineNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
 
     @staticmethod
-    def helper(points, stroke=Colour(0,0,0,255), stroke_width=1):
+    def helper(points, stroke=Colour(0, 0, 0, 255), stroke_width=1):
         return Polyline(points, stroke, stroke_width)
 
     def compute(self, props: ResolvedProps, *args):
@@ -181,7 +183,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
             prop_type=PT_Fill(),
             display_name="Line colour",
             description="Colour of the line.",
-            default_value=Colour(0,0,0,255)
+            default_value=Colour(0, 0, 0, 255)
         ),
         '_main': PropDef(
             prop_type=PT_Polyline(),
@@ -199,12 +201,13 @@ class StraightLineNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_STRAIGHT_LINE_NODE_INFO
 
     @staticmethod
-    def helper(start_coord: Point, stop_coord: Point, stroke=Colour(0,0,0,255), stroke_width=1):
+    def helper(start_coord: Point, stop_coord: Point, stroke=Colour(0, 0, 0, 255), stroke_width=1):
         return Polyline(List(PT_Point(), [start_coord, stop_coord]), stroke, stroke_width)
 
     def compute(self, props: ResolvedProps, *args):
         return {'_main':
-                    StraightLineNode.helper(props.get('start_coord'), props.get('stop_coord'), props.get('stroke_colour'),
+                    StraightLineNode.helper(props.get('start_coord'), props.get('stop_coord'),
+                                            props.get('stroke_colour'),
                                             props.get('stroke_width'))}
 
 
@@ -365,7 +368,8 @@ class EllipseNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_ELLIPSE_INFO
 
     def compute(self, props: ResolvedProps, *args):
-        return {'_main': Ellipse(props.get('centre'), (props.get('rx'), props.get('ry')), props.get('fill'), props.get('stroke_colour'),
+        return {'_main': Ellipse(props.get('centre'), (props.get('rx'), props.get('ry')), props.get('fill'),
+                                 props.get('stroke_colour'),
                                  props.get('stroke_width')).rotate(props.get('orientation'), (0.5, 0.5))}
 
 
@@ -419,7 +423,8 @@ class CircleNode(UnitNode):
 
     def compute(self, props: ResolvedProps, *args):
         r = props.get('r')
-        return {'_main': Ellipse(props.get('centre'), (r, r), props.get('fill'), props.get('stroke_colour'), props.get('stroke_width'))}
+        return {'_main': Ellipse(props.get('centre'), (r, r), props.get('fill'), props.get('stroke_colour'),
+                                 props.get('stroke_width'))}
 
 
 class ShapeNode(CombinationNode):

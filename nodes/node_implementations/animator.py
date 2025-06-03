@@ -1,15 +1,12 @@
-from numbers import Number
-from typing import Optional, cast
+from typing import Optional
 
 from id_datatypes import PropKey
 from nodes.drawers.draw_graph import create_graph_svg
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from nodes.node_implementations.visualiser import visualise_by_type
-from nodes.nodes import UnitNode, AnimatableNode
-from nodes.prop_types import PT_Function, \
-    PT_Float, PT_Int, PT_List, PT_Number, PT_Enum
-from nodes.prop_values import PropValue, List, Int, Float, Enum
-from nodes.warp_datatypes import sample_fun
+from nodes.nodes import AnimatableNode
+from nodes.prop_types import PT_List, PT_Number, PT_Enum
+from nodes.prop_values import PropValue, List, Enum
 from vis_types import Visualisable, MatplotlibFig
 
 DEF_ANIMATOR_INFO = PrivateNodeInfo(

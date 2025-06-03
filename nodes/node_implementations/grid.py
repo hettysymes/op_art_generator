@@ -1,13 +1,8 @@
-from typing import Optional
-
-from id_datatypes import PropKey
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
-from nodes.node_implementations.visualiser import get_grid, add_background
+from nodes.node_implementations.visualiser import get_grid
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Warp, PT_Int, PT_Grid
-from nodes.prop_values import PropValue, Int, Grid, Colour
-from nodes.shape_datatypes import Group, Polyline
-from vis_types import Visualisable
+from nodes.prop_values import Int
 
 DEF_GRID_INFO = PrivateNodeInfo(
     description="Define a grid, which can be input to a Shape Repeater or Checkerboard node. The spacing between the vertical and horizontal lines of the grid can be altered via a Warp in the X or Y direction respectively.",

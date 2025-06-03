@@ -1,15 +1,8 @@
-from typing import Optional
-
-from id_datatypes import PropKey, PortId
+from id_datatypes import PortId
 from node_graph import RefId
-from nodes.drawers.draw_graph import create_graph_svg
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, Node, RefQuerier, ResolvedRefs
-from nodes.nodes import UnitNode, AnimatableNode
-from nodes.prop_types import PT_Function, \
-    PT_Float, PT_Int, PropType
-from nodes.prop_values import PropValue, List, Int, Float
-from nodes.warp_datatypes import sample_fun
-from vis_types import Visualisable, MatplotlibFig
+from nodes.nodes import AnimatableNode
+from nodes.prop_types import PropType
 
 DEF_RANDOM_ANIMATOR_INFO = PrivateNodeInfo(
     description="Takes a random node as input, and animates a random series of outputs.",
@@ -50,5 +43,3 @@ class RandomAnimatorNode(AnimatableNode):
         rprops['seed'] = None
         rrefs['seed'] = None
         return {'_main': random_node.final_compute(rprops, rrefs, rquerier)[src_port.key]}
-
-

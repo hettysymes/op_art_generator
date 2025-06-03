@@ -1,10 +1,9 @@
-import random
 from typing import cast
 
 from id_datatypes import PortId
 from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
-from nodes.nodes import UnitNode, RandomisableNode
+from nodes.nodes import RandomisableNode
 from nodes.prop_types import PT_Int, PropType, PT_Enum, PT_List, find_closest_common_base
 from nodes.prop_values import List, Int, Enum
 

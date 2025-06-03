@@ -21,7 +21,7 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
             default_value=Int(5)
         ),
         '_main': PropDef(
-            prop_type = PT_List(),
+            prop_type=PT_List(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Samples",

@@ -1,4 +1,3 @@
-from app_state import CustomNodeDef
 from nodes.node_defs import Node
 from nodes.node_implementations.animator import AnimatorNode
 from nodes.node_implementations.blaze_maker import BlazeMakerNode
@@ -24,7 +23,6 @@ from nodes.node_implementations.shape_repeater import ShapeRepeaterNode
 from nodes.node_implementations.shapes import ShapeNode
 from nodes.node_implementations.stacker import StackerNode
 from nodes.node_implementations.warp import WarpNode
-from nodes.nodes import CustomNode
 
 node_classes = [
     GridNode,
@@ -55,6 +53,5 @@ node_classes = [
 
 
 def get_node_classes() -> list[type[Node]]:
-    node_classes.sort(key=lambda n: n.name()) # Sort in alphabetical order
+    node_classes.sort(key=lambda n: n.name())  # Sort in alphabetical order
     return node_classes
-

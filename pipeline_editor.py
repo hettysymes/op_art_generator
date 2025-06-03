@@ -15,7 +15,7 @@ from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestu
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack,
-                             QUndoCommand, QGraphicsProxyWidget, QDialog, QLabel, QWidgetAction)
+                             QUndoCommand, QGraphicsProxyWidget, QDialog)
 from PyQt5.QtWidgets import QGraphicsPathItem
 from PyQt5.QtXml import QDomDocument, QDomElement
 
@@ -26,7 +26,7 @@ from id_datatypes import PortId, EdgeId, output_port, input_port, PropKey, node_
 from node_graph import NodeGraph, RefId
 from node_manager import NodeManager, NodeInfo
 from node_props_dialog import NodePropertiesDialog
-from nodes.all_nodes import node_classes, get_node_classes
+from nodes.all_nodes import get_node_classes
 from nodes.node_defs import Node, PropDef, PortStatus
 from nodes.nodes import CombinationNode, CustomNode
 from nodes.prop_types import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PropType, PT_Fill
@@ -237,7 +237,6 @@ class NodeItem(QGraphicsRectItem):
         self._help_text = f"{node_info.base_name} Help:\n{node_info.description}"
 
         self.resize_handle = None
-
         if not node_info.is_canvas:
             # Add resize handle
             self.resize_handle = ResizeHandle(self, 'bottomright')
@@ -927,7 +926,8 @@ class AddNewEdgeCmd(QUndoCommand):
 
 
 class ChangePropertiesCmd(QUndoCommand):
-    def __init__(self, node_item: NodeItem, props_changed, ports_toggled: dict[PortId, bool], description="Change properties"):
+    def __init__(self, node_item: NodeItem, props_changed, ports_toggled: dict[PortId, bool],
+                 description="Change properties"):
         super().__init__(description)
         self.node_item = node_item
         self.node_manager: NodeManager = node_item.node_manager
@@ -1052,13 +1052,14 @@ class RandomiseNodesCmd(QUndoCommand):
             self.node_manager.randomise(node)  # TODO: store new seed for redo
             self.scene.node_item(node).update_visualisations()
 
+
 class PlayNodesCmd(QUndoCommand):
     def __init__(self, scene, nodes: set[NodeId], description="Play node(s)"):
         super().__init__(description)
         self.scene = scene
         self.node_manager: NodeManager = scene.node_manager
         self.nodes = nodes  # Assumes these nodes are animatable
-        self.play_states: dict[NodeId, bool] = {} # Boolean is True if the node was playing
+        self.play_states: dict[NodeId, bool] = {}  # Boolean is True if the node was playing
 
     def undo(self):
         for node in self.nodes:
@@ -1074,13 +1075,14 @@ class PlayNodesCmd(QUndoCommand):
                 self.node_manager.toggle_play(node)
                 cast(NodeItem, self.scene.node_item(node)).update_play_btn_text()
 
+
 class PauseNodesCmd(QUndoCommand):
     def __init__(self, scene, nodes: set[NodeId], description="Pause node(s)"):
         super().__init__(description)
         self.scene = scene
         self.node_manager: NodeManager = scene.node_manager
         self.nodes = nodes  # Assumes these nodes are animatable
-        self.play_states: dict[NodeId, bool] = {} # Boolean is True if the node was playing
+        self.play_states: dict[NodeId, bool] = {}  # Boolean is True if the node was playing
 
     def undo(self):
         for node in self.nodes:
@@ -1812,8 +1814,8 @@ class PipelineEditor(QMainWindow):
     def register_custom_node(self):
         node_states, base_nodes, edges, port_refs = self.identify_selected_subgraph()
         node_states, base_nodes, edges, port_refs, old_to_new_id_map = self.deep_copy_subgraph(node_states, base_nodes,
-                                                                                          edges,
-                                                                                          port_refs)
+                                                                                               edges,
+                                                                                               port_refs)
 
         # Add nodes to sub node manager
         sub_node_manager: NodeManager = NodeManager()
@@ -1873,8 +1875,8 @@ class PipelineEditor(QMainWindow):
             # Register the custom node
             if name not in self.scene.custom_node_defs:
                 self.scene.custom_node_defs[name] = CustomNodeDef(sub_node_manager, selected_ports,
-                                                                           custom_names_dict,
-                                                                           vis_sel_node, description=description)
+                                                                  custom_names_dict,
+                                                                  vis_sel_node, description=description)
             else:
                 print("Error: custom node definition with same name already exists.")
             self.update_delete_custom_action_enabled()
@@ -1944,7 +1946,8 @@ class PipelineEditor(QMainWindow):
             clipboard = QApplication.clipboard()
             clipboard.setMimeData(mime_data)
 
-    def deep_copy_subgraph(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node], edges: set[EdgeId],
+    def deep_copy_subgraph(self, node_states: dict[NodeId, NodeState], base_nodes: dict[NodeId, Node],
+                           edges: set[EdgeId],
                            port_refs: dict[NodeId, dict[PortId, RefId]]):
         old_to_new_id_map = {}
         # Update node states
@@ -1987,7 +1990,7 @@ class PipelineEditor(QMainWindow):
             # Deserialize with pickle
             node_states, base_nodes, edges, port_refs, bounding_rect_centre = pickle.loads(bytes(raw_data))
             node_states, base_nodes, edges, port_refs, _ = self.deep_copy_subgraph(node_states, base_nodes, edges,
-                                                                              port_refs)
+                                                                                   port_refs)
             # Modify positions
             offset = self.view.mouse_pos - bounding_rect_centre
             for node_state in node_states.values():

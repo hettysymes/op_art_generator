@@ -82,7 +82,8 @@ class ShapeRepeaterNode(SelectableNode):
         if not grid or not elem_entries:
             return {}
         main_group = repeat_shapes(grid, List(PT_Element(), [elem_entry.element for elem_entry in elem_entries]),
-                                   row_iter=cast(Enum, props.get('row_iter_enum')).selected_option, scale_x=bool(props.get('scale_x')), scale_y=bool(props.get('scale_y')))
+                                   row_iter=cast(Enum, props.get('row_iter_enum')).selected_option,
+                                   scale_x=bool(props.get('scale_x')), scale_y=bool(props.get('scale_y')))
         ret_result = {'_main': main_group}
         for key in self.extracted_props:
             # Compute cell

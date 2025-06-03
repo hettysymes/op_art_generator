@@ -1,4 +1,3 @@
-import uuid
 from dataclasses import dataclass
 
 
@@ -9,6 +8,7 @@ class NodeId:
 
     def __str__(self):
         return f"#{self.value}"
+
 
 class NodeIdGenerator:
 
@@ -23,6 +23,7 @@ class NodeIdGenerator:
         curr_id = self._next_id
         self._next_id += 1
         return NodeId(curr_id)
+
 
 # Port ID
 type PropKey = str
