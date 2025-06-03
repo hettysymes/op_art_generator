@@ -96,6 +96,39 @@ class RandomisableNode(UnitNode, ABC):
             seed = self.randomise()
         return random.Random(seed)
 
+class AnimatableNode(UnitNode, ABC):
+    def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
+        self._node_info: PrivateNodeInfo = self._default_node_info()
+        self._node_info.prop_defs['jump_time'] = PropDef(
+                                                    prop_type=PT_Float(min_value=10),
+                                                    display_name="Time between animate change / ms",
+                                                    default_value=Float(200)
+                                                )
+        self._time_left = 0 # In milliseconds
+        self._playing = False
+        super().__init__(internal_props)
+
+    @property
+    def animatable(self) -> bool:
+        return True
+
+    @property
+    def playing(self) -> bool:
+        return self._playing
+
+    def reanimate(self, time: float) -> bool:
+        # time is time in milliseconds that has passed
+        # Returns True if it moved to the next animation step
+        assert self.playing
+        self._time_left -= time
+        if self._time_left <= 0:
+            # Reset time left
+            self._time_left: float = self.internal_props['jump_time']  # Time in milliseconds
+            return True
+        return False
+
+    def toggle_play(self) -> None:
+        self._playing = not self._playing
 
 class CombinationNode(Node, ABC):
     NAME = None
