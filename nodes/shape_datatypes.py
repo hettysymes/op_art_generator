@@ -23,8 +23,8 @@ def process_fill(fill: Fill, dwg):
 
 class Element(ElementHolder, Visualisable, ABC):
 
-    def __init__(self, debug_info=None, uid=None):
-        self.uid = uid if uid else str(uuid.uuid4())
+    def __init__(self, debug_info=None):
+        self.uid = str(uuid.uuid4())
         self.debug_info = debug_info
 
     @abstractmethod
@@ -44,7 +44,7 @@ class Element(ElementHolder, Visualisable, ABC):
         pass
 
     @abstractmethod
-    def shape_transformations(self):
+    def shape_transformations(self) -> list[tuple["Shape", TransformList]]:
         pass
 
     @abstractmethod
@@ -61,8 +61,8 @@ class Element(ElementHolder, Visualisable, ABC):
 
 class Group(Element, PointsHolder):
 
-    def __init__(self, transforms=None, debug_info=None, uid=None):
-        super().__init__(debug_info, uid)
+    def __init__(self, transforms=None, debug_info=None):
+        super().__init__(debug_info)
         self.elements = []
         self.transform_list = TransformList(transforms)
 
