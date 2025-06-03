@@ -48,7 +48,6 @@ node_classes = [
     PortForwarderNode,
     EllipseSamplerNode,
     DrawingCropperNode,
-    BlazeMakerNode,
     AnimatorNode,
     RandomAnimatorNode
 ]
@@ -67,5 +66,5 @@ def get_node_classes() -> list[tuple[NodeCategory, list[type[Node]]]]:
         result.append((category, sorted_nodes))
 
     # Sort by enum order
-    result.sort(key=lambda x: x[0].value)
+    result.sort(key=lambda x: x[0].value[0])
     return result

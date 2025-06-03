@@ -27,7 +27,8 @@ from node_graph import NodeGraph, RefId
 from node_manager import NodeManager, NodeInfo
 from node_props_dialog import NodePropertiesDialog
 from nodes.all_nodes import get_node_classes
-from nodes.node_defs import Node, PropDef, PortStatus
+from nodes.node_defs import Node, PropDef, PortStatus, NodeCategory
+from nodes.node_implementations.shapes import ShapeNode
 from nodes.nodes import CombinationNode, CustomNode
 from nodes.prop_types import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PropType, PT_Fill
 from nodes.prop_values import PropValue
@@ -128,7 +129,21 @@ class NodeItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.setBrush(QBrush(QColor(220, 230, 250)))
+
+        # Change node colour based on category:
+        if node_info.category == NodeCategory.SOURCE or node_info.category == NodeCategory.CANVAS:
+            # Purple
+            node_colour = QColor(225, 215, 235)
+        elif node_info.category == NodeCategory.SHAPE_COMPOUNDER:
+            # Blue
+            node_colour = QColor(220, 230, 250)
+        elif node_info.category == NodeCategory.PROPERTY_MODIFIER:
+            # Peach
+            node_colour = QColor(240, 215, 205)
+        else:
+            # Green
+            node_colour = QColor(200, 230, 220)
+        self.setBrush(QBrush(node_colour))
         self.setPen(QPen(Qt.black, 2))
 
         # Add property button
@@ -1312,20 +1327,23 @@ class PipelineScene(QGraphicsScene):
 
             # Add actions for each node type
             for category, node_classes in get_node_classes():
-                menu.addSeparator()
+                if len(node_classes) > 1:
+                    category_menu = menu.addMenu(f"{category.value[1]} Nodes")
+                else:
+                    category_menu = menu
                 for node_class in node_classes:
                     if issubclass(node_class, CombinationNode):
-                        submenu = menu.addMenu(node_class.name())
+                        submenu = category_menu.addMenu(f"{node_class.name()} Nodes")
                         for i in range(len(node_class.selections())):
                             change_action = QAction(node_class.selections()[i].name(), submenu)
                             handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=i)
                             change_action.triggered.connect(handler)
                             submenu.addAction(change_action)
                     else:
-                        action = QAction(node_class.name(), menu)
+                        action = QAction(node_class.name(), category_menu)
                         handler = partial(self.add_new_node, event.scenePos(), node_class)
                         action.triggered.connect(handler)
-                        menu.addAction(action)
+                        category_menu.addAction(action)
             # Add custom nodes
             if self.custom_node_defs:
                 menu.addSeparator()

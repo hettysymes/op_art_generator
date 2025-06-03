@@ -25,11 +25,11 @@ class PortStatus(Enum):
     FORBIDDEN = auto()
 
 class NodeCategory(Enum):
-    SOURCE = auto()
-    CANVAS = auto()
-    SHAPE_COMPOUNDER = auto()
-    PROPERTY_MODIFIER = auto()
-    UNKNOWN = auto()
+    SOURCE = (1, "Source")
+    CANVAS = (2, "Canvas")
+    SHAPE_COMPOUNDER = (3, "Shape Compounder")
+    PROPERTY_MODIFIER = (4, "Property Modifier")
+    UNKNOWN = (5, "Other")
 
 @dataclass(frozen=True)
 class PropDef:
@@ -114,7 +114,7 @@ class Node(ABC):
         return cls.NAME
 
     @classmethod
-    def node_category(cls) -> str:
+    def node_category(cls) -> NodeCategory:
         return cls.NODE_CATEGORY
 
     @property

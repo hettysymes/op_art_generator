@@ -4,7 +4,8 @@ from typing import Optional
 
 from id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from node_graph import NodeGraph
-from nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus
+from nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus, \
+    NodeCategory
 from nodes.node_implementations.canvas import CanvasNode
 from nodes.nodes import CombinationNode, SelectableNode
 from nodes.prop_types import PropType, PT_List
@@ -17,6 +18,7 @@ from vis_types import Visualisable
 class NodeInfo:
     uid: NodeId
     name: str
+    category: NodeCategory
     base_name: str
     description: str
     prop_defs: dict[PropKey, PropDef]
@@ -80,6 +82,7 @@ class NodeManager:
         return NodeInfo(
             uid=node,
             name=runtime_node.node.name(),
+            category=runtime_node.node.node_category(),
             base_name=runtime_node.node.base_name,
             description=runtime_node.node.description,
             prop_defs=runtime_node.node.prop_defs,

@@ -2,6 +2,7 @@ import math
 from typing import cast
 
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_implementations.blaze_maker import BlazeMakerNode
 from nodes.node_implementations.visualiser import get_rectangle
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
@@ -449,6 +450,6 @@ class CircleNode(UnitNode):
 
 
 class ShapeNode(CombinationNode):
-    NAME = "Shape"
+    NAME = "Source"
     NODE_CATEGORY = NodeCategory.SOURCE
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode, BlazeMakerNode]
