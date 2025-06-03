@@ -60,15 +60,16 @@ class AnimatorNode(AnimatableNode):
         output = val_list[self._curr_idx]
         old_idx = self._curr_idx
 
-        if props.get('iter_type_enum').selected_option:
-            # Reverse direction at boundaries and update index
-            if self._curr_idx == 0:
+        if self.tick_reanimate():
+            if props.get('iter_type_enum').selected_option:
+                # Reverse direction at boundaries and update index
+                if self._curr_idx == 0:
+                    self._right_dir = True
+                elif self._curr_idx == len(val_list) - 1:
+                    self._right_dir = False
+            else:
                 self._right_dir = True
-            elif self._curr_idx == len(val_list) - 1:
-                self._right_dir = False
-        else:
-            self._right_dir = True
-        self._curr_idx += 1 if self._right_dir else -1
+            self._curr_idx += 1 if self._right_dir else -1
 
         return {'_main': output, 'curr_index': old_idx, 'val_list': val_list}
 

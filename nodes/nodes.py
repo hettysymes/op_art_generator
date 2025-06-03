@@ -51,7 +51,7 @@ class SelectableNode(UnitNode, ABC):
     def _is_port_redundant(self, props: ResolvedProps, key: PropKey) -> bool:
         pass
 
-    def _add_prop_def(self, key: PropKey, prop_def: PropDef):
+    def _add_prop_def(self, key: PropKey, prop_def: PropDef) -> None:
         self.prop_defs[key] = prop_def
         self.extracted_props.add(key)
 
@@ -90,7 +90,7 @@ class RandomisableNode(UnitNode, ABC):
     def randomisable(self):
         return True
 
-    def get_random_obj(self, seed=None):
+    def get_random_obj(self, seed=None) -> random.Random:
         if seed is None:
             seed = self.randomise()
         return random.Random(seed)
@@ -106,6 +106,7 @@ class AnimatableNode(UnitNode, ABC):
         )
         self._time_left = 0  # In milliseconds
         self._playing = False
+        self._reanimate_on_compute = False
         super().__init__(internal_props)
 
     @property
@@ -116,6 +117,12 @@ class AnimatableNode(UnitNode, ABC):
     def playing(self) -> bool:
         return self._playing
 
+    def tick_reanimate(self) -> bool:
+        reanimate = self._reanimate_on_compute
+        if reanimate:
+            self._reanimate_on_compute = False
+        return reanimate
+
     def reanimate(self, time: float) -> bool:
         # time is time in milliseconds that has passed
         # Returns True if it moved to the next animation step
@@ -124,8 +131,10 @@ class AnimatableNode(UnitNode, ABC):
         if self._time_left <= 0:
             # Reset time left
             self._time_left: float = self.internal_props['jump_time']  # Time in milliseconds
-            return True
-        return False
+            self._reanimate_on_compute = True
+        else:
+            self._reanimate_on_compute = False
+        return self._reanimate_on_compute
 
     def toggle_play(self) -> None:
         self._playing = not self._playing
