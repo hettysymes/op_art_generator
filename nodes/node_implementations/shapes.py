@@ -1,3 +1,4 @@
+import math
 from typing import cast
 
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
@@ -7,7 +8,7 @@ from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Float, PT_Point, PT_Fill, PT_Int, \
     PT_List, PT_PointsHolder, PT_Polyline, PT_Polygon, PT_Ellipse
 from nodes.prop_values import List, Int, Float, PointsHolder, Point, Colour, LineRef
-from nodes.shape_datatypes import Ellipse, SineWave, Polyline, Polygon
+from nodes.shape_datatypes import Ellipse, Polyline, Polygon
 
 DEF_SINE_WAVE_INFO = PrivateNodeInfo(
     description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
@@ -90,8 +91,21 @@ class SineWaveNode(UnitNode):
     @staticmethod
     def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, stroke=Colour(), num_points=100,
                orientation=0):
-        return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, stroke, num_points).rotate(
-            orientation, (0.5, 0.5))
+        if x_min > x_max:
+            raise ValueError("Wave start position must be smaller than wave stop position.")
+        points = List(PT_Point())
+
+        # Generate 100 evenly spaced x-values between x_min and x_max
+        x_values = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
+
+        # Calculate corresponding y-values using the sine wave formula
+        for x in x_values:
+            # Standard sine wave equation: y = A * sin(2π * x / λ + φ) + centre_y
+            # where A is amplitude, λ is wavelength, and φ is phase
+            y = amplitude * math.sin(2 * math.pi * x / wavelength + math.radians(phase)) + centre_y
+            points.append(Point(x, y))
+
+        return Polyline(points, stroke, stroke_width).rotate(orientation, (0.5, 0.5))
 
     def compute(self, props: ResolvedProps, *args):
         try:
