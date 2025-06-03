@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode
 from nodes.prop_types import PropType
 
@@ -24,6 +24,7 @@ DEF_PORT_FORWARDER_INFO = PrivateNodeInfo(
 
 class PortForwarderNode(UnitNode):
     NAME = "Port Forwarder"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_PORT_FORWARDER_INFO
 
     def compute(self, props: ResolvedProps, *args):

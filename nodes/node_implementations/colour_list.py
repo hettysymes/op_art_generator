@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_List, PT_FillHolder, PT_Fill
 from nodes.prop_values import List, Colour
@@ -27,6 +27,7 @@ DEF_COLOUR_LIST_INFO = PrivateNodeInfo(
 
 class ColourListNode(UnitNode):
     NAME = "Colour List"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_COLOUR_LIST_INFO
 
     def compute(self, props: ResolvedProps, *args):

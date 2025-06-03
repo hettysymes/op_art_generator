@@ -24,6 +24,12 @@ class PortStatus(Enum):
     OPTIONAL = auto()
     FORBIDDEN = auto()
 
+class NodeCategory(Enum):
+    SOURCE = auto()
+    CANVAS = auto()
+    SHAPE_COMPOUNDER = auto()
+    PROPERTY_MODIFIER = auto()
+    UNKNOWN = auto()
 
 @dataclass(frozen=True)
 class PropDef:
@@ -78,6 +84,7 @@ class PrivateNodeInfo:
 
 class Node(ABC):
     NAME = ""  # To override
+    NODE_CATEGORY = NodeCategory.UNKNOWN # To override
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None):
         self.internal_props: dict[
@@ -105,6 +112,10 @@ class Node(ABC):
     @classmethod
     def name(cls) -> str:
         return cls.NAME
+
+    @classmethod
+    def node_category(cls) -> str:
+        return cls.NODE_CATEGORY
 
     @property
     def base_name(self) -> str:

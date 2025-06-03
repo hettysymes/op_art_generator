@@ -1,6 +1,6 @@
 from typing import Optional
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Element, PT_Point
 from nodes.prop_values import Point
@@ -43,6 +43,7 @@ DEF_DRAWING_CROPPER_INFO = PrivateNodeInfo(
 
 class DrawingCropperNode(UnitNode):
     NAME = "Drawing Reframer"
+    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_DRAWING_CROPPER_INFO
 
     def compute(self, props: ResolvedProps, *args):

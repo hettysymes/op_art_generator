@@ -5,7 +5,8 @@ from typing import Optional, cast
 
 from id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
 from node_graph import RefId
-from nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus
+from nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus, \
+    NodeCategory
 from nodes.prop_types import PT_Int, PT_Float
 from nodes.prop_values import PropValue, Float
 from nodes.shape_datatypes import Group
@@ -14,6 +15,7 @@ from vis_types import Visualisable
 
 class UnitNode(Node, ABC):
     NAME = None
+    NODE_CATEGORY = None
     DEFAULT_NODE_INFO = None
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
@@ -31,6 +33,7 @@ class UnitNode(Node, ABC):
 
 class SelectableNode(UnitNode, ABC):
     NAME = None
+    NODE_CATEGORY = None
     DEFAULT_NODE_INFO = None
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
@@ -142,6 +145,7 @@ class AnimatableNode(UnitNode, ABC):
 
 class CombinationNode(Node, ABC):
     NAME = None
+    NODE_CATEGORY = None
     SELECTIONS: list[type[Node]] = []  # To override
 
     def __init__(self, internal_props=None, add_info=0):
@@ -197,6 +201,7 @@ class CombinationNode(Node, ABC):
 
 class CustomNode(Node):
     NAME = "Custom"
+    NODE_CATEGORY = NodeCategory.UNKNOWN
     DEFAULT_NODE_INFO = None
 
     @staticmethod

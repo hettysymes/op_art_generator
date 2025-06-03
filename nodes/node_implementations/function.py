@@ -1,7 +1,7 @@
 import sympy as sp
 
 from nodes.function_datatypes import CubicFun, CustomFun, PiecewiseFun
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Function, PT_Float, PT_String, PT_PointsHolder, PT_List
 from nodes.prop_values import List, Float, Point
@@ -46,6 +46,7 @@ DEF_CUBIC_FUN_INFO = PrivateNodeInfo(
 
 class CubicFunNode(UnitNode):
     NAME = "Cubic Function"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_CUBIC_FUN_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -76,6 +77,7 @@ DEF_CUSTOM_FUN_INFO = PrivateNodeInfo(
 
 class CustomFunNode(UnitNode):
     NAME = "Custom Function"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_CUSTOM_FUN_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -107,6 +109,7 @@ DEF_PIECEWISE_FUN_INFO = PrivateNodeInfo(
 
 class PiecewiseFunNode(UnitNode):
     NAME = "Piecewise Linear Function"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_PIECEWISE_FUN_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -116,4 +119,5 @@ class PiecewiseFunNode(UnitNode):
 
 class FunctionNode(CombinationNode):
     NAME = "Function"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     SELECTIONS = [CubicFunNode, PiecewiseFunNode, CustomFunNode]

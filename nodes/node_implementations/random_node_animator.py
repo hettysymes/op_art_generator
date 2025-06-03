@@ -1,6 +1,7 @@
 from id_datatypes import PortId
 from node_graph import RefId
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, Node, RefQuerier, ResolvedRefs
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, Node, RefQuerier, ResolvedRefs, \
+    NodeCategory
 from nodes.nodes import AnimatableNode
 from nodes.prop_types import PropType
 
@@ -24,6 +25,7 @@ DEF_RANDOM_ANIMATOR_INFO = PrivateNodeInfo(
 
 class RandomAnimatorNode(AnimatableNode):
     NAME = "Random Animator"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_RANDOM_ANIMATOR_INFO
 
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier):

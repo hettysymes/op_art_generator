@@ -1,6 +1,6 @@
 import math
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Ellipse, PT_Float, PT_Int, PT_Point, PT_List
 from nodes.prop_values import List, Int, Float, Point
@@ -43,6 +43,7 @@ DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(
 
 class EllipseSamplerNode(UnitNode):
     NAME = "Ellipse Sampler"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_ELLIPSE_SAMPLER_INFO
 
     @staticmethod

@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient
 from nodes.prop_values import List, Point, Colour, Gradient, GradOffset
@@ -25,6 +25,7 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
 
 class ColourNode(UnitNode):
     NAME = "Solid Colour"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -68,6 +69,7 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
 
 class GradientNode(UnitNode):
     NAME = "Linear Gradient"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_GRADIENT_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -76,4 +78,5 @@ class GradientNode(UnitNode):
 
 class FillNode(CombinationNode):
     NAME = "Colour"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     SELECTIONS = [ColourNode, GradientNode]

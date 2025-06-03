@@ -1,6 +1,6 @@
 import itertools
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Element, PT_List, PT_FillHolder, PT_Point, \
@@ -36,6 +36,7 @@ DEF_COLOUR_FILLER_INFO = PrivateNodeInfo(
 
 class ColourFillerNode(UnitNode):
     NAME = "Colour Filler"
+    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_COLOUR_FILLER_INFO
 
     @staticmethod

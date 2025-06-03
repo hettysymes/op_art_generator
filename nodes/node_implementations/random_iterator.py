@@ -2,7 +2,8 @@ from typing import cast
 
 from id_datatypes import PortId
 from node_graph import RefId
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus, \
+    NodeCategory
 from nodes.nodes import RandomisableNode
 from nodes.prop_types import PT_Int, PropType, PT_Enum, PT_List, find_closest_common_base
 from nodes.prop_values import List, Int, Enum
@@ -42,6 +43,7 @@ DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
 
 class RandomIteratorNode(RandomisableNode):
     NAME = "Random Iterator"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_RANDOM_ITERATOR_INFO
 
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier):

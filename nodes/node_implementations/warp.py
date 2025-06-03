@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Function, PT_Warp
@@ -27,6 +27,7 @@ DEF_POS_WARP_NODE_INFO = PrivateNodeInfo(
 
 class PosWarpNode(UnitNode):
     NAME = "Position Warp"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_POS_WARP_NODE_INFO
 
     @staticmethod
@@ -67,6 +68,7 @@ DEF_REL_WARP_NODE_INFO = PrivateNodeInfo(
 
 class RelWarpNode(UnitNode):
     NAME = "Relative Warp"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_REL_WARP_NODE_INFO
 
     @staticmethod
@@ -86,4 +88,5 @@ class RelWarpNode(UnitNode):
 
 class WarpNode(CombinationNode):
     NAME = "Warp"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     SELECTIONS = [PosWarpNode, RelWarpNode]

@@ -2,7 +2,7 @@ from typing import Optional
 
 from id_datatypes import PropKey
 from nodes.drawers.draw_graph import create_graph_svg
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.node_implementations.visualiser import visualise_by_type
 from nodes.nodes import AnimatableNode
 from nodes.prop_types import PT_List, PT_Number, PT_Enum
@@ -38,6 +38,7 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
 
 class AnimatorNode(AnimatableNode):
     NAME = "List Animator"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_ANIMATOR_INFO
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):

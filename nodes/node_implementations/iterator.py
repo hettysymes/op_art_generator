@@ -2,7 +2,8 @@ from typing import Optional, cast
 
 from id_datatypes import PropKey
 from node_graph import RefId
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus, \
+    NodeCategory
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_List, PT_Element, PropType, PT_Enum
@@ -51,6 +52,7 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
 
 class IteratorNode(UnitNode):
     NAME = "Property Iterator"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
 
     def _update_prop_change_enum(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> bool:

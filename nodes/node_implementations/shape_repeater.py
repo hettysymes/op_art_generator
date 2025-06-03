@@ -1,7 +1,7 @@
 from typing import cast
 
 from id_datatypes import PropKey
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.node_implementations.visualiser import repeat_shapes
 from nodes.nodes import SelectableNode
 from nodes.prop_types import PT_Grid, PT_Element, PT_List, PT_ElementHolder, PT_Enum, PT_Bool
@@ -65,6 +65,7 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
 
 class ShapeRepeaterNode(SelectableNode):
     NAME = "Grid Repeater"
+    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_SHAPE_REPEATER_NODE_INFO
 
     @staticmethod

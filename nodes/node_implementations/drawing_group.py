@@ -1,6 +1,6 @@
 from typing import cast
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Enum, PT_ElementHolder, PT_List, PT_Element
 from nodes.prop_values import List, Enum
@@ -37,6 +37,7 @@ DEF_DRAWING_GROUP_INFO = PrivateNodeInfo(
 
 class DrawingGroupNode(UnitNode):
     NAME = "Drawing Group"
+    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_DRAWING_GROUP_INFO
 
     def compute(self, props: ResolvedProps, *args):

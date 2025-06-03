@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Function, PT_Int, PT_Float, PT_List
 from nodes.prop_values import List, Int, Float
@@ -33,6 +33,7 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
 
 class FunSamplerNode(UnitNode):
     NAME = "Function Sampler"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_FUN_SAMPLER_INFO
 
     @staticmethod

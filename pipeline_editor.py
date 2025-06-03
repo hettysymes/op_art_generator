@@ -1311,19 +1311,21 @@ class PipelineScene(QGraphicsScene):
             menu = QMenu()
 
             # Add actions for each node type
-            for node_class in get_node_classes():
-                if issubclass(node_class, CombinationNode):
-                    submenu = menu.addMenu(node_class.name())
-                    for i in range(len(node_class.selections())):
-                        change_action = QAction(node_class.selections()[i].name(), submenu)
-                        handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=i)
-                        change_action.triggered.connect(handler)
-                        submenu.addAction(change_action)
-                else:
-                    action = QAction(node_class.name(), menu)
-                    handler = partial(self.add_new_node, event.scenePos(), node_class)
-                    action.triggered.connect(handler)
-                    menu.addAction(action)
+            for category, node_classes in get_node_classes():
+                menu.addSeparator()
+                for node_class in node_classes:
+                    if issubclass(node_class, CombinationNode):
+                        submenu = menu.addMenu(node_class.name())
+                        for i in range(len(node_class.selections())):
+                            change_action = QAction(node_class.selections()[i].name(), submenu)
+                            handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=i)
+                            change_action.triggered.connect(handler)
+                            submenu.addAction(change_action)
+                    else:
+                        action = QAction(node_class.name(), menu)
+                        handler = partial(self.add_new_node, event.scenePos(), node_class)
+                        action.triggered.connect(handler)
+                        menu.addAction(action)
             # Add custom nodes
             if self.custom_node_defs:
                 menu.addSeparator()

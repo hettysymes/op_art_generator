@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import RandomisableNode
 from nodes.prop_types import PT_List, PT_ValProbPairHolder
 from nodes.prop_values import PropValue, List
@@ -26,6 +26,7 @@ DEF_RANDOM_PORT_SELECTOR_INFO = PrivateNodeInfo(
 
 class RandomPortSelectorNode(RandomisableNode):
     NAME = "Random Port Selector"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_RANDOM_PORT_SELECTOR_INFO
 
     def compute(self, props: ResolvedProps, *args):

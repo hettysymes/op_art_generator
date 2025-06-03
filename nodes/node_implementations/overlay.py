@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_List, PT_ElementHolder, PT_Element
 from nodes.prop_values import List
@@ -28,6 +28,7 @@ DEF_OVERLAY_INFO = PrivateNodeInfo(
 
 class OverlayNode(UnitNode):
     NAME = "Overlay"
+    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_OVERLAY_INFO
 
     def compute(self, props: ResolvedProps, *args):

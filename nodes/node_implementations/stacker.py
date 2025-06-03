@@ -1,6 +1,6 @@
 from typing import cast
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Element, PT_List, PT_Enum, PT_Float, PT_ElementHolder
 from nodes.prop_values import List, Float, Enum
@@ -55,6 +55,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
 
 class StackerNode(UnitNode):
     NAME = "Stacker"
+    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_STACKER_NODE_INFO
 
     @staticmethod
