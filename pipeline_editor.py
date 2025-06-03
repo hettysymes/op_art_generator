@@ -8,10 +8,10 @@ from collections import defaultdict
 from functools import partial
 from typing import cast, Optional
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData, QRect
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QKeySequence, \
-    QFontMetrics
+    QFontMetrics, QRegion
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack,
@@ -158,7 +158,6 @@ class NodeItem(QGraphicsRectItem):
                 QPushButton {
                     background-color: #f0f0f0;
                     border: 1px solid #646464;
-                    border-radius: 4px;
                     font-weight: bold;
                 }
                 QPushButton:hover {
@@ -181,7 +180,6 @@ class NodeItem(QGraphicsRectItem):
                 QPushButton {
                     background-color: #f0f0f0;
                     border: 1px solid #646464;
-                    border-radius: 4px;
                     font-weight: bold;
                 }
                 QPushButton:hover {
@@ -206,7 +204,6 @@ class NodeItem(QGraphicsRectItem):
                         QPushButton {
                             background-color: #f0f0f0;
                             border: 1px solid #646464;
-                            border-radius: 4px;
                             font-weight: bold;
                         }
                         QPushButton:hover {
@@ -230,7 +227,6 @@ class NodeItem(QGraphicsRectItem):
                                     QPushButton {
                                         background-color: #f0f0f0;
                                         border: 1px solid #646464;
-                                        border-radius: 4px;
                                         font-weight: bold;
                                     }
                                     QPushButton:hover {
