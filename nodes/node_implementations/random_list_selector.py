@@ -24,7 +24,7 @@ DEF_RANDOM_LIST_SELECTOR_INFO = PrivateNodeInfo(
 
 class RandomListSelectorNode(RandomisableNode):
     NAME = "Random List Selector"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.SELECTOR
     DEFAULT_NODE_INFO = DEF_RANDOM_LIST_SELECTOR_INFO
 
     def compute(self, props: ResolvedProps, *args):

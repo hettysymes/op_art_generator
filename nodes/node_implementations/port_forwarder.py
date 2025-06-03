@@ -24,7 +24,7 @@ DEF_PORT_FORWARDER_INFO = PrivateNodeInfo(
 
 class PortForwarderNode(UnitNode):
     NAME = "Port Forwarder"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.SELECTOR
     DEFAULT_NODE_INFO = DEF_PORT_FORWARDER_INFO
 
     def compute(self, props: ResolvedProps, *args):

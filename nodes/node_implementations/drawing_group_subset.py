@@ -43,7 +43,7 @@ DEF_DRAWING_GROUP_SUBSET_INFO = PrivateNodeInfo(
 
 class DrawingGroupSubsetNode(UnitNode):
     NAME = "Subset Group"
-    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
+    NODE_CATEGORY = NodeCategory.SELECTOR
     DEFAULT_NODE_INFO = DEF_DRAWING_GROUP_SUBSET_INFO
 
     def compute(self, props: ResolvedProps, *args):

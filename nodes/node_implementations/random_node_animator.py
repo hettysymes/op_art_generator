@@ -25,7 +25,7 @@ DEF_RANDOM_ANIMATOR_INFO = PrivateNodeInfo(
 
 class RandomAnimatorNode(AnimatableNode):
     NAME = "Random Animator"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.ANIMATOR
     DEFAULT_NODE_INFO = DEF_RANDOM_ANIMATOR_INFO
 
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier):

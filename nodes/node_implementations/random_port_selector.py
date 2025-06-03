@@ -26,7 +26,7 @@ DEF_RANDOM_PORT_SELECTOR_INFO = PrivateNodeInfo(
 
 class RandomPortSelectorNode(RandomisableNode):
     NAME = "Random Port Selector"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.SELECTOR
     DEFAULT_NODE_INFO = DEF_RANDOM_PORT_SELECTOR_INFO
 
     def compute(self, props: ResolvedProps, *args):
