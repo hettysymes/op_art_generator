@@ -25,6 +25,7 @@ def find_closest_common_base(types):
 
     return object  # Fallback if no common base
 
+
 # Scalar
 class PT_Scalar(PropType):
 

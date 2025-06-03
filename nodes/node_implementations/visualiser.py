@@ -36,7 +36,7 @@ def get_grid(width=1, height=1, x_warp=None, y_warp=None) -> Grid:
     return Grid(v_line_xs, h_line_ys)
 
 
-def repeat_shapes(grid: Grid, elements: List[PT_Element], row_iter=True, scale_x=True, scale_y = True):
+def repeat_shapes(grid: Grid, elements: List[PT_Element], row_iter=True, scale_x=True, scale_y=True):
     ret_group = Group(debug_info="Shape Repeater")
     element_it = itertools.cycle(elements)
 
@@ -54,8 +54,8 @@ def repeat_shapes(grid: Grid, elements: List[PT_Element], row_iter=True, scale_x
         x2 = grid.v_line_xs[j + 1]
         y1 = grid.h_line_ys[i]
         y2 = grid.h_line_ys[i + 1]
-        x_sf = x2-x1 if scale_x else 1/cols
-        y_sf = y2-y1 if scale_y else 1/rows
+        x_sf = x2 - x1 if scale_x else 1 / cols
+        y_sf = y2 - y1 if scale_y else 1 / rows
         cell_group = Group([Scale(x_sf, y_sf), Translate(x1, y1)], debug_info=f"Cell ({i},{j})")
         cell_group.add(next(element_it))
         ret_group.add(cell_group)
@@ -66,6 +66,7 @@ def repeat_shapes(grid: Grid, elements: List[PT_Element], row_iter=True, scale_x
 def get_rectangle(fill: Fill, stroke: Fill = Colour(), stroke_width=0):
     return Polygon([Point(0, 0), Point(0, 1), Point(1, 1), Point(1, 0)], fill, stroke, stroke_width)
 
+
 def draw_grid(grid: Grid) -> Element:
     grid_group = Group(debug_info="Grid")
     for x in grid.v_line_xs:
@@ -75,6 +76,7 @@ def draw_grid(grid: Grid) -> Element:
         # Draw vertical lines
         grid_group.add(Polyline([(0, y), (1, y)], stroke=Colour(0, 0, 0, 255), stroke_width=2))
     return add_background(grid_group, Colour(255, 255, 255, 255))
+
 
 def visualise_by_type(value, value_type):
     if value is None:

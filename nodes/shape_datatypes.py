@@ -183,7 +183,7 @@ class Shape(Element, ABC):
 
 class Polyline(Shape, PointsHolder):
 
-    def __init__(self, points: List[PT_Point], stroke: Fill = Colour(0,0,0,255), stroke_width=1):
+    def __init__(self, points: List[PT_Point], stroke: Fill = Colour(0, 0, 0, 255), stroke_width=1):
         super().__init__()
         self._points = points
         self.stroke = stroke

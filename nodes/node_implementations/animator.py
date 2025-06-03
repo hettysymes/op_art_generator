@@ -1,15 +1,12 @@
-from numbers import Number
-from typing import Optional, cast
+from typing import Optional
 
 from id_datatypes import PropKey
 from nodes.drawers.draw_graph import create_graph_svg
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
 from nodes.node_implementations.visualiser import visualise_by_type
-from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Function, \
-    PT_Float, PT_Int, PT_List, PT_Number, PT_Enum
-from nodes.prop_values import PropValue, List, Int, Float, Enum
-from nodes.warp_datatypes import sample_fun
+from nodes.nodes import AnimatableNode
+from nodes.prop_types import PT_List, PT_Number, PT_Enum
+from nodes.prop_values import PropValue, List, Enum
 from vis_types import Visualisable, MatplotlibFig
 
 DEF_ANIMATOR_INFO = PrivateNodeInfo(
@@ -20,13 +17,6 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
             display_in_props=False
-        ),
-        'jump_time': PropDef(
-            prop_type=PT_Float(min_value=10),
-            display_name="Time between animate change / ms",
-            input_port_status=PortStatus.FORBIDDEN,
-            output_port_status=PortStatus.FORBIDDEN,
-            default_value=Float(100)
         ),
         'iter_type_enum': PropDef(
             prop_type=PT_Enum(),
@@ -46,16 +36,14 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
 )
 
 
-class AnimatorNode(UnitNode):
+class AnimatorNode(AnimatableNode):
     NAME = "List Animator"
     DEFAULT_NODE_INFO = DEF_ANIMATOR_INFO
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._curr_idx = None
         self._right_dir = None
-        self._time_left = 0  # In milliseconds
         self._reset_idx()
-        self._playing = False
         super().__init__(internal_props, add_info)
 
     def _reset_idx(self):
@@ -93,25 +81,3 @@ class AnimatorNode(UnitNode):
                     create_graph_svg(val_list.items, scatter=True, highlight_index=compute_results.get('curr_index')))
             return visualise_by_type(output, output.type)
         return None
-
-    @property
-    def animatable(self) -> bool:
-        return True
-
-    @property
-    def playing(self) -> bool:
-        return self._playing
-
-    def reanimate(self, time: float) -> bool:
-        # time is time in milliseconds that has passed
-        # Returns True if it moved to the next animation step
-        assert self.playing
-        self._time_left -= time
-        if self._time_left <= 0:
-            # Reset time left
-            self._time_left: float = self.internal_props['jump_time']  # Time in milliseconds
-            return True
-        return False
-
-    def toggle_play(self) -> None:
-        self._playing = not self._playing

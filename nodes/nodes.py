@@ -65,6 +65,72 @@ class SelectableNode(UnitNode, ABC):
         self.extracted_props: set[PropKey] = {key for key in self.extracted_props if key not in keys_to_remove}
 
 
+class RandomisableNode(UnitNode, ABC):
+
+    def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
+        self._node_info: PrivateNodeInfo = self._default_node_info()
+        self._node_info.prop_defs['seed'] = PropDef(
+            prop_type=PT_Int(min_value=0),
+            display_name="Random seed",
+            description="Random seed used."
+        )
+        super().__init__(internal_props)
+
+    def randomise(self, seed=None):
+        min_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).min_value
+        max_seed: int = cast(PT_Int, self.prop_defs['seed'].prop_type).max_value
+        set_seed = seed if seed is not None else random.randint(min_seed, max_seed)
+        self.internal_props['seed'] = set_seed
+        return set_seed
+
+    def get_seed(self):
+        return self.internal_props['seed']
+
+    @property
+    def randomisable(self):
+        return True
+
+    def get_random_obj(self, seed=None):
+        if seed is None:
+            seed = self.randomise()
+        return random.Random(seed)
+
+
+class AnimatableNode(UnitNode, ABC):
+    def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
+        self._node_info: PrivateNodeInfo = self._default_node_info()
+        self._node_info.prop_defs['jump_time'] = PropDef(
+            prop_type=PT_Float(min_value=10),
+            display_name="Time between animate change / ms",
+            default_value=Float(200)
+        )
+        self._time_left = 0  # In milliseconds
+        self._playing = False
+        super().__init__(internal_props)
+
+    @property
+    def animatable(self) -> bool:
+        return True
+
+    @property
+    def playing(self) -> bool:
+        return self._playing
+
+    def reanimate(self, time: float) -> bool:
+        # time is time in milliseconds that has passed
+        # Returns True if it moved to the next animation step
+        assert self.playing
+        self._time_left -= time
+        if self._time_left <= 0:
+            # Reset time left
+            self._time_left: float = self.internal_props['jump_time']  # Time in milliseconds
+            return True
+        return False
+
+    def toggle_play(self) -> None:
+        self._playing = not self._playing
+
+
 class CombinationNode(Node, ABC):
     NAME = None
     SELECTIONS: list[type[Node]] = []  # To override
@@ -179,7 +245,7 @@ class CustomNode(Node):
         self._randomisable = bool(self.randomisable_nodes)
         # Animatable nodes
         self.animatable_nodes: list[NodeId] = [node for node in self.node_topo_order if
-                                                 self.sub_node_manager.node_info(node).animatable]
+                                               self.sub_node_manager.node_info(node).animatable]
         self._animatable = bool(self.animatable_nodes)
         self._playing = None
         self.set_playing(False)

@@ -175,8 +175,10 @@ class PortRenameTable(QWidget):
                     result[(node_id, port_key)] = custom_name
         return result
 
+
 def process_name(name: str) -> str:
     return name.strip().title()
+
 
 class RegCustomDialog(QDialog):
     def __init__(self, node_to_info, existing_names):
