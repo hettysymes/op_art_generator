@@ -1,6 +1,6 @@
 import math
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Ellipse, PT_Float, PT_Int, PT_Point, PT_List
 from nodes.prop_values import List, Int, Float, Point
@@ -35,7 +35,7 @@ DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Samples",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

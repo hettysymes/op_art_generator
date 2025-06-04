@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Function, PT_Int, PT_Float, PT_List
 from nodes.prop_values import List, Int, Float
@@ -12,7 +12,7 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
             display_name="Function",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         'num_samples': PropDef(
             prop_type=PT_Int(min_value=1),
@@ -25,7 +25,7 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Samples",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

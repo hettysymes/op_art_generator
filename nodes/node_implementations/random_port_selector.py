@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import RandomisableNode
 from nodes.prop_types import PT_List, PT_ValProbPairHolder
 from nodes.prop_values import PropValue, List
@@ -18,7 +18,7 @@ DEF_RANDOM_PORT_SELECTOR_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Random selection",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

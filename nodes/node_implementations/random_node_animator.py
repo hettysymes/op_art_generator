@@ -1,7 +1,7 @@
 from id_datatypes import PortId
 from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, Node, RefQuerier, ResolvedRefs, \
-    NodeCategory
+    NodeCategory, DisplayStatus
 from nodes.nodes import AnimatableNode
 from nodes.prop_types import PropType
 
@@ -17,7 +17,7 @@ DEF_RANDOM_ANIMATOR_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Random Output",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

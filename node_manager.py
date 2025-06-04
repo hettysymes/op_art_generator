@@ -5,7 +5,7 @@ from typing import Optional
 from id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from node_graph import NodeGraph
 from nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus, \
-    NodeCategory
+    NodeCategory, DisplayStatus
 from nodes.node_implementations.canvas import CanvasNode
 from nodes.nodes import CombinationNode, SelectableNode
 from nodes.prop_types import PropType, PT_List
@@ -38,8 +38,10 @@ class NodeInfo:
         return results
 
     def requires_property_box(self) -> bool:
-        return any(prop_def.display_in_props for prop_def in self.prop_defs.values())
-
+        return any(
+            prop_def.display_status != DisplayStatus.NO_DISPLAY
+            for prop_def in self.prop_defs.values()
+        )
 
 class NodeManager:
 

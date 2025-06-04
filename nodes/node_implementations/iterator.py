@@ -3,7 +3,7 @@ from typing import Optional, cast
 from id_datatypes import PropKey
 from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus, \
-    NodeCategory
+    NodeCategory, DisplayStatus
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_List, PT_Element, PropType, PT_Enum
@@ -44,7 +44,7 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Iterations",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -67,7 +67,7 @@ class IteratorNode(UnitNode):
         display_options = []
         prop_types = {}
         for prop_key, prop_def in node_info.prop_defs.items():
-            if cast(PropDef, prop_def).display_in_props:
+            if cast(PropDef, prop_def).display_status:
                 options.append(prop_key)
                 display_options.append(prop_def.display_name)
                 prop_types[prop_key] = prop_def.prop_type

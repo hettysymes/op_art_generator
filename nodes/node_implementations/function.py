@@ -1,7 +1,7 @@
 import sympy as sp
 
 from nodes.function_datatypes import CubicFun, CustomFun, PiecewiseFun
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Function, PT_Float, PT_String, PT_PointsHolder, PT_List
 from nodes.prop_values import List, Float, Point
@@ -14,7 +14,7 @@ DEF_CUBIC_FUN_INFO = PrivateNodeInfo(
             display_name="Function",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         'a_coeff': PropDef(
             prop_type=PT_Float(),
@@ -63,7 +63,7 @@ DEF_CUSTOM_FUN_INFO = PrivateNodeInfo(
             display_name="Function",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         'fun_def': PropDef(
             prop_type=PT_String(),
@@ -94,7 +94,7 @@ DEF_PIECEWISE_FUN_INFO = PrivateNodeInfo(
             display_name="Function",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         'points': PropDef(
             prop_type=PT_List(PT_PointsHolder(), input_multiple=True),

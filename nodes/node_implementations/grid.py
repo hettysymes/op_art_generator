@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.node_implementations.visualiser import get_grid
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Warp, PT_Int, PT_Grid
@@ -24,7 +24,7 @@ DEF_GRID_INFO = PrivateNodeInfo(
                                 input_port_status=PortStatus.FORBIDDEN,
                                 output_port_status=PortStatus.COMPULSORY,
                                 display_name="Grid",
-                                display_in_props=False)
+                                display_status=DisplayStatus.NO_DISPLAY)
                }
 )
 

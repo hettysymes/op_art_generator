@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, PropDef, PortStatus, ResolvedProps, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, PropDef, PortStatus, ResolvedProps, NodeCategory, DisplayStatus
 from nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_BlazeCircleDef, PT_List, PT_Int, PT_Float, PT_Fill, PT_Element
@@ -44,7 +44,7 @@ DEF_BLAZE_MAKER_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

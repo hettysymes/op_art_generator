@@ -24,6 +24,11 @@ class PortStatus(Enum):
     OPTIONAL = auto()
     FORBIDDEN = auto()
 
+class DisplayStatus(Enum):
+    ANY_DISPLAY = auto()
+    PORT_ONLY_DISPLAY = auto()
+    NO_DISPLAY = auto()
+
 class NodeCategory(Enum):
     SOURCE = (1, "Source")
     CANVAS = (2, "Canvas")
@@ -42,7 +47,7 @@ class PropDef:
     description: str = ""
     default_value: Optional[PropValue] = None
     auto_format: bool = True
-    display_in_props: bool = True
+    display_status: DisplayStatus = DisplayStatus.ANY_DISPLAY
 
 
 class RefQuerier:

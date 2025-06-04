@@ -1,6 +1,6 @@
 from typing import cast
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Element, PT_List, PT_Enum, PT_Float, PT_ElementHolder
 from nodes.prop_values import List, Float, Enum
@@ -47,7 +47,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

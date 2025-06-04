@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
 from nodes.prop_types import PropType
 
@@ -10,13 +10,13 @@ DEF_PORT_FORWARDER_INFO = PrivateNodeInfo(
             display_name="Input",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         '_main': PropDef(
             display_name="Output",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

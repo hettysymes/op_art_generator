@@ -2,7 +2,7 @@ from typing import Optional
 
 from id_datatypes import PropKey
 from nodes.drawers.draw_graph import create_graph_svg
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.node_implementations.visualiser import visualise_by_type
 from nodes.nodes import AnimatableNode
 from nodes.prop_types import PT_List, PT_Number, PT_Enum
@@ -16,7 +16,7 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
             prop_type=PT_List(),
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         'iter_type_enum': PropDef(
             prop_type=PT_Enum(),
@@ -30,7 +30,7 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="List item",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

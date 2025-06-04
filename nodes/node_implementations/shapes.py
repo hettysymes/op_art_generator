@@ -1,7 +1,7 @@
 import math
 from typing import cast
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.node_implementations.blaze_maker import BlazeMakerNode
 from nodes.node_implementations.visualiser import get_rectangle
 from nodes.node_input_exception import NodeInputException
@@ -79,7 +79,7 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -149,7 +149,7 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -207,7 +207,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -261,7 +261,7 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -311,7 +311,7 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -377,7 +377,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -432,7 +432,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

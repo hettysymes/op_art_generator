@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Function, PT_Warp
@@ -12,14 +12,14 @@ DEF_POS_WARP_NODE_INFO = PrivateNodeInfo(
             display_name="Function",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         '_main': PropDef(
             prop_type=PT_Warp(),
             display_name="Warp",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -53,14 +53,14 @@ DEF_REL_WARP_NODE_INFO = PrivateNodeInfo(
             display_name="Function",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         '_main': PropDef(
             prop_type=PT_Warp(),
             display_name="Warp",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )

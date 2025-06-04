@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode, CombinationNode
 from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient, PT_Float
 from nodes.prop_values import List, Point, Colour, Gradient, GradOffset, Float
@@ -12,29 +12,36 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
             description="Solid colour.",
             default_value=Colour(0, 0, 0, 255)
         ),
-        # 'red': PropDef(
-        #     prop_type=PT_Colour(),
-        #     display_name="Colour",
-        #     description="Solid colour.",
-        #     default_value=Float(0)
-        # ),
-        # 'blue': PropDef(
-        #     prop_type=PT_Colour(),
-        #     display_name="Colour",
-        #     description="Solid colour.",
-        #     default_value=Float(0)
-        # ),
+        'red': PropDef(
+            prop_type=PT_Float(min_value=0, max_value=255),
+            display_name="Red",
+            description="Red component of the colour.",
+            display_status=DisplayStatus.PORT_ONLY_DISPLAY
+        ),
         'green': PropDef(
             prop_type=PT_Float(min_value=0, max_value=255),
-            display_name="Green component",
-            description="Green component of the colour."
+            display_name="Green",
+            description="Green component of the colour.",
+            display_status=DisplayStatus.PORT_ONLY_DISPLAY
+        ),
+        'blue': PropDef(
+            prop_type=PT_Float(min_value=0, max_value=255),
+            display_name="Blue",
+            description="Blue component of the colour.",
+            display_status=DisplayStatus.PORT_ONLY_DISPLAY
+        ),
+        'alpha': PropDef(
+            prop_type=PT_Float(min_value=0, max_value=255),
+            display_name="Alpha",
+            description="Alpha component of the colour.",
+            display_status=DisplayStatus.PORT_ONLY_DISPLAY
         ),
         '_main': PropDef(
             prop_type=PT_Colour(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Colour",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -78,7 +85,7 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Gradient",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
