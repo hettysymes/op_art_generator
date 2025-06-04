@@ -1,6 +1,6 @@
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode, CombinationNode
-from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient, PT_Float
+from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient, PT_Float, PT_Int
 from nodes.prop_values import List, Point, Colour, Gradient, GradOffset, Float
 
 DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
@@ -13,25 +13,25 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         'red': PropDef(
-            prop_type=PT_Float(min_value=0, max_value=255),
+            prop_type=PT_Int(min_value=0, max_value=255),
             display_name="Red",
             description="Red component of the colour.",
             display_status=DisplayStatus.PORT_ONLY_DISPLAY
         ),
         'green': PropDef(
-            prop_type=PT_Float(min_value=0, max_value=255),
+            prop_type=PT_Int(min_value=0, max_value=255),
             display_name="Green",
             description="Green component of the colour.",
             display_status=DisplayStatus.PORT_ONLY_DISPLAY
         ),
         'blue': PropDef(
-            prop_type=PT_Float(min_value=0, max_value=255),
+            prop_type=PT_Int(min_value=0, max_value=255),
             display_name="Blue",
             description="Blue component of the colour.",
             display_status=DisplayStatus.PORT_ONLY_DISPLAY
         ),
         'alpha': PropDef(
-            prop_type=PT_Float(min_value=0, max_value=255),
+            prop_type=PT_Int(min_value=0, max_value=255),
             display_name="Alpha",
             description="Alpha component of the colour.",
             display_status=DisplayStatus.PORT_ONLY_DISPLAY
@@ -53,7 +53,20 @@ class ColourNode(UnitNode):
     DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
-        return {'_main': props.get('colour')}
+        r, g, b, a = props.get('colour')
+
+        # Override RGBA input port values
+        r_prop = props.get('red')
+        g_prop = props.get('green')
+        b_prop = props.get('blue')
+        a_prop = props.get('alpha')
+
+        r = r if r_prop is None else r_prop.to_int()
+        g = g if g_prop is None else g_prop.to_int()
+        b = b if b_prop is None else b_prop.to_int()
+        a = a if a_prop is None else a_prop.to_int()
+
+        return {'_main': Colour(r,g,b,a)}
 
 
 DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(

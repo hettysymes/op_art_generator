@@ -130,6 +130,11 @@ class List(Generic[T], PropValue):
     def __repr__(self):
         return f"List({repr(self.item_type)}, items={self.items})"
 
+class Number(PropValue, ABC):
+
+    @abstractmethod
+    def to_int(self) -> "Int":
+        pass
 
 class Int(int, PropValue):
     def __new__(cls, value: int):
@@ -138,17 +143,24 @@ class Int(int, PropValue):
     def __init__(self, value: int):
         self.value = value
 
+    @abstractmethod
+    def to_int(self) -> "Int":
+        return self
+
     @property
     def type(self) -> PropType:
         return PT_Int()
 
-
-class Float(float, PropValue):
+class Float(float, Number):
     def __new__(cls, value: float):
         return super().__new__(cls, value)
 
     def __init__(self, value: float):
         self.value = value  # optional, but consistent with your Int class
+
+    @abstractmethod
+    def to_int(self) -> Int:
+        return Int(int(self.value))
 
     @property
     def type(self) -> PropType:
