@@ -133,7 +133,7 @@ class NodeItem(QGraphicsRectItem):
         # Change node colour based on category:
         if node_info.category == NodeCategory.SOURCE or node_info.category == NodeCategory.CANVAS:
             # Purple
-            node_colour = QColor(205, 195, 220)
+            node_colour = QColor(195, 195, 225)
         elif node_info.category == NodeCategory.SHAPE_COMPOUNDER:
             # Blue
             node_colour = QColor(215, 225, 245)

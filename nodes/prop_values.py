@@ -152,7 +152,7 @@ class Float(float, PropValue):
 
     @property
     def type(self) -> PropType:
-        return PT_Float()
+        return PT_Float(min_value=self.value, max_value=self.value)
 
 
 class String(str, PropValue):

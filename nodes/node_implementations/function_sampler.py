@@ -38,7 +38,10 @@ class FunSamplerNode(UnitNode):
 
     @staticmethod
     def helper(function, num_samples):
-        return List(PT_Float(), [Float(i) for i in sample_fun(function, num_samples)])
+        samples = sample_fun(function, num_samples)
+        min_sample = min(samples)
+        max_sample = max(samples)
+        return List(PT_Float(min_value=min_sample, max_value=max_sample), [Float(i) for i in samples])
 
     def compute(self, props: ResolvedProps, *args):
         function = props.get('function')
