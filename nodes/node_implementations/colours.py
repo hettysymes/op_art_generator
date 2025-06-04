@@ -1,7 +1,7 @@
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.nodes import UnitNode, CombinationNode
-from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient
-from nodes.prop_values import List, Point, Colour, Gradient, GradOffset
+from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient, PT_Float
+from nodes.prop_values import List, Point, Colour, Gradient, GradOffset, Float
 
 DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
     description="Outputs a desired solid colour.",
@@ -11,6 +11,23 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
             display_name="Colour",
             description="Solid colour.",
             default_value=Colour(0, 0, 0, 255)
+        ),
+        # 'red': PropDef(
+        #     prop_type=PT_Colour(),
+        #     display_name="Colour",
+        #     description="Solid colour.",
+        #     default_value=Float(0)
+        # ),
+        # 'blue': PropDef(
+        #     prop_type=PT_Colour(),
+        #     display_name="Colour",
+        #     description="Solid colour.",
+        #     default_value=Float(0)
+        # ),
+        'green': PropDef(
+            prop_type=PT_Float(min_value=0, max_value=255),
+            display_name="Green component",
+            description="Green component of the colour."
         ),
         '_main': PropDef(
             prop_type=PT_Colour(),
