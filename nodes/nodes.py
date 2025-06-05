@@ -239,7 +239,7 @@ class CustomNode(Node):
                                        description=prop_def.description,
                                        default_value=prop_def.default_value,
                                        auto_format=prop_def.auto_format,
-                                       display_status=DisplayStatus.NO_DISPLAY)
+                                       display_status=prop_def.display_status)
                 prop_defs[CustomNode.to_custom_key(node, key)] = new_prop_def
         return prop_defs
 
@@ -339,6 +339,11 @@ class CustomNode(Node):
             node, key = CustomNode.from_custom_key(edge.dst_key)
             self.subgraph.add_edge(EdgeId(edge.src_port, input_port(node=node, key=key)))
 
+    def _update_internal_props(self, props):
+        for prop_key, prop_val in props.items():
+            node, key = CustomNode.from_custom_key(prop_key)
+            self.sub_node_manager.set_internal_property(node, key, prop_val)
+
     @property
     def node_info(self):
         return self._node_info
@@ -346,6 +351,7 @@ class CustomNode(Node):
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
         # Compute nodes in the subgraph
         self._replace_input_nodes(refs, ref_querier)
+        self._update_internal_props(props)
         if self.randomisable:
             if props.get('seed') is None:
                 self.randomise()
