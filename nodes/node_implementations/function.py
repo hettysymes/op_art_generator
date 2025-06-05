@@ -3,7 +3,7 @@ import sympy as sp
 from nodes.function_datatypes import CubicFun, CustomFun, PiecewiseFun
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode, CombinationNode
-from nodes.prop_types import PT_Function, PT_Float, PT_String, PT_PointsHolder, PT_List
+from nodes.prop_types import PT_Function, PT_Number, PT_String, PT_PointsHolder, PT_List
 from nodes.prop_values import List, Float, Point
 
 DEF_CUBIC_FUN_INFO = PrivateNodeInfo(
@@ -17,25 +17,25 @@ DEF_CUBIC_FUN_INFO = PrivateNodeInfo(
             display_status=DisplayStatus.NO_DISPLAY
         ),
         'a_coeff': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="x³ coefficient",
             description="x³ coefficient (i.e. a in the expression ax³ + bx² + cx + d).",
             default_value=Float(3.22)
         ),
         'b_coeff': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="x² coefficient",
             description="x² coefficient (i.e. b in the expression ax³ + bx² + cx + d).",
             default_value=Float(-5.41)
         ),
         'c_coeff': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="x coefficient",
             description="x coefficient ( i.e. c in the expression ax³ + bx² + cx + d).",
             default_value=Float(3.20)
         ),
         'd_coeff': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Constant",
             description="Constant (i.e. d in the expression ax³ + bx² + cx + d).",
             default_value=Float(0)

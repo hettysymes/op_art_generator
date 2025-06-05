@@ -15,7 +15,7 @@ from id_datatypes import PortId, PropKey, input_port, output_port, NodeId
 from node_graph import NodeGraph
 from node_manager import NodeInfo, NodeManager
 from nodes.node_defs import PropDef, PortStatus, DisplayStatus
-from nodes.prop_types import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
+from nodes.prop_types import PT_Int, PT_Number, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
     PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
     PT_FillHolder, PT_GradOffset, PT_ValProbPairHolder, PT_BlazeCircleDef
 from nodes.prop_values import PropValue, Enum, Point, PortRefTableEntry, Colour, LineRef, Bool
@@ -246,9 +246,8 @@ class NodePropertiesDialog(QDialog):
             if isinstance(prop_type, PT_Int):
                 widget = QSpinBox()
             else:
-                assert isinstance(prop_type, PT_Float)
                 widget = QDoubleSpinBox()
-                widget.setDecimals(prop_type.decimals)
+                widget.setDecimals(3)
             # Set minimum and maximum values
             widget.setMinimum(prop_type.min_value)
             widget.setMaximum(prop_type.max_value)

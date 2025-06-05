@@ -2,7 +2,7 @@ import math
 
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Ellipse, PT_Float, PT_Int, PT_Point, PT_List
+from nodes.prop_types import PT_Ellipse, PT_Number, PT_Int, PT_Point, PT_List
 from nodes.prop_values import List, Int, Float, Point
 from nodes.shape_datatypes import Ellipse
 
@@ -15,7 +15,7 @@ DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.COMPULSORY
         ),
         'start_angle': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Angle of first sample (°)",
             description=(
                 "Central angle (in degrees) of the first sample (point along the edge of the ellipse) with the ellipse's "

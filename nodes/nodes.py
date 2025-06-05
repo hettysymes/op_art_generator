@@ -7,7 +7,7 @@ from id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
 from node_graph import RefId
 from nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus, \
     NodeCategory
-from nodes.prop_types import PT_Int, PT_Float
+from nodes.prop_types import PT_Int, PT_Number
 from nodes.prop_values import PropValue, Float
 from nodes.shape_datatypes import Group
 from vis_types import Visualisable
@@ -103,7 +103,7 @@ class AnimatableNode(UnitNode, ABC):
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._node_info: PrivateNodeInfo = self._default_node_info()
         self._node_info.prop_defs['jump_time'] = PropDef(
-            prop_type=PT_Float(min_value=10),
+            prop_type=PT_Number(min_value=10),
             display_name="Time between animate change / ms",
             default_value=Float(200)
         )
@@ -282,7 +282,7 @@ class CustomNode(Node):
 
         if self._animatable:
             prop_defs['speed'] = PropDef(
-                prop_type=PT_Float(min_value=0.001, max_value=10),
+                prop_type=PT_Number(min_value=0.001, max_value=10),
                 display_name="Animation speed",
                 description="Relative playback speed of the animation (1 = normal speed, 2 = twice as fast, 0.5 = half speed).",
                 input_port_status=PortStatus.FORBIDDEN,

@@ -1,6 +1,6 @@
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode, CombinationNode
-from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient, PT_Float, PT_Int
+from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient, PT_Number, PT_Int
 from nodes.prop_values import List, Point, Colour, Gradient, GradOffset, Float
 
 DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
@@ -61,10 +61,10 @@ class ColourNode(UnitNode):
         b_prop = props.get('blue')
         a_prop = props.get('alpha')
 
-        r = r if r_prop is None else r_prop.to_int()
-        g = g if g_prop is None else g_prop.to_int()
-        b = b if b_prop is None else b_prop.to_int()
-        a = a if a_prop is None else a_prop.to_int()
+        r = r if r_prop is None else r_prop
+        g = g if g_prop is None else g_prop
+        b = b if b_prop is None else b_prop
+        a = a if a_prop is None else a_prop
 
         return {'_main': Colour(r,g,b,a)}
 

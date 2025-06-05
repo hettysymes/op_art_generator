@@ -2,14 +2,16 @@ import copy
 from dataclasses import dataclass
 from typing import Optional
 
+from sympy import Number
+
 from id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from node_graph import NodeGraph
 from nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus, \
     NodeCategory, DisplayStatus
 from nodes.node_implementations.canvas import CanvasNode
 from nodes.nodes import CombinationNode, SelectableNode
-from nodes.prop_types import PropType, PT_List
-from nodes.prop_values import PropValue, List
+from nodes.prop_types import PropType, PT_List, PT_Int
+from nodes.prop_values import PropValue, List, Float
 from nodes.shape_datatypes import Group
 from vis_types import Visualisable
 
@@ -72,10 +74,12 @@ class NodeManager:
             return None
         # Check types of the result, assume they are already compatible
         if isinstance(inp_type, PT_List):
-            if isinstance(comp_result, List) and (not hasattr(inp_type, 'extract') or inp_type.extract):
+            if isinstance(comp_result, List) and inp_type.extract:
                 return comp_result.extract(inp_type)
             else:
                 return List(comp_result.type, [comp_result])
+        elif isinstance(inp_type, PT_Int) and isinstance(comp_result, Float):
+            return comp_result.to_int()
         # Input type is either PropType or Scalar, return value as is
         return comp_result
 

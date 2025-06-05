@@ -1,6 +1,6 @@
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Function, PT_Int, PT_Float, PT_List
+from nodes.prop_types import PT_Function, PT_Int, PT_Number, PT_List
 from nodes.prop_values import List, Int, Float
 from nodes.warp_datatypes import sample_fun
 
@@ -41,7 +41,7 @@ class FunSamplerNode(UnitNode):
         samples = sample_fun(function, num_samples)
         min_sample = min(samples)
         max_sample = max(samples)
-        return List(PT_Float(min_value=min_sample, max_value=max_sample), [Float(i) for i in samples])
+        return List(PT_Number(min_value=min_sample, max_value=max_sample), [Float(i) for i in samples])
 
     def compute(self, props: ResolvedProps, *args):
         function = props.get('function')

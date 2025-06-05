@@ -2,7 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Optional, cast
 
-from nodes.prop_types import PropType, PT_List, PT_Scalar, PT_Int, PT_Float, PT_String, PT_Bool, PT_Enum, \
+from nodes.prop_types import PropType, PT_List, PT_Scalar, PT_Int, PT_Number, PT_String, PT_Bool, PT_Enum, \
     PT_Point, PT_PointsHolder, PT_Grid, PT_Element, PT_ElementHolder, PT_FillHolder, PT_Fill, PT_Colour, \
     PT_GradOffset, PT_Gradient, PT_ValProbPairHolder, PT_BlazeCircleDef
 
@@ -59,21 +59,19 @@ class List(Generic[T], PropValue):
             assert isinstance(x.type, PT_Scalar)
             return List(item_type=x.type, items=[x])
 
-    def extract(self, extract_type: PropType) -> PropValue:
+    def extract(self, extract_type: PT_List) -> PropValue:
         """
         Normalize shape to match `extract_type` (depth),
         but retain base item type from self.
         """
         # Determine target depth
-        target_depth = extract_type.depth if isinstance(extract_type, PT_List) else 0
+        target_depth = extract_type.depth
 
         # Fully flatten this list
         flat: List = List.flatten(self)
 
-        # Derive base item type from self (more specific)
-        self_type = self.type
-        assert isinstance(self_type, PT_List)
-        base_item_type = self_type.base_item_type
+        # Get base item type
+        base_item_type = self.type.base_item_type if isinstance(self.type.base_item_type, type(extract_type.base_item_type)) else extract_type.base_item_type
 
         # If scalar expected, return single scalar value
         if target_depth == 0:
@@ -130,12 +128,6 @@ class List(Generic[T], PropValue):
     def __repr__(self):
         return f"List({repr(self.item_type)}, items={self.items})"
 
-class Number(PropValue, ABC):
-
-    @abstractmethod
-    def to_int(self) -> "Int":
-        pass
-
 class Int(int, PropValue):
     def __new__(cls, value: int):
         return super().__new__(cls, value)
@@ -143,28 +135,23 @@ class Int(int, PropValue):
     def __init__(self, value: int):
         self.value = value
 
-    @abstractmethod
-    def to_int(self) -> "Int":
-        return self
-
     @property
     def type(self) -> PropType:
-        return PT_Int()
+        return PT_Int(min_value=self.value, max_value=self.value)
 
-class Float(float, Number):
+class Float(float, PropValue):
     def __new__(cls, value: float):
         return super().__new__(cls, value)
 
     def __init__(self, value: float):
         self.value = value  # optional, but consistent with your Int class
 
-    @abstractmethod
     def to_int(self) -> Int:
         return Int(int(self.value))
 
     @property
     def type(self) -> PropType:
-        return PT_Float(min_value=self.value, max_value=self.value)
+        return PT_Number(min_value=self.value, max_value=self.value)
 
 
 class String(str, PropValue):

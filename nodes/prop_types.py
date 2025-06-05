@@ -153,18 +153,10 @@ class PT_Number(PT_Scalar):
         if isinstance(dest_type, PT_List):
             # Scalar-to-list: inner types must be compatible
             return self.is_compatible_with(dest_type.base_item_type)
-        if isinstance(self, type(dest_type)):
-            if isinstance(dest_type, PT_Number):
-                # Additionally check this number has a min-max range within the dest type min-max range
-                return dest_type.min_value <= self.min_value and dest_type.max_value >= self.max_value
-            return True
-        return False
-
-
-class PT_Float(PT_Number):
-    def __init__(self, min_value=None, max_value=None, decimals=3):
-        super().__init__(min_value, max_value)
-        self.decimals = decimals
+        if isinstance(dest_type, PT_Number):
+            # Check the min-max range within the dest type min-max range
+            return dest_type.min_value <= self.min_value and dest_type.max_value >= self.max_value
+        return isinstance(self, type(dest_type))
 
 
 class PT_Int(PT_Number):

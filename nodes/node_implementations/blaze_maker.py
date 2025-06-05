@@ -1,7 +1,7 @@
 from nodes.node_defs import PrivateNodeInfo, PropDef, PortStatus, ResolvedProps, NodeCategory, DisplayStatus
 from nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_BlazeCircleDef, PT_List, PT_Int, PT_Float, PT_Fill, PT_Element
+from nodes.prop_types import PT_BlazeCircleDef, PT_List, PT_Int, PT_Number, PT_Fill, PT_Element
 from nodes.prop_values import List, Int, Float, Colour, Fill, BlazeCircleDef
 from nodes.shape_datatypes import Group, Polygon
 
@@ -28,7 +28,7 @@ DEF_BLAZE_MAKER_INFO = PrivateNodeInfo(
             default_value=Int(36)
         ),
         'angle_diff': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Zig-zag angle (°)",
             description="Angle (in degrees) determining the sharpness and direction of the zig-zags. Angles with a higher magnitude give sharper zig-zags. Negative angles give zig-zags in the reverse direction to positive angles.",
             default_value=Float(20)

@@ -6,7 +6,7 @@ from nodes.node_implementations.blaze_maker import BlazeMakerNode
 from nodes.node_implementations.visualiser import get_rectangle
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
-from nodes.prop_types import PT_Float, PT_Point, PT_Fill, PT_Int, \
+from nodes.prop_types import PT_Number, PT_Point, PT_Fill, PT_Int, \
     PT_List, PT_PointsHolder, PT_Polyline, PT_Polygon, PT_Ellipse
 from nodes.prop_values import List, Int, Float, PointsHolder, Point, Colour, LineRef
 from nodes.shape_datatypes import Ellipse, Polyline, Polygon
@@ -15,43 +15,43 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
     description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     prop_defs={
         'amplitude': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Amplitude",
             description="Amplitude of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.5)
         ),
         'wavelength': PropDef(
-            prop_type=PT_Float(min_value=0.001),
+            prop_type=PT_Number(min_value=0.001),
             display_name="Wavelength",
             description="Wavelength of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(1)
         ),
         'centre_y': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Equilibrium position",
             description="Equilibrium position of the sine wave. With 0° rotation, this is the y-coordinate of the equilibrium position. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.5)
         ),
         'phase': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Phase (°)",
             description="Phase of the sine wave in degrees.",
             default_value=Float(0)
         ),
         'x_min': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Wave start",
             description="Start position of the sine wave. With 0° rotation, this is the x-coordinate of the start of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0)
         ),
         'x_max': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Wave stop",
             description="Stop position of the sine wave. With 0° rotation, this is the x-coordinate of the end of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(1)
         ),
         'orientation': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Rotation (°)",
             description="Clockwise rotation applied to the (horizontal) sine wave.",
             default_value=Float(0)
@@ -63,7 +63,7 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
             default_value=Int(100)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Line thickness",
             description="Thickness of the line drawing the sine wave.",
             default_value=Float(1)
@@ -133,7 +133,7 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
             default_value=List(PT_Point(), [Point(0, 0), Point(0.5, 0.5), Point(1, 0)])
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Line thickness",
             description="Thickness of the line drawing.",
             default_value=Float(1)
@@ -191,7 +191,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
             default_value=Point(0, 1)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Line thickness",
             description="Thickness of the straight line.",
             default_value=Float(1)
@@ -245,7 +245,7 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the polygon border.",
             default_value=Float(0)
@@ -295,7 +295,7 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the square border.",
             default_value=Float(0)
@@ -330,13 +330,13 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
     description="Create an ellipse shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     prop_defs={
         'rx': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Horizontal radius (rx)",
             description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.3)
         ),
         'ry': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Vertical radius (ry)",
             description="Vertical semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.5)
@@ -348,7 +348,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             default_value=Point(0.5, 0.5)
         ),
         'orientation': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Rotation (°)",
             description="Clockwise rotation applied to the ellipse.",
             default_value=Float(0)
@@ -361,7 +361,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.OPTIONAL
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the ellipse border.",
             default_value=Float(0)
@@ -398,7 +398,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
     description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     prop_defs={
         'r': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Radius",
             description="Radius of the circle. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.5)
@@ -416,7 +416,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the circle border.",
             default_value=Float(0)
