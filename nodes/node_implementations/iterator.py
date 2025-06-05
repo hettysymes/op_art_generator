@@ -1,5 +1,7 @@
 from typing import Optional, cast
 
+from sympy.integrals.risch import NonElementaryIntegral
+
 from id_datatypes import PropKey
 from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus, \
@@ -79,7 +81,8 @@ class IteratorNode(UnitNode):
             return {}
 
         prop_change_key: PropKey = cast(Enum, props.get('prop_enum')).selected_option
-        assert prop_change_key is not None
+        if prop_change_key is None:
+            return {}
         values: List = props.get('value_list')
         node_input = props.get('node_input')
         node_ref: RefId = refs.get('node_input')

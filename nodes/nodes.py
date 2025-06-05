@@ -6,7 +6,7 @@ from typing import Optional, cast
 from id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
 from node_graph import RefId
 from nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus, \
-    NodeCategory
+    NodeCategory, DisplayStatus
 from nodes.prop_types import PT_Int, PT_Number
 from nodes.prop_values import PropValue, Float
 from nodes.shape_datatypes import Group
