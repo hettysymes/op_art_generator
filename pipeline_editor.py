@@ -35,7 +35,7 @@ from nodes.prop_values import PropValue
 from nodes.shape_datatypes import Group, Element
 from reg_custom_dialog import RegCustomDialog
 from selectable_renderer import SelectableSvgElement
-from vis_types import Visualisable
+from vis_types import Visualisable, ErrorFig
 
 
 class ConnectionSignals(QObject):
@@ -461,7 +461,7 @@ class NodeItem(QGraphicsRectItem):
         svg_width, svg_height = self.node_state.svg_size
 
         vis.save_to_svg(svg_filepath, svg_width, svg_height)
-        if not self.node_info.selectable:
+        if not self.node_info.selectable or isinstance(vis, ErrorFig):
             self.svg_item = QGraphicsSvgItem(svg_filepath)
             # Apply position
             self.svg_item.setParentItem(self)

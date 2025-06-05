@@ -7,9 +7,10 @@ from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, Node, PropDef, PortStatus, \
     NodeCategory, DisplayStatus
 from nodes.node_input_exception import NodeInputException
-from nodes.nodes import UnitNode
+from nodes.nodes import UnitNode, SelectableNode
 from nodes.prop_types import PT_List, PropType, PT_Enum
 from nodes.prop_values import List, Enum
+from nodes.shape_datatypes import Group
 
 DEF_ITERATOR_INFO = PrivateNodeInfo(
     description="Given a list of values (a Colour List or the result of a Function Sampler), create multiple versions of a shape with a specified property modified with each of the values.",
@@ -52,10 +53,38 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
 )
 
 
-class IteratorNode(UnitNode):
+class IteratorNode(SelectableNode):
+
     NAME = "Property Iterator"
     NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
+
+    @staticmethod
+    def _to_cell_key_and_display(i: int) -> tuple[str, str]:
+        return f'cell_{i}', f'Index {i}'
+
+    @staticmethod
+    def _from_cell_key(cell_key: str) -> int:
+        _, i = cell_key.split('_')
+        return int(i)
+
+    def extract_element(self, props: ResolvedProps, parent_group: Group, element_id: str) -> PropKey:
+        i: int = parent_group.get_element_index_from_id(element_id)
+        # Add new port definition
+        prop_key, prop_display = IteratorNode._to_cell_key_and_display(i)
+        port_def = PropDef(
+            prop_type=PropType(),
+            display_name=prop_display,
+            input_port_status=PortStatus.FORBIDDEN,
+            output_port_status=PortStatus.OPTIONAL
+        )
+        self._add_prop_def(prop_key, port_def)
+        return prop_key
+
+    def _is_port_redundant(self, props: ResolvedProps, key: PropKey) -> bool:
+        values = props.get('value_list')
+        i = IteratorNode._from_cell_key(key)
+        return values is None or i >= len(values)
 
     def _update_prop_change_enum(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> bool:
         enum: Enum = props.get('prop_enum')
@@ -100,4 +129,9 @@ class IteratorNode(UnitNode):
             in_props[prop_change_key] = value
             iteration_item = actual_node.final_compute(in_props, in_refs, in_querier)[src_port_key]
             iter_outputs.append(iteration_item)
-        return {'_main': iter_outputs}
+        ret_result = {'_main': iter_outputs}
+        for key in self.extracted_props:
+            # Compute cell
+            i = IteratorNode._from_cell_key(key)
+            ret_result[key] = iter_outputs[i]
+        return ret_result
