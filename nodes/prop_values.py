@@ -348,8 +348,8 @@ class Fill(FillHolder):
 
 
 class Colour(tuple, Fill):
-    def __new__(cls, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
-        return super().__new__(cls, (red, green, blue, alpha))
+    def __new__(cls, red: int = 0, green: int = 0, blue: int = 0, alpha: float = 255):
+        return super().__new__(cls, (int(red), int(green), int(blue), alpha))
 
     def __init__(self, red: float = 0, green: float = 0, blue: float = 0, alpha: float = 255):
         pass  # No need to store attributes separately; values are in the tuple

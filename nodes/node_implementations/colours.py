@@ -31,7 +31,7 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
             display_status=DisplayStatus.PORT_ONLY_DISPLAY
         ),
         'alpha': PropDef(
-            prop_type=PT_Int(min_value=0, max_value=255),
+            prop_type=PT_Number(min_value=0, max_value=255),
             display_name="Alpha",
             description="Alpha component of the colour.",
             display_status=DisplayStatus.PORT_ONLY_DISPLAY

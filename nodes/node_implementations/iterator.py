@@ -6,7 +6,7 @@ from nodes.node_defs import PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQue
     NodeCategory, DisplayStatus
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_List, PT_Element, PropType, PT_Enum
+from nodes.prop_types import PT_List, PropType, PT_Enum
 from nodes.prop_values import List, Enum
 
 DEF_ITERATOR_INFO = PrivateNodeInfo(
@@ -18,9 +18,9 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.COMPULSORY,
             default_value=List()
         ),
-        'element': PropDef(
-            prop_type=PT_Element(),
-            display_name="Drawing",
+        'node_input': PropDef(
+            prop_type=PropType(),
+            display_name="Node",
             input_port_status=PortStatus.COMPULSORY
         ),
         'prop_enum': PropDef(
@@ -57,17 +57,17 @@ class IteratorNode(UnitNode):
 
     def _update_prop_change_enum(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> bool:
         enum: Enum = props.get('prop_enum')
-        elem_input: Optional[PT_Element] = props.get('element')
-        if elem_input is None:
+        node_input = props.get('node_input')
+        if node_input is None:
             enum.set_options()
             return False
         # Update enum
-        node_info = ref_querier.node_info(refs.get('element'))
+        node_info = ref_querier.node_info(refs.get('node_input'))
         options = []
         display_options = []
         prop_types = {}
         for prop_key, prop_def in node_info.prop_defs.items():
-            if cast(PropDef, prop_def).display_status:
+            if cast(PropDef, prop_def).display_status != DisplayStatus.NO_DISPLAY:
                 options.append(prop_key)
                 display_options.append(prop_def.display_name)
                 prop_types[prop_key] = prop_def.prop_type
@@ -81,19 +81,20 @@ class IteratorNode(UnitNode):
         prop_change_key: PropKey = cast(Enum, props.get('prop_enum')).selected_option
         assert prop_change_key is not None
         values: List = props.get('value_list')
-        elem_ref: RefId = refs.get('element')
-        element_node: Node = ref_querier.node_copy(elem_ref)
-        prop_type: PropType = element_node.prop_defs[prop_change_key].prop_type
+        node_input = props.get('node_input')
+        node_ref: RefId = refs.get('node_input')
+        actual_node: Node = ref_querier.node_copy(node_ref)
+        prop_type: PropType = actual_node.prop_defs[prop_change_key].prop_type
 
         if not values.item_type.is_compatible_with(prop_type):
             raise NodeInputException(
                 f"Values of type {values.item_type} is not compatible with expected input type {prop_type}.")
 
-        src_port_key: PropKey = ref_querier.port(elem_ref).key
-        new_elements = List(PT_Element(), vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)
+        src_port_key: PropKey = ref_querier.port(node_ref).key
+        iter_outputs = List(node_input.type, vertical_layout=cast(Enum, props.get('layout_enum')).selected_option)
         for value in values:
-            in_props, in_refs, in_querier = ref_querier.get_compute_inputs(elem_ref)
+            in_props, in_refs, in_querier = ref_querier.get_compute_inputs(node_ref)
             in_props[prop_change_key] = value
-            elem = element_node.final_compute(in_props, in_refs, in_querier)[src_port_key]
-            new_elements.append(elem)
-        return {'_main': new_elements}
+            iteration_item = actual_node.final_compute(in_props, in_refs, in_querier)[src_port_key]
+            iter_outputs.append(iteration_item)
+        return {'_main': iter_outputs}
