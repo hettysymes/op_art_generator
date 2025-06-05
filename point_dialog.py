@@ -12,10 +12,14 @@ class PointDialog(QDialog):
 
         self.x_input = QDoubleSpinBox()
         self.x_input.setDecimals(3)
+        self.x_input.setMinimum(-999999)
+        self.x_input.setMaximum(999999)
         self.x_input.setValue(initial_x)
 
         self.y_input = QDoubleSpinBox()
         self.y_input.setDecimals(3)
+        self.y_input.setMinimum(-999999)
+        self.y_input.setMaximum(999999)
         self.y_input.setValue(initial_y)
 
         form_layout = QFormLayout()
