@@ -9,7 +9,7 @@ DEF_RANDOM_LIST_SELECTOR_INFO = PrivateNodeInfo(
         'val_list': PropDef(
             prop_type=PT_List(),
             display_name="List",
-            description="Input list to select random item of",
+            description="Input list to select random item of.",
             input_port_status=PortStatus.COMPULSORY
         ),
         '_main': PropDef(

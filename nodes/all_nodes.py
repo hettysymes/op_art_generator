@@ -15,6 +15,7 @@ from nodes.node_implementations.function import FunctionNode
 from nodes.node_implementations.function_sampler import FunSamplerNode
 from nodes.node_implementations.grid import GridNode
 from nodes.node_implementations.iterator import IteratorNode
+from nodes.node_implementations.list_selector import ListSelectorNode
 from nodes.node_implementations.overlay import OverlayNode
 from nodes.node_implementations.port_forwarder import PortForwarderNode
 from nodes.node_implementations.random_iterator import RandomIteratorNode
@@ -49,7 +50,8 @@ node_classes = [
     EllipseSamplerNode,
     DrawingCropperNode,
     AnimatorNode,
-    RandomAnimatorNode
+    RandomAnimatorNode,
+    ListSelectorNode
 ]
 
 
