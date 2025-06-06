@@ -450,6 +450,6 @@ class CircleNode(UnitNode):
 
 
 class ShapeNode(CombinationNode):
-    NAME = "Source"
+    NAME = "Shape"
     NODE_CATEGORY = NodeCategory.SOURCE
     SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode, BlazeMakerNode]
