@@ -341,8 +341,11 @@ class CustomNode(Node):
 
     def _update_internal_props(self, props):
         for prop_key, prop_val in props.items():
-            node, key = CustomNode.from_custom_key(prop_key)
-            self.sub_node_manager.set_internal_property(node, key, prop_val)
+            try:
+                node, key = CustomNode.from_custom_key(prop_key)
+                self.sub_node_manager.set_internal_property(node, key, prop_val)
+            except ValueError:
+                pass
 
     @property
     def node_info(self):
