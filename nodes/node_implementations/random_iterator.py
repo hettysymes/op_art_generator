@@ -43,7 +43,7 @@ DEF_RANDOM_ITERATOR_INFO = PrivateNodeInfo(
 
 class RandomIteratorNode(RandomisableNode):
     NAME = "Random Iterator"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.ITERATOR
     DEFAULT_NODE_INFO = DEF_RANDOM_ITERATOR_INFO
 
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier):

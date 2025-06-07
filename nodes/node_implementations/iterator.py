@@ -56,7 +56,7 @@ DEF_ITERATOR_INFO = PrivateNodeInfo(
 class IteratorNode(SelectableNode):
 
     NAME = "Property Iterator"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.ITERATOR
     DEFAULT_NODE_INFO = DEF_ITERATOR_INFO
 
     @staticmethod

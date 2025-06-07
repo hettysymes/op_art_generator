@@ -34,9 +34,10 @@ class NodeCategory(Enum):
     CANVAS = (2, "Canvas")
     SHAPE_COMPOUNDER = (3, "Shape Compounder")
     PROPERTY_MODIFIER = (4, "Property Modifier")
-    SELECTOR = (5, "Selector")
-    ANIMATOR = (6, "Animator")
-    UNKNOWN = (7, "Other")
+    ITERATOR = (5, "Iterator")
+    SELECTOR = (6, "Selector")
+    ANIMATOR = (7, "Animator")
+    UNKNOWN = (8, "Other")
 
 @dataclass(frozen=True)
 class PropDef:
