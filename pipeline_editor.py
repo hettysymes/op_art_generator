@@ -8,10 +8,10 @@ from collections import defaultdict
 from functools import partial
 from typing import cast, Optional
 
-from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData
+from PyQt5.QtCore import QLineF, pyqtSignal, QObject, QRectF, QTimer, QMimeData, QRect
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPainter, QFont, QFontMetricsF, QTransform, QNativeGestureEvent, QKeySequence, \
-    QFontMetrics
+    QFontMetrics, QRegion
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGraphicsScene, QGraphicsView,
                              QGraphicsLineItem, QMenu, QAction, QPushButton, QFileDialog, QGraphicsTextItem, QUndoStack,
@@ -27,14 +27,15 @@ from node_graph import NodeGraph, RefId
 from node_manager import NodeManager, NodeInfo
 from node_props_dialog import NodePropertiesDialog
 from nodes.all_nodes import get_node_classes
-from nodes.node_defs import Node, PropDef, PortStatus
+from nodes.node_defs import Node, PropDef, PortStatus, NodeCategory
+from nodes.node_implementations.shapes import ShapeNode
 from nodes.nodes import CombinationNode, CustomNode
 from nodes.prop_types import PT_Element, PT_Warp, PT_Function, PT_Grid, PT_List, PT_Scalar, PropType, PT_Fill
 from nodes.prop_values import PropValue
 from nodes.shape_datatypes import Group, Element
 from reg_custom_dialog import RegCustomDialog
 from selectable_renderer import SelectableSvgElement
-from vis_types import Visualisable
+from vis_types import Visualisable, ErrorFig
 
 
 class ConnectionSignals(QObject):
@@ -128,7 +129,24 @@ class NodeItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.setBrush(QBrush(QColor(220, 230, 250)))
+
+        # Change node colour based on category:
+        if node_info.category in [NodeCategory.SOURCE, NodeCategory.CANVAS]:
+            # Purple
+            node_colour = QColor(195, 195, 225)
+        elif node_info.category == NodeCategory.SHAPE_COMPOUNDER:
+            # Blue
+            node_colour = QColor(215, 225, 245)
+        elif node_info.category == NodeCategory.PROPERTY_MODIFIER:
+            # Peach
+            node_colour = QColor(240, 220, 200)
+        elif node_info.category in [NodeCategory.ITERATOR, NodeCategory.SELECTOR]:
+            # Grey
+            node_colour = QColor(220, 220, 230)
+        else:
+            # Green
+            node_colour = QColor(200, 230, 220)
+        self.setBrush(QBrush(node_colour))
         self.setPen(QPen(Qt.black, 2))
 
         # Add property button
@@ -140,7 +158,6 @@ class NodeItem(QGraphicsRectItem):
                 QPushButton {
                     background-color: #f0f0f0;
                     border: 1px solid #646464;
-                    border-radius: 4px;
                     font-weight: bold;
                 }
                 QPushButton:hover {
@@ -163,7 +180,6 @@ class NodeItem(QGraphicsRectItem):
                 QPushButton {
                     background-color: #f0f0f0;
                     border: 1px solid #646464;
-                    border-radius: 4px;
                     font-weight: bold;
                 }
                 QPushButton:hover {
@@ -188,7 +204,6 @@ class NodeItem(QGraphicsRectItem):
                         QPushButton {
                             background-color: #f0f0f0;
                             border: 1px solid #646464;
-                            border-radius: 4px;
                             font-weight: bold;
                         }
                         QPushButton:hover {
@@ -212,7 +227,6 @@ class NodeItem(QGraphicsRectItem):
                                     QPushButton {
                                         background-color: #f0f0f0;
                                         border: 1px solid #646464;
-                                        border-radius: 4px;
                                         font-weight: bold;
                                     }
                                     QPushButton:hover {
@@ -447,7 +461,7 @@ class NodeItem(QGraphicsRectItem):
         svg_width, svg_height = self.node_state.svg_size
 
         vis.save_to_svg(svg_filepath, svg_width, svg_height)
-        if not self.node_info.selectable:
+        if not self.node_info.selectable or isinstance(vis, ErrorFig):
             self.svg_item = QGraphicsSvgItem(svg_filepath)
             # Apply position
             self.svg_item.setParentItem(self)
@@ -1311,19 +1325,24 @@ class PipelineScene(QGraphicsScene):
             menu = QMenu()
 
             # Add actions for each node type
-            for node_class in get_node_classes():
-                if issubclass(node_class, CombinationNode):
-                    submenu = menu.addMenu(node_class.name())
-                    for i in range(len(node_class.selections())):
-                        change_action = QAction(node_class.selections()[i].name(), submenu)
-                        handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=i)
-                        change_action.triggered.connect(handler)
-                        submenu.addAction(change_action)
+            for category, node_classes in get_node_classes():
+                if len(node_classes) > 1:
+                    category_menu = menu.addMenu(f"{category.value[1]}s")
                 else:
-                    action = QAction(node_class.name(), menu)
-                    handler = partial(self.add_new_node, event.scenePos(), node_class)
-                    action.triggered.connect(handler)
-                    menu.addAction(action)
+                    category_menu = menu
+                for node_class in node_classes:
+                    if issubclass(node_class, CombinationNode):
+                        submenu = category_menu.addMenu(f"{node_class.name()}s")
+                        for i in range(len(node_class.selections())):
+                            change_action = QAction(node_class.selections()[i].name(), submenu)
+                            handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=i)
+                            change_action.triggered.connect(handler)
+                            submenu.addAction(change_action)
+                    else:
+                        action = QAction(node_class.name(), category_menu)
+                        handler = partial(self.add_new_node, event.scenePos(), node_class)
+                        action.triggered.connect(handler)
+                        category_menu.addAction(action)
             # Add custom nodes
             if self.custom_node_defs:
                 menu.addSeparator()

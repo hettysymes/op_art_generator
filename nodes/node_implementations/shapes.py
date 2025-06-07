@@ -1,55 +1,57 @@
+import math
 from typing import cast
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
+from nodes.node_implementations.blaze_maker import BlazeMakerNode
 from nodes.node_implementations.visualiser import get_rectangle
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode, CombinationNode
-from nodes.prop_types import PT_Float, PT_Point, PT_Fill, PT_Int, \
+from nodes.prop_types import PT_Number, PT_Point, PT_Fill, PT_Int, \
     PT_List, PT_PointsHolder, PT_Polyline, PT_Polygon, PT_Ellipse
 from nodes.prop_values import List, Int, Float, PointsHolder, Point, Colour, LineRef
-from nodes.shape_datatypes import Ellipse, SineWave, Polyline, Polygon
+from nodes.shape_datatypes import Ellipse, Polyline, Polygon
 
 DEF_SINE_WAVE_INFO = PrivateNodeInfo(
     description="Create part of a sine wave, defining properties such as the amplitude and wavelength. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     prop_defs={
         'amplitude': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Amplitude",
             description="Amplitude of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.5)
         ),
         'wavelength': PropDef(
-            prop_type=PT_Float(min_value=0.001),
+            prop_type=PT_Number(min_value=0.001),
             display_name="Wavelength",
             description="Wavelength of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(1)
         ),
         'centre_y': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Equilibrium position",
             description="Equilibrium position of the sine wave. With 0° rotation, this is the y-coordinate of the equilibrium position. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.5)
         ),
         'phase': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Phase (°)",
             description="Phase of the sine wave in degrees.",
             default_value=Float(0)
         ),
         'x_min': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Wave start",
             description="Start position of the sine wave. With 0° rotation, this is the x-coordinate of the start of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0)
         ),
         'x_max': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Wave stop",
             description="Stop position of the sine wave. With 0° rotation, this is the x-coordinate of the end of the sine wave. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(1)
         ),
         'orientation': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Rotation (°)",
             description="Clockwise rotation applied to the (horizontal) sine wave.",
             default_value=Float(0)
@@ -61,7 +63,7 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
             default_value=Int(100)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Line thickness",
             description="Thickness of the line drawing the sine wave.",
             default_value=Float(1)
@@ -77,7 +79,7 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -85,13 +87,27 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
 
 class SineWaveNode(UnitNode):
     NAME = "Sine Wave"
+    NODE_CATEGORY = NodeCategory.SOURCE
     DEFAULT_NODE_INFO = DEF_SINE_WAVE_INFO
 
     @staticmethod
     def helper(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width=1, stroke=Colour(), num_points=100,
                orientation=0):
-        return SineWave(amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, stroke, num_points).rotate(
-            orientation, (0.5, 0.5))
+        if x_min > x_max:
+            raise ValueError("Wave start position must be smaller than wave stop position.")
+        points = List(PT_Point())
+
+        # Generate 100 evenly spaced x-values between x_min and x_max
+        x_values = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
+
+        # Calculate corresponding y-values using the sine wave formula
+        for x in x_values:
+            # Standard sine wave equation: y = A * sin(2π * x / λ + φ) + centre_y
+            # where A is amplitude, λ is wavelength, and φ is phase
+            y = amplitude * math.sin(2 * math.pi * x / wavelength + math.radians(phase)) + centre_y
+            points.append(Point(x, y))
+
+        return Polyline(points, stroke, stroke_width).rotate(orientation, (0.5, 0.5))
 
     def compute(self, props: ResolvedProps, *args):
         try:
@@ -117,7 +133,7 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
             default_value=List(PT_Point(), [Point(0, 0), Point(0.5, 0.5), Point(1, 0)])
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Line thickness",
             description="Thickness of the line drawing.",
             default_value=Float(1)
@@ -133,7 +149,7 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -141,6 +157,7 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
 
 class CustomLineNode(UnitNode):
     NAME = "Custom Line"
+    NODE_CATEGORY = NodeCategory.SOURCE
     DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
 
     @staticmethod
@@ -174,7 +191,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
             default_value=Point(0, 1)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Line thickness",
             description="Thickness of the straight line.",
             default_value=Float(1)
@@ -190,7 +207,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -198,6 +215,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
 
 class StraightLineNode(UnitNode):
     NAME = "Straight Line"
+    NODE_CATEGORY = NodeCategory.SOURCE
     DEFAULT_NODE_INFO = DEF_STRAIGHT_LINE_NODE_INFO
 
     @staticmethod
@@ -227,7 +245,7 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the polygon border.",
             default_value=Float(0)
@@ -243,7 +261,7 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -251,6 +269,7 @@ DEF_POLYGON_INFO = PrivateNodeInfo(
 
 class PolygonNode(UnitNode):
     NAME = "Polygon"
+    NODE_CATEGORY = NodeCategory.SOURCE
     DEFAULT_NODE_INFO = DEF_POLYGON_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -276,7 +295,7 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the square border.",
             default_value=Float(0)
@@ -292,7 +311,7 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -300,6 +319,7 @@ DEF_RECTANGLE_NODE_INFO = PrivateNodeInfo(
 
 class RectangleNode(UnitNode):
     NAME = "Square"
+    NODE_CATEGORY = NodeCategory.SOURCE
     DEFAULT_NODE_INFO = DEF_RECTANGLE_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -310,13 +330,13 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
     description="Create an ellipse shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     prop_defs={
         'rx': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Horizontal radius (rx)",
             description="Horizontal semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.3)
         ),
         'ry': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Vertical radius (ry)",
             description="Vertical semi-axis of the ellipse. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.5)
@@ -328,7 +348,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             default_value=Point(0.5, 0.5)
         ),
         'orientation': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Rotation (°)",
             description="Clockwise rotation applied to the ellipse.",
             default_value=Float(0)
@@ -341,7 +361,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.OPTIONAL
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the ellipse border.",
             default_value=Float(0)
@@ -357,7 +377,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -365,6 +385,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
 
 class EllipseNode(UnitNode):
     NAME = "Ellipse"
+    NODE_CATEGORY = NodeCategory.SOURCE
     DEFAULT_NODE_INFO = DEF_ELLIPSE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -377,7 +398,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
     description="Create a circle shape. A gradient can be used to fill the shape if required. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
     prop_defs={
         'r': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Radius",
             description="Radius of the circle. Coordinates are set in the context of a 1x1 canvas, with (0.5, 0.5) being the centre and (0,0) being the top-left corner.",
             default_value=Float(0.5)
@@ -395,7 +416,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
             default_value=Colour(0, 0, 0, 255)
         ),
         'stroke_width': PropDef(
-            prop_type=PT_Float(min_value=0),
+            prop_type=PT_Number(min_value=0),
             display_name="Border thickness",
             description="Thickness of the line drawing the circle border.",
             default_value=Float(0)
@@ -411,7 +432,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -419,6 +440,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
 
 class CircleNode(UnitNode):
     NAME = "Circle"
+    NODE_CATEGORY = NodeCategory.SOURCE
     DEFAULT_NODE_INFO = DEF_CIRCLE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -429,4 +451,5 @@ class CircleNode(UnitNode):
 
 class ShapeNode(CombinationNode):
     NAME = "Shape"
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode]
+    NODE_CATEGORY = NodeCategory.SOURCE
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode, BlazeMakerNode]

@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import RandomisableNode
 from nodes.prop_types import PT_List
 from nodes.prop_values import List
@@ -9,14 +9,14 @@ DEF_RANDOM_LIST_SELECTOR_INFO = PrivateNodeInfo(
         'val_list': PropDef(
             prop_type=PT_List(),
             display_name="List",
-            description="Input list to select random item of",
+            description="Input list to select random item of.",
             input_port_status=PortStatus.COMPULSORY
         ),
         '_main': PropDef(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Random selection",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -24,6 +24,7 @@ DEF_RANDOM_LIST_SELECTOR_INFO = PrivateNodeInfo(
 
 class RandomListSelectorNode(RandomisableNode):
     NAME = "Random List Selector"
+    NODE_CATEGORY = NodeCategory.SELECTOR
     DEFAULT_NODE_INFO = DEF_RANDOM_LIST_SELECTOR_INFO
 
     def compute(self, props: ResolvedProps, *args):

@@ -1,7 +1,7 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode, CombinationNode
-from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient
-from nodes.prop_values import List, Point, Colour, Gradient, GradOffset
+from nodes.prop_types import PT_Colour, PT_List, PT_GradOffset, PT_Point, PT_Gradient, PT_Number, PT_Int
+from nodes.prop_values import List, Point, Colour, Gradient, GradOffset, Float
 
 DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
     description="Outputs a desired solid colour.",
@@ -12,12 +12,36 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
             description="Solid colour.",
             default_value=Colour(0, 0, 0, 255)
         ),
+        'red': PropDef(
+            prop_type=PT_Int(min_value=0, max_value=255),
+            display_name="Red",
+            description="Red component of the colour.",
+            display_status=DisplayStatus.PORT_ONLY_DISPLAY
+        ),
+        'green': PropDef(
+            prop_type=PT_Int(min_value=0, max_value=255),
+            display_name="Green",
+            description="Green component of the colour.",
+            display_status=DisplayStatus.PORT_ONLY_DISPLAY
+        ),
+        'blue': PropDef(
+            prop_type=PT_Int(min_value=0, max_value=255),
+            display_name="Blue",
+            description="Blue component of the colour.",
+            display_status=DisplayStatus.PORT_ONLY_DISPLAY
+        ),
+        'alpha': PropDef(
+            prop_type=PT_Number(min_value=0, max_value=255),
+            display_name="Alpha",
+            description="Alpha component of the colour.",
+            display_status=DisplayStatus.PORT_ONLY_DISPLAY
+        ),
         '_main': PropDef(
             prop_type=PT_Colour(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Colour",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -25,10 +49,24 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
 
 class ColourNode(UnitNode):
     NAME = "Solid Colour"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
-        return {'_main': props.get('colour')}
+        r, g, b, a = props.get('colour')
+
+        # Override RGBA input port values
+        r_prop = props.get('red')
+        g_prop = props.get('green')
+        b_prop = props.get('blue')
+        a_prop = props.get('alpha')
+
+        r = r if r_prop is None else r_prop
+        g = g if g_prop is None else g_prop
+        b = b if b_prop is None else b_prop
+        a = a if a_prop is None else a_prop
+
+        return {'_main': Colour(r,g,b,a)}
 
 
 DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
@@ -60,7 +98,7 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Gradient",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -68,6 +106,7 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
 
 class GradientNode(UnitNode):
     NAME = "Linear Gradient"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_GRADIENT_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -76,4 +115,5 @@ class GradientNode(UnitNode):
 
 class FillNode(CombinationNode):
     NAME = "Colour"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     SELECTIONS = [ColourNode, GradientNode]

@@ -2,13 +2,16 @@ import copy
 from dataclasses import dataclass
 from typing import Optional
 
+from sympy import Number
+
 from id_datatypes import NodeId, PortId, PropKey, input_port, output_port
 from node_graph import NodeGraph
-from nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus
+from nodes.node_defs import Node, RuntimeNode, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus, \
+    NodeCategory, DisplayStatus
 from nodes.node_implementations.canvas import CanvasNode
 from nodes.nodes import CombinationNode, SelectableNode
-from nodes.prop_types import PropType, PT_List
-from nodes.prop_values import PropValue, List
+from nodes.prop_types import PropType, PT_List, PT_Int
+from nodes.prop_values import PropValue, List, Float
 from nodes.shape_datatypes import Group
 from vis_types import Visualisable
 
@@ -17,6 +20,7 @@ from vis_types import Visualisable
 class NodeInfo:
     uid: NodeId
     name: str
+    category: NodeCategory
     base_name: str
     description: str
     prop_defs: dict[PropKey, PropDef]
@@ -36,8 +40,10 @@ class NodeInfo:
         return results
 
     def requires_property_box(self) -> bool:
-        return any(prop_def.display_in_props for prop_def in self.prop_defs.values())
-
+        return any(
+            prop_def.display_status != DisplayStatus.NO_DISPLAY
+            for prop_def in self.prop_defs.values()
+        )
 
 class NodeManager:
 
@@ -68,10 +74,12 @@ class NodeManager:
             return None
         # Check types of the result, assume they are already compatible
         if isinstance(inp_type, PT_List):
-            if isinstance(comp_result, List) and (not hasattr(inp_type, 'extract') or inp_type.extract):
+            if isinstance(comp_result, List) and inp_type.extract:
                 return comp_result.extract(inp_type)
             else:
                 return List(comp_result.type, [comp_result])
+        elif isinstance(inp_type, PT_Int) and isinstance(comp_result, Float):
+            return comp_result.to_int()
         # Input type is either PropType or Scalar, return value as is
         return comp_result
 
@@ -80,6 +88,7 @@ class NodeManager:
         return NodeInfo(
             uid=node,
             name=runtime_node.node.name(),
+            category=runtime_node.node.node_category(),
             base_name=runtime_node.node.base_name,
             description=runtime_node.node.description,
             prop_defs=runtime_node.node.prop_defs,

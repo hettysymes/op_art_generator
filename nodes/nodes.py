@@ -5,8 +5,9 @@ from typing import Optional, cast
 
 from id_datatypes import PropKey, NodeId, PortId, EdgeId, input_port
 from node_graph import RefId
-from nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus
-from nodes.prop_types import PT_Int, PT_Float
+from nodes.node_defs import Node, PrivateNodeInfo, ResolvedProps, ResolvedRefs, RefQuerier, PropDef, PortStatus, \
+    NodeCategory, DisplayStatus
+from nodes.prop_types import PT_Int, PT_Number
 from nodes.prop_values import PropValue, Float
 from nodes.shape_datatypes import Group
 from vis_types import Visualisable
@@ -14,6 +15,7 @@ from vis_types import Visualisable
 
 class UnitNode(Node, ABC):
     NAME = None
+    NODE_CATEGORY = None
     DEFAULT_NODE_INFO = None
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
@@ -31,6 +33,7 @@ class UnitNode(Node, ABC):
 
 class SelectableNode(UnitNode, ABC):
     NAME = None
+    NODE_CATEGORY = None
     DEFAULT_NODE_INFO = None
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
@@ -100,7 +103,7 @@ class AnimatableNode(UnitNode, ABC):
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
         self._node_info: PrivateNodeInfo = self._default_node_info()
         self._node_info.prop_defs['jump_time'] = PropDef(
-            prop_type=PT_Float(min_value=10),
+            prop_type=PT_Number(min_value=10),
             display_name="Time between animate change / ms",
             default_value=Float(200)
         )
@@ -142,6 +145,7 @@ class AnimatableNode(UnitNode, ABC):
 
 class CombinationNode(Node, ABC):
     NAME = None
+    NODE_CATEGORY = None
     SELECTIONS: list[type[Node]] = []  # To override
 
     def __init__(self, internal_props=None, add_info=0):
@@ -197,6 +201,7 @@ class CombinationNode(Node, ABC):
 
 class CustomNode(Node):
     NAME = "Custom"
+    NODE_CATEGORY = NodeCategory.UNKNOWN
     DEFAULT_NODE_INFO = None
 
     @staticmethod
@@ -234,7 +239,7 @@ class CustomNode(Node):
                                        description=prop_def.description,
                                        default_value=prop_def.default_value,
                                        auto_format=prop_def.auto_format,
-                                       display_in_props=False)
+                                       display_status=prop_def.display_status)
                 prop_defs[CustomNode.to_custom_key(node, key)] = new_prop_def
         return prop_defs
 
@@ -277,7 +282,7 @@ class CustomNode(Node):
 
         if self._animatable:
             prop_defs['speed'] = PropDef(
-                prop_type=PT_Float(min_value=0.001, max_value=10),
+                prop_type=PT_Number(min_value=0.001, max_value=10),
                 display_name="Animation speed",
                 description="Relative playback speed of the animation (1 = normal speed, 2 = twice as fast, 0.5 = half speed).",
                 input_port_status=PortStatus.FORBIDDEN,
@@ -334,6 +339,14 @@ class CustomNode(Node):
             node, key = CustomNode.from_custom_key(edge.dst_key)
             self.subgraph.add_edge(EdgeId(edge.src_port, input_port(node=node, key=key)))
 
+    def _update_internal_props(self, props):
+        for prop_key, prop_val in props.items():
+            try:
+                node, key = CustomNode.from_custom_key(prop_key)
+                self.sub_node_manager.set_internal_property(node, key, prop_val)
+            except ValueError:
+                pass
+
     @property
     def node_info(self):
         return self._node_info
@@ -341,6 +354,7 @@ class CustomNode(Node):
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
         # Compute nodes in the subgraph
         self._replace_input_nodes(refs, ref_querier)
+        self._update_internal_props(props)
         if self.randomisable:
             if props.get('seed') is None:
                 self.randomise()

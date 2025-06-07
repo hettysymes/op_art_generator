@@ -1,8 +1,8 @@
 from typing import cast
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Element, PT_List, PT_Enum, PT_Float, PT_ElementHolder
+from nodes.prop_types import PT_Element, PT_List, PT_Enum, PT_Number, PT_ElementHolder
 from nodes.prop_values import List, Float, Enum
 from nodes.shape_datatypes import Group
 from nodes.transforms import Translate, Scale
@@ -27,7 +27,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
             output_port_status=PortStatus.FORBIDDEN
         ),
         'wh_diff': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Overlap distance",
             description=(
                 "Distance to place between stacked drawings, proportional to the height or width of one drawing "
@@ -37,7 +37,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
             default_value=Float(0)
         ),
         'shift': PropDef(
-            prop_type=PT_Float(),
+            prop_type=PT_Number(),
             display_name="Ascent/Right shift",
             description="Shift to the right or up (for horizontal and vertical stack respectively).",
             default_value=Float(0)
@@ -47,7 +47,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -55,6 +55,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
 
 class StackerNode(UnitNode):
     NAME = "Stacker"
+    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_STACKER_NODE_INFO
 
     @staticmethod

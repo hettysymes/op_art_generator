@@ -1,4 +1,4 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Enum, PT_List, PT_Element
 from nodes.prop_values import List, Enum
@@ -12,7 +12,7 @@ DEF_DRAWING_GROUP_SUBSET_INFO = PrivateNodeInfo(
             description="Drawing Group to get subset of",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         'start_idx_enum': PropDef(
             prop_type=PT_Enum(),
@@ -35,7 +35,7 @@ DEF_DRAWING_GROUP_SUBSET_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing Group",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -43,6 +43,7 @@ DEF_DRAWING_GROUP_SUBSET_INFO = PrivateNodeInfo(
 
 class DrawingGroupSubsetNode(UnitNode):
     NAME = "Subset Group"
+    NODE_CATEGORY = NodeCategory.SELECTOR
     DEFAULT_NODE_INFO = DEF_DRAWING_GROUP_SUBSET_INFO
 
     def compute(self, props: ResolvedProps, *args):

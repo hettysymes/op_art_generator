@@ -24,6 +24,20 @@ class PortStatus(Enum):
     OPTIONAL = auto()
     FORBIDDEN = auto()
 
+class DisplayStatus(Enum):
+    ANY_DISPLAY = auto()
+    PORT_ONLY_DISPLAY = auto()
+    NO_DISPLAY = auto()
+
+class NodeCategory(Enum):
+    SOURCE = (1, "Source")
+    CANVAS = (2, "Canvas")
+    SHAPE_COMPOUNDER = (3, "Shape Compounder")
+    PROPERTY_MODIFIER = (4, "Property Modifier")
+    ITERATOR = (5, "Iterator")
+    SELECTOR = (6, "Selector")
+    ANIMATOR = (7, "Animator")
+    UNKNOWN = (8, "Other")
 
 @dataclass(frozen=True)
 class PropDef:
@@ -34,7 +48,7 @@ class PropDef:
     description: str = ""
     default_value: Optional[PropValue] = None
     auto_format: bool = True
-    display_in_props: bool = True
+    display_status: DisplayStatus = DisplayStatus.ANY_DISPLAY
 
 
 class RefQuerier:
@@ -78,6 +92,7 @@ class PrivateNodeInfo:
 
 class Node(ABC):
     NAME = ""  # To override
+    NODE_CATEGORY = NodeCategory.UNKNOWN # To override
 
     def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None):
         self.internal_props: dict[
@@ -105,6 +120,10 @@ class Node(ABC):
     @classmethod
     def name(cls) -> str:
         return cls.NAME
+
+    @classmethod
+    def node_category(cls) -> NodeCategory:
+        return cls.NODE_CATEGORY
 
     @property
     def base_name(self) -> str:

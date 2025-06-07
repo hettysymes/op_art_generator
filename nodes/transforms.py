@@ -92,11 +92,6 @@ class TransformList:
             return repr(self)
         return None
 
-    def remove_final_scale(self):
-        assert len(self.transforms) > 0
-        assert isinstance(self.transforms[0], Scale)
-        del self.transforms[0]
-
     def transform_points(self, points: List[PT_Point]) -> List[PT_Point]:
         new_points = List(PT_Point())
         for p in points:

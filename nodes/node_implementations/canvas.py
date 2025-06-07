@@ -1,7 +1,7 @@
 from typing import Optional
 
 from id_datatypes import PropKey
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory
 from nodes.node_implementations.visualiser import get_rectangle
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Int, PT_Fill, PT_Element
@@ -41,6 +41,7 @@ DEF_CANVAS_NODE_INFO = PrivateNodeInfo(
 
 class CanvasNode(UnitNode):
     NAME = "Canvas"
+    NODE_CATEGORY = NodeCategory.CANVAS
     DEFAULT_NODE_INFO = DEF_CANVAS_NODE_INFO
 
     @staticmethod

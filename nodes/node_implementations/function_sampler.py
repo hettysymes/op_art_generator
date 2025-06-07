@@ -1,6 +1,6 @@
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.nodes import UnitNode
-from nodes.prop_types import PT_Function, PT_Int, PT_Float, PT_List
+from nodes.prop_types import PT_Function, PT_Int, PT_Number, PT_List
 from nodes.prop_values import List, Int, Float
 from nodes.warp_datatypes import sample_fun
 
@@ -12,7 +12,7 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
             display_name="Function",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         'num_samples': PropDef(
             prop_type=PT_Int(min_value=1),
@@ -25,7 +25,7 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Samples",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -33,11 +33,15 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
 
 class FunSamplerNode(UnitNode):
     NAME = "Function Sampler"
+    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
     DEFAULT_NODE_INFO = DEF_FUN_SAMPLER_INFO
 
     @staticmethod
     def helper(function, num_samples):
-        return List(PT_Float(), [Float(i) for i in sample_fun(function, num_samples)])
+        samples = sample_fun(function, num_samples)
+        min_sample = min(samples)
+        max_sample = max(samples)
+        return List(PT_Number(min_value=min_sample, max_value=max_sample), [Float(i) for i in samples])
 
     def compute(self, props: ResolvedProps, *args):
         function = props.get('function')

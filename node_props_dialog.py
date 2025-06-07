@@ -14,8 +14,8 @@ from gradient_colour_table import GradOffsetColourWidget
 from id_datatypes import PortId, PropKey, input_port, output_port, NodeId
 from node_graph import NodeGraph
 from node_manager import NodeInfo, NodeManager
-from nodes.node_defs import PropDef, PortStatus
-from nodes.prop_types import PT_Int, PT_Float, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
+from nodes.node_defs import PropDef, PortStatus, DisplayStatus
+from nodes.prop_types import PT_Int, PT_Number, PT_Bool, PT_Point, PT_Fill, PT_Number, PT_String, \
     PT_List, PT_PointsHolder, PT_Enum, PT_ElementHolder, \
     PT_FillHolder, PT_GradOffset, PT_ValProbPairHolder, PT_BlazeCircleDef
 from nodes.prop_values import PropValue, Enum, Point, PortRefTableEntry, Colour, LineRef, Bool
@@ -138,9 +138,9 @@ class NodePropertiesDialog(QDialog):
         props_layout = QFormLayout()
         props_group.setLayout(props_layout)
 
-        no_widget_keys: list[PropKey] = []
+        port_only_displayal: list[PropKey] = []
         for key, prop_def in self.node_info.prop_defs.items():
-            if prop_def.display_in_props:
+            if prop_def.display_status == DisplayStatus.ANY_DISPLAY:
                 widget: Optional[QWidget] = self.create_property_widget(prop_def,
                                                                         node_item.node_manager.get_internal_property(
                                                                             node_item.uid, key))
@@ -150,15 +150,17 @@ class NodePropertiesDialog(QDialog):
                     props_layout.addRow(label_container, widget_container)
                     self.property_widgets[key] = widget
                 else:
-                    no_widget_keys.append(key)
+                    port_only_displayal.append(key)
+            elif prop_def.display_status == DisplayStatus.PORT_ONLY_DISPLAY:
+                port_only_displayal.append(key)
         main_layout.addWidget(props_group)
 
-        if no_widget_keys:
+        if port_only_displayal:
             no_widget_group = QGroupBox("Port modifiable properties")
             no_widget_group_layout = QFormLayout()
             no_widget_group.setLayout(no_widget_group_layout)
 
-            for key in no_widget_keys:
+            for key in port_only_displayal:
                 prop_def: PropDef = self.node_info.prop_defs[key]
 
                 # Reuse the existing method, passing None as the widget
@@ -244,9 +246,8 @@ class NodePropertiesDialog(QDialog):
             if isinstance(prop_type, PT_Int):
                 widget = QSpinBox()
             else:
-                assert isinstance(prop_type, PT_Float)
                 widget = QDoubleSpinBox()
-                widget.setDecimals(prop_type.decimals)
+                widget.setDecimals(3)
             # Set minimum and maximum values
             widget.setMinimum(prop_type.min_value)
             widget.setMaximum(prop_type.max_value)

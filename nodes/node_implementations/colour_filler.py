@@ -1,6 +1,6 @@
 import itertools
 
-from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus
+from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, NodeCategory, DisplayStatus
 from nodes.node_input_exception import NodeInputException
 from nodes.nodes import UnitNode
 from nodes.prop_types import PT_Element, PT_List, PT_FillHolder, PT_Point, \
@@ -21,14 +21,14 @@ DEF_COLOUR_FILLER_INFO = PrivateNodeInfo(
             display_name="Drawing",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         ),
         '_main': PropDef(
             prop_type=PT_Element(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
             display_name="Drawing",
-            display_in_props=False
+            display_status=DisplayStatus.NO_DISPLAY
         )
     }
 )
@@ -36,6 +36,7 @@ DEF_COLOUR_FILLER_INFO = PrivateNodeInfo(
 
 class ColourFillerNode(UnitNode):
     NAME = "Colour Filler"
+    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_COLOUR_FILLER_INFO
 
     @staticmethod

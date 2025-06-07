@@ -23,8 +23,8 @@ def process_fill(fill: Fill, dwg):
 
 class Element(ElementHolder, Visualisable, ABC):
 
-    def __init__(self, debug_info=None, uid=None):
-        self.uid = uid if uid else str(uuid.uuid4())
+    def __init__(self, debug_info=None):
+        self.uid = str(uuid.uuid4())
         self.debug_info = debug_info
 
     @abstractmethod
@@ -44,7 +44,7 @@ class Element(ElementHolder, Visualisable, ABC):
         pass
 
     @abstractmethod
-    def shape_transformations(self):
+    def shape_transformations(self) -> list[tuple["Shape", TransformList]]:
         pass
 
     @abstractmethod
@@ -61,8 +61,8 @@ class Element(ElementHolder, Visualisable, ABC):
 
 class Group(Element, PointsHolder):
 
-    def __init__(self, transforms=None, debug_info=None, uid=None):
-        super().__init__(debug_info, uid)
+    def __init__(self, transforms=None, debug_info=None):
+        super().__init__(debug_info)
         self.elements = []
         self.transform_list = TransformList(transforms)
 
@@ -260,23 +260,3 @@ class Ellipse(Shape):
     @property
     def type(self):
         return PT_Ellipse()
-
-
-class SineWave(Polyline):
-
-    def __init__(self, amplitude, wavelength, centre_y, phase, x_min, x_max, stroke_width, stroke, num_points):
-        if x_min > x_max:
-            raise ValueError("Wave start position must be smaller than wave stop position.")
-        points = List(PT_Point())
-
-        # Generate 100 evenly spaced x-values between x_min and x_max
-        x_values = [x_min + i * (x_max - x_min) / (num_points - 1) for i in range(num_points)]
-
-        # Calculate corresponding y-values using the sine wave formula
-        for x in x_values:
-            # Standard sine wave equation: y = A * sin(2π * x / λ + φ) + centre_y
-            # where A is amplitude, λ is wavelength, and φ is phase
-            y = amplitude * math.sin(2 * math.pi * x / wavelength + math.radians(phase)) + centre_y
-            points.append(Point(x, y))
-
-        super().__init__(points, stroke, stroke_width)
