@@ -23,7 +23,7 @@ def extract_features(img_path):
 
 
 artworks = ['movement_in_squares', 'hesitate', 'straight_curve', 'arrest_2', 'conversation', 'blaze', 'shadow_play',
-            'blaze_study']
+            'blaze_study', 'arrest_1']
 
 
 def get_similarity(artwork1, artwork2):
