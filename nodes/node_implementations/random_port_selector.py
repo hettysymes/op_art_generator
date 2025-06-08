@@ -4,7 +4,7 @@ from nodes.prop_types import PT_List, PT_ValProbPairHolder
 from nodes.prop_values import PropValue, List
 
 DEF_RANDOM_PORT_SELECTOR_INFO = PrivateNodeInfo(
-    description="Randomly selects an item from a list input. If multiple inputs are given, then it randomly selects an input.",
+    description="Randomly selects a port input.",
     prop_defs={
         'val_prob_list': PropDef(
             prop_type=PT_List(PT_ValProbPairHolder(), input_multiple=True, extract=False),

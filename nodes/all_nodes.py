@@ -20,6 +20,7 @@ from nodes.node_implementations.overlay import OverlayNode
 from nodes.node_implementations.port_forwarder import PortForwarderNode
 from nodes.node_implementations.random_iterator import RandomIteratorNode
 from nodes.node_implementations.random_list_selector import RandomListSelectorNode
+from nodes.node_implementations.random_list_shuffler import RandomListShufflerNode
 from nodes.node_implementations.random_node_animator import RandomAnimatorNode
 from nodes.node_implementations.random_port_selector import RandomPortSelectorNode
 from nodes.node_implementations.shape_repeater import ShapeRepeaterNode
@@ -51,7 +52,8 @@ node_classes = [
     DrawingCropperNode,
     AnimatorNode,
     RandomAnimatorNode,
-    ListSelectorNode
+    ListSelectorNode,
+    RandomListShufflerNode
 ]
 
 
