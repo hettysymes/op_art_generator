@@ -152,6 +152,9 @@ class NodeItem(QGraphicsRectItem):
         elif node_info.category == NodeCategory.SELECTOR:
             # Grey
             node_colour = QColor(220, 220, 230)
+        elif node_info.category == NodeCategory.ANIMATOR:
+            # Red
+            node_colour = QColor(235, 210, 210)
         else:
             # Green
             node_colour = QColor(200, 230, 220)
