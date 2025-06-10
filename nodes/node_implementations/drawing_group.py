@@ -37,7 +37,7 @@ DEF_DRAWING_GROUP_INFO = PrivateNodeInfo(
 
 class DrawingGroupNode(UnitNode):
     NAME = "Drawing Group"
-    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
+    NODE_CATEGORY = NodeCategory.DRAWING_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_DRAWING_GROUP_INFO
 
     def compute(self, props: ResolvedProps, *args):

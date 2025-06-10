@@ -137,13 +137,19 @@ class NodeItem(QGraphicsRectItem):
         elif node_info.category == NodeCategory.CANVAS:
             # Pink
             node_colour = QColor(230, 210, 240)
-        elif node_info.category == NodeCategory.SHAPE_COMPOUNDER:
+        elif node_info.category == NodeCategory.DRAWING_COMPOUNDER:
+            # Darker Blue
+            node_colour = QColor(195, 205, 225)
+        elif node_info.category == NodeCategory.DRAWING_MODIFIER:
             # Blue
             node_colour = QColor(215, 225, 245)
         elif node_info.category == NodeCategory.PROPERTY_MODIFIER:
             # Peach
             node_colour = QColor(240, 220, 200)
-        elif node_info.category in [NodeCategory.ITERATOR, NodeCategory.SELECTOR]:
+        elif node_info.category == NodeCategory.ITERATOR:
+            # Darker Grey
+            node_colour = QColor(200, 200, 210)
+        elif node_info.category == NodeCategory.SELECTOR:
             # Grey
             node_colour = QColor(220, 220, 230)
         else:
@@ -1303,8 +1309,16 @@ class PipelineScene(QGraphicsScene):
         # if isinstance(clicked_item, PortItem):
         #     # Print type for debugging
         #     port: PortId = clicked_item.port
-        #     print(
-        #         f"Node {port.node} ({'Input' if port.is_input else 'Output'}, {port.key}): {clicked_item.port_type}")
+        #     print(f"Node {port.node} ({'Input' if port.is_input else 'Output'}, {port.key}):")
+        #     print(f"\t Def type: {clicked_item.port_type}")
+        #     if not port.is_input:
+        #         value: Optional[PropValue] = self.node_manager.get_compute_result(port.node, port.key)
+        #         if value is None:
+        #             output_type = None
+        #         else:
+        #             assert isinstance(value, PropValue)
+        #             output_type = value.type
+        #         print(f"\t Output type: {output_type}")
 
         if isinstance(clicked_item, NodeItem):
             node_info: NodeInfo = clicked_item.node_info

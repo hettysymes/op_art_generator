@@ -36,7 +36,7 @@ DEF_COLOUR_FILLER_INFO = PrivateNodeInfo(
 
 class ColourFillerNode(UnitNode):
     NAME = "Colour Filler"
-    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
+    NODE_CATEGORY = NodeCategory.DRAWING_MODIFIER
     DEFAULT_NODE_INFO = DEF_COLOUR_FILLER_INFO
 
     @staticmethod

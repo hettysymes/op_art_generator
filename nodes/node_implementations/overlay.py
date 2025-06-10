@@ -28,7 +28,7 @@ DEF_OVERLAY_INFO = PrivateNodeInfo(
 
 class OverlayNode(UnitNode):
     NAME = "Overlay"
-    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
+    NODE_CATEGORY = NodeCategory.DRAWING_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_OVERLAY_INFO
 
     def compute(self, props: ResolvedProps, *args):

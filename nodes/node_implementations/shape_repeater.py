@@ -65,7 +65,7 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
 
 class ShapeRepeaterNode(SelectableNode):
     NAME = "Grid Repeater"
-    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
+    NODE_CATEGORY = NodeCategory.DRAWING_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_SHAPE_REPEATER_NODE_INFO
 
     @staticmethod

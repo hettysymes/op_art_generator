@@ -32,12 +32,13 @@ class DisplayStatus(Enum):
 class NodeCategory(Enum):
     SOURCE = (1, "Source")
     CANVAS = (2, "Canvas")
-    SHAPE_COMPOUNDER = (3, "Shape Compounder")
-    PROPERTY_MODIFIER = (4, "Property Modifier")
-    ITERATOR = (5, "Iterator")
-    SELECTOR = (6, "Selector")
-    ANIMATOR = (7, "Animator")
-    UNKNOWN = (8, "Other")
+    DRAWING_COMPOUNDER = (3, "Drawing Compounder")
+    DRAWING_MODIFIER = (4, "Drawing Modifier")
+    PROPERTY_MODIFIER = (5, "Property Modifier")
+    ITERATOR = (6, "Iterator")
+    SELECTOR = (7, "Selector")
+    ANIMATOR = (8, "Animator")
+    UNKNOWN = (9, "Other")
 
 @dataclass(frozen=True)
 class PropDef:

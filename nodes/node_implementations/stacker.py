@@ -55,7 +55,7 @@ DEF_STACKER_NODE_INFO = PrivateNodeInfo(
 
 class StackerNode(UnitNode):
     NAME = "Stacker"
-    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
+    NODE_CATEGORY = NodeCategory.DRAWING_COMPOUNDER
     DEFAULT_NODE_INFO = DEF_STACKER_NODE_INFO
 
     @staticmethod

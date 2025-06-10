@@ -43,7 +43,7 @@ DEF_DRAWING_CROPPER_INFO = PrivateNodeInfo(
 
 class DrawingCropperNode(UnitNode):
     NAME = "Drawing Reframer"
-    NODE_CATEGORY = NodeCategory.SHAPE_COMPOUNDER
+    NODE_CATEGORY = NodeCategory.DRAWING_MODIFIER
     DEFAULT_NODE_INFO = DEF_DRAWING_CROPPER_INFO
 
     def compute(self, props: ResolvedProps, *args):
