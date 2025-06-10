@@ -131,9 +131,12 @@ class NodeItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
 
         # Change node colour based on category:
-        if node_info.category in [NodeCategory.SOURCE, NodeCategory.CANVAS]:
+        if node_info.category == NodeCategory.SOURCE:
             # Purple
             node_colour = QColor(195, 195, 225)
+        elif node_info.category == NodeCategory.CANVAS:
+            # Pink
+            node_colour = QColor(230, 210, 240)
         elif node_info.category == NodeCategory.SHAPE_COMPOUNDER:
             # Blue
             node_colour = QColor(215, 225, 245)
