@@ -355,7 +355,7 @@ DEF_ELLIPSE_INFO = PrivateNodeInfo(
         ),
         'fill': PropDef(
             prop_type=PT_Fill(),
-            display_name="Colour",
+            display_name="Fill",
             description="Ellipse fill colour.",
             default_value=Colour(0, 0, 0, 255),
             input_port_status=PortStatus.OPTIONAL
@@ -411,7 +411,7 @@ DEF_CIRCLE_INFO = PrivateNodeInfo(
         ),
         'fill': PropDef(
             prop_type=PT_Fill(),
-            display_name="Colour",
+            display_name="Fill",
             description="Circle fill colour.",
             default_value=Colour(0, 0, 0, 255)
         ),

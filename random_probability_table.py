@@ -21,7 +21,7 @@ class RandomProbabilityWidget(QWidget):
 
         self.table = QTableWidget()
         self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Reference", "Weight"])
+        self.table.setHorizontalHeaderLabels(["Input", "Weight"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setItemDelegateForColumn(0, self.item_delegate)
         self.table.verticalHeader().setDefaultSectionSize(40)

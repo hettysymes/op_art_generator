@@ -9,7 +9,7 @@ from nodes.node_implementations.colour_list import ColourListNode
 from nodes.node_implementations.colours import FillNode
 from nodes.node_implementations.drawing_cropper import DrawingCropperNode
 from nodes.node_implementations.drawing_group import DrawingGroupNode
-from nodes.node_implementations.drawing_group_subset import DrawingGroupSubsetNode
+from nodes.node_implementations.list_subset import ListSubsetNode
 from nodes.node_implementations.ellipse_sampler import EllipseSamplerNode
 from nodes.node_implementations.function import FunctionNode
 from nodes.node_implementations.function_sampler import FunSamplerNode
@@ -46,7 +46,7 @@ node_classes = [
     RandomIteratorNode,
     StackerNode,
     DrawingGroupNode,
-    DrawingGroupSubsetNode,
+    ListSubsetNode,
     PortForwarderNode,
     EllipseSamplerNode,
     DrawingCropperNode,

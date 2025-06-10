@@ -51,7 +51,7 @@ DEF_BLAZE_MAKER_INFO = PrivateNodeInfo(
 
 
 class BlazeMakerNode(UnitNode):
-    NAME = "Blaze Maker"
+    NAME = "Blaze Shape"
     NODE_CATEGORY = NodeCategory.SOURCE
     DEFAULT_NODE_INFO = DEF_BLAZE_MAKER_INFO
 
