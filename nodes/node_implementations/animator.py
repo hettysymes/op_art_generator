@@ -14,6 +14,8 @@ DEF_ANIMATOR_INFO = PrivateNodeInfo(
     prop_defs={
         'val_list': PropDef(
             prop_type=PT_List(),
+            display_name="List",
+            description="Input list to select random item of.",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
             display_status=DisplayStatus.NO_DISPLAY

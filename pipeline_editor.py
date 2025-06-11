@@ -132,44 +132,31 @@ class NodeItem(QGraphicsRectItem):
 
         # Change node colour based on category:
         if node_info.category == NodeCategory.SHAPE:
-            # Purple
-            node_colour = QColor(215, 195, 245)
+            node_colour = QColor(215, 195, 245)  # Soft Lavender
         elif node_info.category == NodeCategory.CANVAS:
-            # Pink
-            node_colour = QColor(250, 215, 235)
+            node_colour = QColor(250, 215, 235)  # Pale Pink
         elif node_info.category == NodeCategory.DRAWING_COMPOSER:
-            # Darker Blue
-            node_colour = QColor(190, 210, 250)
+            node_colour = QColor(190, 210, 250)  # Lavender Blue
         elif node_info.category == NodeCategory.DRAWING_MODIFIER:
-            # Blue
-            node_colour = QColor(180, 225, 240)
+            node_colour = QColor(180, 225, 240)  # Mist Blue
         elif node_info.category == NodeCategory.BASE_PROPERTY:
-            # Peach
-            node_colour = QColor(255, 225, 190)
+            node_colour = QColor(255, 225, 190)  # Soft Apricot
         elif node_info.category == NodeCategory.PROPERTY_MODIFIER:
-            # Peach
-            node_colour = QColor(255, 215, 170)
+            node_colour = QColor(255, 215, 170)  # Melon
         elif node_info.category == NodeCategory.PROPERTY_SAMPLER:
-            # Peach
-            node_colour = QColor(255, 235, 190)
+            node_colour = QColor(255, 235, 190)  # Cream Orange
         elif node_info.category == NodeCategory.ITERATOR:
-            # Darker Grey
-            node_colour = QColor(215, 215, 220)
+            node_colour = QColor(215, 215, 220)  # Warm Grey
         elif node_info.category == NodeCategory.SELECTOR:
-            # Grey
-            node_colour = QColor(225, 225, 240)
+            node_colour = QColor(225, 225, 240)  # Light Cool Grey
         elif node_info.category == NodeCategory.COLLATOR:
-            # Grey
-            node_colour = QColor(230, 225, 245)
+            node_colour = QColor(230, 225, 245)  # Light Lilac Grey
         elif node_info.category == NodeCategory.PORT_FORWARDER:
-            # Grey
-            node_colour = QColor(230, 230, 235)
+            node_colour = QColor(230, 230, 235)  # Foggy Silver
         elif node_info.category == NodeCategory.ANIMATOR:
-            # Red
-            node_colour = QColor(255, 200, 200)
+            node_colour = QColor(255, 200, 200)  # Blush
         else:
-            # Green
-            node_colour = QColor(190, 245, 215)
+            node_colour = QColor(190, 245, 215)  # Soft Mint
         self.setBrush(QBrush(node_colour))
         self.setPen(QPen(Qt.black, 2))
 
