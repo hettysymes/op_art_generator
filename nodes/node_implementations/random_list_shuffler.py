@@ -26,7 +26,7 @@ DEF_RANDOM_LIST_SHUFFLER_INFO = PrivateNodeInfo(
 
 class RandomListShufflerNode(RandomisableNode):
     NAME = "Random List Shuffler"
-    NODE_CATEGORY = NodeCategory.SELECTOR
+    NODE_CATEGORY = NodeCategory.LIST_MODIFIER
     DEFAULT_NODE_INFO = DEF_RANDOM_LIST_SHUFFLER_INFO
 
     def compute(self, props: ResolvedProps, *args):

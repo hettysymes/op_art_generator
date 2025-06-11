@@ -43,7 +43,7 @@ DEF_LIST_SUBSET_INFO = PrivateNodeInfo(
 
 class ListSubsetNode(UnitNode):
     NAME = "List Subset"
-    NODE_CATEGORY = NodeCategory.SELECTOR
+    NODE_CATEGORY = NodeCategory.LIST_MODIFIER
     DEFAULT_NODE_INFO = DEF_LIST_SUBSET_INFO
 
     def compute(self, props: ResolvedProps, *args):

@@ -40,9 +40,10 @@ class NodeCategory(Enum):
     ITERATOR = (8, "Iterators")
     SELECTOR = (9, "Selectors")
     COLLATOR = (10, "Collators")
-    PORT_FORWARDER = (11, "Port Forwarders")
-    ANIMATOR = (12, "Animators")
-    UNKNOWN = (13, "Others")
+    LIST_MODIFIER = (11, "List Modifiers")
+    PORT_FORWARDER = (12, "Port Forwarders")
+    ANIMATOR = (13, "Animators")
+    UNKNOWN = (14, "Others")
 
 @dataclass(frozen=True)
 class PropDef:
