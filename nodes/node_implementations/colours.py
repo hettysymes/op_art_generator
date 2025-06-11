@@ -49,7 +49,7 @@ DEF_COLOUR_NODE_INFO = PrivateNodeInfo(
 
 class ColourNode(UnitNode):
     NAME = "Solid Colour"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.BASE_PROPERTY
     DEFAULT_NODE_INFO = DEF_COLOUR_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -106,7 +106,7 @@ DEF_GRADIENT_NODE_INFO = PrivateNodeInfo(
 
 class GradientNode(UnitNode):
     NAME = "Linear Gradient"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.BASE_PROPERTY
     DEFAULT_NODE_INFO = DEF_GRADIENT_NODE_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -115,5 +115,5 @@ class GradientNode(UnitNode):
 
 class FillNode(CombinationNode):
     NAME = "Colour"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.BASE_PROPERTY
     SELECTIONS = [ColourNode, GradientNode]

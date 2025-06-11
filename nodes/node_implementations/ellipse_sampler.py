@@ -43,7 +43,7 @@ DEF_ELLIPSE_SAMPLER_INFO = PrivateNodeInfo(
 
 class EllipseSamplerNode(UnitNode):
     NAME = "Ellipse Sampler"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.PROPERTY_SAMPLER
     DEFAULT_NODE_INFO = DEF_ELLIPSE_SAMPLER_INFO
 
     @staticmethod

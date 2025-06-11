@@ -27,7 +27,7 @@ DEF_COLOUR_LIST_INFO = PrivateNodeInfo(
 
 class ColourListNode(UnitNode):
     NAME = "Colour List"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.COLLATOR
     DEFAULT_NODE_INFO = DEF_COLOUR_LIST_INFO
 
     def compute(self, props: ResolvedProps, *args):

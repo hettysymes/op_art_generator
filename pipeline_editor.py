@@ -131,33 +131,45 @@ class NodeItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
 
         # Change node colour based on category:
-        if node_info.category == NodeCategory.SOURCE:
+        if node_info.category == NodeCategory.SHAPE:
             # Purple
-            node_colour = QColor(195, 195, 225)
+            node_colour = QColor(215, 195, 245)
         elif node_info.category == NodeCategory.CANVAS:
             # Pink
-            node_colour = QColor(230, 210, 240)
-        elif node_info.category == NodeCategory.DRAWING_COMPOUNDER:
+            node_colour = QColor(250, 215, 235)
+        elif node_info.category == NodeCategory.DRAWING_COMPOSER:
             # Darker Blue
-            node_colour = QColor(195, 205, 225)
+            node_colour = QColor(190, 210, 250)
         elif node_info.category == NodeCategory.DRAWING_MODIFIER:
             # Blue
-            node_colour = QColor(215, 225, 245)
+            node_colour = QColor(180, 225, 240)
+        elif node_info.category == NodeCategory.BASE_PROPERTY:
+            # Peach
+            node_colour = QColor(255, 225, 190)
         elif node_info.category == NodeCategory.PROPERTY_MODIFIER:
             # Peach
-            node_colour = QColor(240, 220, 200)
+            node_colour = QColor(255, 215, 170)
+        elif node_info.category == NodeCategory.PROPERTY_SAMPLER:
+            # Peach
+            node_colour = QColor(255, 235, 190)
         elif node_info.category == NodeCategory.ITERATOR:
             # Darker Grey
-            node_colour = QColor(200, 200, 210)
+            node_colour = QColor(215, 215, 220)
         elif node_info.category == NodeCategory.SELECTOR:
             # Grey
-            node_colour = QColor(220, 220, 230)
+            node_colour = QColor(225, 225, 240)
+        elif node_info.category == NodeCategory.COLLATOR:
+            # Grey
+            node_colour = QColor(230, 225, 245)
+        elif node_info.category == NodeCategory.PORT_FORWARDER:
+            # Grey
+            node_colour = QColor(230, 230, 235)
         elif node_info.category == NodeCategory.ANIMATOR:
             # Red
-            node_colour = QColor(235, 210, 210)
+            node_colour = QColor(255, 200, 200)
         else:
             # Green
-            node_colour = QColor(200, 230, 220)
+            node_colour = QColor(190, 245, 215)
         self.setBrush(QBrush(node_colour))
         self.setPen(QPen(Qt.black, 2))
 
@@ -1347,12 +1359,12 @@ class PipelineScene(QGraphicsScene):
             # Add actions for each node type
             for category, node_classes in get_node_classes():
                 if len(node_classes) > 1:
-                    category_menu = menu.addMenu(f"{category.value[1]}s")
+                    category_menu = menu.addMenu(f"{category.value[1]}")
                 else:
                     category_menu = menu
                 for node_class in node_classes:
                     if issubclass(node_class, CombinationNode):
-                        submenu = category_menu.addMenu(f"{node_class.name()}s")
+                        submenu = category_menu.addMenu(node_class.name())
                         for i in range(len(node_class.selections())):
                             change_action = QAction(node_class.selections()[i].name(), submenu)
                             handler = partial(self.add_new_node, event.scenePos(), node_class, add_info=i)

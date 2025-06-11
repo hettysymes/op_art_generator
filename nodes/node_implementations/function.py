@@ -46,7 +46,7 @@ DEF_CUBIC_FUN_INFO = PrivateNodeInfo(
 
 class CubicFunNode(UnitNode):
     NAME = "Cubic Function"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.BASE_PROPERTY
     DEFAULT_NODE_INFO = DEF_CUBIC_FUN_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -77,7 +77,7 @@ DEF_CUSTOM_FUN_INFO = PrivateNodeInfo(
 
 class CustomFunNode(UnitNode):
     NAME = "Custom Function"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.BASE_PROPERTY
     DEFAULT_NODE_INFO = DEF_CUSTOM_FUN_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -109,7 +109,7 @@ DEF_PIECEWISE_FUN_INFO = PrivateNodeInfo(
 
 class PiecewiseFunNode(UnitNode):
     NAME = "Piecewise Linear Function"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.BASE_PROPERTY
     DEFAULT_NODE_INFO = DEF_PIECEWISE_FUN_INFO
 
     def compute(self, props: ResolvedProps, *args):
@@ -119,5 +119,5 @@ class PiecewiseFunNode(UnitNode):
 
 class FunctionNode(CombinationNode):
     NAME = "Function"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.BASE_PROPERTY
     SELECTIONS = [CubicFunNode, PiecewiseFunNode, CustomFunNode]

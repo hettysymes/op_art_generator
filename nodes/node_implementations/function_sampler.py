@@ -33,7 +33,7 @@ DEF_FUN_SAMPLER_INFO = PrivateNodeInfo(
 
 class FunSamplerNode(UnitNode):
     NAME = "Function Sampler"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.PROPERTY_SAMPLER
     DEFAULT_NODE_INFO = DEF_FUN_SAMPLER_INFO
 
     @staticmethod

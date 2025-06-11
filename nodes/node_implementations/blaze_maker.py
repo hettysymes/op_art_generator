@@ -51,8 +51,8 @@ DEF_BLAZE_MAKER_INFO = PrivateNodeInfo(
 
 
 class BlazeMakerNode(UnitNode):
-    NAME = "Blaze Shape"
-    NODE_CATEGORY = NodeCategory.SOURCE
+    NAME = "Blaze"
+    NODE_CATEGORY = NodeCategory.SHAPE
     DEFAULT_NODE_INFO = DEF_BLAZE_MAKER_INFO
 
     def compute(self, props: ResolvedProps, *args):

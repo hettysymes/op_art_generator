@@ -31,7 +31,7 @@ DEF_GRID_INFO = PrivateNodeInfo(
 
 class GridNode(UnitNode):
     NAME = "Grid"
-    NODE_CATEGORY = NodeCategory.PROPERTY_MODIFIER
+    NODE_CATEGORY = NodeCategory.BASE_PROPERTY
     DEFAULT_NODE_INFO = DEF_GRID_INFO
 
     def compute(self, props: ResolvedProps, *args):
