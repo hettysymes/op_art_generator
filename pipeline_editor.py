@@ -152,13 +152,13 @@ class NodeItem(QGraphicsRectItem):
         elif node_info.category == NodeCategory.COLLATOR:
             node_colour = QColor(230, 225, 245)  # Light Lilac Grey
         elif node_info.category == NodeCategory.LIST_MODIFIER:
-            node_colour = QColor(205, 220, 235)  # Muted Teal Blue
+            node_colour = QColor(215, 215, 235)  # Lavender Grey
         elif node_info.category == NodeCategory.PORT_FORWARDER:
             node_colour = QColor(230, 230, 235)  # Foggy Silver
         elif node_info.category == NodeCategory.ANIMATOR:
             node_colour = QColor(255, 200, 200)  # Blush
         else:
-            node_colour = QColor(190, 245, 215)  # Soft Mint
+            node_colour = QColor(175, 230, 200)  # Soft Mint
         self.setBrush(QBrush(node_colour))
         self.setPen(QPen(Qt.black, 2))
 
