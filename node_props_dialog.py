@@ -247,7 +247,7 @@ class NodePropertiesDialog(QDialog):
                 widget = QSpinBox()
             else:
                 widget = QDoubleSpinBox()
-                widget.setDecimals(3)
+                widget.setDecimals(4)
             # Set minimum and maximum values
             widget.setMinimum(prop_type.min_value)
             widget.setMaximum(prop_type.max_value)
@@ -272,12 +272,12 @@ class NodePropertiesDialog(QDialog):
 
             # Create the spinboxes
             x_spinbox = QDoubleSpinBox()
-            x_spinbox.setDecimals(3)
+            x_spinbox.setDecimals(4)
             x_spinbox.setMinimum(-999999)
             x_spinbox.setMaximum(999999)
 
             y_spinbox = QDoubleSpinBox()
-            y_spinbox.setDecimals(3)
+            y_spinbox.setDecimals(4)
             y_spinbox.setMinimum(-999999)
             y_spinbox.setMaximum(999999)
 
