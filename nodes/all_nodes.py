@@ -24,13 +24,14 @@ from nodes.node_implementations.random_list_shuffler import RandomListShufflerNo
 from nodes.node_implementations.random_node_animator import RandomAnimatorNode
 from nodes.node_implementations.random_port_selector import RandomPortSelectorNode
 from nodes.node_implementations.shape_repeater import ShapeRepeaterNode
-from nodes.node_implementations.shapes import ShapeNode
+from nodes.node_implementations.shapes import ShapeNode, LineNode
 from nodes.node_implementations.stacker import StackerNode
 from nodes.node_implementations.warp import WarpNode
 
 node_classes = [
     GridNode,
     ShapeNode,
+    LineNode,
     CanvasNode,
     ShapeRepeaterNode,
     FunctionNode,

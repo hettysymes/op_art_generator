@@ -87,7 +87,7 @@ DEF_SINE_WAVE_INFO = PrivateNodeInfo(
 
 class SineWaveNode(UnitNode):
     NAME = "Sine Wave"
-    NODE_CATEGORY = NodeCategory.SHAPE
+    NODE_CATEGORY = NodeCategory.LINE
     DEFAULT_NODE_INFO = DEF_SINE_WAVE_INFO
 
     @staticmethod
@@ -157,7 +157,7 @@ DEF_CUSTOM_LINE_INFO = PrivateNodeInfo(
 
 class CustomLineNode(UnitNode):
     NAME = "Custom Line"
-    NODE_CATEGORY = NodeCategory.SHAPE
+    NODE_CATEGORY = NodeCategory.LINE
     DEFAULT_NODE_INFO = DEF_CUSTOM_LINE_INFO
 
     @staticmethod
@@ -215,7 +215,7 @@ DEF_STRAIGHT_LINE_NODE_INFO = PrivateNodeInfo(
 
 class StraightLineNode(UnitNode):
     NAME = "Straight Line"
-    NODE_CATEGORY = NodeCategory.SHAPE
+    NODE_CATEGORY = NodeCategory.LINE
     DEFAULT_NODE_INFO = DEF_STRAIGHT_LINE_NODE_INFO
 
     @staticmethod
@@ -452,4 +452,9 @@ class CircleNode(UnitNode):
 class ShapeNode(CombinationNode):
     NAME = "Shape"
     NODE_CATEGORY = NodeCategory.SHAPE
-    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, SineWaveNode, StraightLineNode, CustomLineNode, BlazeMakerNode]
+    SELECTIONS = [PolygonNode, RectangleNode, EllipseNode, CircleNode, BlazeMakerNode]
+
+class LineNode(CombinationNode):
+    NAME = "Line"
+    NODE_CATEGORY = NodeCategory.LINE
+    SELECTIONS = [SineWaveNode, StraightLineNode, CustomLineNode]

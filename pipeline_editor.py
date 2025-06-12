@@ -133,6 +133,8 @@ class NodeItem(QGraphicsRectItem):
         # Change node colour based on category:
         if node_info.category == NodeCategory.SHAPE:
             node_colour = QColor(215, 195, 245)  # Soft Lavender
+        elif node_info.category == NodeCategory.LINE:
+            node_colour = QColor(195, 175, 235)  # Darker Lavender
         elif node_info.category == NodeCategory.CANVAS:
             node_colour = QColor(250, 215, 235)  # Pale Pink
         elif node_info.category == NodeCategory.DRAWING_COMPOSER:
