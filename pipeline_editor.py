@@ -22,6 +22,7 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 from app_state import NodeState, AppState, CustomNodeDef, NodeId
 from delete_custom_node_dialog import DeleteCustomNodeDialog
 from export_w_aspect_ratio import ExportWithAspectRatio
+from full_screen_svg import SvgFullScreenWindow
 from id_datatypes import PortId, EdgeId, output_port, input_port, PropKey, node_changed_port, NodeIdGenerator
 from node_graph import NodeGraph, RefId
 from node_manager import NodeManager, NodeInfo
@@ -1151,6 +1152,7 @@ class PipelineScene(QGraphicsScene):
         self.temp_dir = temp_dir
         self.undo_stack = QUndoStack()
         self.filepath = None
+        self.svg_viewer = None
 
         # Connect signals
         self.connection_signals.connectionStarted.connect(self.start_connection)
@@ -1342,6 +1344,10 @@ class PipelineScene(QGraphicsScene):
                     change_action.triggered.connect(lambda _, index=i: self.change_node_selection(clicked_item, index))
                     submenu.addAction(change_action)
                 menu.addMenu(submenu)
+            elif node_info.is_canvas:
+                svg_full_screen = QAction("View in Full Screen", menu)
+                svg_full_screen.triggered.connect(lambda _: self.view_svg_full_screen(clicked_item))
+                menu.addAction(svg_full_screen)
 
             menu.exec_(event.screenPos())
         else:
@@ -1378,6 +1384,16 @@ class PipelineScene(QGraphicsScene):
                     menu.addAction(action)
 
             menu.exec_(event.screenPos())
+
+    def view_svg_full_screen(self, canvas_node: NodeItem):
+        vis: Visualisable = canvas_node.visualise()
+        if isinstance(vis, Element):
+            svg_path: str = os.path.join(self.temp_dir, f"{canvas_node.uid}_fullscreen.svg")
+            width: int = self.node_manager.get_internal_property(canvas_node.uid, 'width')
+            height: int = self.node_manager.get_internal_property(canvas_node.uid, 'height')
+            vis.save_to_svg(svg_path, width, height)
+            self.svg_viewer = SvgFullScreenWindow(svg_path)
+            self.svg_viewer.show()
 
     def save_scene(self, filepath):
         view = self.view()
