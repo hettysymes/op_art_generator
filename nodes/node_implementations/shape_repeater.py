@@ -17,7 +17,6 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
             prop_type=PT_Grid(),
             display_name="Grid",
             input_port_status=PortStatus.COMPULSORY,
-            output_port_status=PortStatus.FORBIDDEN,
             display_status=DisplayStatus.NO_DISPLAY
         ),
         'elements': PropDef(
@@ -25,7 +24,6 @@ DEF_SHAPE_REPEATER_NODE_INFO = PrivateNodeInfo(
             display_name="Drawings",
             description="Order of drawings in which to repeat them within the grid. Drawings are cycled through the grid cells row by row.",
             input_port_status=PortStatus.COMPULSORY,
-            output_port_status=PortStatus.FORBIDDEN,
             default_value=List(PT_ElementHolder())
         ),
         'row_iter_enum': PropDef(
