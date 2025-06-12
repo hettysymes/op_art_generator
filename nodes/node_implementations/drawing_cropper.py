@@ -13,7 +13,7 @@ DEF_DRAWING_CROPPER_INFO = PrivateNodeInfo(
         'element': PropDef(
             prop_type=PT_Element(),
             display_name="Drawing",
-            description="Order of drawings in the drawing group.",
+            description="Order of drawings in the drawing list.",
             input_port_status=PortStatus.COMPULSORY,
             output_port_status=PortStatus.FORBIDDEN,
             display_status=DisplayStatus.NO_DISPLAY
@@ -34,7 +34,7 @@ DEF_DRAWING_CROPPER_INFO = PrivateNodeInfo(
             prop_type=PT_Element(),
             input_port_status=PortStatus.FORBIDDEN,
             output_port_status=PortStatus.COMPULSORY,
-            display_name="Drawing Group",
+            display_name="Drawing List",
             display_status=DisplayStatus.NO_DISPLAY
         )
     }
