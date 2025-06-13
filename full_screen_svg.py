@@ -37,12 +37,4 @@ class SvgFullScreenWindow(QMainWindow):
         self.svg_widget = SvgDisplayWidget(svg_path)
         self.setCentralWidget(self.svg_widget)
 
-        # Remove minimize and maximize buttons, keep only close
-        self.setWindowFlags(
-            Qt.Window |
-            Qt.CustomizeWindowHint |
-            Qt.WindowTitleHint |
-            Qt.WindowCloseButtonHint
-        )
-
         self.showFullScreen()
