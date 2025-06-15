@@ -354,7 +354,7 @@ class CustomNode(Node):
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier) -> dict[PropKey, PropValue]:
         # Compute nodes in the subgraph
         self._replace_input_nodes(refs, ref_querier)
-        self._update_internal_props(props)
+        # self._update_internal_props(props)
         if self.randomisable:
             if props.get('seed') is None:
                 self.randomise()
