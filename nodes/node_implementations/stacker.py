@@ -65,7 +65,7 @@ class StackerNode(UnitNode):
         group = Group(debug_info="Stacker")
         for i, e in enumerate(elements):
             if vertical_layout:
-                transform = [Translate(0, -i * shift), Scale(1, 1 / size), Translate(0, i * (1 - wh_diff) / size)]
+                transform = [Translate(i * shift, 0), Scale(1, 1 / size), Translate(0, i * (1 - wh_diff) / size)]
             else:
                 transform = [Translate(0, -i * shift), Scale(1 / size, 1), Translate(i * (1 - wh_diff) / size, 0)]
             elem_cell = Group(transform, debug_info=f"Stack element {i}")
