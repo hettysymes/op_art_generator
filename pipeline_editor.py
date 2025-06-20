@@ -447,6 +447,7 @@ class NodeItem(QGraphicsRectItem):
 
         # Update output port shapes
         for port, port_item in self.port_items.items():
+            if port not in self.node_state.ports_open: continue
             if port.is_input:
                 # Update input port shape
                 incoming_edges: set[EdgeId] = self.node_graph.incoming_edges(port)
@@ -581,9 +582,9 @@ class NodeItem(QGraphicsRectItem):
 
     def remove_port(self, port: PortId, update_layout=True):
         port_item = self.port_items[port]
+        self.node_state.ports_open.remove(port)  # Remove from open ports
         port_item.remove_edges()  # Remove connections to/from this port
         del self.port_items[port]  # Remove reference to port
-        self.node_state.ports_open.remove(port)  # Remove from open ports
         port_item.scene().removeItem(port_item)  # Remove port from scene
         if update_layout:
             self.update_label_port_positions()
