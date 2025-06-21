@@ -1,9 +1,13 @@
-from id_datatypes import PortId
+import random
+from typing import Optional
+
+from id_datatypes import PortId, PropKey
 from node_graph import RefId
 from nodes.node_defs import PrivateNodeInfo, ResolvedProps, PropDef, PortStatus, Node, RefQuerier, ResolvedRefs, \
     NodeCategory, DisplayStatus
 from nodes.nodes import AnimatableNode
 from nodes.prop_types import PropType
+from nodes.prop_values import PropValue
 
 DEF_RANDOM_ANIMATOR_INFO = PrivateNodeInfo(
     description="Takes a random node as input, and animates a random series of outputs.",
@@ -28,6 +32,10 @@ class RandomAnimatorNode(AnimatableNode):
     NODE_CATEGORY = NodeCategory.ANIMATOR
     DEFAULT_NODE_INFO = DEF_RANDOM_ANIMATOR_INFO
 
+    def __init__(self, internal_props: Optional[dict[PropKey, PropValue]] = None, add_info=None):
+        self._last_seed = random.random()
+        super().__init__(internal_props, add_info)
+
     def compute(self, props: ResolvedProps, refs: ResolvedRefs, ref_querier: RefQuerier):
         random_input = props.get('random_input')
         if random_input is None:
@@ -42,6 +50,8 @@ class RandomAnimatorNode(AnimatableNode):
 
         # Return random result
         rprops, rrefs, rquerier = ref_querier.get_compute_inputs(random_node_ref)
-        rprops['seed'] = None
+        if self.tick_reanimate():
+            self._last_seed = random.random()
+        rprops['seed'] = self._last_seed
         rrefs['seed'] = None
         return {'_main': random_node.final_compute(rprops, rrefs, rquerier)[src_port.key]}
