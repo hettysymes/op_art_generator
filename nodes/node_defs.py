@@ -299,5 +299,5 @@ class RuntimeNode:
     def get_compute_result(self, key: PropKey) -> Optional[PropValue]:
         if key in self.compute_results:
             return self.compute_results[key]
-        # Forwarding an internal property
-        return self.node.internal_props.get(key)
+        # Forwarding a resolved property
+        return self.resolve_properties()[0].get(key)
